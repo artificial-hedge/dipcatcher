@@ -42,6 +42,8 @@ import numpy as np
 import numpy.typing as npt
 
 from fx1.modelcard import ModelCard
+from fx1.serve.release_gate import require_loopback_engine_bind, require_nonfixture_or_test_opt_in
+from fx1.serve.signing import verify_release_ed25519
 
 _F32 = npt.NDArray[np.float32]
 
@@ -259,6 +261,8 @@ class LocalWeightsEngine:
             raise RuntimeError(
                 f"{card.version} failed the ship gate; refusing to serve its weights"
             )
+        if enforce_ship_gate:
+            require_nonfixture_or_test_opt_in(card)
         manifest = self._load_manifest(root)
         weights_rel = manifest["weights_file"]
         weights_path = (root / weights_rel).resolve()
@@ -276,6 +280,8 @@ class LocalWeightsEngine:
             n_heads = int(arch["n_heads"])
         self.root = root
         self.card = card
+        if card.public_model_id is not None and not verify_release_ed25519(root):
+            raise RuntimeError("public model alias requires an Ed25519-signed checkpoint")
         self.manifest = manifest
         self.model = _TinyLM.from_tensors(_load_safetensors(weights_path), n_heads=n_heads)
         if self.model.vocab != VOCAB_SIZE:
@@ -283,7 +289,7 @@ class LocalWeightsEngine:
                 f"weights vocab {self.model.vocab} does not match the byte tokenizer "
                 f"({VOCAB_SIZE}); this engine serves byte-level fx-1 checkpoints only"
             )
-        self.served_model = card.version
+        self.served_model = card.public_model_id or card.version
         self.weights_sha256 = sha
 
     @staticmethod
@@ -536,6 +542,7 @@ def _watch_orphan(spawner_ppid: int) -> None:
 
 def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: bool = True) -> int:
     """Serve forever on a real socket; returns 0 on a clean shutdown."""
+    require_loopback_engine_bind(host)
     srv = _EngineHTTPServer((host, port), _Handler)
     srv.engine = engine
     if watch_orphan:
@@ -552,7 +559,6 @@ def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: boo
 def main(argv: list[str] | None = None) -> int:
     """``python -m fx1.serve.local_engine`` — the FX1_LOCAL_SERVE_CMD target."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--checkpoint-dir", type=Path, default=None)
     parser.add_argument("--host", default=_DEFAULT_HOST)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument(
@@ -561,6 +567,10 @@ def main(argv: list[str] | None = None) -> int:
         help="do not exit when the spawning process dies (standalone daemon mode)",
     )
     args = parser.parse_args(argv)
+    require_loopback_engine_bind(args.host)
+    # The parent backend pins this environment variable when it spawns us.
+    # A CLI path override would let untrusted agent-supplied arguments select
+    # another directory for signature verification and weight loading.
     env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "")
     root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
     if args.checkpoint_dir is None and not env_dir:

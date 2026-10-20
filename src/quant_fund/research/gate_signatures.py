@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 GATE_SIGNATURES_SCHEMA = "gate_signatures.v1"
@@ -75,6 +76,15 @@ def sign_pins(
     from quant_fund.utils.atomicio import atomic_write_text
 
     root_path = Path(root)
+    if (root_path / DEFAULT_QUORUM_PATH).exists():
+        raise ValueError("quorum registry present — use quorum-sign")
+    validate_signer_pair(private_seed_hex, pubkey_hex)
+    pub_file = root_path / DEFAULT_PUBKEY_PATH
+    if pub_file.exists() or pub_file.is_symlink():
+        if not pub_file.is_file() or pub_file.is_symlink():
+            raise ValueError("committed public key is not a regular file")
+        if pub_file.read_text().strip() != pubkey_hex:
+            raise ValueError("supplied public key does not match committed public key")
     manifest = _pin_manifest(root_path)
     key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
     sig = key.sign(canonical_json_bytes(manifest))
@@ -85,10 +95,8 @@ def sign_pins(
         "payload": manifest,
         "signature": sig.hex(),
     }
-    atomic_write_text(
-        root_path / DEFAULT_PUBKEY_PATH,
-        pubkey_hex + "\n",
-    )
+    if not pub_file.exists():
+        atomic_write_text(pub_file, pubkey_hex + "\n")
     sig_path = root_path / DEFAULT_SIG_PATH
     atomic_write_text(sig_path, json.dumps(body, indent=2, sort_keys=True) + "\n")
     return sig_path
@@ -124,7 +132,8 @@ def verify_pin_signatures(
         return {"ok": False, "signed": True, "errors": ["signature_file_missing"]}
     pubkey_hex = pub_file.read_text().strip()
     try:
-        pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+        pubkey_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pubkey_hex))
+        pubkey = Ed25519PublicKey.from_public_bytes(pubkey_bytes)
     except ValueError:
         return {"ok": False, "signed": True, "errors": ["pubkey_malformed"]}
     try:
@@ -258,12 +267,12 @@ def init_quorum(
     """
     from quant_fund.utils.atomicio import atomic_write_bytes
 
-    if threshold < 1 or threshold > len(pubkeys):
+    if isinstance(threshold, bool) or threshold < 1 or threshold > len(pubkeys):
         raise ValueError("threshold must be in [1, n_keys]")
     seen: set[str] = set()
     keys = []
     for i, pub in enumerate(pubkeys):
-        bytes.fromhex(pub)  # raises on malformed
+        require_canonical_prime_order_public_key(bytes.fromhex(pub))
         kid = key_id(pub)
         if kid in seen:
             raise ValueError(f"duplicate pubkey: {kid}")
@@ -305,6 +314,7 @@ def quorum_registry_errors(registry: object) -> list[str]:
         keys = []
     if (
         not isinstance(threshold, int)
+        or isinstance(threshold, bool)
         or threshold < 1
         or (isinstance(keys, list) and keys and threshold > len(keys))
     ):
@@ -320,7 +330,7 @@ def quorum_registry_errors(registry: object) -> list[str]:
             errors.append("registry_key_malformed")
             continue
         try:
-            bytes.fromhex(pub)
+            require_canonical_prime_order_public_key(bytes.fromhex(pub))
         except ValueError:
             errors.append("registry_key_malformed")
             continue
@@ -366,6 +376,56 @@ def load_quorum_registry(root: str | Path) -> tuple[dict[str, str], int] | None:
     )
 
 
+def validate_signer_pair(private_hex: str, public_hex: str) -> str:
+    """Return the public key ID only when a seed derives that exact public key."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    try:
+        if len(public_hex) != 64:
+            raise ValueError
+        kid = key_id(public_hex)
+        private_key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex))
+    except ValueError as exc:
+        raise ValueError("signer material malformed") from exc
+    actual_public = private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    if actual_public.hex() != public_hex:
+        raise ValueError(f"signer private seed does not match public key: {kid}")
+    return kid
+
+
+def validate_quorum_signers(
+    root: str | Path,
+    signers: list[tuple[str, str]],
+    *,
+    registry_path: Path = DEFAULT_QUORUM_PATH,
+) -> tuple[int, int]:
+    """Check registered, distinct seed/public pairs without changing pin state."""
+    reg_file = Path(root) / registry_path
+    if not reg_file.exists():
+        raise ValueError("no quorum registry — run quorum-init first")
+    try:
+        registry = json.loads(reg_file.read_text())
+    except (OSError, ValueError) as exc:
+        raise ValueError("malformed quorum registry") from exc
+    errors = quorum_registry_errors(registry)
+    if errors:
+        raise ValueError(f"malformed quorum registry: {errors}")
+    threshold = int(registry["threshold"])
+    registered = {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}
+    seen: set[str] = set()
+    for private_hex, public_hex in signers:
+        kid = validate_signer_pair(private_hex, public_hex)
+        if registered.get(kid) != public_hex:
+            raise ValueError(f"signer not in quorum registry: {kid}")
+        if kid in seen:
+            raise ValueError(f"duplicate signer: {kid}")
+        seen.add(kid)
+    if len(seen) < threshold:
+        raise ValueError(f"quorum unattainable: {len(seen)} signers < threshold {threshold}")
+    return len(seen), threshold
+
+
 def sign_pins_quorum(
     root: str | Path,
     signers: list[tuple[str, str]],
@@ -384,26 +444,14 @@ def sign_pins_quorum(
     from quant_fund.utils.atomicio import atomic_write_text
 
     root_path = Path(root)
-    reg_file = root_path / registry_path
-    if not reg_file.exists():
-        raise ValueError("no quorum registry — run quorum-init first")
-    registry = json.loads(reg_file.read_text())
-    errors = quorum_registry_errors(registry)
-    if errors:
-        raise ValueError(f"malformed quorum registry: {errors}")
-    threshold = int(registry["threshold"])
-    registered = {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}
+    validate_quorum_signers(root_path, signers, registry_path=registry_path)
     manifest = _pin_manifest(root_path)
     msg = canonical_json_bytes(manifest)
     signatures = []
     for priv_hex, pub_hex in signers:
         kid = key_id(pub_hex)
-        if kid not in registered or registered[kid] != pub_hex:
-            raise ValueError(f"signer not in quorum registry: {kid}")
         sig = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_hex)).sign(msg)
         signatures.append({"key_id": kid, "signature": sig.hex()})
-    if len(signatures) < threshold:
-        raise ValueError(f"quorum unattainable: {len(signatures)} signers < threshold {threshold}")
     body = {
         "schema": QUORUM_SIG_SCHEMA,
         "algorithm": "ed25519",

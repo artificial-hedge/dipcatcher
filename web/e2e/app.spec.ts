@@ -10,6 +10,27 @@ async function publishedReceiptRows(page: Page): Promise<number> {
   return rows;
 }
 
+const fixtureIndex = JSON.parse(
+  readFileSync(join(import.meta.dirname, "..", "public", "fixtures", "index.json"), "utf8"),
+) as {
+  receipts: { id: string; n_hash_matches: number; n_hashes: number }[];
+  hash_matches: Record<string, string>;
+};
+const receiptCount = fixtureIndex.receipts.length;
+const fastReplayReceipt = JSON.parse(
+  readFileSync(
+    join(
+      import.meta.dirname,
+      "..",
+      "public",
+      "fixtures",
+      "receipts",
+      "fast_replay_p42_conformance_20260928.json",
+    ),
+    "utf8",
+  ),
+) as { code_sha256: Record<string, string> };
+
 test.describe("research explorer", () => {
   test("loads the overview with strategies and receipts", async ({ page }) => {
     await page.goto("/");

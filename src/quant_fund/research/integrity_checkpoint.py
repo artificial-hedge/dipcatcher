@@ -34,9 +34,12 @@ from quant_fund.research.gate_signatures import (
     DEFAULT_QUORUM_PATH,
     key_id,
     load_quorum_registry,
+    validate_quorum_signers,
+    validate_signer_pair,
 )
 from quant_fund.research.timestamp_anchor import stamp_timestamp, verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 CHECKPOINT_SCHEMA = "integrity_checkpoint.v1"
@@ -155,6 +158,26 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
     }
 
 
+def _preflight_checkpoint_signers(
+    root_path: Path, signers: list[tuple[str, str]]
+) -> tuple[dict[str, str], int] | None:
+    """Validate the trust root and signer pairs before any checkpoint writes."""
+    if not signers:
+        raise ValueError("no signer key material")
+    quorum = load_quorum_registry(root_path)
+    if (root_path / DEFAULT_QUORUM_PATH).exists():
+        if quorum is None:
+            raise ValueError("malformed quorum registry")
+        validate_quorum_signers(root_path, signers)
+    else:
+        private_hex, public_hex = signers[0]
+        validate_signer_pair(private_hex, public_hex)
+        committed_pub = root_path / DEFAULT_PUBKEY_PATH
+        if not committed_pub.is_file() or committed_pub.read_text().strip() != public_hex:
+            raise ValueError("signer does not match committed public key")
+    return quorum
+
+
 def write_checkpoint(
     root: str | Path,
     signers: list[tuple[str, str]],
@@ -172,9 +195,8 @@ def write_checkpoint(
     """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-    if not signers:
-        raise ValueError("no signer key material")
     root_path = Path(root)
+    quorum = _preflight_checkpoint_signers(root_path, signers)
     prev_file = root_path / path
     # Archive the superseded checkpoint before overwrite — append-only, keyed
     # by its digest so the prev_sha256 chain can be walked offline.
@@ -188,7 +210,6 @@ def write_checkpoint(
             atomic_write_text(archived, prev_bytes.decode())
     state = checkpoint_state(root_path)
     msg = canonical_json_bytes(state)
-    quorum = load_quorum_registry(root_path)
     if quorum is not None:
         registered, threshold = quorum
         signatures: list[dict[str, str]] = []
@@ -331,9 +352,12 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
                         errors.append("signature_malformed")
                         continue
                     try:
-                        Ed25519PublicKey.from_public_bytes(
+                        pub_bytes = require_canonical_prime_order_public_key(
                             bytes.fromhex(registered[str(kid)])
-                        ).verify(bytes.fromhex(sig_hex), canonical_json_bytes(payload))
+                        )
+                        Ed25519PublicKey.from_public_bytes(pub_bytes).verify(
+                            bytes.fromhex(sig_hex), canonical_json_bytes(payload)
+                        )
                         valid.add(str(kid))
                     except (InvalidSignature, ValueError):
                         errors.append("signature_invalid")
@@ -347,7 +371,8 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
             return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}
         pubkey_hex = pub_file.read_text().strip()
         try:
-            pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+            pubkey_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pubkey_hex))
+            pubkey = Ed25519PublicKey.from_public_bytes(pubkey_bytes)
         except ValueError:
             return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_malformed"]}
         if body.get("key_id") != key_id(pubkey_hex):

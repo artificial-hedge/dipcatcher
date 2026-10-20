@@ -324,6 +324,7 @@ def _client(
             os.environ[_API_KEY_ENV] = api_key
         resolve = resolver or (lambda name, *a, **k: backend_map[name]())
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=resolve,
             **app_kw,
@@ -1370,6 +1371,7 @@ def _cli_probes() -> dict[str, Any]:
             os.environ.pop(k, None)
         os.environ[_API_KEY_ENV] = _ROOT
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: _EvalBackend(),
         )

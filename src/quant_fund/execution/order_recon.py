@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
+from math import isfinite
 from typing import Any, Literal
 
 from quant_fund.schemas.errors import ConfigError, KillSwitchActive
@@ -102,6 +103,43 @@ def _signed_qty(side: Side, quantity: float) -> float:
     return quantity if side == "BUY" else -quantity
 
 
+def _finite_number(value: object, name: str, *, positive: bool = False) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise OrderLedgerError(f"{name} must be a finite number")
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise OrderLedgerError(f"{name} must be finite") from exc
+    if not isfinite(number):
+        raise OrderLedgerError(f"{name} must be finite")
+    if positive and number <= 0:
+        raise OrderLedgerError(f"{name} must be positive")
+    return number
+
+
+def _aware_time(value: object, name: str) -> None:
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+        raise OrderLedgerError(f"{name} must be a timezone-aware datetime")
+
+
+def _nonempty_id(value: object, name: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise OrderLedgerError(f"{name} must be a non-empty string")
+
+
+def _validate_fill(fill: Fill) -> None:
+    _nonempty_id(fill.fill_id, "fill_id")
+    _nonempty_id(fill.order_id, "order_id")
+    _nonempty_id(fill.security_id, "security_id")
+    _finite_number(fill.quantity, "fill quantity", positive=True)
+    _finite_number(fill.price, "fill price", positive=True)
+    _aware_time(fill.fill_time, "fill_time")
+    if fill.seq is not None and (
+        isinstance(fill.seq, bool) or not isinstance(fill.seq, int) or fill.seq < 0
+    ):
+        raise OrderLedgerError("fill seq must be a nonnegative integer")
+
+
 class OrderFillLedger:
     """Order-id <-> fill-id ledger with reconciliation and a kill switch.
 
@@ -120,11 +158,13 @@ class OrderFillLedger:
         position_tolerance: float = 1e-6,
     ) -> None:
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
-        self._cash_tolerance = float(cash_tolerance)
-        self._position_tolerance = float(position_tolerance)
+        self._cash_tolerance = _finite_number(cash_tolerance, "cash_tolerance")
+        self._position_tolerance = _finite_number(position_tolerance, "position_tolerance")
+        if self._cash_tolerance < 0 or self._position_tolerance < 0:
+            raise OrderLedgerError("reconciliation tolerances must be nonnegative")
         self._orders: dict[str, _OrderState] = {}
         self._fills: dict[str, Fill] = {}
-        self._computed_cash = float(starting_cash)
+        self._computed_cash = _finite_number(starting_cash, "starting_cash")
         self._computed_positions: dict[str, float] = {}
         self._declared_cash: float | None = None
         self._declared_positions: dict[str, float] | None = None
@@ -161,7 +201,18 @@ class OrderFillLedger:
         """Record an order idempotently; refuse new orders after a kill trip."""
         if self._kill_state != "ENABLED":
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
+        _nonempty_id(order.order_id, "order_id")
+        _nonempty_id(order.security_id, "security_id")
+        if order.side not in ("BUY", "SELL"):
+            raise OrderLedgerError("order side must be BUY or SELL")
+        _finite_number(order.quantity, "order quantity", positive=True)
+        if order.submitted_time is not None:
+            _aware_time(order.submitted_time, "submitted_time")
+        if not isinstance(order.expects_fill, bool):
+            raise OrderLedgerError("expects_fill must be boolean")
         if order.order_id in self._orders:
+            if self._orders[order.order_id].order != order:
+                raise OrderLedgerError(f"conflicting replay for order_id {order.order_id!r}")
             self._counters["duplicate_orders"] += 1
             return "duplicate_order"
         self._orders[order.order_id] = _OrderState(order=order)
@@ -177,14 +228,27 @@ class OrderFillLedger:
         ``out_of_order_fill``. Duplicates and out-of-order fills are counted
         and never double-count into positions/cash.
         """
+        _validate_fill(fill)
         if fill.fill_id in self._fills:
+            if self._fills[fill.fill_id] != fill:
+                raise OrderLedgerError(f"conflicting replay for fill_id {fill.fill_id!r}")
             self._counters["duplicate_fills"] += 1
             return "duplicate_fill"
-        self._fills[fill.fill_id] = fill
         state = self._orders.get(fill.order_id)
         if state is None:
+            self._fills[fill.fill_id] = fill
             self._counters["orphan_fills"] += 1
             return "orphan_fill"
+        if fill.security_id != state.order.security_id:
+            raise OrderLedgerError("fill security_id differs from its order")
+        if state.filled_qty + fill.quantity > state.order.quantity:
+            raise OrderLedgerError("fills exceed submitted order quantity")
+        signed = _signed_qty(state.order.side, fill.quantity)
+        if not isfinite(self._computed_positions.get(fill.security_id, 0.0) + signed):
+            raise OrderLedgerError("fill would overflow computed position")
+        if not isfinite(self._computed_cash - signed * fill.price):
+            raise OrderLedgerError("fill would overflow computed cash")
+        self._fills[fill.fill_id] = fill
         verdict = "accepted"
         if self._is_out_of_order(state, fill):
             self._counters["out_of_order_fills"] += 1
@@ -213,8 +277,13 @@ class OrderFillLedger:
     # -- declaration (broker-reported) state, for drift alarms --
 
     def declare_state(self, *, cash: float, positions: dict[str, float]) -> None:
-        self._declared_cash = float(cash)
-        self._declared_positions = {str(k): float(v) for k, v in positions.items()}
+        declared_cash = _finite_number(cash, "declared cash")
+        declared_positions: dict[str, float] = {}
+        for security_id, quantity in positions.items():
+            _nonempty_id(security_id, "declared security_id")
+            declared_positions[security_id] = _finite_number(quantity, "declared position")
+        self._declared_cash = declared_cash
+        self._declared_positions = declared_positions
 
     # -- reconciliation --
 

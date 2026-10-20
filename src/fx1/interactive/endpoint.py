@@ -46,6 +46,8 @@ class FailureClass(StrEnum):
     UNCONFIGURED = "unconfigured"
     BAD_URL = "bad_url"
     CANCELLED = "cancelled"
+    IDENTITY_MISMATCH = "identity_mismatch"
+    IDENTITY_UNVERIFIED = "identity_unverified"
     UNKNOWN = "unknown"
 
 
@@ -81,6 +83,8 @@ _RETRYABLE: dict[FailureClass, bool] = {
     FailureClass.UNCONFIGURED: False,
     FailureClass.BAD_URL: False,
     FailureClass.CANCELLED: False,
+    FailureClass.IDENTITY_MISMATCH: False,
+    FailureClass.IDENTITY_UNVERIFIED: False,
     FailureClass.UNKNOWN: False,
 }
 
@@ -95,6 +99,8 @@ _SUMMARIES: dict[FailureClass, str] = {
     FailureClass.UNCONFIGURED: "the model endpoint is not configured",
     FailureClass.BAD_URL: "the endpoint URL is invalid",
     FailureClass.CANCELLED: "the operation was cancelled",
+    FailureClass.IDENTITY_MISMATCH: "the served model id differs from the requested id",
+    FailureClass.IDENTITY_UNVERIFIED: "the provider did not report a served model id",
 }
 
 _ACTIONS: dict[FailureClass, str] = {
@@ -111,6 +117,8 @@ _ACTIONS: dict[FailureClass, str] = {
     FailureClass.UNCONFIGURED: "/keys set {model}",
     FailureClass.BAD_URL: "/keys set {model} with an https:// URL",
     FailureClass.CANCELLED: "rerun the command",
+    FailureClass.IDENTITY_MISMATCH: "check provider routing and the model deployment",
+    FailureClass.IDENTITY_UNVERIFIED: "use an endpoint that reports its served model id",
     FailureClass.UNKNOWN: "retry the command or inspect the endpoint configuration",
 }
 
@@ -161,7 +169,7 @@ class RetryPolicy:
 
 
 class OperationCancelled(RuntimeError):
-    """A retry wait was aborted because the cancel event was set."""
+    """A model attempt or retry wait was aborted by cancellation."""
 
 
 def call_with_retries[T](
@@ -178,9 +186,8 @@ def call_with_retries[T](
 
     Retryable failures wait, then try again. Auth and other definitive
     failures re-raise the original exception. ``KeyboardInterrupt``
-    propagates immediately. A set ``cancel_event`` after a failure is
-    scheduled raises :class:`OperationCancelled` instead of sleeping or
-    instead of starting the next attempt.
+    propagates immediately. A set ``cancel_event`` prevents an attempt from
+    starting and interrupts a retry before the next attempt.
     """
     active = RetryPolicy() if policy is None else policy
     active.validate()
@@ -212,14 +219,14 @@ class IdentityReport:
 
     @property
     def identity_matches(self) -> bool | None:
-        """Whether the served id is the requested id or a provider-prefixed form.
+        """Whether the served id is exactly the requested model id.
 
         ``None`` when the provider did not report a model id.
         """
         served = self.served_model
         if served is None:
             return None
-        return served == self.requested_model or served.startswith(self.requested_model)
+        return served == self.requested_model
 
     def render(self) -> str:
         """Multi-line status safe to print in the chat transcript."""
@@ -418,6 +425,8 @@ def _attempt_loop[T](
 ) -> T:
     attempt = 0
     while True:
+        if cancel_event is not None and cancel_event.is_set():
+            raise OperationCancelled(f"cancelled before attempt {attempt + 1}")
         try:
             return fn()
         except KeyboardInterrupt:
@@ -472,17 +481,10 @@ def _delay_for(policy: RetryPolicy, attempt: int, rng: random.Random) -> float:
 
 
 def _render_ok(report: IdentityReport) -> str:
-    head = f"{report.requested_model} @ {report.endpoint_host}: OK — "
-    served = report.served_model
-    if served is None:
-        return f"{head}provider did not report a model id"
-    rendered = f"{head}served model {served!r} in {round(report.latency_ms)} ms"
-    if report.identity_matches is False:
-        rendered += (
-            "\n  note: served identity differs from the requested model id "
-            "(provider routing); recorded, not an error"
-        )
-    return rendered
+    return (
+        f"{report.requested_model} @ {report.endpoint_host}: OK — "
+        f"served model {report.served_model!r} in {round(report.latency_ms)} ms"
+    )
 
 
 def _render_failed(report: IdentityReport) -> str:
@@ -546,16 +548,21 @@ def _ok_report(
     checked_at: str,
 ) -> IdentityReport:
     if served is None:
-        detail = "provider did not report a model id"
+        detail = f"provider did not report a model id; requested {model!r} remains unverified"
+        failure = FailureClass.IDENTITY_UNVERIFIED
+    elif served != model:
+        detail = f"requested model {model!r}; served model {served!r}"
+        failure = FailureClass.IDENTITY_MISMATCH
     else:
         detail = f"served model {served!r}"
+        failure = None
     return IdentityReport(
         requested_model=model,
         served_model=served,
-        ok=True,
+        ok=failure is None,
         latency_ms=latency_ms,
         http_status=None,
-        failure=None,
+        failure=failure,
         detail=detail,
         endpoint_host=endpoint_host,
         checked_at=checked_at,

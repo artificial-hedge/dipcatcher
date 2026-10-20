@@ -40,8 +40,9 @@ to misread as a shipped artifact. Read it before the [fx-1](#fx-1) section.
 - **What does not exist.** **No fine-tuned fx-1 checkpoint is published.** No
   fine-tuned weights, no downloadable artifact, no HF repo, no hosted endpoint.
   `docs/FX1_TRAINING.md` states it plainly: no training run has been launched
-  from the ladder. `LocalFx1Backend.complete()` raises `NotImplementedError`
-  (`src/fx1/serve/backends.py`), so local generation is not implemented either.
+  from the ladder. `LocalFx1Backend.complete()` delegates generation to a
+  configured OpenAI-compatible local engine (`src/fx1/serve/backends.py`), but
+  there are no released fx-1 weights for it to serve.
 - **`fx1.__version__ = "0.4.0"` tracks the harness API, not a model release.**
   It is the semver of the `fx1` package surface — see
   [`docs/FX1_API_STABILITY.md`](docs/FX1_API_STABILITY.md) — and `pyproject.toml`
@@ -158,9 +159,11 @@ position the honesty ledger already records, correctly.
 
 ## Overview
 
-**dipcatcher** is Artificial Hedge's state-of-the-art harness for orchestrating
-its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
-from the command line. The CLI is designed like Codex CLI: chat-first, with
+**dipcatcher** is Artificial Hedge's harness for orchestrating research and
+the planned **fx1** and **fx1-lite** model interfaces
+([artificialhedge.co](https://artificialhedge.co)) from the command line.
+Neither model has verified public release weights or a deployed endpoint yet.
+The CLI is designed like Codex CLI: chat-first, with
 about 99% of the interface being a conversation with the active model. The
 `/superpower` slash command plans and runs whichever of dipcatcher's research
 families fit the goal you typed, and explains what it used and why. Type
@@ -2270,15 +2273,14 @@ README:
 
 ### Readiness tiers — which "production-ready" is meant
 
-"Production-ready" is not one thing, and conflating the three is how a research
-repository accidentally implies that it trades. This repository targets **Tier
-A** and is honest about the distance to the other two.
+The release target requires all three surfaces below. Each needs its own
+evidence before dipcatcher can be called production-ready as a whole.
 
 | Tier | What it means | Reachable by code? | Status here |
 |---|---|---|---|
-| **A — Research platform** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Yes** | Where this repo is working. Not yet *verified* — see the CI status note below. |
-| **B — Distributed platform** | Tier A plus signed releases, third-party security review, a real install path, and onboarding. | **Mostly** | Not reached. `git tag -l 'v*' | wc -l` → **0**: SBOM/Sigstore/SLSA are defined but never exercised. No `pip install` route exists. |
-| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt. | **No** | **Blocked, and it is not a code problem.** Conditions 1 and 2 require a purchased entitlement and a broker authorization. |
+| **A — Research CLI** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Mostly** | Not cleared: current replay proofs and a same-SHA green release baseline remain open. See the CI status note below. |
+| **B — Public fx1 and fx1-lite** | Tier A plus evaluated and signed fine-tuned weights for both aliases, license rights, authenticated serving, signed release artifacts, and deployment acceptance. | **No** | Not reached: neither alias has verified public release weights or a deployed endpoint evidenced here. The tiny LM is a synthetic correctness fixture. |
+| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt, and written live authorization. | **No** | Blocked: no qualifying feed, live broker adapter, venue evidence, eligible forward record, or live authorization. |
 
 Tier C is gated by the five minimum-evidence conditions in
 [`docs/INSTITUTIONAL_READINESS.md`](docs/INSTITUTIONAL_READINESS.md), reproduced
@@ -2288,7 +2290,7 @@ sentence that prevents most of the possible misreadings:
 > A working fail-closed adapter, a compiling module, or a passing SYNTHETIC
 > fixture is **not** evidence and never marks a condition ready.
 
-No amount of code closes conditions 1 and 2. `quant_fund.data.qualifying`
+Code alone cannot close conditions 1 and 2. `quant_fund.data.qualifying`
 enforces the condition-1 PIT rules and fails closed to `UNAVAILABLE` with **no
 synthetic substitution**; `quant_fund.execution.order_recon` and
 `quant_fund.paper.broker_adapter` are the condition-2 *reference shape* only,
@@ -2417,8 +2419,9 @@ post-hoc filter.
   and an on-record base-model eval are both present. It does **not**
   launch a training job.
 - `LocalFx1Backend` refuses a directory that lacks a model card cleared by
-  the ship gate. `complete()` raises `NotImplementedError` until a
-  distilled student exists (`src/fx1/serve/backends.py`).
+  the ship gate. `complete()` delegates to a configured OpenAI-compatible
+  local engine; no fine-tuned fx-1 release checkpoint exists yet
+  (`src/fx1/serve/backends.py`).
 - The **honesty contract inherits across the harness/model boundary by
   construction, not by convention**:
   `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS` mirrors
@@ -2604,7 +2607,7 @@ third-party badge.
 | `make proof-verify` | Bundle hash, sidecar, signature, and metric verification tests; replay remains closed |
 | `make leakage-scan` | Leakage hunter — WARN MODE this wave (adjudicated: advisory only) |
 | `make reality-gate` | Reality-filter gate: score trials; absent DB or empty export skips |
-| `make receipts-reverify` | Fail-closed audit; schema-specific committed receipt verifiers pending |
+| `make receipts-reverify` | Strict suite-health audit: committed receipts must verify or match an exact quarantine pin |
 | `make evidence-audit` | CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact |
 | `make lattice-check` | CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts |
 | `make market-sim-test` | Matching engine and agent-market tests |
@@ -2614,23 +2617,25 @@ Total: **45** self-documented targets — run `make help` for the live list.
 
 ### Continuous integration
 
-> **CI status — measured 2026-10-08: the pipeline is dark, not green.**
-> The badges at the top of this file are the workflow *definitions* rendering,
-> not a current verdict. As of 2026-10-08, `gh run list` shows **0 successful
-> runs in 400 consecutive attempts** (last 100: 85 `cancelled`, 15 `queued`, 0
-> success). Nothing in this repository has been verified by a returning CI
-> verdict in that window — including the 81% coverage floor, the strict-typing
-> claim, receipt verification, and the SBOM, all of which are *defined and
-> enforced in configuration* but have not been observed green.
+> **CI status — measured 2026-10-16: no production baseline yet.** The
+> October 8 zero-success census in
+> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) is a historical
+> snapshot. The [October 16 `main` run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454409) has reached real job verdicts, including
+> successful lint and packaging, but its evidence audit fails on stale quorum
+> signatures for two integrity pins. The [proofcore run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454422) also fails three
+> committed replay comparisons. The [fx1 run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454430) passed; the [full platform matrix](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454610)
+> was queued at the time of this check. The required green CI/matrix baseline
+> and signed release are still open. Check GitHub Actions runs for
+> the latest verdict before making a release claim.
 >
-> The cause is orchestration, not flaky tests: ~80+ jobs per push across 22
-> workflow files, burst merge cadence, and `cancel-in-progress: true` on the
-> gate workflows, so each new push cancels the run in flight. Measured
-> findings, mechanism, and the remediation plan are in
-> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) (Phase 0).
-> Until that gate returns verdicts, treat every CI-enforced claim in this
-> README as *specified but unconfirmed*. Local `make lint` is green as of
-> 2026-10-08 (`ruff check src tests` → "All checks passed!").
+> **Enforcement status — measured 2026-10-16:** `main` has no classic branch
+> protection (`GET /branches/main/protection/required_status_checks` returns
+> `404 Branch not protected`). The two active repository rulesets enforce only
+> branch creation/deletion restrictions. The `merge_group` workflow triggers
+> are prepared, but no required status checks or merge queue currently protect
+> `main`; an administrator must configure them before CI can block a merge.
+> The exact proposed contexts and queue settings are in
+> [the CI enforcement proposal](docs/CI_ENFORCEMENT_PROPOSAL.md).
 
 **22** workflow files under [`.github/workflows/`](.github/workflows/).
 CI runs the PR-gate test matrix on Python **3.12 and 3.13**; the separate
@@ -2639,8 +2644,8 @@ schedule and on `workflow_dispatch`.
 
 | Workflow file | Declared name | Trigger | What it gates |
 |---|---|---|---|
-| `ci.yml` | CI | push to main, PR to main (+ legacy branch), schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
-| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
+| `ci.yml` | CI | push to main, PR to main (+ legacy branch), merge queue, schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
+| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR, merge queue | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
 | `codeql.yml` | CodeQL | push to main, PR, schedule | Static security analysis (CodeQL). |
 | `scorecard.yml` | Scorecard | branch_protection_rule change, weekly schedule, push to main | OpenSSF Scorecard supply-chain posture. |
 | `secret-scan.yml` | Secret scan | push to main, PR | Repository secret scanning. |
@@ -2648,10 +2653,10 @@ schedule and on `workflow_dispatch`.
 | `docs.yml` | docs | push to main, PR | Builds the MkDocs site in strict mode. |
 | `atlas.yml` | atlas | push to main, PR | Regenerates and diff-checks the architecture diagrams and atlas doc. |
 | `arch_guards.yml` | arch-guards | push to main, PR, manual | Enforces import-layer boundaries (`configs/arch_boundaries.toml`). |
-| `release.yml` | Release | push of tag `v*.*.*` | Release build/publish pipeline. |
-| `matrix.yml` | Platform Matrix | PR/push to main, manual | Extended OS x Python matrix: ubuntu/macos/windows x 3.12/3.13/3.14. |
+| `release.yml` | Release | push of tag `v*.*.*` | Checks the tag against the package version and requires same-commit CI and full matrix proof, then builds and smoke-tests the wheel, signs distributions, and attests/uploads artifacts; publishing is not configured. |
+| `matrix.yml` | Platform Matrix | nightly, manual | Extended OS x Python matrix: ubuntu/macos/windows x 3.12/3.13/3.14. |
 | `perf-baseline.yml` | Perf baseline gate | push to main, weekly schedule, PR | Compares hot-path timings against the stored baseline (1.5x gate). |
-| `proofcore.yml` | proofcore | push to main, PR | PROOFCORE contracts, provenance DB, layering gate. |
+| `proofcore.yml` | proofcore | push to main, PR, merge queue | PROOFCORE contracts, provenance DB, layering gate. |
 | `property-nightly.yml` | Adversarial properties (nightly) | daily schedule, manual | Nightly extended Hypothesis property run. |
 | `adversarial-properties.yml` | Adversarial properties | push to main, PR | Adversarial property-based tests (PR-sized). |
 | `simtest.yml` | Deterministic simulation | PR to main, manual (seed input) | Bounded deterministic-simulation swarm. |
@@ -2979,8 +2984,8 @@ see [Honesty enforcement map](#honesty-enforcement-map).
 <summary><strong>Where are the fx-1 model weights?</strong></summary>
 
 Nowhere in this tree. No training run has been launched from this
-repository; `LocalFx1Backend.complete()` raises `NotImplementedError`
-until a distilled student exists. See [fx-1](#fx-1).
+repository. `LocalFx1Backend.complete()` can delegate to a configured local
+engine, but there are no released fx-1 weights to serve. See [fx-1](#fx-1).
 
 </details>
 

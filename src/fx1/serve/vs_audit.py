@@ -240,6 +240,7 @@ def _client(**kw: Any) -> TestClient:
     from fx1.harness import Harness
 
     app = api_mod.create_app(
+        public_release=False,
         harness=Harness(runner=_runner),
         backend_resolver=lambda *a, **k: _B(),
         **kw,
@@ -262,10 +263,6 @@ def _env_key() -> Iterator[None]:
 
 def _h(auth: str | None) -> dict[str, str]:
     return {"X-API-Key": auth} if auth else {}
-
-
-def _bearer(auth: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {auth}"}
 
 
 def _mint(c: TestClient, **policy: Any) -> tuple[str, str]:
@@ -1438,12 +1435,13 @@ def _probe_scope_auth(stack: ExitStack) -> dict[str, bool]:
     with _env_key():
         c = stack.enter_context(_client())
         env_h = _h(_ROOT_KEY)
+        bearer_h = {"Authorization": f"Bearer {_ROOT_KEY}"}
         out["auth_required_401"] = c.post("/v1/vector_stores", json={}).status_code == 401
         out["auth_wrong_key_401"] = (
             c.post("/v1/vector_stores", json={}, headers=_h("wrong")).status_code == 401
         )
         out["auth_bearer_accepted_on_v1"] = (
-            c.post("/v1/vector_stores", json={}, headers=_bearer(_ROOT_KEY)).status_code == 200
+            c.post("/v1/vector_stores", json={}, headers=bearer_h).status_code == 200
         )
         k_rw, _id_rw = _mint(c, name="rw", scopes=["read", "write"])
         k_r, _id_r = _mint(c, name="r", scopes=["read"])

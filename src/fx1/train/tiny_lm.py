@@ -340,6 +340,7 @@ def write_modelcard(
         training_manifest_sha256=training_manifest_sha256,
         eval_delta=eval_delta if eval_delta is not None else eval_fixture_placeholder_delta(),
         known_limits=known_limits,
+        fixture_only=eval_delta is None,
     ).save(card_path)
     return card_path
 

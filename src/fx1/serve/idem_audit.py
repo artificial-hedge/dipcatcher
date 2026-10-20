@@ -187,6 +187,7 @@ def _make_app(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=runner or _fast_runner),
             backend_resolver=lambda name, *a, **k: backends[name](),
             state_dir=create_kw.pop("state_dir", isolated / "state"),
@@ -417,7 +418,7 @@ def _probe_cov_harness() -> dict[str, bool]:
         and _same(r1.json(), r2.json())
         and r1.json().get("completion_id") == r2.json().get("completion_id")
     )
-    out["coverage.complete.once"] = stub.calls == before + 1
+    out["coverage.complete.once"] = complete_stub.calls == before + 1
 
     before = stub.calls
     r1, r2 = _post2(complete_client, "/harness/complete/batch", _cbatch_body(), "cov.cbatch")
@@ -427,7 +428,7 @@ def _probe_cov_harness() -> dict[str, bool]:
         and r2.json().get("replayed") is True
         and _same(r1.json(), r2.json())
     )
-    out["coverage.complete_batch.once"] = stub.calls == before + 1
+    out["coverage.complete_batch.once"] = complete_stub.calls == before + 1
     return out
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Standalone epoch-chain auditor — no repo imports, stdlib only.
+"""Standalone epoch-chain auditor — no quant_fund imports.
 
 Reimplements ``quant_fund.research.corpus_epoch.check_epoch_chain`` from
 scratch so a third-party auditor can verify a corpus's committed epoch
@@ -37,14 +37,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import unicodedata
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
 EPOCH_SCHEMA = "corpus_epoch.v1"
+POINT_CHECKER_SHA256 = "0421eb1970e19ccb6489a0b9e2d428684abbd19591839f5d1d61ca1a25143433"
 GENESIS_PREV = "0" * 64
 HEADS_PIN_BASENAME = "epoch_heads.json"
 # Position commitments every heads-pin entry must carry (mirrors
@@ -103,6 +105,30 @@ _NODE_PREFIX = b"\x01"
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _point_checker_ok() -> bool:
+    """Bind the sibling checker before its code can be imported."""
+    try:
+        raw = Path(__file__).with_name("ed25519_public.py").read_bytes()
+    except OSError:
+        return False
+    return _sha256(raw) == POINT_CHECKER_SHA256
+
+
+def _load_point_checker() -> Callable[[bytes], bool] | None:
+    """Execute exactly the checked source bytes, never a cached module."""
+    path = Path(__file__).with_name("ed25519_public.py")
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return None
+    if _sha256(raw) != POINT_CHECKER_SHA256:
+        return None
+    namespace: dict[str, Any] = {"__name__": "_standalone_ed25519_public"}
+    exec(compile(raw, str(path), "exec"), namespace)  # noqa: S102 - hash-pinned bytes
+    checker = namespace.get("is_canonical_prime_order_public_key")
+    return checker if callable(checker) else None
 
 
 def _canonicalize(value: Any) -> Any:
@@ -238,19 +264,47 @@ def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
     """Mirror ``corpus_epoch.gitignored_relpaths`` — tracked files stay members."""
     if not rels:
         return set()
+    if os.name == "nt":
+        # Git for Windows hangs on NUL-delimited stdin; a byte newline stream
+        # avoids Python's CRLF translation. Unsafe names stay members so the
+        # independent portability check can reject them.
+        if any("\r" in name or "\n" in name for name in rels):
+            return set()
+        try:
+            proc_bytes = subprocess.run(
+                ["git", "-c", "core.quotePath=false", "check-ignore", "--stdin"],
+                cwd=root,
+                input=("\n".join(rels) + "\n").encode("utf-8", "surrogateescape"),
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+        except OSError:
+            return set()
+        if proc_bytes.returncode not in (0, 1):
+            return set()
+        return {
+            name.decode("utf-8", "surrogateescape")
+            for name in proc_bytes.stdout.split(b"\n")
+            if name
+        }
     try:
-        proc = subprocess.run(
-            ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
+        proc_text = subprocess.run(
+            ["git", "check-ignore", "-z", "--stdin"],
+            cwd=root,
             input="\0".join(rels) + "\0",
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="surrogateescape",
+            timeout=30,
             check=False,
         )
     except OSError:
         return set()
-    if proc.returncode not in (0, 1):
+    if proc_text.returncode not in (0, 1):
         return set()
-    return {name for name in proc.stdout.split("\0") if name}
+    return {name for name in proc_text.stdout.split("\0") if name}
 
 
 def _member_digests(corpus_dir: Path, pattern: str) -> dict[str, str]:
@@ -479,8 +533,14 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     except ImportError:
         return None
+    checker = _load_point_checker()
+    if checker is None:
+        return False
     try:
-        pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex.strip()))
+        public_bytes = bytes.fromhex(pub_hex.strip())
+        if not checker(public_bytes):
+            return False
+        pub = Ed25519PublicKey.from_public_bytes(public_bytes)
         pub.verify(bytes.fromhex(sig_hex), msg)
     except (InvalidSignature, ValueError, TypeError):
         return False
@@ -1019,6 +1079,10 @@ def main() -> int:
     ap.add_argument("--require-stamped", action="store_true")
     ap.add_argument("--allow-member-updates", action="store_true")
     args = ap.parse_args()
+
+    if not _point_checker_ok():
+        print("  ed25519_point_checker_mismatch\nFAIL")
+        return 1
 
     if args.checkpoint is not None and args.pubkey is None:
         print("--checkpoint requires --pubkey", file=sys.stderr)

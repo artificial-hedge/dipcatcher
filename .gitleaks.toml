@@ -36,6 +36,17 @@ condition = "AND"
 paths = ['''(?:^|/)tests/fx1/test_sources\.py$''']
 regexes = ['''^sk-test-SECRET-123$''']
 
+# These CLI tests set a literal test-key and toggle a fixture flag in their
+# child env. generic-api-key captures the next env-var NAME across dictionary
+# entries. Exempt only these complete synthetic lines in this one test file.
+[[allowlists]]
+description = "Synthetic public-serve CLI fixture environment"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/fx1/test_bank_modelcard_serve\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*env=\{"FX1_API_KEY": "test-key", "FX1_ALLOW_TEST_FIXTURE": "[01]"\},\s*$''']
+
 # .dsh-24x7 is a committed evidence directory: its JSON files pin data
 # files, model artifacts, and script contents by sha256 digest, under keys
 # as varied as model names ("kronos_small"), symbols ("BTCUSDT"), and file
@@ -136,3 +147,15 @@ condition = "AND"
 paths = ['''(?:^|/)web/public/fixtures/index\.json$''']
 regexTarget = "secret"
 regexes = ['''^[0-9a-f]{64}$''']
+
+# A historical prereg timestamp verifier reads at most 64 KiB from its token
+# file. The generic-api-key heuristic captures the numeric size bound after
+# `token =`, although this line contains no credential. Match this one source
+# statement only; other token assignments remain scanned across full history.
+[[allowlists]]
+description = "Prereg timestamp token input size bound (not a credential)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+regexTarget = "line"
+regexes = ['''^\+?\s*token = _read_regular\(token_path, max_bytes=64 \* 1024\)\s*$''']

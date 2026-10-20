@@ -13213,14 +13213,21 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     return True
 
 
+def _has_template_provenance(payload: dict[object, object]) -> bool:
+    marker = payload.get("provenance")
+    return isinstance(marker, str) and marker == "template"
+
+
 def family_blob_executed(payload: object) -> bool:
-    """True iff family payload is truthy (scorecard ``executed`` twin)."""
+    """An exact template label alone does not count as an executed blob."""
+    if isinstance(payload, dict) and _has_template_provenance(payload):
+        return any(key != "provenance" for key in payload)
     return bool(payload)
 
 
 def family_blob_nonempty(payload: object) -> bool:
-    """True iff family payload is truthy (scorecard ``nonempty`` twin)."""
-    return bool(payload)
+    """An exact template label alone does not count as a nonempty blob."""
+    return family_blob_executed(payload)
 
 
 def family_blob_has_finite_observation(payload: object) -> bool:
@@ -13228,17 +13235,24 @@ def family_blob_has_finite_observation(payload: object) -> bool:
 
     Lifted from research.agent ``_benchmark_scorecard`` nested ``has_observation``
     (Day Wave 44). Semantics:
-    - dict / list / tuple → any child is an observation
+    - dict / list / tuple → any child is an observation, excluding an exact
+      ``provenance: template`` label
     - bool → True
     - int (incl. numpy integer scalars via ``.item()``) → True
     - float (incl. numpy floating) → ``math.isfinite``
     - str → nonempty strip and not ``nan`` / ``none`` (case-insensitive)
     - else → False
 
-    Empty ``{}`` / all-NaN blobs → False. Used by soft scorecard forge verify.
+    Empty ``{}``, template-label-only, and all-NaN blobs → False. Used by soft
+    scorecard forge verify.
     """
     if isinstance(payload, dict):
-        return any(family_blob_has_finite_observation(item) for item in payload.values())
+        template_labeled = _has_template_provenance(payload)
+        return any(
+            family_blob_has_finite_observation(item)
+            for key, item in payload.items()
+            if not (template_labeled and key == "provenance")
+        )
     if isinstance(payload, (list, tuple)):
         return any(family_blob_has_finite_observation(item) for item in payload)
     if isinstance(payload, bool):

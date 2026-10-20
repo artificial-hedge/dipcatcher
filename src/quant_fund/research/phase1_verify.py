@@ -747,6 +747,16 @@ def verify_phase1_run(
     }
 
 
+def _index_path_is_relative(raw: Any) -> TypeGuard[str]:
+    """Reject absolute, rooted, and drive-relative paths on every host OS."""
+    return (
+        isinstance(raw, str)
+        and bool(raw)
+        and not PurePosixPath(raw).anchor
+        and not PureWindowsPath(raw).anchor
+    )
+
+
 def verify_phase1_index(path: Path) -> dict[str, Any]:
     """Verify an index binding run receipts to source configs and code provenance."""
     path = Path(path)

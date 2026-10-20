@@ -83,6 +83,23 @@ def test_generation_is_deterministic() -> None:
     assert edge_pairs == sorted(edge_pairs)
 
 
+def test_generated_files_are_byte_stable_across_line_endings(tmp_path, monkeypatch) -> None:
+    repo = _make_repo(tmp_path)
+    _without_curated(monkeypatch)
+    gen.write_all(repo)
+
+    for rel, content in gen.generated_artifacts(repo).items():
+        path = repo / rel
+        assert path.read_bytes() == content.encode("utf-8")
+    atlas = repo / gen.ATLAS_DOC
+    assert b"\r\n" not in atlas.read_bytes()
+    assert gen.stale_artifacts(repo) == []
+
+    manifest = repo / "docs" / "architecture" / "manifest.json"
+    manifest.write_bytes(manifest.read_bytes().replace(b"\n", b"\r\n"))
+    assert "docs/architecture/manifest.json" in gen.stale_artifacts(repo)
+
+
 def test_import_drift_marks_artifacts_stale(tmp_path, monkeypatch) -> None:
     repo = _make_repo(tmp_path)
     _without_curated(monkeypatch)

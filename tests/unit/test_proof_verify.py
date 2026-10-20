@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 
 import polars as pl
 import pytest
@@ -201,7 +202,13 @@ def test_unreadable_sidecar_directory_fails(tmp_path) -> None:
         _bundle_file(bundle_dir, bundle), bundle_dir=bundle_dir, strict_signature=False
     )
     assert not result.ok
-    assert "sidecar:trade_log:unreadable:IsADirectoryError" in result.reasons
+    assert any(
+        reason in result.reasons
+        for reason in (
+            "sidecar:trade_log:unreadable:IsADirectoryError",
+            "sidecar:trade_log:unreadable:PermissionError",
+        )
+    )
 
 
 def test_malformed_trade_log_cannot_recompute_metrics(tmp_path) -> None:
@@ -339,7 +346,12 @@ def test_sidecar_symlink_is_rejected(tmp_path) -> None:
     sidecar = sidecar_paths(bundle_dir, bundle.bundle_id)["trade_log"]
     outside = tmp_path / "outside.parquet"
     sidecar.rename(outside)
-    sidecar.symlink_to(outside)
+    try:
+        sidecar.symlink_to(outside)
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege unavailable")
+        raise
     result = verify_bundle(
         _bundle_file(bundle_dir, bundle), bundle_dir=bundle_dir, strict_signature=False
     )

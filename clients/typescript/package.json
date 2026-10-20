@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "generate:schema": "openapi-typescript openapi.json -o schema.d.ts",
-    "typecheck": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext --target es2022 --skipLibCheck --allowImportingTsExtensions client.ts"
+    "typecheck": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext --target es2022 --skipLibCheck --allowImportingTsExtensions client.ts",
+    "test": "node --test client.test.mjs"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0",

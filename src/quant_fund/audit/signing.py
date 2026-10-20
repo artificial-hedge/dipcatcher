@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from quant_fund.audit.errors import AuditError, SignatureUnavailableError
+from quant_fund.utils.ed25519_public import is_canonical_prime_order_public_key
 
 _PUB_LEN = 32
 _SIG_LEN = 64
@@ -120,7 +121,7 @@ def verify_ed25519(payload: bytes, signature_hex: str, public_key: bytes) -> boo
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-    if len(public_key) != _PUB_LEN or not isinstance(signature_hex, str):
+    if not is_canonical_prime_order_public_key(public_key) or not isinstance(signature_hex, str):
         return False
     try:
         signature = bytes.fromhex(signature_hex)
@@ -143,6 +144,8 @@ def load_public_key_hex(path: Path) -> bytes:
         raise AuditError(f"public key {path} is not hex") from exc
     if len(raw) != _PUB_LEN:
         raise AuditError("Ed25519 public key must be 32 bytes")
+    if not is_canonical_prime_order_public_key(raw):
+        raise AuditError("Ed25519 public key must be canonical and prime order")
     return raw
 
 

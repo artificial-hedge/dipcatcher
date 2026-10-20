@@ -242,7 +242,6 @@ fx1-coverage: ## fx-1 coverage ratchet, floor 80 (same command as proofcore.yml 
 
 PROOFCORE_LEDGER ?= data/metadata/proofcore-trials.jsonl
 PROOFCORE_DB ?= data/metadata/proofcore.duckdb
-DEFAULT_PROOFCORE_DB := data/metadata/proofcore.duckdb
 COMMITTED_TRIAL_LEDGER ?= research/reality/trials.jsonl
 
 proofcore-test: ## PROOFCORE tests: W5 contracts/provenance/CI/layering + W6 scheduler/runner/estimators + W7 replay + W8 guard/fixes + wave-2 e2e
@@ -290,23 +289,8 @@ leakage-scan: ## Leakage hunter — WARN MODE this wave (adjudicated: advisory o
 	fi
 
 reality-gate: ## Reality-filter gate: score trials; absent DB or empty export skips
-	if [ ! -f "$(PROOFCORE_DB)" ] && [ "$(PROOFCORE_DB)" = "$(DEFAULT_PROOFCORE_DB)" ] && [ -s "$(COMMITTED_TRIAL_LEDGER)" ]; then \
-	  uv run quant reality preflight --ledger $(COMMITTED_TRIAL_LEDGER); code=$$?; \
-	  if [ $$code -eq 3 ]; then exit 0; fi; \
-	  if [ $$code -ne 0 ]; then exit $$code; fi; \
-	  uv run quant reality trial-report --ledger $(COMMITTED_TRIAL_LEDGER); \
-	  uv run quant reality ledger-gate --ledger $(COMMITTED_TRIAL_LEDGER); \
-	  exit $$?; \
-	fi; \
-	uv run quant reality preflight --db $(PROOFCORE_DB); code=$$?; \
-	if [ $$code -eq 3 ]; then exit 0; fi; \
-	if [ $$code -ne 0 ]; then exit $$code; fi; \
-	uv run quant proofcore export --db $(PROOFCORE_DB) --out $(PROOFCORE_LEDGER); \
-	uv run quant reality preflight --ledger $(PROOFCORE_LEDGER); code=$$?; \
-	if [ $$code -eq 3 ]; then exit 0; fi; \
-	if [ $$code -ne 0 ]; then exit $$code; fi; \
-	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER) && \
-	uv run quant reality ledger-gate --ledger $(PROOFCORE_LEDGER)
+	uv run python scripts/reality_gate.py --db "$(PROOFCORE_DB)" \
+		--ledger "$(PROOFCORE_LEDGER)" --committed-ledger "$(COMMITTED_TRIAL_LEDGER)"
 
 receipts-reverify: ## Fail-closed audit: suite-health --strict (verify or exact quarantine pin)
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/receipts-reverify" \
@@ -356,7 +340,7 @@ checkpoint-chain: ## Walk the full checkpoint spine — every archived link veri
 verify-rotations: ## Verify the gate-key rotation chain — dual-signed links, spine-anchored genesis, live key is terminus
 	uv run dipcatcher verify-rotations
 
-rotate-key: ## Record an authorized gate-key rotation (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); then re-sign pins + checkpoint
+rotate-key: ## Rotate the legacy single-key trust root (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); quorum registry uses quorum-rotate
 	uv run dipcatcher rotate-key
 
 tamper-drill: ## Self-attack: clone the integrity state, land every probe mutation, require verify-repo flags each

@@ -80,6 +80,7 @@ _ENV_KEYS = (
     "FX1_LOCAL_SERVE_CMD",
     "FX1_LOCAL_MODEL",
     "FX1_SIGNING_KEY",
+    "FX1_ALLOW_TEST_FIXTURE",
     "MOONSHOT_API_KEY",
 )
 # Model-weight artifact suffixes only — `.npz` is deliberately excluded
@@ -535,7 +536,15 @@ def run_goldenpath(
 
     # --- weights-direct leg: load the committed artifact in-process ------
     ckpt_dir = _committed_checkpoint()
-    weights_engine = _weights_direct_leg(legs, ckpt_dir, _all_weight_hits())
+    previous_fixture_opt_in = os.environ.get("FX1_ALLOW_TEST_FIXTURE")
+    os.environ["FX1_ALLOW_TEST_FIXTURE"] = "1"
+    try:
+        weights_engine = _weights_direct_leg(legs, ckpt_dir, _all_weight_hits())
+    finally:
+        if previous_fixture_opt_in is None:
+            os.environ.pop("FX1_ALLOW_TEST_FIXTURE", None)
+        else:
+            os.environ["FX1_ALLOW_TEST_FIXTURE"] = previous_fixture_opt_in
 
     # --- real stub engine (the closest-to-real in-repo OpenAI-compatible) ----
     from fx1.serve.e2e_audit import _StubChat  # noqa: PLC0415 — audit stub reuse
@@ -562,6 +571,7 @@ def run_goldenpath(
             "FX1_BYOK_MODEL": "stub-v0",
             "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
             "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
+            "FX1_ALLOW_TEST_FIXTURE": "1",
         }
     )
     engine_sock: socket.socket | None = None
@@ -580,8 +590,7 @@ def run_goldenpath(
         server_env["FX1_ENFORCE_SHIP_GATE"] = "0"
         server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
         server_env["FX1_LOCAL_SERVE_CMD"] = (
-            "$python -m fx1.serve.local_engine "
-            f"--checkpoint-dir $checkpoint_dir --port {engine_port}"
+            f"$python -m fx1.serve.local_engine --port {engine_port}"
         )
 
     saved_local = {k: os.environ.get(k) for k in _ENV_KEYS}

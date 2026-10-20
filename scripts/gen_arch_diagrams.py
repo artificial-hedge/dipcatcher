@@ -699,7 +699,7 @@ def stale_artifacts(root: Path) -> list[str]:
             stale.append(rel)
             continue
         try:
-            current = path.read_text(encoding="utf-8")
+            current = path.read_bytes().decode("utf-8")
         except UnicodeDecodeError:
             stale.append(rel)
             continue
@@ -708,7 +708,7 @@ def stale_artifacts(root: Path) -> list[str]:
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         try:
-            current_atlas = atlas.read_text(encoding="utf-8")
+            current_atlas = atlas.read_bytes().decode("utf-8")
             expected = splice_blocks(current_atlas, generated_blocks(artifacts))
         except (UnicodeDecodeError, ValueError):
             stale.append(_rel(ATLAS_DOC))
@@ -813,6 +813,7 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.eval.contamination_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.core_audit", "quant_fund.utils.hashing"),
         ("fx1.eval.core_audit", "quant_fund.utils.reproducibility"),
+        ("fx1.eval.evidence_contract", "quant_fund.utils.ed25519_public"),
         ("fx1.eval.masking_audit", "quant_fund.utils.hashing"),
         ("fx1.eval.masking_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.options_audit", "quant_fund.utils.hashing"),
@@ -925,6 +926,7 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.serve.retrieval_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.serve_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.serve_audit", "quant_fund.utils.reproducibility"),
+        ("fx1.serve.signing", "quant_fund.utils.ed25519_public"),
         ("fx1.serve.spec_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.spec_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.stream_audit", "quant_fund.utils.hashing"),

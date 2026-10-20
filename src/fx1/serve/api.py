@@ -112,6 +112,8 @@ from fx1.serve.anthropic_compat import (
     anthropic_sse,
     anthropic_to_openai,
 )
+from fx1.serve.api_metrics import BackendCompletionStats as BackendCompletionStats
+from fx1.serve.api_metrics import MetricsResponse, _Metrics
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -172,6 +174,7 @@ from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
     OPENAI_RESPONSE_TERMINAL,
+    PUBLIC_MODEL_IDS,
     ByokOverride,
     OpenAIBatchRequest,
     OpenAIChatRequest,
@@ -196,8 +199,7 @@ from fx1.serve.openai_compat import (
     OpenAIVectorStoreFileCreate,
     OpenAIVectorStoreSearch,
     OpenAIVectorStoreUpdate,
-    _resolve_openai_link,
-    _resolve_timeout,
+    _resolve_public_release_link,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -233,6 +235,7 @@ from fx1.serve.openai_compat import (
     validate_openai_output,
     validate_response_format,
 )
+from fx1.serve.openai_request_options import resolve_timeout as _resolve_timeout
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.uploads import (
@@ -1163,6 +1166,7 @@ class EvalSubmitRequest(_Model):
     # ``callback_secret`` HMAC-signs the delivery and is never echoed.
     callback_url: str | None = None
     callback_secret: str | None = None
+    _served_model: str | None = PrivateAttr(default=None)
 
     @field_validator("callback_url")
     @classmethod
@@ -1739,39 +1743,6 @@ class ReceiptVerifyBatchResponse(_Model):
     results: list[ReceiptVerifyBatchItem]
 
 
-class BackendCompletionStats(_Model):
-    """Per-backend completion accounting: outcome counts, a cumulative
-    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
-    backend-reported token sums. ``usage_calls`` counts calls that carried
-    a usage dict — a silent provider shows zero tokens AND zero calls."""
-
-    ok: int = 0
-    error: int = 0
-    latency_count: int = 0
-    latency_sum_ms: float = 0.0
-    latency_buckets: dict[str, int] = {}
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
-    usage_calls: int = 0
-
-
-class MetricsResponse(_Model):
-    """Point-in-time ops snapshot: totals since process start."""
-
-    uptime_s: float
-    requests_total: int
-    errors_total: int
-    by_status: dict[str, int]
-    inflight: int
-    inflight_watermark: int
-    max_inflight: int
-    draining: bool
-    rate_limited_total: int = 0
-    # completion calls only — per backend name as requested on the wire
-    complete: dict[str, BackendCompletionStats] = {}
-
-
 class DrainResponse(_Model):
     """Result of latching drain mode: state + live in-flight count."""
 
@@ -1858,142 +1829,6 @@ class JobStatusResponse(_Model):
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
     callback_error: str | None = None
     callback_attempts: int = 0
-
-
-_LAT_BUCKETS_MS = (100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0, 30000.0, 60000.0)
-
-
-class _Metrics:
-    """Request counters + inflight gauge + per-backend completion
-    histograms, shared via app.state."""
-
-    def __init__(self, max_inflight: int) -> None:
-        self.started = time.monotonic()
-        self.max_inflight = max_inflight
-        self._cond = threading.Condition()
-        self._requests_total = 0
-        self._errors_total = 0
-        self._by_status: dict[int, int] = {}
-        self._inflight = 0
-        self._watermark = 0
-        self._rate_limited_total = 0
-        # backend -> {"ok","error","count","sum","buckets" (cumulative),
-        #              "*_tokens","usage_calls"}
-        self._complete: dict[str, dict[str, Any]] = {}
-        self.draining = threading.Event()
-
-    def record_complete(
-        self,
-        backend: str,
-        ok: bool,
-        latency_ms: float,
-        usage: dict[str, int] | None = None,
-    ) -> None:
-        """One attempted model call: outcome + latency into the backend's
-        cumulative histogram, plus backend-reported token sums when the
-        endpoint supplies them. Called only when the backend was invoked —
-        breaker rejections and pre-call validation aren't model work.
-        ``usage_calls`` counts calls that reported usage at all, so a
-        silent provider is distinguishable from a zero bill."""
-        with self._cond:
-            st = self._complete.setdefault(
-                backend,
-                {
-                    "ok": 0,
-                    "error": 0,
-                    "count": 0,
-                    "sum": 0.0,
-                    # one entry per edge + a final +Inf slot
-                    "buckets": [0] * (len(_LAT_BUCKETS_MS) + 1),
-                    "prompt_tokens": 0,
-                    "completion_tokens": 0,
-                    "total_tokens": 0,
-                    "usage_calls": 0,
-                },
-            )
-            st["ok" if ok else "error"] += 1
-            st["count"] += 1
-            st["sum"] += latency_ms
-            for i, edge in enumerate(_LAT_BUCKETS_MS):
-                if latency_ms <= edge:
-                    st["buckets"][i] += 1
-            st["buckets"][-1] += 1
-            if usage:
-                st["usage_calls"] += 1
-                for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                    v = usage.get(k)
-                    if isinstance(v, int) and not isinstance(v, bool):
-                        st[k] += v
-
-    def record_rate_limited(self) -> None:
-        with self._cond:
-            self._rate_limited_total += 1
-
-    def record(self, status: int) -> None:
-        with self._cond:
-            self._requests_total += 1
-            self._by_status[status] = self._by_status.get(status, 0) + 1
-            if status >= 400:
-                self._errors_total += 1
-
-    def acquire(self) -> None:
-        with self._cond:
-            self._inflight += 1
-            self._watermark = max(self._watermark, self._inflight)
-
-    def release(self) -> None:
-        with self._cond:
-            self._inflight -= 1
-            self._cond.notify_all()
-
-    def wait_idle(self, timeout_s: float) -> bool:
-        """Block until inflight reaches zero or the timeout lapses — the
-        drain-lifecycle wait channel. True when the pool actually emptied."""
-        deadline = time.monotonic() + timeout_s
-        with self._cond:
-            while self._inflight > 0:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    return False
-                self._cond.wait(remaining)
-            return True
-
-    def snapshot(self) -> MetricsResponse:
-        with self._cond:
-            return MetricsResponse(
-                uptime_s=round(time.monotonic() - self.started, 3),
-                requests_total=self._requests_total,
-                errors_total=self._errors_total,
-                by_status={str(k): v for k, v in sorted(self._by_status.items())},
-                inflight=self._inflight,
-                inflight_watermark=self._watermark,
-                max_inflight=self.max_inflight,
-                draining=self.draining.is_set(),
-                rate_limited_total=self._rate_limited_total,
-                complete={
-                    b: BackendCompletionStats(
-                        ok=st["ok"],
-                        error=st["error"],
-                        latency_count=st["count"],
-                        latency_sum_ms=round(st["sum"], 3),
-                        latency_buckets={
-                            **_lat_bucket_labels(st["buckets"]),
-                        },
-                        prompt_tokens=st["prompt_tokens"],
-                        completion_tokens=st["completion_tokens"],
-                        total_tokens=st["total_tokens"],
-                        usage_calls=st["usage_calls"],
-                    )
-                    for b, st in sorted(self._complete.items())
-                },
-            )
-
-
-def _lat_bucket_labels(counts: list[int]) -> dict[str, int]:
-    """Cumulative bucket counts keyed by le-label, ``+Inf`` last — the
-    Prometheus histogram convention, kept identical on the JSON snapshot."""
-    labels = [f"{edge:g}" for edge in _LAT_BUCKETS_MS] + ["+Inf"]
-    return dict(zip(labels, counts, strict=True))
 
 
 def _env_int_bound(name: str, default: int, given: int | None) -> int:
@@ -4386,7 +4221,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     app: FastAPI,
     *,
     slot: Callable[..., Iterator[None]],
-    resolve_backend: Callable[[str, str | None, dict[str, str] | None, float | None], Any],
+    resolve_backend: Callable[
+        [str, str | None, dict[str, str] | None, float | None, str | None], Any
+    ],
+    public_release: bool,
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
@@ -4423,6 +4261,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     extracted from ``create_app`` to keep its branch complexity under the
     ruff cap. Evals share the complete chain resolution and the jobs
     executor's slot contract."""
+
+    def _listed_model_ids() -> tuple[str, ...]:
+        if not public_release:
+            return OPENAI_MODEL_IDS
+        from fx1.serve.release_gate import configured_public_models
+
+        links = tuple(model for model in OPENAI_MODEL_IDS if model not in PUBLIC_MODEL_IDS)
+        return (*links, *configured_public_models())
 
     # Idempotency-Key claims: the dep holds the store's per-key mutex for
     # the whole handler span — lookup, model spend, and replay-record
@@ -4513,6 +4359,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             body.checkpoint_dir if name == "local_fx1" else None,
             body.byok.model_dump() if name == "byok" and body.byok is not None else None,
             body.timeout_s,
+            body._served_model
+            if public_release
+            and isinstance(body, (CompleteRequest, EvalSubmitRequest))
+            and body._served_model in PUBLIC_MODEL_IDS
+            else None,
         )
 
     def _resolve_chain(
@@ -4649,6 +4500,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             else None
                         ),
                         body.timeout_s,
+                        None,
                     )
                     judge = metered_model(
                         judge_obj,
@@ -4839,7 +4691,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         model-card registry to its checkpoint (unregistered fails closed)."""
         if model in ("hosted_k3", "local_fx1", "byok"):
             return cast(Literal["hosted_k3", "local_fx1", "byok"], model), None
-        if model == "fx1":
+        if model in PUBLIC_MODEL_IDS:
             return "local_fx1", None
         if model.startswith("ft:"):
             ckpt = ft_store.checkpoint_for(model)
@@ -4956,6 +4808,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     422, f"data_source.source failed validation: {exc.errors()[0].get('msg')}"
                 ) from exc
         backend, ckpt = _run_model_backend(body.model)
+        if (
+            public_release
+            and body.model in PUBLIC_MODEL_IDS
+            and (schema.checkpoint_dir is not None or schema.fallbacks or body.byok is not None)
+        ):
+            raise ApiError(422, "public eval model refuses checkpoint, fallback, or BYOK overrides")
         if body.judge_byok is not None and schema.judge_backend != "byok":
             raise ApiError(422, "judge_byok applies only when judge_backend='byok'")
         sub = _request_or_422(
@@ -4974,6 +4832,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "callback_secret": body.callback_secret,
             },
         )
+        if public_release and body.model in PUBLIC_MODEL_IDS:
+            sub._served_model = body.model
         # The run's dedupe namespace is scoped to the spec — the same
         # Idempotency-Key under a different eval is a different run.
         scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
@@ -5637,7 +5497,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         translation or post-validation failures (callers map it to the
         wire shape)."""
         creq = _complete_request_from_kwargs(
-            openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+            openai_to_kwargs(
+                body,
+                headers,
+                ft_resolver=ft_store.checkpoint_for,
+                public_release=public_release,
+            )
         )
         # n>1 fans out into n gated calls — each completion gets its own
         # honesty-gate pass, format check, and completion-log record; usage
@@ -5844,7 +5709,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
         search_items, eff_body = _file_search_turn(body, eff_body)
         creq = _complete_request_from_kwargs(
-            response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
+            response_to_kwargs(
+                eff_body,
+                headers,
+                ft_resolver=ft_store.checkpoint_for,
+                public_release=public_release,
+            )
         )
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
@@ -5928,7 +5798,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         Returns ``(envelope, completion_id)``."""
         ereq = _request_or_422(
             EmbedRequest,
-            embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for),
+            embeddings_to_kwargs(
+                body,
+                headers,
+                ft_resolver=ft_store.checkpoint_for,
+                public_release=public_release,
+            ),
         )
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
@@ -6094,9 +5969,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``client.models.list()`` works unmodified. Without the header the
         OpenAI ``{object: \"list\"}`` shape answers; the cursor params
         are Anthropic's and ignored on the OpenAI branch."""
-        refs = ft_store.models()
+        refs = [] if public_release else ft_store.models()
         stamps = {str(r["id"]): int(r["created"]) for r in refs}
-        ids = [m for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in refs))]
+        ids = [m for m in (*_listed_model_ids(), *(r["id"] for r in refs))]
         if "anthropic-version" not in request.headers:
             return JSONResponse(
                 OpenAIModelList(
@@ -6141,13 +6016,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         stock SDK's ``client.models.retrieve``), with unknown ids in the
         ``not_found_error`` grammar."""
         anthropic = "anthropic-version" in request.headers
-        refs = ft_store.models()
+        refs = [] if public_release else ft_store.models()
         try:
             card = openai_model(
                 model,
                 created=_openai_created,
                 extra_ids=(r["id"] for r in refs),
                 created_by_id={str(r["id"]): int(r["created"]) for r in refs},
+                model_ids=_listed_model_ids(),
             )
         except OpenAICompatError as exc:
             if anthropic:
@@ -6171,7 +6047,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ids are permanent (400) and unknown names fail closed 404 — a
         delete verdict is never fabricated for a model that isn't real.
         The tombstone journals, so a restart can't resurrect it."""
-        if model in OPENAI_MODEL_IDS:
+        if model in _listed_model_ids():
             raise ApiError(
                 400,
                 f"the built-in link '{model}' is not deletable",
@@ -6289,6 +6165,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 model=env_chat["model"],
                 usage=env_chat["usage"],
                 cid=cid,
+                created=env_chat["created"],
             )
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
@@ -6957,12 +6834,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         hdrs = {str(k).lower(): str(v) for k, v in request.headers.items()}
         try:
-            backend_name, _fb, checkpoint_dir, byok, _sv = _resolve_openai_link(
+            backend_name, _fb, checkpoint_dir, byok, served_model = _resolve_public_release_link(
                 body.model,
                 body.fx1,
                 hdrs,
                 ft_resolver=ft_store.checkpoint_for,
                 require_known_model=True,
+                public_release=public_release,
             )
             timeout_s = _resolve_timeout(body.fx1.timeout_s if body.fx1 is not None else None, hdrs)
         except OpenAICompatError as exc:
@@ -6972,6 +6850,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             checkpoint_dir,
             byok.model_dump() if byok is not None else None,
             timeout_s,
+            served_model if public_release and served_model in PUBLIC_MODEL_IDS else None,
         )
         if not isinstance(backend, TokenCountingBackend):
             raise ApiError(
@@ -9323,6 +9202,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 req.checkpoint_dir,
                 req.byok.model_dump() if req.byok is not None else None,
                 req.timeout_s if req.timeout_s is not None else 30.0,
+                None,
             )
         except ApiError as exc:
             # An unconfigured/unreachable backend is a verdict, not an
@@ -10332,6 +10212,8 @@ def _resolve_auth(
     request: Request,
     api_key: str | None,
     key_store: ApiKeyStore,
+    *,
+    public_release: bool = False,
 ) -> tuple[str | None, bool, frozenset[str] | None] | JSONResponse:
     """Resolve the request's credential → ``(key_id, admin, scopes)``, or
     the refusal response. ``scopes`` is the minted key's declared set;
@@ -10349,7 +10231,7 @@ def _resolve_auth(
     """
     if request.url.path in _PUBLIC_PATHS:
         return (None, False, None)
-    if api_key or key_store.has_keys:
+    if api_key or key_store.has_keys or public_release:
         provided = request.headers.get("X-API-Key")
         # OpenAI-shape clients authenticate with Authorization: Bearer
         # — accept it on /v1 so stock SDKs work unmodified.
@@ -10414,6 +10296,41 @@ def _resolve_auth(
     return (None, True, None)
 
 
+def _local_checkpoint_kwargs(
+    checkpoint_dir: str | None, *, public_release: bool, requested_model: str | None
+) -> dict[str, str]:
+    """Resolve a public alias from its operator path, never a caller path."""
+    if public_release and checkpoint_dir is not None:
+        raise ApiError(422, "public local_fx1 refuses caller-selected checkpoint_dir")
+    if public_release and requested_model in PUBLIC_MODEL_IDS:
+        from fx1.serve.release_gate import public_checkpoint_env
+
+        checkpoint = os.environ.get(public_checkpoint_env(requested_model))
+        if not checkpoint:
+            raise ApiError(
+                503, f"public model {requested_model!r} has no signed checkpoint configured"
+            )
+        return {"checkpoint_dir": checkpoint, "model": requested_model}
+    checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
+    if not checkpoint:
+        raise ApiError(
+            422,
+            "local_fx1 needs a checkpoint_dir in the request or FX1_CHECKPOINT_DIR on the server",
+        )
+    return {"checkpoint_dir": checkpoint}
+
+
+def _public_release_mode(
+    requested: bool | None, harness: Harness | None, backend_resolver: Any | None
+) -> bool:
+    """No-argument ASGI factory launches default to the public policy."""
+    if requested is not None:
+        return requested
+    if harness is not None or backend_resolver is not None:
+        raise ValueError("injected harness/backend requires explicit public_release mode")
+    return True
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -10436,10 +10353,17 @@ def create_app(
     ft_runner: FTJobRunner | None = None,
     ft_dir: str | os.PathLike[str] | None = None,
     state_dir: str | os.PathLike[str] | None = None,
+    public_release: bool | None = None,
 ) -> FastAPI:
+    public_release = _public_release_mode(public_release, harness, backend_resolver)
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
-    resolve_backend = backend_resolver or get_backend
+    from fx1.serve.release_gate import public_release_resolver, require_public_runtime_env
+
+    require_public_runtime_env(public_release)
+    resolve_backend = public_release_resolver(
+        backend_resolver or get_backend, enabled=public_release
+    )
     max_inflight = _env_int_bound(_MAX_INFLIGHT_ENV, 16, max_inflight)
     idem_max = _env_int_bound(_IDEM_MAX_ENV, 1024, idem_max)
     job_max = _env_int_bound(_JOB_MAX_ENV, 1024, job_max)
@@ -10735,7 +10659,7 @@ def create_app(
         request.state.key_id = None
         request.state.admin = False
         try:
-            auth = _resolve_auth(request, api_key, key_store)
+            auth = _resolve_auth(request, api_key, key_store, public_release=public_release)
         except KeyStoreError as exc:
             # a managed key past its declared rpm/budget refuses 429 —
             # same fail-closed shape as the global limiter, keyed to the
@@ -11186,6 +11110,7 @@ def create_app(
         checkpoint_dir: str | None,
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
+        requested_model: str | None = None,
     ) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""
         kwargs: dict[str, Any] = {}
@@ -11203,14 +11128,13 @@ def create_app(
                 )
             kwargs.update(byok)
         if backend_name == "local_fx1":
-            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
-            if not checkpoint:
-                raise ApiError(
-                    422,
-                    "local_fx1 needs a checkpoint_dir in the request or "
-                    "FX1_CHECKPOINT_DIR on the server",
+            kwargs.update(
+                _local_checkpoint_kwargs(
+                    checkpoint_dir,
+                    public_release=public_release,
+                    requested_model=requested_model,
                 )
-            kwargs["checkpoint_dir"] = checkpoint
+            )
         elif checkpoint_dir is not None:
             raise ApiError(422, "checkpoint_dir applies only to the local_fx1 backend")
         try:
@@ -11228,6 +11152,7 @@ def create_app(
         app,
         slot=_slot,
         resolve_backend=_resolve_request_backend,
+        public_release=public_release,
         sse_keepalive_s=sse_keepalive_s,
         complete_idem_store=complete_idem_store,
         complete_batch_idem_store=complete_batch_idem_store,
@@ -11286,7 +11211,9 @@ def create_app(
     return app
 
 
-app = create_app()
+# Direct ASGI loading has no reliable bind-host signal. Keep that exported app
+# on the public policy; host-aware launchers construct their own app instead.
+app = create_app(public_release=True)
 
 if __name__ == "__main__":
     # `python -m fx1.serve.api` — loopback guard lives in `_api_cli`.

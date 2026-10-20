@@ -45,7 +45,10 @@ def surface(kind, state, monkeypatch):
 
     if kind == "api":
         app = api.create_app(
-            harness=Harness(runner=unused), backend_resolver=unused, state_dir=state
+            public_release=False,
+            harness=Harness(runner=unused),
+            backend_resolver=unused,
+            state_dir=state,
         )
         endpoint = next(
             route.endpoint for route in app.routes if getattr(route, "path", None) == "/v1/uploads"

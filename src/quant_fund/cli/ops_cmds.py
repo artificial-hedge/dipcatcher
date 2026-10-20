@@ -275,7 +275,10 @@ def monitor(
     json_out: bool = typer.Option(False, "--json", help="Emit JSON instead of markdown."),
     out: Path | None = typer.Option(None, "--out", help="Write output to this path."),
 ) -> None:
-    """Ops snapshot over the latest paper run: limits, staleness, kill state."""
+    """Ops snapshot over the latest paper run: limits, staleness, kill state.
+
+    Exit codes: 0 healthy, 1 warning, 2 breach, 3 insufficient data.
+    """
     import json
 
     import polars as pl
@@ -337,11 +340,11 @@ def monitor(
     else:
         typer.echo(text)
     # Nagios-style exit codes so schedulers/alerting can consume status.
-    status = snap["overall_status"]
-    if status == "breach":
-        raise typer.Exit(2)
-    if status == "warn":
-        raise typer.Exit(1)
+    exit_code = {"breach": 2, "warn": 1, "insufficient_data": 3}.get(snap["overall_status"])
+    if exit_code is not None:
+        raise typer.Exit(exit_code)
+    if snap["overall_status"] != "ok":
+        raise typer.Exit(3)
 
 
 @app.command("sim-live")

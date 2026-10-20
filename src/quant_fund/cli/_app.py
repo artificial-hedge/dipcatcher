@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+import io
+import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import typer
 
@@ -78,7 +80,21 @@ def format_fdr_families(hypotheses: Sequence[object]) -> str:
     )
 
 
-app = typer.Typer(
+class _ConsoleSafeTyper(typer.Typer):
+    """Keep help and diagnostics printable with narrow terminal encodings."""
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        # Rich emits mathematical symbols in the command help. Windows can
+        # expose cp1252 stdout even in a terminal; strict encoding otherwise
+        # raises UnicodeEncodeError before the operator sees any help. Preserve
+        # the stream's encoding and escape only characters it cannot express.
+        for stream in (sys.stdout, sys.stderr):
+            if isinstance(stream, io.TextIOWrapper):
+                stream.reconfigure(errors="backslashreplace")
+        return super().__call__(*args, **kwargs)
+
+
+app = _ConsoleSafeTyper(
     help="Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is research, never live."
 )
 

@@ -106,6 +106,7 @@ from quant_fund.research.catalog import (
 from quant_fund.research.catalog import (
     REQUIRED_BENCHMARK_FAMILIES as CATALOG_REQUIRED,
 )
+from quant_fund.research.catalog.optional_classification import exploratory_families
 from quant_fund.research.receipt_schema import (
     migrate_research_receipt,
     unavailable_overfitting_block,
@@ -709,6 +710,27 @@ def test_verify_research_artifact_rejects_non_hex_digests(tmp_path: Path) -> Non
     assert result["valid"] is False
     assert "invalid_run_id" in result["errors"]
     assert "invalid_config_sha256" in result["errors"]
+
+
+@pytest.mark.parametrize("fingerprint", [None, "g" * 64, "a" * 63])
+def test_verify_research_artifact_rejects_invalid_optional_input_fingerprint(
+    tmp_path: Path, fingerprint: str | None
+) -> None:
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["input_fingerprint_sha256"] = fingerprint
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert "invalid_input_fingerprint_sha256" in result["errors"]
+
+
+def test_verify_research_artifact_rejects_wrong_valid_hex_input_fingerprint(tmp_path: Path) -> None:
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["input_fingerprint_sha256"] = "f" * 64
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert "input_fingerprint_mismatch" in result["errors"]
 
 
 def test_verify_research_artifact_rejects_external_artifacts(tmp_path: Path) -> None:
@@ -3178,6 +3200,10 @@ def test_catalog_family_blob_executed_nonempty() -> None:
     assert family_blob_nonempty({}) is False
     assert family_blob_executed(None) is False
     assert family_blob_nonempty(None) is False
+    assert family_blob_executed({"provenance": "template"}) is False
+    assert family_blob_nonempty({"provenance": "template"}) is False
+    assert family_blob_executed({"provenance": "source"}) is True
+    assert family_blob_nonempty({"provenance": "source"}) is True
 
 
 def test_catalog_family_blob_has_finite_observation() -> None:
@@ -3195,6 +3221,87 @@ def test_catalog_family_blob_has_finite_observation() -> None:
     assert family_blob_has_finite_observation(None) is False
     assert family_blob_has_finite_observation([float("nan"), 2.0]) is True
     assert family_blob_has_finite_observation([float("nan")]) is False
+    assert family_blob_has_finite_observation({"provenance": "template"}) is False
+    assert family_blob_has_finite_observation({"provenance": "source"}) is True
+    assert (
+        family_blob_has_finite_observation({"provenance": "template", "metric": float("nan")})
+        is False
+    )
+    assert family_blob_has_finite_observation({"provenance": "template", "metric": 0.0}) is True
+
+
+def test_verify_rejects_forged_optional_provenance_only_blob(tmp_path: Path) -> None:
+    """A template label alone cannot satisfy any observation scorecard flag."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    template = sorted(exploratory_families())[0]
+    payload["families"][template] = {"provenance": "template"}
+    payload["scorecard"][template] = {
+        "executed": True,
+        "nonempty": True,
+        "finite_observation": True,
+        "forbidden_metrics_absent": True,
+        "claim": "research_metric_only",
+    }
+    payload["artifacts"]["immutable_json_sha256"] = _receipt_digest(payload)
+    path.write_text(json.dumps(payload))
+    immutable = Path(payload["artifacts"]["immutable_json"])
+    immutable.write_text(json.dumps(payload))
+
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert f"scorecard_executed_flag_forged:{template}" in result["errors"]
+    assert f"scorecard_nonempty_flag_forged:{template}" in result["errors"]
+    assert f"scorecard_finite_observation_flag_forged:{template}" in result["errors"]
+
+
+@pytest.mark.parametrize("marker", [None, "template"])
+def test_verify_accepts_optional_template_with_legacy_absent_or_new_marker(
+    tmp_path: Path, marker: str | None
+) -> None:
+    """An archived blob without a marker stays valid; new labels are valid too."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    template = sorted(exploratory_families())[0]
+    blob: dict[str, object] = {"metric": 0.5}
+    if marker is not None:
+        blob["provenance"] = marker
+    payload["families"][template] = blob
+    payload["scorecard"][template] = {
+        "executed": True,
+        "nonempty": True,
+        "finite_observation": True,
+        "forbidden_metrics_absent": True,
+        "claim": "research_metric_only",
+    }
+    payload["artifacts"]["immutable_json_sha256"] = _receipt_digest(payload)
+    path.write_text(json.dumps(payload))
+    Path(payload["artifacts"]["immutable_json"]).write_text(json.dumps(payload))
+
+    result = verify_research_artifact(path)
+    assert result["valid"] is True, result["errors"]
+
+
+@pytest.mark.parametrize("marker", ["specified", None, {"kind": "template"}])
+def test_verify_rejects_wrong_present_template_provenance(tmp_path: Path, marker: object) -> None:
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    template = sorted(exploratory_families())[0]
+    payload["families"][template] = {"metric": 0.5, "provenance": marker}
+    payload["scorecard"][template] = {
+        "executed": True,
+        "nonempty": True,
+        "finite_observation": True,
+        "forbidden_metrics_absent": True,
+        "claim": "research_metric_only",
+    }
+    payload["artifacts"]["immutable_json_sha256"] = _receipt_digest(payload)
+    path.write_text(json.dumps(payload))
+    Path(payload["artifacts"]["immutable_json"]).write_text(json.dumps(payload))
+
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert f"family_template_provenance_invalid:{template}" in result["errors"]
 
 
 def test_verify_rejects_forged_executed_nonempty_on_empty_blob(tmp_path: Path) -> None:

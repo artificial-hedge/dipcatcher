@@ -184,6 +184,24 @@ def _errors(result: dict) -> list[str]:
 
 
 class TestLowLevel:
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("../benchmark", True),
+            ("/abs/run", False),
+            (r"C:\abs\run", False),
+            (r"C:relative", False),
+            (r"\rooted", False),
+            (r"\\server\share\run", False),
+            ("", False),
+            (None, False),
+        ],
+    )
+    def test_index_path_relative_on_every_host(self, raw: object, expected: bool) -> None:
+        from quant_fund.research.phase1_verify import _index_path_is_relative
+
+        assert _index_path_is_relative(raw) is expected
+
     def test_duplicate_keys_rejected(self, tmp_path) -> None:
         p = tmp_path / "bad.json"
         p.write_text('{"a": 1, "a": 2}')

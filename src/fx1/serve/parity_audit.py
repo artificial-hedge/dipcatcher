@@ -133,6 +133,26 @@ class _NonStreamingBackend:
         return None
 
 
+def _logprobs_payload(logprobs: bool | None, top_logprobs: int | None) -> dict[str, Any] | None:
+    """Return the one canned score payload shared by both parity backends."""
+    if not logprobs:
+        return None
+    return {
+        "content": [
+            {
+                "token": "x",
+                "logprob": -0.5,
+                "bytes": [120],
+                "top_logprobs": (
+                    [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                    if top_logprobs is not None
+                    else []
+                ),
+            }
+        ]
+    }
+
+
 class _ParityToolBackend(_ParityBackend):
     """Tool-capable parity backend — answers canned function calls,
     plus a canned logprobs payload when the request asks for scores.
@@ -156,22 +176,6 @@ class _ParityToolBackend(_ParityBackend):
     ) -> ToolCompletion:
         from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
 
-        lp: dict[str, Any] | None = None
-        if logprobs:
-            lp = {
-                "content": [
-                    {
-                        "token": "x",
-                        "logprob": -0.5,
-                        "bytes": [120],
-                        "top_logprobs": (
-                            [{"token": "x", "logprob": -0.5, "bytes": [120]}]
-                            if top_logprobs is not None
-                            else []
-                        ),
-                    }
-                ]
-            }
         return ToolCompletion(
             content=None,
             tool_calls=tuple(
@@ -183,7 +187,7 @@ class _ParityToolBackend(_ParityBackend):
                 for k in range(self.n_calls)
             ),
             finish_reason="tool_calls",
-            logprobs=lp,
+            logprobs=_logprobs_payload(logprobs, top_logprobs),
         )
 
 
@@ -204,27 +208,11 @@ class _ParityLpBackend(_ParityBackend):
     ) -> ToolCompletion:
         from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
 
-        lp: dict[str, Any] | None = None
-        if logprobs:
-            lp = {
-                "content": [
-                    {
-                        "token": "x",
-                        "logprob": -0.5,
-                        "bytes": [120],
-                        "top_logprobs": (
-                            [{"token": "x", "logprob": -0.5, "bytes": [120]}]
-                            if top_logprobs is not None
-                            else []
-                        ),
-                    }
-                ]
-            }
         return ToolCompletion(
             content=self.complete(messages),
             tool_calls=None,
             finish_reason="stop",
-            logprobs=lp,
+            logprobs=_logprobs_payload(logprobs, top_logprobs),
         )
 
 
@@ -332,6 +320,7 @@ def _surfaces(
         harness=Harness(runner=fake_runner), backend_resolver=resolver, ft_runner=ft_runner
     )
     app = api_mod.create_app(
+        public_release=False,
         harness=Harness(runner=fake_runner),
         backend_resolver=resolver,
         ft_runner=ft_runner,
@@ -1277,7 +1266,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             from fx1.serve.client import HarnessClient as _HCr  # noqa: PLC0415
 
             _sdk_r = _FHr(receipts_dir=_rdir)
-            _api_r = _TCr(_api_mod_r.create_app(receipts_dir=_rdir))
+            _api_r = _TCr(_api_mod_r.create_app(public_release=False, receipts_dir=_rdir))
             _rem_r = _HCr("http://harness.test", transport=_tc_transport(_api_r))
 
             _idx = _api_r.get("/receipts").json()
@@ -1362,7 +1351,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
 
         sdk_byok = _FHb(harness=_Hb(runner=_fake_run), backend_resolver=_cap_res)
         app_byok = _TCb(
-            api_mod2.create_app(harness=_Hb(runner=_fake_run), backend_resolver=_cap_res)
+            api_mod2.create_app(
+                public_release=False, harness=_Hb(runner=_fake_run), backend_resolver=_cap_res
+            )
         )
         ovr = {
             "base_url": "https://llm.example.com/v1",
@@ -1508,7 +1499,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             harness=_Hb(runner=_fake_run), backend_resolver=_chain_resolver
         )
         app_chain = api_mod2.create_app(
-            harness=_Hb(runner=_fake_run), backend_resolver=_chain_resolver
+            public_release=False, harness=_Hb(runner=_fake_run), backend_resolver=_chain_resolver
         )
         client_chain = _TCb(app_chain)
         remote_chain = HarnessClient("http://harness.test", transport=_tc_transport(client_chain))
@@ -2219,6 +2210,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             return _ParityBackend()
 
         capped_app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=fake_runner2),
             backend_resolver=resolver2,
             max_inflight=2,
@@ -2274,7 +2266,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         )
         out["cap_invalid_config_fails"] = (
             _raises(
-                lambda: api_mod.create_app(harness=Harness(runner=fake_runner2), max_inflight=0)
+                lambda: api_mod.create_app(
+                    public_release=False, harness=Harness(runner=fake_runner2), max_inflight=0
+                )
             )[0]
             == "ValueError"
         )

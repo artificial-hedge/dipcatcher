@@ -88,7 +88,9 @@ def test_local_doctor_no_secret_material() -> None:
 
 def test_remote_doctor_all_green(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("FX1_API_KEY", "doctor-admin")
-    app = create_app(state_dir=tmp_path / "state", receipts_dir=_REPO_RECEIPTS)
+    app = create_app(
+        public_release=False, state_dir=tmp_path / "state", receipts_dir=_REPO_RECEIPTS
+    )
     with TestClient(app) as tc:
         transport = _transport_for(tc)
         make = lambda k: HarnessClient(  # noqa: E731
@@ -121,7 +123,9 @@ def test_remote_doctor_unreachable_fails_closed() -> None:
 def test_remote_doctor_open_mode_skips_auth_check(tmp_path: Path) -> None:
     """A deployment with no bootstrap key: gated routes accept anything —
     doctor reports open mode as skipped, never as a pass."""
-    app = create_app(state_dir=tmp_path / "state", receipts_dir=_REPO_RECEIPTS)
+    app = create_app(
+        public_release=False, state_dir=tmp_path / "state", receipts_dir=_REPO_RECEIPTS
+    )
     with TestClient(app) as tc:
         transport = _transport_for(tc)
         make = lambda k: HarnessClient(  # noqa: E731

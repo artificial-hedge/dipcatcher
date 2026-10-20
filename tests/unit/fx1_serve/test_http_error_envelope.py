@@ -28,6 +28,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
         raise AssertionError("routing tests must not resolve a backend")
 
     app = create_app(
+        public_release=False,
         harness=Harness(runner=unused_runner),
         backend_resolver=unused_backend,
         rate_limit_rps=0,

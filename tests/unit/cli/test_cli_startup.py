@@ -60,12 +60,19 @@ def _env() -> dict[str, str]:
     return env
 
 
-def _run(args: list[str]) -> subprocess.CompletedProcess[str]:
+def _run(args: list[str], *, uninstrumented: bool = False) -> subprocess.CompletedProcess[str]:
+    env = _env()
+    if uninstrumented:
+        # Full offline coverage traces child interpreters via coverage.py's
+        # subprocess patch. Measure the CLI as users run it, without tracing
+        # every import in this timing-only child. Other tests cover imports.
+        env.pop("COVERAGE_PROCESS_CONFIG", None)
+        env.pop("COVERAGE_PROCESS_START", None)
     started = time.perf_counter()
     completed = subprocess.run(
         [sys.executable, *args],
         cwd=_ROOT,
-        env=_env(),
+        env=env,
         capture_output=True,
         text=True,
         timeout=_SUBPROCESS_TIMEOUT_S,
@@ -73,6 +80,31 @@ def _run(args: list[str]) -> subprocess.CompletedProcess[str]:
     )
     completed.elapsed = time.perf_counter() - started  # type: ignore[attr-defined]
     return completed
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["-m", "quant_fund.cli.main", "--help"],
+        ["-m", "quant_fund.cli.main", "kyle-ofi", "--help"],
+        ["-m", "dipcatcher_cli", "--help"],
+    ],
+)
+def test_help_survives_narrow_console_encoding(args: list[str]) -> None:
+    env = _env()
+    env["PYTHONIOENCODING"] = "cp1252:strict"
+    completed = subprocess.run(
+        [sys.executable, *args],
+        cwd=_ROOT,
+        env=env,
+        capture_output=True,
+        encoding="cp1252",
+        timeout=_SUBPROCESS_TIMEOUT_S,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "Usage" in completed.stdout
+    assert "UnicodeEncodeError" not in completed.stderr
 
 
 def test_package_and_cli_imports_skip_heavy_modules() -> None:
@@ -106,7 +138,7 @@ def test_package_and_cli_imports_skip_heavy_modules() -> None:
     ],
 )
 def test_cli_first_output_stays_under_budget(args: list[str], budget_s: float, needle: str) -> None:
-    completed = _run(args)
+    completed = _run(args, uninstrumented=True)
     elapsed = float(completed.elapsed)  # type: ignore[attr-defined]
     assert completed.returncode == 0, completed.stderr
     assert needle in completed.stdout
@@ -117,7 +149,7 @@ def test_cli_first_output_stays_under_budget(args: list[str], budget_s: float, n
         # page cache can blow the wall-clock pin without any product change.
         # Re-measure once so the pin still trips on a real regression while
         # absorbing one-off jitter.
-        completed = _run(args)
+        completed = _run(args, uninstrumented=True)
         elapsed = float(completed.elapsed)  # type: ignore[attr-defined]
         assert completed.returncode == 0, completed.stderr
         assert needle in completed.stdout

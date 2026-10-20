@@ -7,7 +7,8 @@ when the document includes ``retired``. A document that only carries
 UNKNOWN and RETIRED both fail closed for new selection.
 
 ``execution_constraint`` reports whether the research runner can execute a
-chosen subset. It is false today: selection narrows eligibility and reporting.
+chosen subset. It is false today: named-family goals cannot launch an
+unconstrained scorecard automatically.
 """
 
 from __future__ import annotations
@@ -17,20 +18,26 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
+from hashlib import sha256
 from types import MappingProxyType
 from typing import Any
 
-CATALOG_SCHEMA_VERSION = 1
+CATALOG_SCHEMA_VERSION = 2
 
 _EXPLICIT_TOKEN = re.compile(r"\bfamily:([a-z0-9_]+)\b")
+_LOOKUP_WORD = re.compile(r"[a-z0-9]+")
+_FAMILY_NAME = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*\Z")
+_LOOKUP_MAX_PARTS = 5
+_LOOKUP_MAX_HASHES = 300
 _REASON_LIMIT = 200
 _UNAVAILABLE_LINE = (
     "family catalog unavailable — family eligibility could not be checked; "
     "no family-level claims will be made (fail-closed)"
 )
 _EXECUTION_NOTE = (
-    "note: the research command runs its configured scorecard; family selection "
-    "narrows eligibility and reporting, not the benches executed."
+    "note: the research runner has no per-family selector; automatic research is "
+    "excluded when a goal names a family, while explicit research runs the "
+    "configured scorecard."
 )
 
 _WORD = re.compile(r"[a-z0-9_]+")
@@ -48,7 +55,7 @@ class FamilyState(StrEnum):
 
 @dataclass(frozen=True)
 class FamilyCatalog:
-    """One snapshot of the benchmark family catalog."""
+    """One planner-facing snapshot; ``live_optional`` is the justified subset."""
 
     schema_version: int
     catalog_version: int
@@ -59,6 +66,10 @@ class FamilyCatalog:
     retired_sample: frozenset[str]
     order: tuple[str, ...]
     generated_at: str
+    live_optional_total: int = 0
+    exploratory_count: int = 0
+    omitted_matches: frozenset[str] = frozenset()
+    lookup_goal_sha256: str = ""
     source: str = "harness"
     execution_constraint: bool = False
     note: str = ""
@@ -66,19 +77,22 @@ class FamilyCatalog:
     retired: frozenset[str] = frozenset()
 
     @classmethod
-    def from_json(cls, text: str) -> FamilyCatalog:
+    def from_json(cls, text: str, *, goal: str | None = None) -> FamilyCatalog:
         """Parse a ``research-families`` JSON document.
 
         Raises ``ValueError`` with ``unsupported family catalog schema`` when
         ``schema_version`` is not :data:`CATALOG_SCHEMA_VERSION`. Every other
         malformed field raises ``ValueError`` and is rejected (fail closed).
+        A goal requires a matching, bounded lookup response before research
+        can be planned or executed for that exact goal.
         """
         payload = _as_object(text)
+        schema_version = _require_schema(payload)
         constrained, note = _runner_fields(payload)
         sample = _require_str_list(payload.get("retired_sample"), "retired_sample")
         count = _require_int(payload.get("retired_count"), "retired_count")
         return cls(
-            schema_version=_require_schema(payload),
+            schema_version=schema_version,
             catalog_version=_require_int(payload.get("catalog_version"), "catalog_version"),
             receipt_schema_version=_require_int(
                 payload.get("receipt_schema_version"), "receipt_schema_version"
@@ -91,6 +105,10 @@ class FamilyCatalog:
             retired_sample=frozenset(sample),
             order=tuple(_require_str_list(payload.get("order"), "order")),
             generated_at=_require_str(payload.get("generated_at"), "generated_at"),
+            live_optional_total=live_optional_total,
+            exploratory_count=exploratory_count,
+            omitted_matches=omitted_matches,
+            lookup_goal_sha256=goal_sha256(goal) if goal is not None else "",
             source="harness",
             execution_constraint=constrained,
             note=note,
@@ -137,13 +155,18 @@ class FamilyCatalog:
     def eligible(self) -> frozenset[str]:
         return self.required | self.live_optional
 
+    def covers_goal(self, goal: str) -> bool:
+        """True only for a validated lookup bound to this exact goal."""
+        return self.available and self.lookup_goal_sha256 == goal_sha256(goal)
+
     def describe(self) -> str:
         if not self.available:
             return f"family catalog unavailable: {self.note}"
         summary = (
             f"family catalog v{self.catalog_version} "
             f"(receipt schema v{self.receipt_schema_version}): "
-            f"{len(self.required)} required · {len(self.live_optional)} live optional · "
+            f"{len(self.required)} required · {len(self.live_optional)} selectable optional · "
+            f"{self.exploratory_count} exploratory of {self.live_optional_total} live optional · "
             f"{self.retired_count} retired · source {self.source}"
         )
         if self.note:
@@ -238,23 +261,31 @@ DEFAULT_ALIASES: Mapping[str, str] = MappingProxyType(
 )
 
 
-def load_catalog(harness: Any, *, cache: dict[str, FamilyCatalog] | None = None) -> FamilyCatalog:
+def load_catalog(
+    harness: Any, *, cache: dict[str, FamilyCatalog] | None = None, goal: str | None = None
+) -> FamilyCatalog:
     """Load ``research-families`` through ``harness``. Never raises.
 
-    A cache hit returns the stored catalog with ``source="cached"``. A
-    non-zero exit, a parse failure, or any exception from the harness becomes
-    :meth:`FamilyCatalog.unavailable` using the first 200 characters of the
-    stderr text or the exception message. Only a successful load is stored.
+    A base-catalog cache hit returns the stored catalog with ``source="cached"``.
+    Goal-specific lookups always call the harness and only cache a stripped
+    base catalog. A non-zero exit, interruption, parse failure, or exception
+    from the harness becomes :meth:`FamilyCatalog.unavailable` using the first
+    200 characters of the failure reason.
     """
-    if cache is not None:
+    if cache is not None and goal is None:
         cached = _cached_catalog(cache)
         if cached is not None:
             return cached
     try:
-        result = harness.run("research-families")
+        extra_args = ["--lookup-hashes", goal_lookup_hashes(goal)] if goal is not None else None
+        result = (
+            harness.run("research-families", extra_args=extra_args)
+            if extra_args is not None
+            else harness.run("research-families")
+        )
     except Exception as exc:  # noqa: BLE001 — catalog load is fail-closed
         return FamilyCatalog.unavailable(_short_reason(exc))
-    return _catalog_from_result(result, cache)
+    return _catalog_from_result(result, cache, goal=goal)
 
 
 def resolve_families(
@@ -266,10 +297,12 @@ def resolve_families(
     """Classify family mentions in ``goal``.
 
     Matching is whole-word (and whole-phrase). Underscored names also match
-    their space and hyphen spellings. ``family:<name>`` tokens are always
-    classified; a free-text word that is not a catalog name or an alias is
-    not a mention. Longest phrase wins. Duplicate names keep the first hit.
-    An unavailable catalog sends every mention to ``unknown``.
+    their space and hyphen spellings. A validated goal lookup also recognizes
+    eligible and omitted names across punctuation-separated words. The
+    ``family:<name>`` tokens are always classified; a free-text word that is
+    not a catalog name or an alias is not a mention. Longest phrase wins.
+    Duplicate names keep the first hit. An unavailable catalog sends every
+    mention to ``unknown``.
     """
     table: Mapping[str, str] = DEFAULT_ALIASES if aliases is None else aliases
     forced_unknown = not catalog.available
@@ -277,10 +310,25 @@ def resolve_families(
     retired: list[FamilyMention] = []
     unknown: list[FamilyMention] = []
     ordered: list[FamilyMention] = []
-    for hit in _ordered_hits(goal.lower(), catalog, table):
+    hits = list(_ordered_hits(goal.lower(), catalog, table))
+    # The lab lookup tokenizes punctuation as word separators. A slash or
+    # newline can therefore match a catalog name even when the human-readable
+    # phrase matcher (which accepts only spaces, hyphens, and underscores)
+    # does not. The validated lookup must still block that named research run.
+    if catalog.covers_goal(goal):
+        candidate_hashes = set(goal_lookup_hashes(goal).split(","))
+        mentioned_names = {hit.name for hit in hits}
+        hash_matched = {
+            name
+            for name in catalog.eligible()
+            if sha256(name.encode("utf-8")).hexdigest() in candidate_hashes
+        }
+        for name in sorted((catalog.omitted_matches | hash_matched) - mentioned_names):
+            hits.append(
+                _Hit(start=len(goal), end=len(goal), name=name, matched_text=name, explicit=False)
+            )
+    for hit in hits:
         mention = _mention_for(hit, catalog, forced_unknown=forced_unknown)
-        if mention is None:
-            continue
         ordered.append(mention)
         _store_mention(mention, eligible, retired, unknown)
     source = "unavailable" if forced_unknown else catalog.source
@@ -304,6 +352,62 @@ def families_prompt_block(selection: FamilySelection, catalog: FamilyCatalog) ->
     if not catalog.execution_constraint:
         lines.append(_EXECUTION_NOTE)
     return "\n".join(lines)
+
+
+def goal_sha256(goal: str) -> str:
+    """Bind a lookup to the exact goal used by both planning and execution."""
+    return sha256(goal.encode("utf-8")).hexdigest()
+
+
+def goal_lookup_hashes(goal: str) -> str:
+    """Hash bounded candidate family names without exposing the goal in argv."""
+    if len(goal.encode("utf-8")) > 2048:
+        raise ValueError("family lookup goal exceeds 2048 UTF-8 bytes")
+    words = _LOOKUP_WORD.findall(goal.lower())
+    if not words:
+        raise ValueError("family lookup goal contains no searchable words")
+    hashes: set[str] = set()
+    for start in range(len(words)):
+        for width in range(1, min(_LOOKUP_MAX_PARTS, len(words) - start) + 1):
+            name = "_".join(words[start : start + width])
+            hashes.add(sha256(name.encode("ascii")).hexdigest())
+            if len(hashes) > _LOOKUP_MAX_HASHES:
+                raise ValueError("family lookup exceeds 300 name candidates")
+    return ",".join(sorted(hashes))
+
+
+def _lookup_matches(
+    payload: Mapping[str, Any], goal: str | None, selectable: frozenset[str]
+) -> frozenset[str]:
+    lookup = payload.get("lookup")
+    if goal is None:
+        if "lookup" in payload:
+            raise ValueError("unexpected goal-specific family lookup")
+        return frozenset()
+    if not isinstance(lookup, dict):
+        raise ValueError("goal-specific family lookup missing")
+    request = goal_lookup_hashes(goal)
+    expected = sha256(request.encode("ascii")).hexdigest()
+    if lookup.get("request_sha256") != expected:
+        raise ValueError("goal-specific family lookup request mismatch")
+    raw_matches = lookup.get("omitted_matches")
+    if not isinstance(raw_matches, list) or len(raw_matches) > _LOOKUP_MAX_HASHES:
+        raise ValueError("goal-specific family lookup matches malformed")
+    requested = set(request.split(","))
+    names: list[str] = []
+    for name in raw_matches:
+        if (
+            not isinstance(name, str)
+            or _FAMILY_NAME.fullmatch(name) is None
+            or len(name.split("_")) > _LOOKUP_MAX_PARTS
+            or sha256(name.encode("ascii")).hexdigest() not in requested
+            or name in selectable
+        ):
+            raise ValueError("goal-specific family lookup returned an invalid name")
+        names.append(name)
+    if len(set(names)) != len(names):
+        raise ValueError("goal-specific family lookup returned duplicate names")
+    return frozenset(names)
 
 
 def _as_object(text: str) -> dict[str, Any]:
@@ -413,18 +517,24 @@ def _as_text(value: object) -> str:
     return str(value)
 
 
-def _catalog_from_result(result: Any, cache: dict[str, FamilyCatalog] | None) -> FamilyCatalog:
+def _catalog_from_result(
+    result: Any, cache: dict[str, FamilyCatalog] | None, *, goal: str | None
+) -> FamilyCatalog:
+    if bool(getattr(result, "cancelled", False)):
+        return FamilyCatalog.unavailable("research-families cancelled")
+    if bool(getattr(result, "timed_out", False)):
+        return FamilyCatalog.unavailable("research-families timed out")
     exit_code = getattr(result, "exit_code", 1)
     stderr = _as_text(getattr(result, "stderr", ""))
     if exit_code != 0:
         reason = stderr or f"research-families exited {exit_code}"
         return FamilyCatalog.unavailable(_short_reason(reason))
     try:
-        catalog = FamilyCatalog.from_json(_as_text(getattr(result, "stdout", "")))
+        catalog = FamilyCatalog.from_json(_as_text(getattr(result, "stdout", "")), goal=goal)
     except Exception as exc:  # noqa: BLE001 — malformed catalog is unavailable
         return FamilyCatalog.unavailable(_short_reason(exc))
     if cache is not None:
-        cache["catalog"] = catalog
+        cache["catalog"] = replace(catalog, omitted_matches=frozenset(), lookup_goal_sha256="")
     return catalog
 
 
@@ -438,7 +548,7 @@ def _explain_mention(mention: FamilyMention) -> str:
             f"family '{mention.name}' — retired; new selection blocked "
             "(historical receipts still verify)"
         )
-    return f"'{mention.name}' — not a known family; no suitable family"
+    return f"'{mention.name}' — not a planner-selectable family; no suitable family"
 
 
 def _forms(name: str) -> tuple[str, ...]:
@@ -591,12 +701,11 @@ def _ordered_hits(
     return tuple(unique)
 
 
-def _mention_for(
-    hit: _Hit, catalog: FamilyCatalog, *, forced_unknown: bool
-) -> FamilyMention | None:
+def _mention_for(hit: _Hit, catalog: FamilyCatalog, *, forced_unknown: bool) -> FamilyMention:
     state = FamilyState.UNKNOWN if forced_unknown else catalog.state_of(hit.name)
-    if state is FamilyState.UNKNOWN and not hit.explicit and not forced_unknown:
-        return None
+    # Aliases in the curated map name research families. If a catalog omits an
+    # alias target, keep the mention UNKNOWN so it cannot launch the full
+    # unconstrained scorecard through a missing-name path.
     return FamilyMention(name=hit.name, state=state, matched_text=hit.matched_text)
 
 
@@ -623,6 +732,8 @@ __all__ = [
     "FamilySelection",
     "FamilyState",
     "families_prompt_block",
+    "goal_lookup_hashes",
+    "goal_sha256",
     "load_catalog",
     "resolve_families",
 ]

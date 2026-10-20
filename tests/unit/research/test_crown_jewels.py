@@ -33,15 +33,30 @@ def test_round_trip_clean(repo: Path) -> None:
     assert set(load_crown_jewels_pin(pin)) == set(DEFAULT_JEWELS)
 
 
-def test_mutation_missing_and_symlink(repo: Path) -> None:
+def test_ed25519_verifier_helpers_are_pinned() -> None:
+    assert "src/quant_fund/utils/ed25519_public.py" in DEFAULT_JEWELS
+    assert "scripts/ed25519_public.py" in DEFAULT_JEWELS
+
+
+def test_mutation_and_missing(repo: Path) -> None:
     pin = repo / "quality" / "crown_jewels.json"
     write_crown_jewels_pin(repo, pin)
     (repo / "pyproject.toml").write_text("# tampered\n")
     assert "jewel_mutated:pyproject.toml" in crown_jewels_errors(repo, pin)
     (repo / "AGENTS.md").unlink()
     assert "jewel_missing:AGENTS.md" in crown_jewels_errors(repo, pin)
+
+
+def test_symlinked_jewel_is_rejected(repo: Path) -> None:
+    pin = repo / "quality" / "crown_jewels.json"
+    write_crown_jewels_pin(repo, pin)
     (repo / "uv.lock").unlink()
-    (repo / "uv.lock").symlink_to("pyproject.toml")
+    try:
+        (repo / "uv.lock").symlink_to("pyproject.toml")
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege is unavailable")
+        raise
     assert "jewel_symlink:uv.lock" in crown_jewels_errors(repo, pin)
 
 

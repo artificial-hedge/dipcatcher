@@ -189,13 +189,20 @@ def test_only_committed_background_results_append_to_conversation(intervention: 
             store.put({"id": rid, "object": "response", "status": "cancelled"})
         return output
 
+    translated_public_modes: list[bool] = []
+
+    def translate_response(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        translated_public_modes.append(kwargs["public_release"])
+        return {}
+
     bindings = dict(
         envelope_store=store,
         conv_store=conversations,
+        public_release=False,
         conversation_id_of=lambda value: value,
         chained_response_input=lambda envelope, old, current: current,
         _file_search_turn=lambda request, effective: ([], effective),
-        response_to_kwargs=lambda *args, **kwargs: {},
+        response_to_kwargs=translate_response,
         ft_store=types.SimpleNamespace(checkpoint_for=lambda _: None),
         CompleteRequest=lambda **kwargs: types.SimpleNamespace(**kwargs),
         complete=complete,
@@ -214,6 +221,7 @@ def test_only_committed_background_results_append_to_conversation(intervention: 
     )
     bindings["_complete_request_from_kwargs"] = _handler("_complete_request_from_kwargs", bindings)
     envelope, completion_id, usage = _handler("_openai_response_core", bindings)(body, {}, rid=rid)
+    assert translated_public_modes == [False]
     assert completion_id == "completion_review" and usage == output.usage
     stored = store.get(rid)
     items = conversations.get_items("conv_review", "items")

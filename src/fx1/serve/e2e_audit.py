@@ -201,7 +201,7 @@ def e2e_audit() -> dict[str, bool]:
         def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
             return 0, f"ran:{' '.join(argv)}", ""
 
-        app = api_mod.create_app(harness=Harness(runner=fake_runner))
+        app = api_mod.create_app(public_release=False, harness=Harness(runner=fake_runner))
         server, server_thread, port = _serve_uvicorn(app)
         out["e2e_server_boots"] = bool(server.started and thread_is_alive(server_thread))
 
@@ -306,7 +306,9 @@ def e2e_audit() -> dict[str, bool]:
         out["e2e_cli_remote_list"] = cr2.exit_code == 0 and sorted(cmds)[0] in cr2.output
 
         # -- resilience over the real wire: cap 503 -> Retry-After -> recover
-        capped_app = api_mod.create_app(harness=Harness(runner=fake_runner), max_inflight=1)
+        capped_app = api_mod.create_app(
+            public_release=False, harness=Harness(runner=fake_runner), max_inflight=1
+        )
         server2, server2_thread, port2 = _serve_uvicorn(capped_app)
         base2 = f"http://127.0.0.1:{port2}"
         slots = capped_app.state.inflight_slots
@@ -375,7 +377,7 @@ def e2e_audit() -> dict[str, bool]:
         # async jobs over the real wire: submit, poll to terminal, then drain
         # and verify a keyed resubmit replays instead of refusing.
         server3, server3_thread, port3 = _serve_uvicorn(
-            api_mod.create_app(harness=Harness(runner=fake_runner))
+            api_mod.create_app(public_release=False, harness=Harness(runner=fake_runner))
         )
         try:
             jremote = HarnessClient(f"http://127.0.0.1:{port3}", api_key=_API_KEY, timeout_s=15.0)
@@ -433,7 +435,7 @@ def e2e_audit() -> dict[str, bool]:
             return (0, "ran:" + " ".join(a), "")
 
         server4, server4_thread, port4 = _serve_uvicorn(
-            api_mod.create_app(harness=Harness(runner=_slow_runner))
+            api_mod.create_app(public_release=False, harness=Harness(runner=_slow_runner))
         )
         try:
             wremote = HarnessClient(f"http://127.0.0.1:{port4}", api_key=_API_KEY, timeout_s=15.0)
@@ -454,7 +456,9 @@ def e2e_audit() -> dict[str, bool]:
         # scheduler stall, letting a queued job start early and flipping
         # the "queued" status reads.
         gate5 = threading.Event()
-        server5_app = api_mod.create_app(harness=Harness(runner=_slow_runner), max_inflight=2)
+        server5_app = api_mod.create_app(
+            public_release=False, harness=Harness(runner=_slow_runner), max_inflight=2
+        )
         server5, server5_thread, port5 = _serve_uvicorn(server5_app)
         try:
             cremote = HarnessClient(f"http://127.0.0.1:{port5}", api_key=_API_KEY, timeout_s=15.0)
@@ -493,7 +497,9 @@ def e2e_audit() -> dict[str, bool]:
         # never empties. rps=0.5 gives capacity 1: the first call drains
         # the token and the next call inside ~2s denies at any stall,
         # while Retry-After ≈ 2s still fits max_retry_wait_s=5.
-        server6_app = api_mod.create_app(harness=Harness(runner=fake_runner), rate_limit_rps=0.5)
+        server6_app = api_mod.create_app(
+            public_release=False, harness=Harness(runner=fake_runner), rate_limit_rps=0.5
+        )
         server6, server6_thread, port6 = _serve_uvicorn(server6_app)
         try:
             rl = HarnessClient(
@@ -562,7 +568,7 @@ def e2e_audit() -> dict[str, bool]:
         hook_thread = threading.Thread(target=hook_srv.serve_forever, daemon=True)
         hook_thread.start()
         hook_url = f"http://127.0.0.1:{hook_srv.server_address[1]}/hook"
-        server7_app = api_mod.create_app(harness=Harness(runner=fake_runner))
+        server7_app = api_mod.create_app(public_release=False, harness=Harness(runner=fake_runner))
         server7, server7_thread, port7 = _serve_uvicorn(server7_app)
         try:
             hc = HarnessClient(f"http://127.0.0.1:{port7}", api_key=_API_KEY, timeout_s=15.0)

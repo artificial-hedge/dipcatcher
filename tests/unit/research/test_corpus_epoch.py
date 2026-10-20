@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -573,7 +574,12 @@ def test_symlink_members_refused_and_flagged(tmp_path: Path) -> None:
     _receipt(corpus, "real.json", "1")
     outside = tmp_path / "outside.json"
     outside.write_text('{"escape": true}')
-    (corpus / "link.json").symlink_to(outside)
+    try:
+        (corpus / "link.json").symlink_to(outside)
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege unavailable")
+        raise
     with pytest.raises(ValueError, match="symlink"):
         corpus_epoch(corpus)
     assert _symlink_errors(corpus, "*.json") == ["member_is_symlink:'link.json'"]
@@ -638,7 +644,7 @@ def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     _stamp(corpus)
     (corpus / bad).write_text("{}")
     hits = [e for e in check_epoch_chain(corpus)["errors"] if "not_portable" in e]
-    assert hits and all("\n" not in e for e in hits)
+    assert hits and all(control not in e for e in hits)
 
 
 def test_epoch_prefix_squat_flagged_and_refused(tmp_path: Path) -> None:
@@ -733,9 +739,12 @@ def test_member_digests_skip_gitignored_untracked_files(tmp_path: Path) -> None:
     subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
     corpus = tmp_path / "data" / "metadata"
     corpus.mkdir(parents=True)
-    (tmp_path / ".gitignore").write_text("data/metadata/local.json\n")
+    (tmp_path / ".gitignore").write_text(
+        "data/metadata/local.json\ndata/metadata/価格.json\n", encoding="utf-8"
+    )
     (corpus / "kept.json").write_text("{}\n")
     (corpus / "local.json").write_text("{}\n")
+    (corpus / "価格.json").write_text("{}\n")
     assert set(member_digests(corpus)) == {"kept.json"}
     assert sv._member_digests(corpus, "*.json") == member_digests(corpus)
 

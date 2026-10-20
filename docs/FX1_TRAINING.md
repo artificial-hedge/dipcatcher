@@ -39,6 +39,22 @@ fixture, not the output of this plan.
    keep general-task scores at or above the base, and pass every honesty
    task natively.
 
+The current `ModelCard.eval_delta` is an asserted numeric result. Its
+`ship_eligible` property checks those numbers, but public serving cannot
+recompute them from independently signed case-level evidence. The fine-tuning
+lane's `fx1_ft_eval.v1` receipt is labeled `SYNTHETIC`; its sealed summary and
+the card's freeform `known_limits` note cannot qualify `fx1` or `fx1-lite` for
+production. Both public aliases are disabled by an empty evaluator trust
+registry and a hard refusal in the serving gate. Approval requires an
+independently held-out, preregistered and chain-timestamped bank; signed raw
+paired responses; exact base/candidate weight, inference configuration and
+tokenizer pins; and an evaluator key separate from the release signer. A
+complete verifier must re-score the cases, check paired significance and
+exact card equality, and bind the verdict to the signed release inventory.
+The public default bank in this tree remains a synthetic honesty smoke test.
+The required owner artifacts and verifier contract are listed in
+[FX1_PUBLIC_EVAL_EVIDENCE.md](FX1_PUBLIC_EVAL_EVIDENCE.md).
+
 ## Corpus status
 
 Seed corpus built from `receipts/`: 5 receipts loaded, 5 eligible (positive),

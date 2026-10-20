@@ -398,11 +398,18 @@ def combine(root: Path, parts: Path, output: Path) -> int:
             cov.xml_report(outfile=str(output / "coverage.xml"))
             cov.html_report(directory=str(output / "html"))
             report = json.loads((output / "coverage.json").read_text(encoding="utf-8"))
+            if os.name == "nt":
+                files = report["files"]
+                portable = {name.replace("\\", "/"): entry for name, entry in files.items()}
+                if len(portable) != len(files):
+                    raise CoverageGateError("coverage paths collide after normalization")
+                report["files"] = portable
+                _write_json(output / "coverage.json", report)
         finally:
             if cov is not None:
                 cov.get_data().close()
             os.chdir(previous)
-        summary = summarize(parts, report, tracked_sources(root))
+        summary = summarize(parts, report, sources)
         # The CLI applies coverage.py's exact precision/100%-floor semantics.
         threshold = subprocess.run(
             [

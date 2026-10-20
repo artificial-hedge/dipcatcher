@@ -645,6 +645,8 @@ def test_epoch_consistency_fails_closed_on_an_unreadable_base_pin(
     base's heads pin was absent or malformed. The probe base is HEAD with the
     pin removed or replaced, written to a scratch object store so the repo's
     own is untouched."""
+    if shutil.which("make") is None:
+        pytest.skip("GNU make is unavailable; this POSIX recipe runs in CI")
     common = subprocess.run(
         ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
         cwd=REPO_ROOT,

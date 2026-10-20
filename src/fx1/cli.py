@@ -454,25 +454,10 @@ def contamination_audit(
     raise typer.Exit(code=1 if report.overall_flagged else 0)
 
 
-@app.command("sign")
-def sign_checkpoint(
-    checkpoint_dir: Path = typer.Argument(...),
-) -> None:
-    """Sign an fx-1 release (attestation ladder tier 1)."""
-    from fx1.serve import sign_release
-
-    sig = sign_release(checkpoint_dir)
-    typer.echo(f"signed: {sig}")
+app.command("sign")(sign_checkpoint)
 
 
-@app.command("attestation")
-def attestation_status(
-    checkpoint_dir: Path = typer.Argument(...),
-) -> None:
-    """Report which attestation tiers a checkpoint satisfies."""
-    from fx1.serve import attestation_ladder_status
-
-    typer.echo(json.dumps(attestation_ladder_status(checkpoint_dir), indent=2))
+app.command("attestation")(attestation_status)
 
 
 @app.command("sbom")

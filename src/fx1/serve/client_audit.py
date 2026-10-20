@@ -330,6 +330,7 @@ def _client(
             return entry() if callable(entry) else entry
 
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=runner if runner is not None else fake_runner),
             backend_resolver=_resolve,
             **app_kw,
@@ -1349,7 +1350,9 @@ def _parity_probes() -> dict[str, bool]:
             # the remote leg carries the root credential like any real caller.
             os.environ[_API_KEY_ENV] = _ROOT
             sdk = Fx1Harness(harness=Harness(runner=fake_runner), backend_resolver=resolver)
-            app = api_mod.create_app(harness=Harness(runner=fake_runner), backend_resolver=resolver)
+            app = api_mod.create_app(
+                public_release=False, harness=Harness(runner=fake_runner), backend_resolver=resolver
+            )
             remote = _remote(_TC(app, raise_server_exceptions=False), api_key=_ROOT)
         finally:
             for k, v in saved.items():

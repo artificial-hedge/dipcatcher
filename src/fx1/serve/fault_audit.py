@@ -90,7 +90,7 @@ def _client(
     import fx1.serve.api as api_mod
 
     return TestClient(
-        api_mod.create_app(harness=Harness(runner=runner)),
+        api_mod.create_app(public_release=False, harness=Harness(runner=runner)),
         raise_server_exceptions=False,
     )
 
@@ -647,7 +647,9 @@ def _probe_state_dir() -> dict[str, bool]:
         _deny_directory_write(ro)
         try:
             try:
-                api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=ro)
+                api_mod.create_app(
+                    public_release=False, harness=Harness(runner=_fast_runner), state_dir=ro
+                )
                 out["state_dir_readonly_fails_loud"] = False
             except OSError:
                 out["state_dir_readonly_fails_loud"] = True
@@ -661,7 +663,9 @@ def _probe_state_dir() -> dict[str, bool]:
 
         missing = Path(td) / "no" / "such" / "dir"
         try:
-            api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=missing)
+            api_mod.create_app(
+                public_release=False, harness=Harness(runner=_fast_runner), state_dir=missing
+            )
             out["state_dir_missing_created"] = missing.exists()
         except OSError:
             out["state_dir_missing_created"] = False
@@ -669,7 +673,9 @@ def _probe_state_dir() -> dict[str, bool]:
         sd = Path(td) / "live"
         sd.mkdir()
         with _root_env():
-            app = api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=sd)
+            app = api_mod.create_app(
+                public_release=False, harness=Harness(runner=_fast_runner), state_dir=sd
+            )
             from fastapi.testclient import TestClient
 
             client = TestClient(app, raise_server_exceptions=False)

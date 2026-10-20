@@ -1,3 +1,4 @@
+import json
 import math
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from quant_fund.research.agent import (
     _benchmark_scorecard,
     _git_worktree_sha256,
     _provenance,
+    _publish_research_run_once,
     run_research,
 )
 from quant_fund.research.catalog import (
@@ -17,6 +19,7 @@ from quant_fund.research.catalog import (
     RESEARCH_RECEIPT_SCHEMA_VERSION,
     family_blob_forbidden_metrics_absent,
 )
+from quant_fund.research.verify import _optional_input_fingerprint_errors
 from quant_fund.utils.hashing import canonical_frame_fingerprint
 
 
@@ -28,6 +31,18 @@ def test_provenance_changes_when_materialized_data_changes() -> None:
         _provenance(cfg, left, "x")["dataset_content_sha256"]
         != _provenance(cfg, right, "x")["dataset_content_sha256"]
     )
+
+
+def test_provenance_gives_repeated_inputs_distinct_runs() -> None:
+    cfg = load_config("configs/research.yaml")
+    frame = pl.DataFrame({"event_time": [1], "security_id": ["A"], "x": [1.0]})
+    first = _provenance(cfg, frame, "x")
+    second = _provenance(cfg, frame, "x")
+    assert first["input_fingerprint_sha256"] == second["input_fingerprint_sha256"]
+    assert first["run_id"] != second["run_id"]
+    assert len(first["run_id"]) == len(second["run_id"]) == 64
+    assert _optional_input_fingerprint_errors(first) == []
+    assert _optional_input_fingerprint_errors(second) == []
 
 
 def test_canonical_frame_fingerprint_is_order_invariant_and_counts_duplicates() -> None:
@@ -65,7 +80,7 @@ def test_provenance_hashes_external_northset_book_contents(tmp_path: Path) -> No
         first["northset_inputs"]["book_panel_sha256"]
         != second["northset_inputs"]["book_panel_sha256"]
     )
-    assert first["run_id"] != second["run_id"]
+    assert first["input_fingerprint_sha256"] != second["input_fingerprint_sha256"]
 
 
 def test_worktree_fingerprint_is_a_real_sha256() -> None:
@@ -305,6 +320,33 @@ def test_research_receipt_records_runtime_fingerprint(tmp_path: Path) -> None:
     assert runtime["implementation"]
     assert runtime["platform"]
     assert runtime["packages"]["numpy"]
+
+    receipt_root = tmp_path / "metadata" / "research"
+    first_json = receipt_root / nb.artifacts["immutable_json"]
+    first_markdown = receipt_root / nb.artifacts["immutable_markdown"]
+    original_json = first_json.read_bytes()
+    original_markdown = first_markdown.read_bytes()
+    repeated = run_research(cfg)
+    assert (
+        repeated.provenance["input_fingerprint_sha256"] == nb.provenance["input_fingerprint_sha256"]
+    )
+    assert repeated.provenance["run_id"] != nb.provenance["run_id"]
+    assert first_json.read_bytes() == original_json
+    assert first_markdown.read_bytes() == original_markdown
+    repeated_json = receipt_root / repeated.artifacts["immutable_json"]
+    repeated_markdown = receipt_root / repeated.artifacts["immutable_markdown"]
+    assert repeated_json.is_file()
+    assert (receipt_root / "latest.json").read_bytes() == repeated_json.read_bytes()
+    assert (receipt_root / "latest.md").read_bytes() == repeated_markdown.read_bytes()
+    assert (
+        tmp_path / "metadata" / "reports" / "latest.md"
+    ).read_bytes() == repeated_markdown.read_bytes()
+    assert (
+        json.loads((receipt_root / "latest.json").read_text(encoding="utf-8"))["provenance"][
+            "run_id"
+        ]
+        == repeated.provenance["run_id"]
+    )
 
 
 def test_forbidden_research_metric_keys_frozen() -> None:

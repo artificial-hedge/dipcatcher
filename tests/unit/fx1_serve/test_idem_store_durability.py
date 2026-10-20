@@ -102,7 +102,7 @@ def test_file_upload_rolls_back_when_idem_journal_append_fails(tmp_path, monkeyp
         original_append(journal, payload)
 
     monkeypatch.setattr(JobJournal, "append", fail_idem_once)
-    app = create_app(state_dir=tmp_path, max_inflight=1)
+    app = create_app(public_release=False, state_dir=tmp_path, max_inflight=1)
     files = {"file": ("batch.jsonl", b'{"custom_id":"1"}\n', "application/jsonl")}
     headers = {"Idempotency-Key": "retry-file"}
 
@@ -123,6 +123,7 @@ def test_replay_bypasses_capacity_and_drain(tmp_path, monkeypatch) -> None:
     monkeypatch.delenv("FX1_API_KEY", raising=False)
     backend = _Backend()
     app = create_app(
+        public_release=False,
         backend_resolver=lambda *args, **kwargs: backend,
         state_dir=tmp_path,
         max_inflight=1,

@@ -227,6 +227,7 @@ def _app(
     import fx1.serve.api as api_mod  # noqa: PLC0415
 
     return api_mod.create_app(
+        public_release=False,
         harness=Harness(runner=runner),
         backend_resolver=lambda *a, **k: _StubBackend(),
         ft_runner=_ft_runner,

@@ -70,7 +70,12 @@ def _chat(args: Sequence[str]) -> None:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--model", choices=_CHAT_MODELS, default=_DEFAULT_CHAT_MODEL)
+    parser.add_argument(
+        "--model",
+        choices=_CHAT_MODELS,
+        default=_DEFAULT_CHAT_MODEL,
+        help="model identifier; model turns require a configured endpoint",
+    )
     parser.add_argument(
         "--resume",
         metavar="SESSION",

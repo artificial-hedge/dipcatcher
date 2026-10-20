@@ -48,6 +48,7 @@ jobs:
   build:
     needs: preflight
     name: Build, SBOM, sign, attest
+    needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -73,8 +74,7 @@ jobs:
           set -euo pipefail
           uv sync --frozen --all-groups --no-install-project --no-build
           uv pip install --python .venv/bin/python --no-deps dist/*.whl
-          .venv/bin/fx1 --help
-          .venv/bin/dipcatcher --help
+          .venv/bin/python scripts/smoke_installed_wheel.py
 
       - name: CycloneDX SBOM from the locked runtime set
         run: |

@@ -160,6 +160,7 @@ def _make_app(
     from fx1.serve.conv_audit import _StubBackend  # noqa: PLC0415
 
     return api_mod.create_app(
+        public_release=False,
         harness=Harness(runner=runner or _fast_runner),
         backend_resolver=lambda *a, **k: _StubBackend(),
         state_dir=state_dir,

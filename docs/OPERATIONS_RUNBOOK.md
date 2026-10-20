@@ -208,22 +208,29 @@ Preparedness drills (self-attacking; they must keep failing loudly):
 
 Two distinct key systems — do not conflate them.
 
-**A. Repo gate-signing keys (Ed25519, `GATE_SIGNING_KEY`).** They sign the
-integrity pins and the checkpoint. Authorized rotation, in order:
+**A. Repo gate-signing keys (Ed25519).** The committed
+`quality/gate_quorum.json` registry governs current pin and checkpoint
+signatures. Authorized quorum-member rotation, in order:
 
-1. Export both `GATE_SIGNING_KEY` and `GATE_SIGNING_KEY_NEW` (new key handed
-   over out of band).
-2. `make rotate-key` — records the rotation as a dual-signed link
-   (predecessor + successor), then re-signs the pins and checkpoint.
-3. `make anchor-pins` — RFC 3161 timestamp-anchors `quality/epoch_heads.json`
-   and `quality/crown_jewels.json` via FreeTSA (network). Quiet points only:
-   any later `make stamp-epochs` stales the anchors.
-4. `make verify-rotations` — must pass: dual-signed links, spine-anchored
-   genesis, live key is the chain terminus.
-5. `make checkpoint-chain` — the full spine must still walk cleanly.
+1. Prepare the new `gate_quorum.v1` registry and the outgoing quorum's
+   signer key files out of band.
+2. Run `dipcatcher quorum-rotate --registry <new-registry.json> --key-file
+   <outgoing-key>` (repeat `--key-file` until the outgoing threshold is met).
+   This records the signed predecessor-to-successor link and installs the new
+   registry.
+3. Run `make stamp-epochs`, then `make sign-pins` with the incoming registered
+   signer pairs in `GATE_QUORUM_KEYS`.
+4. Run `make anchor-pins` at a quiet point. Later epoch stamps stale these
+   RFC 3161 anchors.
+5. Run `make checkpoint` with incoming registered signer pairs in
+   `GATE_SIGNING_KEY`, then `uv run dipcatcher verify-repo` and
+   `make checkpoint-chain`.
 
-Regenerating keys, pins, or signatures without the Lead and
-`GATE_SIGNING_KEY` is forbidden; signed state (`quality/checkpoint.json`,
+`make rotate-key` rotates the legacy single-key trust root in
+`quality/gate_signing.pub`; it does not change the committed quorum registry.
+
+Regenerating keys, pins, or signatures without the Lead and the required
+quorum keys is forbidden; signed state (`quality/checkpoint.json`,
 `gate_pins.sig`, `*.sig`, pin and anchor files) is immutable to ordinary
 lanes.
 
@@ -303,7 +310,9 @@ touching any covered directory:
 3. `make anchor-pins` — RFC 3161-anchor both pin files (network; quiet
    points).
 4. `make checkpoint` — sign the pin state into `quality/checkpoint.json`
-   (needs `GATE_SIGNING_KEY`). Run **last**: it binds the current signature.
+   (needs registered signer pairs in `GATE_SIGNING_KEY`, or invoke
+   `dipcatcher checkpoint` with repeatable `--key-file` options). Run **last**:
+   it binds the current signature.
 5. Optional: `make anchor-checkpoint` (RFC 3161 anchor of the checkpoint),
    `make witness-checkpoint` (public Rekor witness; needs
    `WITNESS_SIGNING_KEY`), verified offline by `make verify-witness`.

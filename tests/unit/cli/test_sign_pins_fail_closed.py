@@ -9,7 +9,7 @@ import pytest
 from typer.testing import CliRunner
 
 from quant_fund.cli._app import app
-from quant_fund.research.gate_signatures import generate_keypair
+from quant_fund.research.gate_signatures import generate_keypair, init_quorum
 
 runner = CliRunner()
 

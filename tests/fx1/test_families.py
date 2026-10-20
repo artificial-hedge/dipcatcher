@@ -6,6 +6,7 @@ import json
 import sys
 import time
 from dataclasses import replace
+from hashlib import sha256
 from typing import Any
 
 import pytest
@@ -15,34 +16,36 @@ from fx1.interactive.families import (
     FamilyCatalog,
     FamilyState,
     families_prompt_block,
+    goal_lookup_hashes,
     load_catalog,
     resolve_families,
 )
 
 _NOTE = (
-    "dipcatcher research executes the REQUIRED scorecard plus live optional families "
-    "per its config; per-family execution constraint is not supported yet — family "
-    "selection narrows eligibility and reporting, not the benches executed."
+    "the research runner has no per-family selector; automatic research is excluded "
+    "when a goal names a family, while explicit research runs the configured scorecard."
 )
 _CLOSED = (
     "family catalog unavailable — family eligibility could not be checked; "
     "no family-level claims will be made (fail-closed)"
 )
 _SCORECARD_NOTE = (
-    "note: the research command runs its configured scorecard; family selection "
-    "narrows eligibility and reporting, not the benches executed."
+    "note: the research runner has no per-family selector; automatic research is "
+    "excluded when a goal names a family, while explicit research runs the "
+    "configured scorecard."
 )
 
 
 def _document() -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "catalog_version": 2,
         "receipt_schema_version": 2,
         "required": ["conformal", "distribution", "northset", "tail", "volatility"],
         "live_optional": ["candle_order_book", "regime"],
+        "live_optional_total": 4,
+        "exploratory_count": 2,
         "retired_count": 7529,
-        "retired_sample": ["dead_bench", "old_family"],
         "order": ["volatility", "distribution", "tail", "conformal", "northset"],
         "forbidden_metric_keys": ["calmar", "nav", "pnl", "sharpe", "sortino"],
         "runner": {
@@ -55,10 +58,20 @@ def _document() -> dict[str, Any]:
     }
 
 
+def _goal_document(goal: str, matches: list[str]) -> dict[str, Any]:
+    document = _document()
+    request = goal_lookup_hashes(goal)
+    document["lookup"] = {
+        "request_sha256": sha256(request.encode("ascii")).hexdigest(),
+        "omitted_matches": matches,
+    }
+    return document
+
+
 def _resolver_catalog() -> FamilyCatalog:
     targets = set(DEFAULT_ALIASES.values())
     return FamilyCatalog(
-        schema_version=1,
+        schema_version=2,
         catalog_version=2,
         receipt_schema_version=2,
         required=frozenset(targets - {"regime"}),
@@ -67,17 +80,29 @@ def _resolver_catalog() -> FamilyCatalog:
         retired_sample=frozenset({"old_family", "dead_bench"}),
         order=tuple(sorted(targets - {"regime"})),
         generated_at="2026-10-12T00:00:00Z",
+        live_optional_total=4,
+        exploratory_count=2,
         source="harness",
         execution_constraint=False,
-        note="per-family execution constraint is not supported yet",
+        note="runner has no per-family selector",
     )
 
 
 class _Result:
-    def __init__(self, exit_code: int, stdout: str, stderr: str) -> None:
+    def __init__(
+        self,
+        exit_code: int,
+        stdout: str,
+        stderr: str,
+        *,
+        cancelled: bool = False,
+        timed_out: bool = False,
+    ) -> None:
         self.exit_code = exit_code
         self.stdout = stdout
         self.stderr = stderr
+        self.cancelled = cancelled
+        self.timed_out = timed_out
 
 
 class _Harness:
@@ -97,13 +122,15 @@ class _Harness:
 def test_from_json_reads_a_realistic_document() -> None:
     document = _document()
     catalog = FamilyCatalog.from_json(json.dumps(document))
-    assert catalog.schema_version == 1
+    assert catalog.schema_version == 2
     assert catalog.catalog_version == 2
     assert catalog.receipt_schema_version == 2
     assert catalog.required == frozenset(document["required"])
     assert catalog.live_optional == frozenset(document["live_optional"])
+    assert catalog.live_optional_total == 4
+    assert catalog.exploratory_count == 2
     assert catalog.retired_count == 7529
-    assert catalog.retired_sample == frozenset(document["retired_sample"])
+    assert catalog.retired_sample == frozenset()
     assert catalog.order == tuple(document["order"])
     assert catalog.generated_at == "2026-10-12T00:00:00Z"
     assert catalog.source == "harness"
@@ -114,7 +141,7 @@ def test_from_json_reads_a_realistic_document() -> None:
 
 def test_from_json_rejects_unknown_schema() -> None:
     document = _document()
-    document["schema_version"] = 2
+    document["schema_version"] = 1
     with pytest.raises(ValueError, match="unsupported family catalog schema"):
         FamilyCatalog.from_json(json.dumps(document))
 
@@ -134,12 +161,64 @@ def test_from_json_rejects_wrong_types() -> None:
         FamilyCatalog.from_json(json.dumps(bool_count))
 
 
+def test_from_json_rejects_inconsistent_counts_and_extra_family_names() -> None:
+    inconsistent = _document()
+    inconsistent["exploratory_count"] = 3
+    with pytest.raises(ValueError, match="exploratory count is inconsistent"):
+        FamilyCatalog.from_json(json.dumps(inconsistent))
+    total_too_small = _document()
+    total_too_small["live_optional_total"] = 1
+    with pytest.raises(ValueError, match="counts are inconsistent"):
+        FamilyCatalog.from_json(json.dumps(total_too_small))
+    overlap = _document()
+    overlap["live_optional"].append("conformal")
+    with pytest.raises(ValueError, match="required and optional names overlap"):
+        FamilyCatalog.from_json(json.dumps(overlap))
+    retired_names = _document()
+    retired_names["retired_sample"] = ["old_family"]
+    with pytest.raises(ValueError, match="must not enumerate retired names"):
+        FamilyCatalog.from_json(json.dumps(retired_names))
+    extra_order = _document()
+    extra_order["order"].append("old_family")
+    with pytest.raises(ValueError, match="order must enumerate required names only"):
+        FamilyCatalog.from_json(json.dumps(extra_order))
+
+
+def test_goal_lookup_classifies_bare_omitted_family_without_listing_bulk() -> None:
+    goal = "benchmark a1 homotopy"
+    catalog = FamilyCatalog.from_json(json.dumps(_goal_document(goal, ["a1_homotopy"])), goal=goal)
+    assert catalog.omitted_matches == frozenset({"a1_homotopy"})
+    assert catalog.covers_goal(goal)
+    assert not catalog.covers_goal("benchmark another family")
+    selection = resolve_families(goal, catalog)
+    assert [mention.name for mention in selection.unknown] == ["a1_homotopy"]
+    assert selection.refused
+    assert "a1_homotopy" not in catalog.eligible()
+
+
+def test_goal_lookup_rejects_missing_mismatched_or_forged_response() -> None:
+    goal = "benchmark a1 homotopy and conformal"
+    with pytest.raises(ValueError, match="lookup missing"):
+        FamilyCatalog.from_json(json.dumps(_document()), goal=goal)
+    wrong_request = _goal_document(goal, [])
+    wrong_request["lookup"]["request_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="request mismatch"):
+        FamilyCatalog.from_json(json.dumps(wrong_request), goal=goal)
+    for names in (["not_in_goal"], ["conformal"], ["a1_homotopy", "a1_homotopy"]):
+        with pytest.raises(ValueError):
+            FamilyCatalog.from_json(json.dumps(_goal_document(goal, names)), goal=goal)
+    with pytest.raises(ValueError, match="unexpected goal-specific"):
+        FamilyCatalog.from_json(json.dumps(_goal_document(goal, [])))
+
+
 def test_unavailable_is_empty_and_not_available() -> None:
     catalog = FamilyCatalog.unavailable("registry offline")
     assert catalog.source == "unavailable"
     assert catalog.note == "registry offline"
     assert catalog.required == frozenset()
     assert catalog.live_optional == frozenset()
+    assert catalog.live_optional_total == 0
+    assert catalog.exploratory_count == 0
     assert catalog.retired_sample == frozenset()
     assert catalog.retired_count == 0
     assert catalog.order == ()
@@ -168,9 +247,9 @@ def test_describe_available_and_unavailable() -> None:
     text = catalog.describe()
     assert text.startswith("family catalog v2 (receipt schema v2): ")
     expected = (
-        f"{len(catalog.required)} required · {len(catalog.live_optional)} live optional · "
-        "7529 retired · source harness · note: per-family execution constraint is not "
-        "supported yet"
+        f"{len(catalog.required)} required · {len(catalog.live_optional)} selectable optional · "
+        "2 exploratory of 4 live optional · "
+        "7529 retired · source harness · note: runner has no per-family selector"
     )
     assert expected in text
     missing = FamilyCatalog.unavailable("registry offline")
@@ -185,10 +264,52 @@ def test_load_catalog_success_then_cache() -> None:
     assert first.source == "harness"
     assert first.available
     assert first.execution_constraint is False
-    assert "not supported yet" in first.note
+    assert "no per-family selector" in first.note
     assert second.source == "cached"
     assert second.required == first.required
     assert harness.calls == 1
+
+
+def test_goal_lookup_bypasses_base_cache_and_never_caches_goal_matches() -> None:
+    goal = "benchmark a1 homotopy"
+
+    class GoalHarness:
+        def __init__(self) -> None:
+            self.calls: list[list[str] | None] = []
+
+        def run(self, name: str, extra_args: list[str] | None = None) -> _Result:
+            assert name == "research-families"
+            self.calls.append(extra_args)
+            return _Result(
+                0,
+                json.dumps(
+                    _goal_document(goal, ["a1_homotopy"]) if extra_args is not None else _document()
+                ),
+                "",
+            )
+
+    harness = GoalHarness()
+    cache: dict[str, FamilyCatalog] = {}
+    assert load_catalog(harness, cache=cache).available
+    looked_up = load_catalog(harness, cache=cache, goal=goal)
+    assert looked_up.omitted_matches == frozenset({"a1_homotopy"})
+    assert harness.calls == [None, ["--lookup-hashes", goal_lookup_hashes(goal)]]
+    assert cache["catalog"].omitted_matches == frozenset()
+    assert cache["catalog"].lookup_goal_sha256 == ""
+    assert load_catalog(harness, cache=cache).omitted_matches == frozenset()
+    assert len(harness.calls) == 2
+
+
+@pytest.mark.parametrize(
+    "goal",
+    ["x" * 2049, " ".join(f"word{i}" for i in range(80))],
+)
+def test_oversize_goal_lookup_fails_closed_before_harness_call(goal: str) -> None:
+    harness = _Harness(_Result(0, json.dumps(_document()), ""))
+    catalog = load_catalog(harness, goal=goal)
+    assert not catalog.available
+    assert "exceeds" in catalog.note
+    assert harness.calls == 0
 
 
 def test_load_catalog_nonzero_exit_uses_stderr() -> None:
@@ -196,6 +317,24 @@ def test_load_catalog_nonzero_exit_uses_stderr() -> None:
     assert not catalog.available
     assert "catalog exploded: missing registry" in catalog.note
     assert catalog.describe() == ("family catalog unavailable: catalog exploded: missing registry")
+
+
+@pytest.mark.parametrize("interruption", ["cancelled", "timed_out"])
+@pytest.mark.parametrize("goal", [None, "benchmark a1 homotopy"])
+def test_load_catalog_interrupted_success_is_unavailable_and_not_cached(
+    interruption: str, goal: str | None
+) -> None:
+    document = _goal_document(goal, ["a1_homotopy"]) if goal is not None else _document()
+    result = _Result(0, json.dumps(document), "", **{interruption: True})
+    harness = _Harness(result)
+    cache: dict[str, FamilyCatalog] = {}
+
+    catalog = load_catalog(harness, cache=cache, goal=goal)
+
+    assert not catalog.available
+    assert interruption.replace("_", " ") in catalog.note
+    assert harness.calls == 1
+    assert "catalog" not in cache
 
 
 def test_load_catalog_truncates_long_reasons() -> None:
@@ -239,6 +378,19 @@ def test_aliases_resolve_to_catalog_families() -> None:
     assert resolve_families("order book", catalog).eligible[0].name == "northset"
 
 
+def test_omitted_alias_and_explicit_family_fail_closed_in_v2() -> None:
+    catalog = FamilyCatalog.from_json(json.dumps(_document()))
+    # "bandit" is a known family alias; this small v2 fixture omits its target.
+    implicit = resolve_families("run the bandit benchmark", catalog)
+    assert [mention.name for mention in implicit.unknown] == ["quantile_bandit"]
+    assert implicit.refused
+    explicit = resolve_families("family:quantile_bandit", catalog)
+    assert [mention.name for mention in explicit.unknown] == ["quantile_bandit"]
+    assert explicit.refused
+    # Whole-word matching keeps incidental substrings outside the family gate.
+    assert not resolve_families("banditry is unrelated", catalog).mentioned
+
+
 @pytest.mark.parametrize(("phrase", "family"), sorted(DEFAULT_ALIASES.items()))
 def test_each_default_alias(phrase: str, family: str) -> None:
     found = resolve_families(phrase, _resolver_catalog())
@@ -258,7 +410,7 @@ def test_explicit_family_tokens_classify_eligible_retired_and_unknown() -> None:
     ]
     unknown = resolve_families("family:foo_bar", catalog)
     assert unknown.unknown[0].state is FamilyState.UNKNOWN
-    assert unknown.explain() == ["'foo_bar' — not a known family; no suitable family"]
+    assert unknown.explain() == ["'foo_bar' — not a planner-selectable family; no suitable family"]
     free = resolve_families("conformal and foo_bar", catalog)
     assert free.unknown == ()
     assert [mention.name for mention in free.eligible] == ["conformal"]
@@ -312,7 +464,7 @@ def test_unavailable_catalog_routes_mentions_to_unknown() -> None:
 def test_resolve_families_stays_fast_on_a_live_sized_catalog() -> None:
     names = [f"family_{i:04d}" for i in range(2700)]
     catalog = FamilyCatalog(
-        schema_version=1,
+        schema_version=2,
         catalog_version=2,
         receipt_schema_version=2,
         required=frozenset(names[:23]),

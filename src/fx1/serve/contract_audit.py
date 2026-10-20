@@ -53,7 +53,9 @@ def normalized_surface(spec: dict[str, Any] | None = None) -> dict[str, Any]:
     if spec is None:
         from fx1.serve.api import create_app
 
-        spec = create_app().openapi()
+        spec = create_app(
+            public_release=False,
+        ).openapi()
     paths: dict[str, Any] = {}
     for path, ops in spec.get("paths", {}).items():
         paths[path] = {m: _operation_surface(ops[m]) for m in sorted(ops)}

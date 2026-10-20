@@ -28,14 +28,16 @@ def _git_repo(tmp_path: Path) -> Path:
         DEFAULT_JEWELS,
         write_crown_jewels_pin,
     )
+    from quant_fund.research.gate_signatures import generate_keypair, sign_pins
 
     root = tmp_path / "repo"
     root.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    priv, pub = generate_keypair()
     for jewel in DEFAULT_JEWELS:
         p = root / jewel
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(f"# {jewel}\n")
+        p.write_text(pub + "\n" if jewel == "quality/gate_signing.pub" else f"# {jewel}\n")
     # The evidence-policy jewels are parsed by the gates, which fail closed on
     # a malformed policy file — the fixture carries well-formed empty ones.
     (root / "quality" / "epoch_allowed_removals.json").write_text(
@@ -64,9 +66,6 @@ def _git_repo(tmp_path: Path) -> Path:
         update_heads_pin(pin, "quality", "*.json", ep)
     # The committed pubkey is a crown jewel — sign the pins for real so the
     # gate isn't testing a stub. Priv key is test-local only.
-    from quant_fund.research.gate_signatures import generate_keypair, sign_pins
-
-    priv, pub = generate_keypair()
     sign_pins(root, priv, pub)
     write_crown_jewels_pin(root)
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")

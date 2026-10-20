@@ -31,7 +31,7 @@ def app_client(
         calls.append(argv)
         return 0, "ok", ""
 
-    app = create_app(harness=Harness(runner=runner), state_dir=tmp_path)
+    app = create_app(public_release=False, harness=Harness(runner=runner), state_dir=tmp_path)
     with TestClient(app, raise_server_exceptions=False) as client:
         yield app, client, calls
 

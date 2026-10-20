@@ -210,6 +210,7 @@ def _client(
     receipts.mkdir()
     with _api_key_env(api_key):
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=lambda argv, timeout_s: (0, "ok", "")),
             backend_resolver=lambda name, *a, **k: (backend_map or _backends())[name](**k),
             state_dir=state_dir if state_dir is not None else isolated / "state",

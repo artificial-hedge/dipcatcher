@@ -477,7 +477,9 @@ def test_hosted_backend_rejects_null_content(monkeypatch):
 
     class _Resp:
         def read(self):
-            return json.dumps({"choices": [{"message": {"content": None}}]}).encode()
+            return json.dumps(
+                {"model": "kimi-k3", "choices": [{"message": {"content": None}}]}
+            ).encode()
 
         def __enter__(self):
             return self

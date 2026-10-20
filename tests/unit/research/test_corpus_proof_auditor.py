@@ -376,7 +376,7 @@ def _signed_checkpoint_v2(heads: dict, pins: dict, tmp_path: Path) -> tuple[Path
     kid = hashlib.sha256(bytes.fromhex(pub_hex)).hexdigest()[:16]
     reg = {"schema": "gate_quorum.v1", "threshold": 1, "keys": [{"key_id": kid, "pubkey": pub_hex}]}
     reg_path = tmp_path / "gate_quorum.json"
-    reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+    reg_path.write_bytes((json.dumps(reg, indent=2, sort_keys=True) + "\n").encode())
     payload = {
         "schema": "integrity_checkpoint.v1",
         "at": "2026-01-01T00:00:00+00:00",

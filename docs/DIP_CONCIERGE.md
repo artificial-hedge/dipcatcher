@@ -28,9 +28,10 @@ why.
 > cancels the running job, twice exits. What remains open is listed under
 > [Known limitations](#known-limitations-honest-gaps) and in
 > [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md): the `research`
-> bench still executes its configured scorecard (family selection narrows
-> eligibility and reporting, not the benches run), live hosted-model
-> verification needs a working endpoint, and the frozen journey suite /
+> bench still executes its configured scorecard; `/superpower` excludes
+> automatic research when a goal names a family because it cannot pass a
+> selector to that runner. Broad research goals can run the full scorecard.
+> Live hosted-model verification needs a working endpoint, and the frozen journey suite /
 > moderated trial have not been run. Nothing here is proof of live model
 > availability.
 
@@ -107,7 +108,11 @@ fail-closed posture:
 | `flash_retrieve` | ranks persistent research memory against the query | none (local read) |
 | `web_lookup` | one bounded search + up to two page reads | fetch policy |
 | `flash_save` | persists a finding with task/uncertainty | none (local write) |
-| `harness_run` | runs one registered `dipcatcher` command | approval when consequential |
+| `harness_run` | runs one registered `dipcatcher` command | approval when consequential; model-selected `research` refused |
+
+The model tool cannot start the full research scorecard. Use `/superpower`
+for a checked research plan or `/harness run research` to request the full
+configured scorecard explicitly.
 
 Slash commands:
 
@@ -217,15 +222,32 @@ together with web research, flash retrieve/save, and synthesis.
    and cannot reinstate — a capability the family gate blocked.
    **Family gate.** When the plan would run `research`, the lab's read-only
    family catalog is loaded through the registered `research-families`
-   command (cached per session). Families named in the goal — by name,
-   alias (`tail risk` → `tail`, `CRPS` → `distribution`, …) or explicit
-   `family:<name>` token — are classified *required*, *optional*, *retired*
-   or *unknown*. A goal that names only retired or unknown families cannot
+   command. Schema v2 lists the 23 required families and six audit-justified
+   optional families as selectable; it reports counts for exploratory, live
+   and retired families without listing their names. When automatic research
+   is considered, the planner sends a bounded set of SHA-256 family-name
+   candidates to the local command
+   and checks the goal-bound response. This catches bare names of omitted
+   families without putting the raw goal on the subprocess command line.
+   An omitted name is classified unknown and fails closed. A missing, stale,
+   malformed or oversized lookup also excludes automatic `research`.
+   Families named in the goal — by name, alias (`tail risk` → `tail`,
+   `CRPS` → `distribution`, …) or explicit `family:<name>` token — are
+   classified *required*, *optional* or *unknown*. A goal that names only
+   retired or unknown families cannot
    select `research`: the plan prints `excluded: research … no suitable
-   family`. An unavailable catalog never blocks, but the plan says that no
-   family-level claim will be made. Because `dipcatcher research` still
-   executes its configured scorecard, the plan also says that selection
-   narrows eligibility and reporting, not the benches executed.
+   family`. If the catalog is unavailable, `research` is excluded and the
+   plan explains that eligibility could not be checked. An eligible named
+   family also excludes automatic `research`: `/superpower` cannot pass the
+   selection to the runner, which would execute the configured scorecard,
+   including optional benches unless required-only mode is set. The plan
+   explains the exclusion and marks the result partial.
+   A broad research goal without named families may run that full scorecard;
+   `/harness run research` requests it explicitly.
+   Commands that require explicit CLI inputs (`validate`, `collect`, and
+   `tearsheet`) stay available through `/harness run` and are excluded from
+   automatic plans until those inputs are supplied. Exclusions make the run
+   partial and are shown in the result.
 2. **Recall.** Flash context is retrieved first (cheap, local) so prior
    findings feed everything downstream.
 3. **Execute.** Web research (budgeted, cancellable) runs before harness
@@ -248,10 +270,11 @@ together with web research, flash retrieve/save, and synthesis.
    with its goal and capability list.
 
 The plan is printed with a per-capability rationale, the family verdicts and
-the budget before anything runs. Every result carries an explain block
+the budget before any selected capability runs. Every result carries an explain block
 (`capabilities used and why`) in which each capability names its **evidence
-class** — `verified-receipt` (a verifier such as `verify-research`/`doctor`/
-`validate` exited 0), `synthetic-correctness` (output labelled SYNTHETIC),
+class** — `verified-research-artifact` (`verify-research` returned a valid JSON
+verdict naming the checked path), `synthetic-correctness` (output labelled
+SYNTHETIC),
 `harness-output-unverified`, `heuristic-web`, `memory`,
 `model-interpretation`, or `deterministic-summary` — followed by a
 `result: complete|partial — N/M capabilities ran` verdict. A run with any

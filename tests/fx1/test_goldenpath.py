@@ -26,6 +26,62 @@ _SCRIPT = _ROOT / "scripts" / "fx1_goldenpath.py"
 _CKPT = _ROOT / "artifacts" / "fx1_tiny_lm"
 
 
+@pytest.mark.parametrize("prefix", ["", "  \t"])
+@pytest.mark.parametrize("quote", ["", '"'])
+def test_custom_engine_command_quotes_template_values(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, prefix: str, quote: str
+) -> None:
+    """Placeholders stay one argument with or without quotes on both platforms."""
+    from fx1.serve.backends import LocalFx1Backend
+
+    backend = object.__new__(LocalFx1Backend)
+    backend._root = tmp_path / "checkpoint with spaces"
+    backend._serve_cmd = prefix + (
+        f"{quote}$python{quote} -m external.engine "
+        f"--checkpoint-dir {quote}$checkpoint_dir{quote} --port 8080"
+    )
+    monkeypatch.setenv("FX1_RELEASE_SIGNING_KEY", "private-release-seed")
+    monkeypatch.setenv("FX1_SIGNING_KEY", "internal-hmac-secret")
+    captured: dict[str, object] = {}
+    sentinel = object()
+
+    def fake_popen(argv: list[str], **kwargs: object) -> object:
+        captured["argv"] = argv
+        captured["env"] = kwargs["env"]
+        return sentinel
+
+    monkeypatch.setattr("fx1.serve.backends.subprocess.Popen", fake_popen)
+    assert backend._spawn_engine() is sentinel
+    assert captured["argv"] == [
+        sys.executable,
+        "-m",
+        "external.engine",
+        "--checkpoint-dir",
+        str(backend._root),
+        "--port",
+        "8080",
+    ]
+    assert captured["env"]["FX1_CHECKPOINT_DIR"] == str(backend._root)
+    assert "FX1_RELEASE_SIGNING_KEY" not in captured["env"]
+    assert "FX1_SIGNING_KEY" not in captured["env"]
+
+
+def test_local_engine_command_rejects_whitespace_only(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from fx1.serve.backends import LocalFx1Backend
+
+    backend = object.__new__(LocalFx1Backend)
+    backend._root = tmp_path
+    backend._serve_cmd = "  \t"
+    monkeypatch.setattr(
+        "fx1.serve.backends.subprocess.Popen",
+        lambda *args, **kwargs: pytest.fail("empty command spawned a process"),
+    )
+    with pytest.raises(RuntimeError, match="command is empty"):
+        backend._spawn_engine()
+
+
 def test_goldenpath_end_to_end(tmp_path: Path) -> None:
     out = tmp_path / "goldenpath.v1.json"
     proc = subprocess.run(  # noqa: S603 — argv is a fixed local list
@@ -92,7 +148,9 @@ def test_goldenpath_end_to_end(tmp_path: Path) -> None:
         assert results[must]["ok"], f"{must}: {results[must]['detail']}"
 
 
-def test_weights_direct_checkpoint_loads_and_serves(tmp_path: Path) -> None:
+def test_weights_direct_checkpoint_loads_and_serves(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The committed checkpoint really loads: card + manifest + safetensors.
 
     In-process ``complete_messages`` must be deterministic, non-empty, and

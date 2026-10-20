@@ -189,13 +189,16 @@ def retrieve(
     k: int = 5,
     min_score: float = DEFAULT_MIN_SCORE,
     now: float | None = None,
+    include_private: bool = True,
 ) -> list[Retrieval]:
-    """Rank the store against *query*; only entries above *min_score* return."""
+    """Rank the store against *query*; optionally omit private entries."""
     if k <= 0:
         raise ValueError("k must be positive")
     now = time.time() if now is None else now
     scored: list[Retrieval] = []
     for entry in store.all():
+        if entry.private and not include_private:
+            continue
         score, reasons = score_entry(entry, query, now=now)
         if score >= min_score:
             scored.append(Retrieval(entry=entry, score=score, reasons=reasons))

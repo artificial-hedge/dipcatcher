@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes
 
 ROTATION_SCHEMA = "key_rotation.v1"
@@ -77,7 +78,8 @@ def _verify_dual_signatures(rec: dict[str, Any], errors: list[str], tag: str) ->
     for side, pub_hex in (("old", old_pub), ("new", new_pub)):
         sig = str(body.get(f"{side}_signature", ""))
         try:
-            pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex))
+            pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pub_hex))
+            pub = Ed25519PublicKey.from_public_bytes(pub_bytes)
             pub.verify(bytes.fromhex(sig), canonical_json_bytes(payload))
         except (InvalidSignature, ValueError):
             errors.append(f"{tag}_signature_invalid:{side}")
@@ -209,7 +211,8 @@ def verify_rotations(root: str | Path = ".") -> dict[str, Any]:
             from quant_fund.research.checkpoint_chain import collect_spine_records
 
             records = collect_spine_records(root_path)
-            pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(genesis_pub))
+            genesis_pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(genesis_pub))
+            pub = Ed25519PublicKey.from_public_bytes(genesis_pub_bytes)
             for rec in records.values():
                 body, payload = rec.get("body") or {}, rec.get("payload")
                 if payload is None:

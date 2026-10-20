@@ -64,7 +64,12 @@ def ops_snapshot(
     if not np.isfinite(nav) or nav <= 0:
         raise ValueError("nav must be finite and positive")
     cfg = config.risk_gate
-    pos_val = {s: q * marks.get(s, np.nan) for s, q in positions.items() if abs(q) > 1e-12}
+    invalid_positions = sorted(s for s, q in positions.items() if not np.isfinite(q))
+    pos_val = {
+        s: q * marks.get(s, np.nan)
+        for s, q in positions.items()
+        if s not in invalid_positions and abs(q) > 1e-12
+    }
     gross = sum(abs(v) for v in pos_val.values() if np.isfinite(v))
     net = sum(v for v in pos_val.values() if np.isfinite(v))
     max_name_val = max((abs(v) for v in pos_val.values()), default=0.0)
@@ -75,8 +80,12 @@ def ops_snapshot(
         "net": _check(abs(net) / nav, cfg.max_net, warn_fraction),
         "largest_name": _check(max_name_val / nav, cfg.max_name, warn_fraction),
         "cash_buffer": {
-            "status": WARN if cash < 0 else OK,
-            "value": float(cash),
+            "status": BREACH if not np.isfinite(cash) else (WARN if cash < 0 else OK),
+            "value": float(cash) if np.isfinite(cash) else None,
+        },
+        "invalid_positions": {
+            "status": BREACH if invalid_positions else OK,
+            "securities": invalid_positions,
         },
         "unmarked_positions": {
             "status": BREACH if unmarked else OK,
@@ -91,10 +100,23 @@ def ops_snapshot(
     }
 
     if mark_age_bars is not None:
-        stale = sorted(s for s, a in mark_age_bars.items() if a > cfg.stale_price_bars)
+        missing_age = sorted(set(pos_val) - set(mark_age_bars))
+        invalid_age = sorted(
+            s
+            for s, age in mark_age_bars.items()
+            if isinstance(age, bool) or not isinstance(age, int) or age < 0
+        )
+        invalid_age_set = set(invalid_age)
+        stale = sorted(
+            s
+            for s, age in mark_age_bars.items()
+            if s not in invalid_age_set and age > cfg.stale_price_bars
+        )
         checks["mark_staleness"] = {
-            "status": BREACH if stale else OK,
+            "status": BREACH if stale or invalid_age else (INSUFFICIENT if missing_age else OK),
             "stale_securities": stale,
+            "invalid_securities": invalid_age,
+            "missing_securities": missing_age,
             "stale_price_bars": cfg.stale_price_bars,
         }
     else:
@@ -129,19 +151,15 @@ def ops_snapshot(
     overall = (
         BREACH
         if BREACH in statuses
-        else (
-            WARN
-            if WARN in statuses
-            else (INSUFFICIENT if all(s == INSUFFICIENT for s in statuses) else OK)
-        )
+        else (WARN if WARN in statuses else (INSUFFICIENT if INSUFFICIENT in statuses else OK))
     )
     return {
         "asof": None if asof is None else asof.isoformat(),
         "nav": float(nav),
-        "cash": float(cash),
+        "cash": float(cash) if np.isfinite(cash) else None,
         "gross": float(gross),
         "net": float(net),
-        "n_positions": int(len(pos_val)),
+        "n_positions": int(len(pos_val) + len(invalid_positions)),
         "checks": checks,
         "overall_status": overall,
         "research_only": True,
@@ -151,12 +169,14 @@ def ops_snapshot(
 
 def render_markdown(snapshot: dict[str, Any]) -> str:
     """Human-readable ops board — one line per check."""
+    cash = snapshot["cash"]
+    cash_text = "unavailable" if cash is None else f"{cash:,.2f}"
     lines = [
         "# Ops snapshot",
         "",
         f"- asof: {snapshot.get('asof')}",
         f"- overall: **{snapshot['overall_status']}**",
-        f"- nav: {snapshot['nav']:,.2f} | cash: {snapshot['cash']:,.2f} | "
+        f"- nav: {snapshot['nav']:,.2f} | cash: {cash_text} | "
         f"gross: {snapshot['gross']:,.0f} | net: {snapshot['net']:,.0f} | "
         f"positions: {snapshot['n_positions']}",
         "",
@@ -172,6 +192,10 @@ def render_markdown(snapshot: dict[str, Any]) -> str:
             extra = f" stale={','.join(c['stale_securities'])}"
         if c.get("securities"):
             extra = f" missing={','.join(c['securities'])}"
+        if c.get("missing_securities"):
+            extra += f" missing_age={','.join(c['missing_securities'])}"
+        if c.get("invalid_securities"):
+            extra += f" invalid_age={','.join(c['invalid_securities'])}"
         if name == "kill_switch":
             val = c.get("state")
         if name == "open_orders":

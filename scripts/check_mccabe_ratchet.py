@@ -42,7 +42,7 @@ _RUFF_MSG = re.compile(r"^(.+) is too complex \((\d+) > (\d+)\)$")
 
 def _qualified_names(path: Path) -> dict[int, str]:
     """Map def lineno → Class.method / outer.inner qualified name."""
-    tree = ast.parse(path.read_text(), filename=str(path))
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     out: dict[int, str] = {}
 
     def walk(nodes: list[ast.stmt], prefix: str = "") -> None:
@@ -234,7 +234,7 @@ def census_rows(census: dict[str, object]) -> dict[tuple[str, str], int]:
 
 def _entries(path: Path) -> dict[tuple[str, str], int]:
     rows: dict[tuple[str, str], int] = {}
-    for raw in path.read_text().splitlines():
+    for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
@@ -322,7 +322,7 @@ def check(measured: dict[tuple[str, str], int] | None = None) -> int:
             )
 
     expected = _format_baseline(baseline)
-    if BASELINE.read_text() != expected:
+    if BASELINE.read_text(encoding="utf-8") != expected:
         regressions.append("  quality/mccabe_baseline.txt must be sorted unique canonical form")
 
     if regressions:

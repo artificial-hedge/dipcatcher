@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import threading
 import time
 import uuid
@@ -46,7 +45,18 @@ from pydantic import (
 )
 
 from fx1.serve.backends import byok_base_url_problem
-from fx1.serve.receipt_store import SHA256_HEX
+from fx1.serve.openai_request_options import (
+    OpenAICompatError,
+)
+from fx1.serve.openai_request_options import (
+    history_tool_call_shape as _history_tool_call_shape,
+)
+from fx1.serve.openai_request_options import (
+    resolve_receipt_hashes as _resolve_receipt_hashes,
+)
+from fx1.serve.openai_request_options import (
+    resolve_timeout as _resolve_timeout,
+)
 from fx1.serve.webhooks import check_callback_url
 
 if TYPE_CHECKING:
@@ -57,6 +67,7 @@ __all__ = [
     "OPENAI_ERR_TYPES",
     "OPENAI_UNSUPPORTED",
     "OPENAI_MODEL_IDS",
+    "PUBLIC_MODEL_IDS",
     "OPENAI_RESPONSE_FORMATS",
     "RESPONSE_ITEM_TYPES_REFUSED",
     "RESPONSE_PART_TYPES",
@@ -144,21 +155,6 @@ class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class OpenAICompatError(ValueError):
-    """A rejection at the OpenAI translation layer.
-
-    ``status`` is the HTTP status the wire maps the rejection to; on the
-    SDK surface the exception itself is the verdict (a ``ValueError``, the
-    SDK's request-error class). ``code`` lands in the OpenAI error
-    envelope's ``code`` field when the wire emits it.
-    """
-
-    def __init__(self, message: str, *, status: int = 400, code: str = "invalid_request") -> None:
-        super().__init__(message)
-        self.status = status
-        self.code = code
-
-
 # Backend names an OpenAI `model` field or `X-Fx1-Backend` header may carry.
 OPENAI_BACKENDS = frozenset({"hosted_k3", "local_fx1", "byok"})
 
@@ -172,6 +168,7 @@ OPENAI_RESPONSE_FORMATS = frozenset({"text", "json_object", "json_schema"})
 
 # The GET /v1/models inventory — `fx1` is the alias for the default link.
 OPENAI_MODEL_IDS = ("fx1", "hosted_k3", "local_fx1", "byok")
+PUBLIC_MODEL_IDS = ("fx1", "fx1-lite")
 
 # Fields a caller may send that the gated pipeline cannot honor. Naming the
 # field beats silently dropping it — honest compat over fake compat.
@@ -561,6 +558,7 @@ def openai_models(
     created: int | None = None,
     extra_ids: Iterable[str] = (),
     created_by_id: Mapping[str, int] | None = None,
+    model_ids: Iterable[str] | None = None,
 ) -> OpenAIModelList:
     """The model inventory — `fx1` plus the backend names `model` may
     carry. ``created`` defaults to call time for the built-ins;
@@ -568,11 +566,12 @@ def openai_models(
     recorded creation time."""
     ts = int(time.time()) if created is None else created
     stamps = created_by_id or {}
-    extra = [m for m in dict.fromkeys(extra_ids) if m not in OPENAI_MODEL_IDS]
+    builtins = tuple(OPENAI_MODEL_IDS if model_ids is None else model_ids)
+    extra = [m for m in dict.fromkeys(extra_ids) if m not in builtins]
     return OpenAIModelList(
         data=[
             OpenAIModel(id=m, created=int(stamps.get(m, ts)) if m in stamps else ts)
-            for m in (*OPENAI_MODEL_IDS, *sorted(extra))
+            for m in (*builtins, *sorted(extra))
         ]
     )
 
@@ -583,6 +582,7 @@ def openai_model(
     created: int | None = None,
     extra_ids: Iterable[str] = (),
     created_by_id: Mapping[str, int] | None = None,
+    model_ids: Iterable[str] | None = None,
 ) -> OpenAIModel:
     """One model card — ``GET /v1/models/{id}`` retrieve semantics.
 
@@ -592,7 +592,8 @@ def openai_model(
     ``created_by_id`` stamps an extra card with its own recorded
     creation time instead of the serve boot stamp.
     """
-    if model_id not in OPENAI_MODEL_IDS and model_id not in frozenset(extra_ids):
+    builtins = OPENAI_MODEL_IDS if model_ids is None else tuple(model_ids)
+    if model_id not in builtins and model_id not in frozenset(extra_ids):
         raise OpenAICompatError(
             f"The model '{model_id}' does not exist", status=404, code="model_not_found"
         )
@@ -601,27 +602,6 @@ def openai_model(
     if model_id in stamps:
         ts = int(stamps[model_id])
     return OpenAIModel(id=model_id, created=ts)
-
-
-def _history_tool_call_shape(raw: Any, i: int, j: int) -> dict[str, Any]:
-    """One entry of an assistant message's ``tool_calls`` history —
-    validated before it rides the wire so a malformed replay is a 400,
-    not upstream confusion."""
-    fn = raw.get("function") if isinstance(raw, dict) else None
-    args = fn.get("arguments") if isinstance(fn, dict) else None
-    if (
-        not isinstance(raw, dict)
-        or not isinstance(raw.get("id"), str)
-        or raw.get("type") != "function"
-        or not isinstance(fn, dict)
-        or not isinstance(fn.get("name"), str)
-        or not isinstance(args, str)
-    ):
-        raise OpenAICompatError(
-            f"messages[{i}].tool_calls[{j}]: needs "
-            "{id, type: 'function', function: {name, arguments}}"
-        )
-    return raw
 
 
 def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, Any]]:
@@ -814,45 +794,44 @@ def _resolve_openai_link(
     return backend, fallbacks, checkpoint_dir, byok, None
 
 
-def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float | None:
-    """Per-request backend timeout: ``fx1.timeout_s`` > ``X-Fx1-Timeout``
-    header (seconds). A malformed header is a fail-closed 400 — never a
-    silent default."""
-    if ext_timeout is not None:
-        return ext_timeout
-    raw = hdrs.get("x-fx1-timeout")
-    if raw is None:
-        return None
-    try:
-        val = float(raw)
-    except ValueError as exc:
-        raise OpenAICompatError("X-Fx1-Timeout must be seconds as a number") from exc
-    if not math.isfinite(val) or val <= 0.0 or val > 3600.0:
-        raise OpenAICompatError("X-Fx1-Timeout must be in (0, 3600] seconds")
-    return val
-
-
-def _resolve_receipt_hashes(ext_hashes: list[str] | None, hdrs: dict[str, str]) -> list[str] | None:
-    """Evidence citations: ``fx1.receipt_hashes`` > ``X-Fx1-Receipt-Hashes``
-    header (comma-separated sha256 digests — the knob for clients that
-    can't edit the JSON body, same channel as ``X-Fx1-Fallbacks``). A
-    malformed digest is a fail-closed 400; resolvability stays with the
-    mounted store's check downstream."""
-    if ext_hashes:
-        if any(SHA256_HEX.fullmatch(h) is None for h in ext_hashes):
-            # the body channel enforces the same digest shape as the
-            # header — a garbage citation must never reach the Evidence
-            # footer unchallenged (it stays advisory only when it is a
-            # well-formed digest the store cannot resolve).
-            raise OpenAICompatError("fx1.receipt_hashes entries must be sha256 digests")
-        return list(ext_hashes)
-    raw = hdrs.get("x-fx1-receipt-hashes")
-    if raw is None:
-        return None
-    out = [h.strip() for h in raw.split(",") if h.strip()]
-    if any(SHA256_HEX.fullmatch(h) is None for h in out):
-        raise OpenAICompatError("X-Fx1-Receipt-Hashes must be comma-separated sha256 digests")
-    return out or None
+def _resolve_public_release_link(
+    model: str,
+    ext: OpenAIFx1 | None,
+    hdrs: dict[str, str],
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
+    require_known_model: bool = False,
+    public_release: bool = False,
+) -> tuple[str, list[str], str | None, ByokOverride | None, str | None]:
+    """Route public aliases only to their own signed local checkpoint."""
+    if public_release and model in PUBLIC_MODEL_IDS:
+        explicit = (ext.backend if ext is not None else None) or hdrs.get("x-fx1-backend")
+        if (
+            explicit not in (None, "local_fx1")
+            or any(name.startswith("x-fx1-byok-") for name in hdrs)
+            or (ext is not None and ext.byok is not None)
+        ):
+            raise OpenAICompatError(
+                f"public model {model!r} requires its signed local_fx1 release",
+                status=422,
+            )
+        if (
+            (ext is not None and (ext.checkpoint_dir is not None or ext.fallbacks))
+            or hdrs.get("x-fx1-checkpoint-dir")
+            or hdrs.get("x-fx1-fallbacks")
+        ):
+            raise OpenAICompatError(
+                f"public model {model!r} does not accept checkpoint or fallback overrides",
+                status=422,
+            )
+        return "local_fx1", [], None, None, model
+    return _resolve_openai_link(
+        model,
+        ext,
+        hdrs,
+        ft_resolver=ft_resolver,
+        require_known_model=require_known_model,
+    )
 
 
 def openai_to_kwargs(
@@ -860,6 +839,7 @@ def openai_to_kwargs(
     headers: Mapping[str, str] | None = None,
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
+    public_release: bool = False,
 ) -> dict[str, Any]:
     """Translate an OpenAI request into ``complete`` kwargs.
 
@@ -877,8 +857,13 @@ def openai_to_kwargs(
     """
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_openai_link(
-        body.model, ext, hdrs, ft_resolver=ft_resolver, require_known_model=True
+    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_public_release_link(
+        body.model,
+        ext,
+        hdrs,
+        ft_resolver=ft_resolver,
+        require_known_model=True,
+        public_release=public_release,
     )
     return {
         "backend": backend,
@@ -1807,6 +1792,7 @@ def response_to_kwargs(
     headers: Mapping[str, str] | None = None,
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
+    public_release: bool = False,
 ) -> dict[str, Any]:
     """Translate a Responses request into ``complete`` kwargs — the same
     backend-resolution order and the same extension/headers as the chat
@@ -1815,8 +1801,13 @@ def response_to_kwargs(
     ``user`` or ``safety_identifier``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_openai_link(
-        body.model, ext, hdrs, ft_resolver=ft_resolver, require_known_model=True
+    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_public_release_link(
+        body.model,
+        ext,
+        hdrs,
+        ft_resolver=ft_resolver,
+        require_known_model=True,
+        public_release=public_release,
     )
     effort = (body.reasoning or {}).get("effort")
     return {
@@ -2767,12 +2758,17 @@ def embeddings_to_kwargs(
     headers: Mapping[str, str] | None = None,
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
+    public_release: bool = False,
 ) -> dict[str, Any]:
     """Translate an embeddings request into call kwargs — same link
     resolution as chat (``fx1.backend`` > header > model > hosted_k3);
     keys: ``backend``, ``fallbacks``, ``byok``, ``checkpoint_dir``,
     ``timeout_s`` plus the forwarded fields ``model``, ``input``,
     ``encoding_format``, ``dimensions``, ``user``."""
+    if public_release and body.model in PUBLIC_MODEL_IDS:
+        raise OpenAICompatError(
+            f"public model {body.model!r} has no verified embeddings channel", status=501
+        )
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
     # ``model`` here is the upstream embedding deployment name — free-form

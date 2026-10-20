@@ -3055,7 +3055,11 @@ def sign_pins_cmd(
                 f"{committed_pub.as_posix()} — use rotate-key to change the trust root"
             )
             raise typer.Exit(code=2)
-    sig_path = sign_pins(root, priv, pub)
+    try:
+        sig_path = sign_pins(root, priv, pub)
+    except ValueError as exc:
+        typer.echo(f"sign-pins: {exc}")
+        raise typer.Exit(code=2) from exc
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
 
 
