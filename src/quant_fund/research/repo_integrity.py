@@ -201,11 +201,14 @@ def verify_repo(
     from quant_fund.research.ots_anchor import verify_ots
 
     ots = verify_ots(root)
+    anchor_state = _timestamp_anchor_state(ts, ots)
     gates["timestamp_anchors"] = {
         "ok": bool(ts["ok"] and ots["ok"]),
         "anchored": bool(ts["anchored"] or ots["anchored"]),
         "fresh": ts.get("fresh", {}),
         "staleness": ts.get("staleness", {}),
+        "stale": anchor_state["stale"],
+        "age_days": anchor_state["age_days"],
         "ots": ots.get("attestations", {}),
         "errors": [*ts["errors"], *ots["errors"]],
     }
@@ -455,7 +458,158 @@ def verify_repo(
         **lattice_info,
     }
 
+    closure = unchained_surface_errors(root)
+    gates["coverage_closure"] = {"ok": not closure, "errors": closure}
+
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}
+
+
+# Tracked evidence outside ``CORPORA``. A file here has no epoch chain.
+UNCHAINED_SURFACES: tuple[str, ...] = ("data/manifests", "packaging")
+
+
+def unchained_surface_errors(root: Path) -> list[str]:
+    """``uncovered_member`` for files under surfaces no corpus chain covers.
+
+    Absent surfaces are neutral (synthetic trees and drill clones omit
+    them). Once a surface is added to ``CORPORA``, this list stops
+    reporting it — the epoch gate owns it from then on.
+    """
+    from quant_fund.research.corpus_epoch import gitignored_relpaths
+
+    chained = {c[0] for c in CORPORA}
+    rels: list[str] = []
+    for surface in UNCHAINED_SURFACES:
+        if surface in chained or any(surface.startswith(f"{c}/") for c in chained):
+            continue
+        base = root / surface
+        if not base.exists():
+            continue
+        if base.is_file() and not base.is_symlink():
+            rels.append(surface)
+            continue
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob("*")):
+            if not path.is_file() or path.is_symlink() or path.name.startswith("corpus_epoch_"):
+                continue
+            rels.append(path.relative_to(root).as_posix())
+    ignored = gitignored_relpaths(root, rels)
+    return [f"uncovered_member:{rel!a}" for rel in rels if rel not in ignored]
+
+
+def _timestamp_anchor_state(ts: Mapping[str, Any], ots: Mapping[str, Any]) -> dict[str, Any]:
+    """Stale when any TSA or OTS anchor no longer matches live bytes.
+
+    Age is the oldest stale TSA ``genTime``, in whole days. OTS staleness
+    with no TSA clock still reports ``stale`` and ``age_days=None``.
+    """
+    ages: list[int] = []
+    stale = False
+    staleness = ts.get("staleness") or {}
+    if isinstance(staleness, Mapping):
+        for info in staleness.values():
+            if not isinstance(info, Mapping) or info.get("stale") is not True:
+                continue
+            stale = True
+            days = info.get("age_days")
+            if isinstance(days, int) and not isinstance(days, bool) and days >= 0:
+                ages.append(days)
+                continue
+            age_s = info.get("age_s")
+            if isinstance(age_s, int) and not isinstance(age_s, bool) and age_s >= 0:
+                ages.append(age_s // 86400)
+    ots_fresh = ots.get("fresh") or {}
+    if isinstance(ots_fresh, Mapping) and any(value is False for value in ots_fresh.values()):
+        stale = True
+    return {"stale": stale, "age_days": max(ages) if ages else None}
+
+
+def format_verify_repo_line(name: str, gate: Mapping[str, Any]) -> str:
+    """One ``verify-repo`` status line. Stale anchors stay non-failing."""
+    if gate.get("skipped"):
+        state = f"skipped({gate['skipped']})"
+    elif name == "timestamp_anchors" and gate.get("ok") and gate.get("stale"):
+        age = gate.get("age_days")
+        if isinstance(age, int) and not isinstance(age, bool):
+            state = f"stale age={age}d"
+        else:
+            state = "stale age=unknown"
+    elif name == "pin_signatures" and gate.get("ok") and not gate.get("signed"):
+        state = "unsigned"
+    elif gate.get("ok"):
+        state = "ok"
+    else:
+        state = "FAIL " + ",".join(str(err) for err in gate.get("errors") or [])
+    return f"verify-repo {name}: {state}"
+
+
+def verify_repo_summary(result: Mapping[str, Any]) -> str:
+    """Closing line. A stale anchor set is valid proof and is not a green claim."""
+    gates = result.get("gates", {})
+    ts = gates.get("timestamp_anchors", {}) if isinstance(gates, Mapping) else {}
+    if isinstance(ts, Mapping) and ts.get("stale"):
+        age = ts.get("age_days")
+        shown = f"{age}d" if isinstance(age, int) and not isinstance(age, bool) else "unknown"
+        return f"repo integrity: timestamp_anchors stale age={shown}"
+    return "repo integrity: all gates intact"
+
+
+def attestation_current(verdict: Mapping[str, Any]) -> bool:
+    """True only when every gate passed and timestamp anchors match live pins."""
+    if not verdict.get("ok"):
+        return False
+    gates = verdict.get("gates", {})
+    ts = gates.get("timestamp_anchors", {}) if isinstance(gates, Mapping) else {}
+    return not (isinstance(ts, Mapping) and ts.get("stale"))
+
+
+def committed_attestation_note(root: Path) -> str | None:
+    """The committed receipt claims green while its own anchor map is stale.
+
+    Does not fail the live gates. A historical seal stays on disk; this
+    line stops it being read as the current tree.
+    """
+    path = root / "quality" / "repo_integrity.json"
+    if not path.is_file():
+        return None
+    try:
+        body = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return "verify-repo committed attestation: unreadable"
+    if not isinstance(body, Mapping) or body.get("ok") is not True:
+        return None
+    gates = body.get("gates")
+    fresh: object = {}
+    if isinstance(gates, Mapping):
+        ts = gates.get("timestamp_anchors")
+        if isinstance(ts, Mapping):
+            fresh = ts.get("fresh")
+    anchors_stale = isinstance(fresh, Mapping) and any(value is False for value in fresh.values())
+    pins = body.get("pins")
+    drifted = False
+    if isinstance(pins, Mapping):
+        for key, rel in (
+            ("epoch_heads_sha256", "quality/epoch_heads.json"),
+            ("crown_jewels_sha256", "quality/crown_jewels.json"),
+        ):
+            declared = pins.get(key)
+            live = root / rel
+            if (
+                isinstance(declared, str)
+                and live.is_file()
+                and hash_bytes(live.read_bytes()) != declared
+            ):
+                drifted = True
+    if body.get("current") is False or anchors_stale or drifted:
+        parts: list[str] = []
+        if anchors_stale or body.get("current") is False:
+            parts.append("anchors stale")
+        if drifted:
+            parts.append("pins differ from tree")
+        detail = ", ".join(parts) if parts else "stale"
+        return f"verify-repo committed attestation: stale ({detail})"
+    return None
 
 
 def _load_repo_epoch_acks(root: Path) -> tuple[list[dict[str, Any]], list[str], list[str]]:
@@ -663,6 +817,7 @@ _REQUIRED_GATES = (
     "key_rotation",
     "quorum_rotations",
     "lattice",
+    "coverage_closure",
 )
 
 
@@ -755,12 +910,30 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             and pins.get("timestamps_anchored") != ts_gate["anchored"]
         ):
             errors.append("pins_anchor_incoherent")
+        if isinstance(ts_gate, Mapping):
+            age_days = ts_gate.get("age_days")
+            if "stale" in ts_gate and not isinstance(ts_gate.get("stale"), bool):
+                errors.append("gate_field_malformed:timestamp_anchors:stale")
+            if (
+                "age_days" in ts_gate
+                and age_days is not None
+                and not (
+                    isinstance(age_days, int) and not isinstance(age_days, bool) and age_days >= 0
+                )
+            ):
+                errors.append("gate_field_malformed:timestamp_anchors:age_days")
         for key in ("epoch_heads_sha256", "crown_jewels_sha256"):
             v = pins.get(key)
             if v is not None and not (isinstance(v, str) and len(v) == 64):
                 errors.append(f"pin_malformed:{key}")
     else:
         errors.append("pins_missing")
+    if "current" in payload and not isinstance(payload.get("current"), bool):
+        errors.append("current_malformed")
+    if payload.get("ok") is True and payload.get("current") is True:
+        ts_gate = gates.get("timestamp_anchors") if isinstance(gates, Mapping) else None
+        if isinstance(ts_gate, Mapping) and ts_gate.get("stale"):
+            errors.append("current_incoherent_stale_anchors")
     params = payload.get("params")
     if isinstance(params, Mapping):
         corpora = params.get("corpora")
@@ -790,6 +963,7 @@ def repo_integrity_receipt(
         "schema": REPO_INTEGRITY_SCHEMA,
         "data_label": "SYNTHETIC",
         "ok": verdict["ok"],
+        "current": attestation_current(verdict),
         "mode": "evidence_only" if evidence_only else "full",
         "gates": {
             # signed/anchored are verdict state, not metadata — an unsigned-
@@ -804,6 +978,8 @@ def repo_integrity_receipt(
                         "anchored",
                         "fresh",
                         "staleness",
+                        "stale",
+                        "age_days",
                         "skipped",
                         "revision_ancestor",
                     )
@@ -834,8 +1010,14 @@ def write_repo_integrity_receipt(
     heads_pin: Path | str = "quality/epoch_heads.json",
     evidence_only: bool = False,
 ) -> Path:
-    """Write the sealed attestation to ``out_path`` (atomic)."""
+    """Write the sealed attestation to ``out_path`` (atomic).
+
+    Refuses a green file when anchors do not match the live pins. A red
+    attestation may still be written.
+    """
     receipt = repo_integrity_receipt(root, heads_pin=heads_pin, evidence_only=evidence_only)
+    if receipt.get("ok") is True and receipt.get("current") is not True:
+        raise ValueError("refusing to write a green attestation while timestamp anchors are stale")
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(out, json.dumps(receipt, indent=2, sort_keys=True) + "\n")

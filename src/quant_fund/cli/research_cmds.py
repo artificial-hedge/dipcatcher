@@ -6,7 +6,7 @@ Split out of the original module. Import the parent path; it re-exports these na
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -26,31 +26,35 @@ from .research_pvalues import _harvest_p_values
 from .support import _cfg, format_data_label, format_fdr_families
 
 
-@app.command()
-def research(
-    config: Path = typer.Option(Path("configs/research.yaml")),
-    only: str | None = typer.Option(
-        None,
-        "--only",
-        help=(
-            "Comma-separated qualified family ids. Executes only those selective "
-            "runners and writes a partial unverified record. Omit for the full notebook."
-        ),
-    ),
-) -> None:
-    """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
-    if only is not None:
-        from quant_fund.cli.family_cmds import emit_selected_run
+def _harvest_p_values(findings: Iterable[Any]) -> list[float]:
+    """Pull the ``stat == "p"`` values out of one harvest_findings result.
 
-        emit_selected_run(config, only)
-        return
+    Findings are dicts on the corpus-inference lane; attribute access is
+    tolerated so the command survives a dataclass-shaped finding.
+    """
+    out: list[float] = []
+    for finding in findings:
+        if isinstance(finding, Mapping):
+            stat, value = finding.get("stat"), finding.get("value")
+        else:
+            stat = getattr(finding, "stat", None)
+            value = getattr(finding, "value", None)
+        if stat == "p" and isinstance(value, (int, float)) and not isinstance(value, bool):
+            out.append(float(value))
+    return out
+
+
+@app.command()
+def research(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+    """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
     from quant_fund.research.agent import format_p_value, run_research
 
     cfg = _cfg(config)
     nb = run_research(cfg)
     # Always print DATA_LABEL + FDR families (regression-tested).
     typer.echo(format_data_label(synthetic=bool(nb.synthetic), data_source=str(nb.data_source)))
-    _echo_synthetic_marker(bool(nb.synthetic))
+    if nb.synthetic:
+        typer.echo("SYNTHETIC")
     typer.echo(f"{nb.product} — {nb.firm}'s proprietary research lab {nb.version}")
     typer.echo(format_fdr_families(list(nb.hypotheses)))
     typer.echo(nb.disclaimer)
@@ -619,7 +623,8 @@ def replay_all_cmd(
         f"fail={body['n_fail']} skipped={body['n_skipped']} "
         f"declared={declared} "
         f"coverage={body['coverage']:.4f} "
-        f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']}"
+        f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']} "
+        f"claims_skipped={body.get('n_claims_skipped', 0)}"
     )
     typer.echo(f"verdict={body['verdict']} receipt={out_path}")
     if strict and (body["n_fail"] > 0 or body["n_pass"] == 0):
@@ -2873,39 +2878,35 @@ def verify_repo_cmd(
     heads pin — into one verdict, optionally sealed as a repo_integrity.v1
     receipt. Provenance evidence only; never a market or P&L claim.
     """
-    from quant_fund.research.repo_integrity import verify_repo, write_repo_integrity_receipt
+    from quant_fund.research.repo_integrity import (
+        committed_attestation_note,
+        format_verify_repo_line,
+        verify_repo,
+        verify_repo_summary,
+        write_repo_integrity_receipt,
+    )
 
     # Verify first: --out writes into a chain-covered corpus dir, so a
     # post-write verify would flag the attestation itself as drift.
     result = verify_repo(root, heads_pin=heads_pin, evidence_only=evidence_only)
     if out is not None:
-        path = write_repo_integrity_receipt(
-            out, root, heads_pin=heads_pin, evidence_only=evidence_only
-        )
-        typer.echo(f"receipt={path}")
+        try:
+            path = write_repo_integrity_receipt(
+                out, root, heads_pin=heads_pin, evidence_only=evidence_only
+            )
+        except ValueError as exc:
+            typer.echo(f"verify-repo: {exc}")
+        else:
+            typer.echo(f"receipt={path}")
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for name, gate in result["gates"].items():
-        state = "ok" if gate["ok"] else "FAIL " + ",".join(gate["errors"])
-        if name == "pin_signatures" and gate["ok"] and not gate.get("signed"):
-            state = "unsigned"
-        if gate.get("skipped"):
-            state = f"skipped({gate['skipped']})"
-        if name == "timestamp_anchors":
-            stale_notes: list[str] = []
-            for target, info in sorted(gate.get("staleness", {}).items()):
-                if not isinstance(info, Mapping) or not info.get("stale"):
-                    continue
-                age = info.get("age_s")
-                if isinstance(age, int) and age >= 0:
-                    stale_notes.append(f"{target}:stale age={age}s")
-                else:
-                    stale_notes.append(f"{target}:stale")
-            if stale_notes:
-                state = f"{state} ({'; '.join(stale_notes)})"
-        typer.echo(f"verify-repo {name}: {state}")
+        typer.echo(format_verify_repo_line(name, gate))
+    note = committed_attestation_note(root)
+    if note:
+        typer.echo(note)
     if not result["ok"]:
         raise typer.Exit(code=1)
-    typer.echo("repo integrity: all gates intact")
+    typer.echo(verify_repo_summary(result))
 
 
 @app.command("epoch-ack-gate")
@@ -3057,11 +3058,7 @@ def sign_pins_cmd(
                 f"{committed_pub.as_posix()} — use rotate-key to change the trust root"
             )
             raise typer.Exit(code=2)
-    try:
-        sig_path = sign_pins(root, priv, pub)
-    except ValueError as exc:
-        typer.echo(f"sign-pins: {exc}")
-        raise typer.Exit(code=2) from exc
+    sig_path = sign_pins(root, priv, pub)
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
 
 

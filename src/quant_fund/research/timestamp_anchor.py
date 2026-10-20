@@ -255,6 +255,7 @@ def verify_timestamps(
     root: str | Path,
     *,
     ts_dir: Path = TIMESTAMPS_DIR,
+    now: int | None = None,
 ) -> dict[str, Any]:
     """Verify committed timestamp anchors.
 
@@ -282,7 +283,7 @@ def verify_timestamps(
     fresh: dict[str, bool] = {}
     staleness: dict[str, dict[str, Any]] = {}
     chain: dict[str, str] = {}
-    now = int(time.time())
+    clock = int(now) if now is not None else int(time.time())
     cacert = tdir / CACERT_NAME
     tsa_cert = tdir / TSA_CERT_NAME
     openssl_ok = _openssl_available() and cacert.is_file()
@@ -313,8 +314,9 @@ def verify_timestamps(
         is_fresh = hash_bytes(target.read_bytes()) == declared
         fresh[label] = is_fresh
         gen_unix = extract_gen_time_unix(token_bytes)
-        age_s = (now - gen_unix) if gen_unix is not None else None
-        staleness[label] = {"stale": not is_fresh, "age_s": age_s}
+        age_s = (clock - gen_unix) if gen_unix is not None else None
+        age_days = (age_s // 86400) if isinstance(age_s, int) and age_s >= 0 else None
+        staleness[label] = {"stale": not is_fresh, "age_s": age_s, "age_days": age_days}
         if openssl_ok:
             cmd = [
                 "openssl",

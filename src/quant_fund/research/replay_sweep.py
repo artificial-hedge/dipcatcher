@@ -47,7 +47,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, TypeGuard
 
@@ -100,6 +100,8 @@ def _bind_reproduced(
         "receipt_valid": None,
         "bound": False,
     }
+    if "claims_equal" in entry:
+        record["claims_equal"] = entry.get("claims_equal")
     if not isinstance(rel, str) or not rel.strip() or _path_escapes(rel):
         return record, [f"reproduced_receipt_path_invalid:{label}"]
     resolved = (root_path / rel).resolve()
@@ -174,6 +176,33 @@ def _executed_row(rel: str, proof: Mapping[str, Any], binding: dict[str, Any]) -
     return row
 
 
+def _headline_claim_counts(rows: Sequence[Mapping[str, Any]]) -> tuple[int, int, int]:
+    """Executed claim total, executed equals, and skipped claims.
+
+    A skipped carrier never ran. Folding its ``claims_equal`` into the
+    headline would report equality for a lane that produced no bytes.
+    """
+    executed_total = 0
+    executed_equal = 0
+    skipped_claims = 0
+    for row in rows:
+        reproduces = row.get("reproduces")
+        if not isinstance(reproduces, list):
+            continue
+        n_claims = len(reproduces)
+        if row.get("verdict") == "skipped":
+            skipped_claims += n_claims
+        else:
+            executed_total += n_claims
+            # Only executed carriers promote claims_equal into the headline.
+            executed_equal += sum(
+                1
+                for item in reproduces
+                if isinstance(item, Mapping) and item.get("claims_equal") is True
+            )
+    return executed_total, executed_equal, skipped_claims
+
+
 def run_replay_sweep(
     carriers_dir: Path | str,
     *,
@@ -201,8 +230,6 @@ def run_replay_sweep(
         raise ValueError(f"carriers directory does not exist: {carriers_path}")
 
     rows: list[dict[str, Any]] = []
-    n_claims_total = 0
-    n_claims_byte_equal = 0
     for carrier in sorted(carriers_path.glob("*.json")):
         try:
             carrier_bytes = carrier.read_bytes()
@@ -252,21 +279,13 @@ def run_replay_sweep(
 
         rows.append(_executed_row(rel, proof, binding))
 
-        reproduces = carrier_body.get("reproduces")
-        if isinstance(reproduces, list):
-            n_claims_total += len(reproduces)
-            n_claims_byte_equal += sum(
-                1
-                for item in reproduces
-                if isinstance(item, Mapping) and item.get("claims_equal") is True
-            )
-
     if not rows:
         raise ValueError(f"no replay_manifest.v1 carriers under {carriers_path}")
 
     n_pass = sum(1 for row in rows if row["verdict"] == "pass")
     n_fail = sum(1 for row in rows if row["verdict"] == "fail")
     n_skipped = sum(1 for row in rows if row["verdict"] == "skipped")
+    n_claims_total, n_claims_byte_equal, n_claims_skipped = _headline_claim_counts(rows)
     n_executed = n_pass + n_fail
     coverage = (n_pass / n_executed) if n_executed else 0.0
     verdict = "pass" if n_fail == 0 and n_pass > 0 else "fail"
@@ -287,6 +306,7 @@ def run_replay_sweep(
         "coverage": coverage,
         "n_claims_total": n_claims_total,
         "n_claims_byte_equal": n_claims_byte_equal,
+        "n_claims_skipped": n_claims_skipped,
         "claims_byte_equal_frac": (n_claims_byte_equal / n_claims_total)
         if n_claims_total
         else None,
@@ -528,6 +548,28 @@ def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         value = payload.get(field)
         if not _is_count(value):
             errors.append(field)
+    if "n_claims_skipped" in payload:
+        if not _is_count(payload.get("n_claims_skipped")):
+            errors.append("n_claims_skipped")
+        elif row_verdicts and not errors:
+            total, equal, skipped_claims = _headline_claim_counts(rows)  # type: ignore[arg-type]
+            if payload.get("n_claims_total") != total:
+                errors.append("n_claims_total")
+            if payload.get("n_claims_byte_equal") != equal:
+                errors.append("n_claims_byte_equal")
+            if payload.get("n_claims_skipped") != skipped_claims:
+                errors.append("n_claims_skipped")
+            frac_expected = (equal / total) if total else None
+            frac = payload.get("claims_byte_equal_frac")
+            if frac_expected is None:
+                if frac is not None:
+                    errors.append("claims_byte_equal_frac")
+            elif (
+                not isinstance(frac, (int, float))
+                or isinstance(frac, bool)
+                or not math.isclose(float(frac), frac_expected, rel_tol=0, abs_tol=1e-12)
+            ):
+                errors.append("claims_byte_equal_frac")
     frac = payload.get("claims_byte_equal_frac")
     if frac is not None and (
         not isinstance(frac, (int, float)) or isinstance(frac, bool) or not math.isfinite(frac)

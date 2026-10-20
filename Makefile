@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard dipcatcher-test dipcatcher-journeys dipcatcher-journeys-pty dipcatcher-relevance dipcatcher-gate dipcatcher-evidence
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard dipcatcher-test dipcatcher-journeys dipcatcher-journeys-pty dipcatcher-relevance dipcatcher-gate dipcatcher-evidence evidence-base-ref
 
 .DEFAULT_GOAL := help
 
@@ -32,9 +32,6 @@ test-durations: ## Refresh checked-in .test_durations for pytest-split CI shards
 		--store-durations --durations-path .test_durations --clean-durations
 	$(TEST_ENV) uv run pytest -n auto --dist loadfile -m "slow and not network" \
 		--store-durations --durations-path .test_durations
-
-check-test-durations: ## Verify .test_durations covers the pytest-split inventory
-	uv run python scripts/check_test_durations.py
 
 parity-smoke: ## SYNTHETIC backtest/shadow parity smoke (simulated broker only)
 	uv run pytest -q tests/unit/parity
@@ -207,36 +204,6 @@ fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty 
 	PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
 	uv run fx1 corpus build --receipts-dir receipts --out data/fx1/corpus_ci_smoke.jsonl
 
-# --- dipcatcher CLI harness (chat, exec, models, sessions) -----------------
-dipcatcher-test: ## dipcatcher harness: fx1 lane + launcher/lab CLI tests (xdist)
-	PYTHONPATH=src $(TEST_ENV) uv run pytest tests/fx1 tests/unit/cli -q -n auto --dist loadfile
-
-dipcatcher-journeys: ## frozen scripted chat-journey suite (not the five-user trial)
-	PYTHONPATH=src $(TEST_ENV) uv run pytest tests/fx1/journeys -q
-
-dipcatcher-journeys-pty: ## pty/inproc journey suite via the script; JSON under EVIDENCE_DIR
-	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"
-	PYTHONPATH=src $(TEST_ENV) uv run python scripts/dipcatcher_journeys_pty.py --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/journeys_pty.json"
-
-dipcatcher-relevance: ## frozen goal/data relevance suite; JSON under EVIDENCE_DIR
-	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"
-	PYTHONPATH=src $(TEST_ENV) uv run python scripts/dipcatcher_relevance.py --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/relevance.json"
-
-dipcatcher-gate: ## dipcatcher harness gate: lint + strict types + tests + both journey suites + relevance
-	uv run ruff check src tests
-	uv run ruff format --check src tests
-	uv run mypy --strict src/fx1 src/dipcatcher_cli
-	$(MAKE) dipcatcher-test
-	$(MAKE) dipcatcher-journeys
-	$(MAKE) dipcatcher-journeys-pty
-	$(MAKE) dipcatcher-relevance
-
-dipcatcher-evidence: ## write bounded evidence records (latency, soak, wheel smoke) to EVIDENCE_DIR
-	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"
-	uv run python scripts/dipcatcher_latency.py --runs 30 --events 200 --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/latency.json"
-	uv run python scripts/dipcatcher_soak.py --duration-s 60 --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/soak.json"
-	uv run python scripts/dipcatcher_release_smoke.py --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/release_smoke.json" --checksums "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/SHA256SUMS"
-
 fx1-coverage: ## fx-1 coverage ratchet, floor 80 (same command as proofcore.yml fx1-coverage)
 	uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=80 --cov-report=term-missing
 
@@ -245,6 +212,7 @@ fx1-coverage: ## fx-1 coverage ratchet, floor 80 (same command as proofcore.yml 
 
 PROOFCORE_LEDGER ?= data/metadata/proofcore-trials.jsonl
 PROOFCORE_DB ?= data/metadata/proofcore.duckdb
+DEFAULT_PROOFCORE_DB := data/metadata/proofcore.duckdb
 COMMITTED_TRIAL_LEDGER ?= research/reality/trials.jsonl
 
 proofcore-test: ## PROOFCORE tests: W5 contracts/provenance/CI/layering + W6 scheduler/runner/estimators + W7 replay + W8 guard/fixes + wave-2 e2e
@@ -292,8 +260,23 @@ leakage-scan: ## Leakage hunter — WARN MODE this wave (adjudicated: advisory o
 	fi
 
 reality-gate: ## Reality-filter gate: score trials; absent DB or empty export skips
-	uv run python scripts/reality_gate.py --db "$(PROOFCORE_DB)" \
-		--ledger "$(PROOFCORE_LEDGER)" --committed-ledger "$(COMMITTED_TRIAL_LEDGER)"
+	if [ ! -f "$(PROOFCORE_DB)" ] && [ "$(PROOFCORE_DB)" = "$(DEFAULT_PROOFCORE_DB)" ] && [ -s "$(COMMITTED_TRIAL_LEDGER)" ]; then \
+	  uv run quant reality preflight --ledger $(COMMITTED_TRIAL_LEDGER); code=$$?; \
+	  if [ $$code -eq 3 ]; then exit 0; fi; \
+	  if [ $$code -ne 0 ]; then exit $$code; fi; \
+	  uv run quant reality trial-report --ledger $(COMMITTED_TRIAL_LEDGER); \
+	  uv run quant reality ledger-gate --ledger $(COMMITTED_TRIAL_LEDGER); \
+	  exit $$?; \
+	fi; \
+	uv run quant reality preflight --db $(PROOFCORE_DB); code=$$?; \
+	if [ $$code -eq 3 ]; then exit 0; fi; \
+	if [ $$code -ne 0 ]; then exit $$code; fi; \
+	uv run quant proofcore export --db $(PROOFCORE_DB) --out $(PROOFCORE_LEDGER); \
+	uv run quant reality preflight --ledger $(PROOFCORE_LEDGER); code=$$?; \
+	if [ $$code -eq 3 ]; then exit 0; fi; \
+	if [ $$code -ne 0 ]; then exit $$code; fi; \
+	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER) && \
+	uv run quant reality ledger-gate --ledger $(PROOFCORE_LEDGER)
 
 receipts-reverify: ## Fail-closed audit: suite-health --strict (verify or exact quarantine pin)
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/receipts-reverify" \
@@ -306,7 +289,7 @@ receipt-integrity-scan: ## Fast in-process self-seal digest scan over committed 
 audit-cli-mounts: ## Detect Typer apps defined in src/ but never mounted (dropped-wiring guard)
 	uv run python scripts/audit_cli_mounts.py
 
-evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
+evidence-audit: ## CI gate: every evidence gate runs and reports; fail at the end if any failed
 	@ea_fail=0; \
 	_ea() { \
 	  gate="$$1"; shift; \
@@ -337,13 +320,16 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	_ea fuzz-drill uv run dipcatcher fuzz-drill --seed 7 --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts/fuzz-drill.json"; \
 	if [ "$$ea_fail" -ne 0 ]; then echo "evidence-audit: one or more gates failed"; exit 1; fi
 
+evidence-base-ref: ## JSON: last commit with a completed green evidence run (CI admission base)
+	uv run -q python -m quant_fund.research.evidence_base --event "$${EVENT:-push}" --head "$$(git rev-parse HEAD)" --push-before "$${PUSH_BEFORE:-$$(git rev-parse --verify HEAD^)}" --pr-base "$${PR_BASE:-}"
+
 checkpoint-chain: ## Walk the full checkpoint spine — every archived link verifies, no forks/orphans, Rekor order holds
 	uv run dipcatcher checkpoint-chain
 
 verify-rotations: ## Verify the gate-key rotation chain — dual-signed links, spine-anchored genesis, live key is terminus
 	uv run dipcatcher verify-rotations
 
-rotate-key: ## Rotate the legacy single-key trust root (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); quorum registry uses quorum-rotate
+rotate-key: ## Record an authorized gate-key rotation (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); then re-sign pins + checkpoint
 	uv run dipcatcher rotate-key
 
 tamper-drill: ## Self-attack: clone the integrity state, land every probe mutation, require verify-repo flags each
@@ -431,8 +417,10 @@ replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or
 
 ADMISSION_BASE ?= origin/main
 # Base commit for evidence-audit comparison gates in CI (epoch-consistency,
-# admission-gate, quarantine-gate). Defaults to ADMISSION_BASE; CI sets
-# EPOCH_BASE / ADMISSION_BASE from the pre-push tip via the resolved base sha.
+# admission-gate, quarantine-gate). Defaults to ADMISSION_BASE. CI sets
+# EPOCH_BASE / ADMISSION_BASE from the last commit with a completed green
+# evidence run (evidence-base-ref), so a cancelled pre-push tip stays inside
+# the gated range instead of becoming the base.
 EVIDENCE_AUDIT_BASE ?= $(ADMISSION_BASE)
 # Candidates are every *.json the diff touches under receipts/ at ANY depth --
 # the stamper (corpus_epoch.member_digests) is recursive, so a narrower filter
