@@ -128,6 +128,20 @@ def _exec(args: Sequence[str]) -> None:
     exec_main(list(args))
 
 
+def _sessions(args: Sequence[str]) -> None:
+    """``sessions list|show|export|rm|prune``. ``sessions_cmd`` raises ``SystemExit``."""
+    from dipcatcher_cli.sessions_cmd import sessions_main
+
+    sessions_main(list(args))
+
+
+def _resume(args: Sequence[str]) -> None:
+    """Open chat on a saved session. ``resume_main`` raises ``SystemExit``."""
+    from dipcatcher_cli.sessions_cmd import resume_main
+
+    resume_main(list(args))
+
+
 def _oneshot(args: Sequence[str]) -> None:
     """Run a concierge one-shot through the fxi Typer app under this prog name."""
     from fx1.interactive.app import app as fxi_app
@@ -172,6 +186,15 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if rest[:1] == ["exec"]:
         _exec(rest[1:])
+        return
+    if rest[:1] == ["sessions"]:
+        _sessions(rest[1:])
+        return
+    if rest[:1] == ["resume"]:
+        resume_args = list(rest[1:])
+        if model is not None:
+            resume_args = ["--model", model, *resume_args]
+        _resume(resume_args)
         return
     if rest and rest[0] in ONESHOT_COMMANDS:
         _oneshot(args)

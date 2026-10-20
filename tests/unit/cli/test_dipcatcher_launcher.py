@@ -191,8 +191,8 @@ def test_leading_model_flag_reaches_oneshot(monkeypatch: pytest.MonkeyPatch) -> 
     seen: list[list[str]] = []
     monkeypatch.setattr("dipcatcher_cli.app._oneshot", lambda args: seen.append(list(args)))
     _terminal(monkeypatch, stdin=False, stdout=False)
-    main(["--model", "fx1-lite", "sessions", "--limit", "3"])
-    assert seen == [["--model", "fx1-lite", "sessions", "--limit", "3"]]
+    main(["--model", "fx1-lite", "superpower", "--capabilities"])
+    assert seen == [["--model", "fx1-lite", "superpower", "--capabilities"]]
 
 
 def test_leading_model_flag_reaches_chat(monkeypatch: pytest.MonkeyPatch) -> None:

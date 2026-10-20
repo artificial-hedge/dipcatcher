@@ -163,7 +163,7 @@ Chat                  plain text with the active model (tools: flash, web, harne
 /session              the active persisted session
 /sessions [n]         list recent sessions (journal); /resume <id> shows one transcript
 /resume <id>          restore a stored session, or show a journal transcript
-/export [json|md]     redacted session export; refuses to overwrite
+/export [json|md|PATH] redacted session export; a path alone is accepted; refuses to overwrite
 /new                  start a session without changing the model
 /families [goal]      research-family catalog; with a goal, show which families are eligible
 /flash add|list|show|remove|correct|search|refresh ...
@@ -240,15 +240,34 @@ def _session_limit(rest: str) -> int:
 _EXPORT_KINDS = {"json": "json", "md": "markdown", "markdown": "markdown"}
 
 
+_EXPORT_USAGE = "usage: /export [json|markdown] [PATH]"
+_EXPORT_SUFFIXES = {".json": "json", ".md": "markdown", ".markdown": "markdown"}
+
+
 def _export_args(rest: str) -> tuple[str, Path | None]:
+    """``/export``, ``/export json|md [PATH]``, or ``/export PATH``."""
     tokens = shlex.split(rest)
     if not tokens:
         return "json", None
+    if len(tokens) > 2:
+        raise ValueError(_EXPORT_USAGE)
     kind = _EXPORT_KINDS.get(tokens[0])
-    if kind is None or len(tokens) > 2:
-        raise ValueError("usage: /export [json|markdown] [PATH]")
-    dest = Path(tokens[1]) if len(tokens) == 2 else None
-    return kind, dest
+    if kind is not None:
+        dest = Path(tokens[1]) if len(tokens) == 2 else None
+        return kind, dest
+    if len(tokens) == 1 and _looks_like_export_path(tokens[0]):
+        return _kind_for_export_path(tokens[0]), Path(tokens[0])
+    raise ValueError(_EXPORT_USAGE)
+
+
+def _looks_like_export_path(token: str) -> bool:
+    if "/" in token or "\\" in token:
+        return True
+    return Path(token).suffix.casefold() in _EXPORT_SUFFIXES
+
+
+def _kind_for_export_path(token: str) -> str:
+    return _EXPORT_SUFFIXES.get(Path(token).suffix.casefold(), "markdown")
 
 
 def _superpower_memory(result: SuperpowerResult) -> str:
