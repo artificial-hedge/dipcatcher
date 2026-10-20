@@ -564,6 +564,22 @@ def attestation_current(verdict: Mapping[str, Any]) -> bool:
     return not (isinstance(ts, Mapping) and ts.get("stale"))
 
 
+def _committed_pins_drifted(root: Path, pins: Mapping[str, Any]) -> bool:
+    for key, rel in (
+        ("epoch_heads_sha256", "quality/epoch_heads.json"),
+        ("crown_jewels_sha256", "quality/crown_jewels.json"),
+    ):
+        declared = pins.get(key)
+        live = root / rel
+        if (
+            isinstance(declared, str)
+            and live.is_file()
+            and hash_bytes(live.read_bytes()) != declared
+        ):
+            return True
+    return False
+
+
 def committed_attestation_note(root: Path) -> str | None:
     """The committed receipt claims green while its own anchor map is stale.
 
@@ -587,20 +603,7 @@ def committed_attestation_note(root: Path) -> str | None:
             fresh = ts.get("fresh")
     anchors_stale = isinstance(fresh, Mapping) and any(value is False for value in fresh.values())
     pins = body.get("pins")
-    drifted = False
-    if isinstance(pins, Mapping):
-        for key, rel in (
-            ("epoch_heads_sha256", "quality/epoch_heads.json"),
-            ("crown_jewels_sha256", "quality/crown_jewels.json"),
-        ):
-            declared = pins.get(key)
-            live = root / rel
-            if (
-                isinstance(declared, str)
-                and live.is_file()
-                and hash_bytes(live.read_bytes()) != declared
-            ):
-                drifted = True
+    drifted = isinstance(pins, Mapping) and _committed_pins_drifted(root, pins)
     if body.get("current") is False or anchors_stale or drifted:
         parts: list[str] = []
         if anchors_stale or body.get("current") is False:
@@ -821,6 +824,71 @@ _REQUIRED_GATES = (
 )
 
 
+def _gate_contract_errors(name: str, gate: object, mode: str) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(gate, Mapping):
+        return [f"gate_malformed:{name}"]
+    g_errors = gate.get("errors")
+    if not isinstance(gate.get("ok"), bool) or not isinstance(g_errors, list):
+        return [f"gate_malformed:{name}"]
+    if not all(isinstance(e, str) for e in g_errors):
+        errors.append(f"gate_errors_not_strings:{name}")
+    if bool(gate["ok"]) != (not g_errors):
+        errors.append(f"gate_ok_incoherent:{name}")
+    if "revision_ancestor" in gate and not (
+        gate["revision_ancestor"] is None or isinstance(gate["revision_ancestor"], bool)
+    ):
+        errors.append(f"gate_field_malformed:{name}:revision_ancestor")
+    if "skipped" in gate:
+        skip_ok = gate["skipped"] == "evidence_only" and (
+            name in ("crown_jewels", "spine")
+            or (name.startswith("epoch:") and name.removeprefix("epoch:") not in EVIDENCE_CORPORA)
+        )
+        if not skip_ok:
+            errors.append(f"gate_skip_invalid:{name}")
+        elif mode != "evidence_only":
+            errors.append(f"gate_skipped_in_full_mode:{name}")
+    return errors
+
+
+def _repo_integrity_pins_errors(
+    pins: object,
+    gates: Mapping[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(pins, Mapping):
+        return ["pins_missing"]
+    sig_gate = gates.get("pin_signatures", {})
+    ts_gate = gates.get("timestamp_anchors", {})
+    if (
+        isinstance(sig_gate, Mapping)
+        and "signed" in sig_gate
+        and pins.get("gate_pins_signed") != sig_gate["signed"]
+    ):
+        errors.append("pins_sig_incoherent")
+    if (
+        isinstance(ts_gate, Mapping)
+        and "anchored" in ts_gate
+        and pins.get("timestamps_anchored") != ts_gate["anchored"]
+    ):
+        errors.append("pins_anchor_incoherent")
+    if isinstance(ts_gate, Mapping):
+        age_days = ts_gate.get("age_days")
+        if "stale" in ts_gate and not isinstance(ts_gate.get("stale"), bool):
+            errors.append("gate_field_malformed:timestamp_anchors:stale")
+        if (
+            "age_days" in ts_gate
+            and age_days is not None
+            and not (isinstance(age_days, int) and not isinstance(age_days, bool) and age_days >= 0)
+        ):
+            errors.append("gate_field_malformed:timestamp_anchors:age_days")
+    for key in ("epoch_heads_sha256", "crown_jewels_sha256"):
+        v = pins.get(key)
+        if v is not None and not (isinstance(v, str) and len(v) == 64):
+            errors.append(f"pin_malformed:{key}")
+    return errors
+
+
 def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """Contract check for a ``repo_integrity.v1`` receipt body.
 
@@ -844,40 +912,7 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append(f"mode_unknown:{mode}")
         mode = "full"
     for name, gate in gates.items():
-        if not isinstance(gate, Mapping):
-            errors.append(f"gate_malformed:{name}")
-            continue
-        g_errors = gate.get("errors")
-        if not isinstance(gate.get("ok"), bool) or not isinstance(g_errors, list):
-            errors.append(f"gate_malformed:{name}")
-            continue
-        if not all(isinstance(e, str) for e in g_errors):
-            errors.append(f"gate_errors_not_strings:{name}")
-        # The gate's own verdict must match its listed errors — a receipt
-        # can't claim ok while listing the errors it failed on.
-        if bool(gate["ok"]) != (not g_errors):
-            errors.append(f"gate_ok_incoherent:{name}")
-        if "revision_ancestor" in gate and not (
-            gate["revision_ancestor"] is None or isinstance(gate["revision_ancestor"], bool)
-        ):
-            errors.append(f"gate_field_malformed:{name}:revision_ancestor")
-        if "skipped" in gate:
-            # Only evidence_only may carry skipped gates, and only for
-            # crown_jewels or epoch gates over non-evidence corpora (the
-            # code tree isn't part of an evidence bundle): a full-tree
-            # attestation silently skipping a gate would downgrade a
-            # partial verdict into an implied full pass.
-            skip_ok = gate["skipped"] == "evidence_only" and (
-                name in ("crown_jewels", "spine")
-                or (
-                    name.startswith("epoch:")
-                    and name.removeprefix("epoch:") not in EVIDENCE_CORPORA
-                )
-            )
-            if not skip_ok:
-                errors.append(f"gate_skip_invalid:{name}")
-            elif mode != "evidence_only":
-                errors.append(f"gate_skipped_in_full_mode:{name}")
+        errors.extend(_gate_contract_errors(name, gate, mode))
     if mode == "evidence_only":
         cj = gates.get("crown_jewels")
         if not isinstance(cj, Mapping) or cj.get("skipped") != "evidence_only":
@@ -894,40 +929,7 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     )
     if payload.get("ok") != expected_ok:
         errors.append("ok_incoherent")
-    pins = payload.get("pins")
-    if isinstance(pins, Mapping):
-        sig_gate = gates.get("pin_signatures", {})
-        ts_gate = gates.get("timestamp_anchors", {})
-        if (
-            isinstance(sig_gate, Mapping)
-            and "signed" in sig_gate
-            and pins.get("gate_pins_signed") != sig_gate["signed"]
-        ):
-            errors.append("pins_sig_incoherent")
-        if (
-            isinstance(ts_gate, Mapping)
-            and "anchored" in ts_gate
-            and pins.get("timestamps_anchored") != ts_gate["anchored"]
-        ):
-            errors.append("pins_anchor_incoherent")
-        if isinstance(ts_gate, Mapping):
-            age_days = ts_gate.get("age_days")
-            if "stale" in ts_gate and not isinstance(ts_gate.get("stale"), bool):
-                errors.append("gate_field_malformed:timestamp_anchors:stale")
-            if (
-                "age_days" in ts_gate
-                and age_days is not None
-                and not (
-                    isinstance(age_days, int) and not isinstance(age_days, bool) and age_days >= 0
-                )
-            ):
-                errors.append("gate_field_malformed:timestamp_anchors:age_days")
-        for key in ("epoch_heads_sha256", "crown_jewels_sha256"):
-            v = pins.get(key)
-            if v is not None and not (isinstance(v, str) and len(v) == 64):
-                errors.append(f"pin_malformed:{key}")
-    else:
-        errors.append("pins_missing")
+    errors.extend(_repo_integrity_pins_errors(payload.get("pins"), gates))
     if "current" in payload and not isinstance(payload.get("current"), bool):
         errors.append("current_malformed")
     if payload.get("ok") is True and payload.get("current") is True:

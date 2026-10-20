@@ -113,6 +113,23 @@ def _seq_children(body: bytes) -> list[tuple[int, bytes]]:
     return out
 
 
+def _encap_content_info(sd_wrap: bytes) -> bytes:
+    sd = _seq_children(sd_wrap)
+    eci = None
+    for t, v in sd:
+        if t == 0x30:
+            inner = _seq_children(v)
+            if inner and inner[0][0] == 0x06:
+                eci = inner
+                break
+    if eci is None or len(eci) < 2 or eci[1][0] != 0xA0:
+        raise DerError("encapContentInfo missing")
+    _t, octs, _ = _read_tlv(eci[1][1], 0)
+    if _t != 0x04:
+        raise DerError("eContent not octet string")
+    return octs
+
+
 def _tst_info_children(tsr: bytes) -> list[tuple[int, bytes]]:
     tag, top, _ = _read_tlv(tsr, 0)
     if tag != 0x30:
@@ -129,19 +146,7 @@ def _tst_info_children(tsr: bytes) -> list[tuple[int, bytes]]:
     _t, sd_wrap, _ = _read_tlv(ci[1][1], 0)
     if _t != 0x30:
         raise DerError("signedData not a sequence")
-    sd = _seq_children(sd_wrap)
-    eci = None
-    for t, v in sd:
-        if t == 0x30:
-            inner = _seq_children(v)
-            if inner and inner[0][0] == 0x06:
-                eci = inner
-                break
-    if eci is None or len(eci) < 2 or eci[1][0] != 0xA0:
-        raise DerError("encapContentInfo missing")
-    _t, octs, _ = _read_tlv(eci[1][1], 0)
-    if _t != 0x04:
-        raise DerError("eContent not octet string")
+    octs = _encap_content_info(sd_wrap)
     return _seq_children(_read_tlv(octs, 0)[1])
 
 

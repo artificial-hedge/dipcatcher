@@ -39,28 +39,17 @@ def _blank(ref: str | None) -> bool:
     return not ref or ref == ZERO_SHA
 
 
-def resolve_evidence_base(
-    event: str,
+def _resolve_pr_evidence_base(pr_base: str | None) -> dict[str, Any]:
+    if _blank(pr_base):
+        return {"ok": True, "sha": None, "reason": "branch_created", "unverified": []}
+    return {"ok": True, "sha": pr_base, "reason": "pr_base", "unverified": []}
+
+
+def _resolve_push_evidence_base(
     head: str,
     push_before: str | None,
-    pr_base: str | None,
     commits: Sequence[CommitEvidence],
 ) -> dict[str, Any]:
-    """Return ``{ok, sha, reason, unverified}``.
-
-    ``sha`` is the commit the diff starts at (exclusive). ``unverified``
-    lists ancestors strictly between that commit and ``head`` whose
-    evidence run was not a completed success, oldest first. ``ok`` is
-    false when no green ancestor was found inside the lookback — the
-    caller still receives the widest known sha so the comparison steps
-    run, and must exit non-zero.
-    """
-    if event == "pull_request":
-        if _blank(pr_base):
-            return {"ok": True, "sha": None, "reason": "branch_created", "unverified": []}
-        return {"ok": True, "sha": pr_base, "reason": "pr_base", "unverified": []}
-    if event != "push":
-        return {"ok": False, "sha": None, "reason": "unsupported_event", "unverified": []}
     if _blank(push_before):
         return {"ok": True, "sha": None, "reason": "branch_created", "unverified": []}
 
@@ -101,6 +90,29 @@ def resolve_evidence_base(
     }
 
 
+def resolve_evidence_base(
+    event: str,
+    head: str,
+    push_before: str | None,
+    pr_base: str | None,
+    commits: Sequence[CommitEvidence],
+) -> dict[str, Any]:
+    """Return ``{ok, sha, reason, unverified}``.
+
+    ``sha`` is the commit the diff starts at (exclusive). ``unverified``
+    lists ancestors strictly between that commit and ``head`` whose
+    evidence run was not a completed success, oldest first. ``ok`` is
+    false when no green ancestor was found inside the lookback — the
+    caller still receives the widest known sha so the comparison steps
+    run, and must exit non-zero.
+    """
+    if event == "pull_request":
+        return _resolve_pr_evidence_base(pr_base)
+    if event != "push":
+        return {"ok": False, "sha": None, "reason": "unsupported_event", "unverified": []}
+    return _resolve_push_evidence_base(head, push_before, commits)
+
+
 def _paged(
     fetch: Callable[[str], Any],
     path: str,
@@ -125,6 +137,35 @@ def _paged(
     return items
 
 
+def _audit_job_conclusion(
+    run_id: int,
+    *,
+    fetch: Callable[[str], Any],
+    repo: str,
+) -> str | None:
+    doc = fetch(f"/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100")
+    jobs = doc.get("jobs") if isinstance(doc, dict) else None
+    if not isinstance(jobs, list):
+        return None
+    saw_failure = False
+    saw_cancelled = False
+    for job in jobs:
+        if not isinstance(job, dict) or job.get("name") != "evidence-audit":
+            continue
+        conclusion = job.get("conclusion")
+        if conclusion == "success":
+            return "success"
+        if conclusion == "failure":
+            saw_failure = True
+        elif conclusion == "cancelled":
+            saw_cancelled = True
+    if saw_failure:
+        return "failure"
+    if saw_cancelled:
+        return "cancelled"
+    return None
+
+
 def _evidence_for(
     sha: str,
     *,
@@ -139,8 +180,6 @@ def _evidence_for(
     runs = runs_by_sha.get(sha, [])
     if any(run.get("conclusion") == "success" for run in runs):
         return "success"
-    saw_failure = False
-    saw_cancelled = False
     ordered = sorted(runs, key=lambda run: str(run.get("created_at") or ""), reverse=True)
     for run in ordered:
         if budget[0] <= 0:
@@ -149,27 +188,34 @@ def _evidence_for(
         if not isinstance(run_id, int):
             continue
         budget[0] -= 1
-        doc = fetch(f"/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100")
-        jobs = doc.get("jobs") if isinstance(doc, dict) else None
-        if not isinstance(jobs, list):
-            continue
-        for job in jobs:
-            if not isinstance(job, dict) or job.get("name") != "evidence-audit":
-                continue
-            conclusion = job.get("conclusion")
-            if conclusion == "success":
-                return "success"
-            if conclusion == "failure":
-                saw_failure = True
-            elif conclusion == "cancelled":
-                saw_cancelled = True
-    if saw_failure:
-        return "failure"
-    if saw_cancelled or any(run.get("conclusion") == "cancelled" for run in runs):
+        verdict = _audit_job_conclusion(run_id, fetch=fetch, repo=repo)
+        if verdict is not None:
+            return verdict
+    if any(run.get("conclusion") == "cancelled" for run in runs):
         return "cancelled"
     if any(run.get("conclusion") == "failure" for run in runs):
         return "failure"
     return None
+
+
+def _green_head_shas(artifacts: Sequence[Any]) -> set[str]:
+    green: set[str] = set()
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        run = artifact.get("workflow_run")
+        if isinstance(run, dict) and isinstance(run.get("head_sha"), str):
+            green.add(run["head_sha"])
+    return green
+
+
+def _runs_by_head_sha(runs: Sequence[Any]) -> dict[str, list[Mapping[str, Any]]]:
+    runs_by_sha: dict[str, list[Mapping[str, Any]]] = {}
+    for run in runs:
+        if not isinstance(run, dict) or not isinstance(run.get("head_sha"), str):
+            continue
+        runs_by_sha.setdefault(run["head_sha"], []).append(run)
+    return runs_by_sha
 
 
 def collect_commit_evidence(
@@ -204,24 +250,14 @@ def collect_commit_evidence(
         "artifacts",
         2,
     )
-    green: set[str] = set()
-    for artifact in artifacts:
-        if not isinstance(artifact, dict):
-            continue
-        run = artifact.get("workflow_run")
-        if isinstance(run, dict) and isinstance(run.get("head_sha"), str):
-            green.add(run["head_sha"])
+    green = _green_head_shas(artifacts)
     runs = _paged(
         fetch,
         f"/repos/{repo}/actions/workflows/ci.yml/runs",
         "workflow_runs",
         max_commit_pages,
     )
-    runs_by_sha: dict[str, list[Mapping[str, Any]]] = {}
-    for run in runs:
-        if not isinstance(run, dict) or not isinstance(run.get("head_sha"), str):
-            continue
-        runs_by_sha.setdefault(run["head_sha"], []).append(run)
+    runs_by_sha = _runs_by_head_sha(runs)
 
     budget = [max_job_fetches]
     chain: list[CommitEvidence] = []

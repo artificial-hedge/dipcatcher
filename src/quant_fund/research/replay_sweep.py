@@ -82,8 +82,6 @@ def _bind_reproduced(
     verifier read one byte string, so the two checks cannot disagree about
     which file they saw.
     """
-    from quant_fund.research.receipt_v2 import verify_receipt_bytes
-
     if not isinstance(entry, Mapping):
         label = f"reproduces[{index}]"
         return (
@@ -107,6 +105,17 @@ def _bind_reproduced(
     resolved = (root_path / rel).resolve()
     if not resolved.is_relative_to(root_path):  # symlink escape
         return record, [f"reproduced_receipt_path_invalid:{label}"]
+    return _bind_reproduced_live(record, resolved, pinned, label)
+
+
+def _bind_reproduced_live(
+    record: dict[str, Any],
+    resolved: Path,
+    pinned: object,
+    label: str,
+) -> tuple[dict[str, Any], list[str]]:
+    from quant_fund.research.receipt_v2 import verify_receipt_bytes
+
     errors: list[str] = []
     if not _is_sha256(pinned):
         errors.append(f"reproduced_receipt_pin_invalid:{label}")
@@ -444,6 +453,139 @@ def _binding_total_errors(
     return errors
 
 
+def _replay_coverage_header_errors(payload: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if payload.get("schema") != REPLAY_COVERAGE_SCHEMA:
+        errors.append("schema")
+    if payload.get("research_only") is not True:
+        errors.append("research_only")
+    if payload.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim")
+    if payload.get("data_label") != "CORPUS":
+        errors.append("data_label")
+    return errors
+
+
+def _replay_coverage_rows_scan(
+    rows: object,
+    binding_declared: bool,
+) -> tuple[list[str], list[str], int, int]:
+    errors: list[str] = []
+    row_verdicts: list[str] = []
+    total_binding_errors = 0
+    total_bound = 0
+    if not isinstance(rows, list) or not rows:
+        return ["rows"], row_verdicts, total_binding_errors, total_bound
+    for index, row in enumerate(rows):
+        if not isinstance(row, Mapping):
+            errors.append(f"rows[{index}]")
+            continue
+        verdict = row.get("verdict")
+        if verdict not in ("pass", "fail", "skipped"):
+            errors.append(f"rows[{index}].verdict")
+            verdict = "fail"
+        row_verdicts.append(str(verdict))
+        carrier = row.get("carrier")
+        if not isinstance(carrier, str) or not carrier.strip():
+            errors.append(f"rows[{index}].carrier")
+        if verdict == "skipped" and row.get("skipped_reason") not in _SKIP_CLASSES:
+            errors.append(f"rows[{index}].skipped_reason")
+        errors.extend(_pass_row_errors(row, index, verdict))
+        row_errors, n_row_errors, n_row_bound = _row_binding_errors(
+            row, index, str(verdict), binding_declared
+        )
+        errors.extend(row_errors)
+        total_binding_errors += n_row_errors
+        total_bound += n_row_bound
+    return errors, row_verdicts, total_binding_errors, total_bound
+
+
+def _replay_coverage_headline_counts(
+    payload: Mapping[str, Any],
+    row_verdicts: list[str],
+    n_declared: object,
+    rows: list[Any],
+) -> list[str]:
+    errors: list[str] = []
+    n_rows = len(row_verdicts)
+    n_pass = row_verdicts.count("pass")
+    n_fail = row_verdicts.count("fail")
+    n_skipped = row_verdicts.count("skipped")
+    n_executed = n_pass + n_fail
+    headline_is_executed = n_declared is not None
+    expected_carriers = n_executed if headline_is_executed else n_rows
+    if payload.get("n_carriers") != expected_carriers:
+        errors.append("n_carriers")
+    if headline_is_executed and n_declared != n_rows:
+        errors.append("n_declared")
+    if payload.get("n_pass") != n_pass:
+        errors.append("n_pass")
+    if payload.get("n_fail") != n_fail:
+        errors.append("n_fail")
+    if payload.get("n_skipped") != n_skipped:
+        errors.append("n_skipped")
+    coverage = payload.get("coverage")
+    if headline_is_executed:
+        expected_coverage = (n_pass / n_executed) if n_executed else 0.0
+    else:
+        expected_coverage = n_pass / n_rows
+    if (
+        not isinstance(coverage, (int, float))
+        or isinstance(coverage, bool)
+        or not math.isclose(float(coverage), expected_coverage, rel_tol=0, abs_tol=1e-12)
+    ):
+        errors.append("coverage")
+    expected = "pass" if n_fail == 0 and n_pass > 0 else "fail"
+    if payload.get("verdict") != expected:
+        errors.append("verdict")
+    return errors
+
+
+def _claims_byte_equal_frac_error(payload: Mapping[str, Any], equal: int, total: int) -> str | None:
+    frac_expected = (equal / total) if total else None
+    frac = payload.get("claims_byte_equal_frac")
+    if frac_expected is None:
+        return "claims_byte_equal_frac" if frac is not None else None
+    if (
+        not isinstance(frac, (int, float))
+        or isinstance(frac, bool)
+        or not math.isclose(float(frac), frac_expected, rel_tol=0, abs_tol=1e-12)
+    ):
+        return "claims_byte_equal_frac"
+    return None
+
+
+def _replay_coverage_claims_errors(
+    payload: Mapping[str, Any],
+    row_verdicts: list[str],
+    rows: list[Any],
+) -> list[str]:
+    errors: list[str] = []
+    for field in ("n_claims_total", "n_claims_byte_equal"):
+        value = payload.get(field)
+        if not _is_count(value):
+            errors.append(field)
+    if "n_claims_skipped" not in payload:
+        return errors
+    if not _is_count(payload.get("n_claims_skipped")):
+        errors.append("n_claims_skipped")
+        return errors
+    if not row_verdicts:
+        return errors
+    total, equal, skipped_claims = _headline_claim_counts(rows)
+    for field, expected in (
+        ("n_claims_total", total),
+        ("n_claims_byte_equal", equal),
+        ("n_claims_skipped", skipped_claims),
+    ):
+        if payload.get(field) != expected:
+            errors.append(field)
+    frac_error = _claims_byte_equal_frac_error(payload, equal, total)
+    if frac_error is not None:
+        errors.append(frac_error)
+    return errors
+
+
 def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """Internal consistency for a ``replay_coverage.v1`` body — fail closed.
 
@@ -461,45 +603,14 @@ def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """
     if not isinstance(payload, Mapping):
         return ["payload_not_object"]
-    errors: list[str] = []
-    if payload.get("schema") != REPLAY_COVERAGE_SCHEMA:
-        errors.append("schema")
-    if payload.get("research_only") is not True:
-        errors.append("research_only")
-    if payload.get("live_pnl_claim") is not False:
-        errors.append("live_pnl_claim")
-    if payload.get("data_label") != "CORPUS":
-        errors.append("data_label")
+    errors: list[str] = _replay_coverage_header_errors(payload)
 
     binding_declared = "n_binding_errors" in payload or "n_reproduces_bound" in payload
-    total_binding_errors = 0
-    total_bound = 0
     rows = payload.get("rows")
-    row_verdicts: list[str] = []
-    if not isinstance(rows, list) or not rows:
-        errors.append("rows")
-    else:
-        for index, row in enumerate(rows):
-            if not isinstance(row, Mapping):
-                errors.append(f"rows[{index}]")
-                continue
-            verdict = row.get("verdict")
-            if verdict not in ("pass", "fail", "skipped"):
-                errors.append(f"rows[{index}].verdict")
-                verdict = "fail"
-            row_verdicts.append(str(verdict))
-            carrier = row.get("carrier")
-            if not isinstance(carrier, str) or not carrier.strip():
-                errors.append(f"rows[{index}].carrier")
-            if verdict == "skipped" and row.get("skipped_reason") not in _SKIP_CLASSES:
-                errors.append(f"rows[{index}].skipped_reason")
-            errors.extend(_pass_row_errors(row, index, verdict))
-            row_errors, n_row_errors, n_row_bound = _row_binding_errors(
-                row, index, str(verdict), binding_declared
-            )
-            errors.extend(row_errors)
-            total_binding_errors += n_row_errors
-            total_bound += n_row_bound
+    row_errors, row_verdicts, total_binding_errors, total_bound = _replay_coverage_rows_scan(
+        rows, binding_declared
+    )
+    errors.extend(row_errors)
 
     for field in ("n_carriers", "n_pass", "n_fail", "n_skipped"):
         value = payload.get(field)
@@ -511,65 +622,10 @@ def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     errors.extend(
         _binding_total_errors(payload, binding_declared, total_binding_errors, total_bound)
     )
-    if row_verdicts and not errors:
-        n_rows = len(row_verdicts)
-        n_pass = row_verdicts.count("pass")
-        n_fail = row_verdicts.count("fail")
-        n_skipped = row_verdicts.count("skipped")
-        n_executed = n_pass + n_fail
-        headline_is_executed = n_declared is not None
-        expected_carriers = n_executed if headline_is_executed else n_rows
-        if payload.get("n_carriers") != expected_carriers:
-            errors.append("n_carriers")
-        if headline_is_executed and n_declared != n_rows:
-            errors.append("n_declared")
-        if payload.get("n_pass") != n_pass:
-            errors.append("n_pass")
-        if payload.get("n_fail") != n_fail:
-            errors.append("n_fail")
-        if payload.get("n_skipped") != n_skipped:
-            errors.append("n_skipped")
-        coverage = payload.get("coverage")
-        if headline_is_executed:
-            expected_coverage = (n_pass / n_executed) if n_executed else 0.0
-        else:
-            expected_coverage = n_pass / n_rows
-        if (
-            not isinstance(coverage, (int, float))
-            or isinstance(coverage, bool)
-            or not math.isclose(float(coverage), expected_coverage, rel_tol=0, abs_tol=1e-12)
-        ):
-            errors.append("coverage")
-        expected = "pass" if n_fail == 0 and n_pass > 0 else "fail"
-        if payload.get("verdict") != expected:
-            errors.append("verdict")
-
-    for field in ("n_claims_total", "n_claims_byte_equal"):
-        value = payload.get(field)
-        if not _is_count(value):
-            errors.append(field)
-    if "n_claims_skipped" in payload:
-        if not _is_count(payload.get("n_claims_skipped")):
-            errors.append("n_claims_skipped")
-        elif row_verdicts and not errors:
-            total, equal, skipped_claims = _headline_claim_counts(rows)  # type: ignore[arg-type]
-            if payload.get("n_claims_total") != total:
-                errors.append("n_claims_total")
-            if payload.get("n_claims_byte_equal") != equal:
-                errors.append("n_claims_byte_equal")
-            if payload.get("n_claims_skipped") != skipped_claims:
-                errors.append("n_claims_skipped")
-            frac_expected = (equal / total) if total else None
-            frac = payload.get("claims_byte_equal_frac")
-            if frac_expected is None:
-                if frac is not None:
-                    errors.append("claims_byte_equal_frac")
-            elif (
-                not isinstance(frac, (int, float))
-                or isinstance(frac, bool)
-                or not math.isclose(float(frac), frac_expected, rel_tol=0, abs_tol=1e-12)
-            ):
-                errors.append("claims_byte_equal_frac")
+    if row_verdicts and not errors and isinstance(rows, list):
+        errors.extend(_replay_coverage_headline_counts(payload, row_verdicts, n_declared, rows))
+    if row_verdicts and not errors and isinstance(rows, list):
+        errors.extend(_replay_coverage_claims_errors(payload, row_verdicts, rows))
     frac = payload.get("claims_byte_equal_frac")
     if frac is not None and (
         not isinstance(frac, (int, float)) or isinstance(frac, bool) or not math.isfinite(frac)
