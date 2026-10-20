@@ -423,6 +423,12 @@ directory = "htmlcov"
 # .github/workflows/proofcore.yml via `python -m quant_fund.proofcore.ci
 # coverage-gate`, which reads this table (single source of truth).
 # Ratchet-only thereafter: raise, never lower.
+[tool.fx1.coverage]
+# Ratchet floor for `make fx1-coverage` / proofcore fx1-coverage (2026-10-20).
+# Union of tests/fx1 + tests/unit/fx1_serve measured 91.19% on 2026-10-15;
+# floor is measured minus 1 percentage point. Raise, never lower.
+fail_under = 90
+
 [tool.proofcore.coverage-floors]
 # 2026-09-28 local measurements: pit 93.02, proof 94.57, leakage 96.55,
 # reality 95.27, proofcore 97.04. Floors raised +1 — CI measures lower than

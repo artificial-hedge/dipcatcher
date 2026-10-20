@@ -8,7 +8,7 @@ Accepted (discovered; documents existing behavior)
 
 Two test suites exist: the lab suite (`tests/unit`, `tests/property`,
 `tests/regression`, `tests/end_to_end`, ~700 files) and the fx-1 suite
-(`tests/fx1`, ~200 tests per AGENTS.md). `pyproject.toml` sets
+(`tests/fx1`, ~300+ tests per AGENTS.md / `docs/AUDIT_FX1.md`). `pyproject.toml` sets
 
 ```toml
 testpaths = ["tests/unit", "tests/property", "tests/regression", "tests/end_to_end"]

@@ -64,3 +64,31 @@ def test_doctor_reports_ledger_chain_state(tmp_path: Path) -> None:
         '{"event": "corrupt_entry"}\n', encoding="utf-8"
     )
     assert collect_status(tmp_path)["corpus_ledger_chain"] in {"unverifiable", "BROKEN"}
+
+
+def test_doctor_distribution_lineage_matches_crown_jewels_library(tmp_path: Path) -> None:
+    from quant_fund.research.crown_jewels import (
+        DEFAULT_JEWELS,
+        distribution_lineage_digest,
+        write_crown_jewels_pin,
+    )
+
+    for rel in DEFAULT_JEWELS:
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"# {rel}\n", encoding="utf-8")
+    (tmp_path / "quality" / "epoch_heads.json").write_text("{}\n", encoding="utf-8")
+    (tmp_path / "quality" / "repo_integrity.json").write_text("{}\n", encoding="utf-8")
+    write_crown_jewels_pin(tmp_path, tmp_path / "quality" / "crown_jewels.json")
+    lineage = distribution_lineage_digest(tmp_path)
+    status = collect_status(tmp_path)
+    assert status["distribution_lineage"] == lineage["digest"]
+    assert status["distribution_jewels_intact"] is True
+
+    (tmp_path / "pyproject.toml").write_text("# mutated\n", encoding="utf-8")
+    broken = distribution_lineage_digest(tmp_path)
+    assert broken["jewels_intact"] is False
+    status_broken = collect_status(tmp_path)
+    assert status_broken["distribution_jewels_intact"] is False
+    assert status_broken["distribution_lineage"] == broken["digest"]
+    assert status_broken["distribution_lineage"] != lineage["digest"]

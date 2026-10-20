@@ -4,10 +4,8 @@ Mirrors the harness-side ``dipcatcher doctor``: presence flags only,
 never secret values. Informational — nothing here hard-fails; missing
 pieces are reported so an operator can fix the environment.
 
-Distribution lineage fingerprints the integrity pins with
-``quant_fund.utils.hashing`` and delegates jewel-byte verification to
-``quant_fund.research.crown_jewels`` (the same library gate as
-``dipcatcher crown-jewels``).
+Distribution lineage delegates to ``quant_fund.research.crown_jewels``
+(the same library gate as ``dipcatcher crown-jewels``).
 """
 
 from __future__ import annotations
@@ -17,11 +15,6 @@ import os
 from pathlib import Path
 
 import fx1
-
-_CROWN_JEWELS_PIN = Path("quality/crown_jewels.json")
-_EPOCH_HEADS_PIN = Path("quality/epoch_heads.json")
-_REPO_INTEGRITY_PIN = Path("quality/repo_integrity.json")
-_DISTRIBUTION_LINEAGE_SCHEMA = "distribution_lineage.v1"
 
 
 def _count_jsonl(path: Path) -> int | None:
@@ -42,40 +35,6 @@ def _extra_presence() -> dict[str, str]:
         "torch": "present" if importlib.util.find_spec("torch") else "missing",
         "safetensors": "present" if importlib.util.find_spec("safetensors") else "missing",
     }
-
-
-def _jewels_intact(root: Path, pin: Path) -> bool:
-    """True when the crown-jewels library reports no pin/jewel errors."""
-    from quant_fund.research.crown_jewels import crown_jewels_errors
-
-    return not crown_jewels_errors(root, pin)
-
-
-def _distribution_lineage(root: Path) -> dict[str, object]:
-    """Fingerprint the integrity pins and crown-jewel pin state."""
-    from quant_fund.utils.hashing import hash_bytes
-
-    pin = root / _CROWN_JEWELS_PIN
-    payload: dict[str, object] = {
-        "schema": _DISTRIBUTION_LINEAGE_SCHEMA,
-        "crown_jewels_pin_present": pin.is_file(),
-        "jewels_intact": _jewels_intact(root, pin),
-    }
-    for label, rel in (
-        ("crown_jewels_pin_sha256", _CROWN_JEWELS_PIN),
-        ("epoch_heads_sha256", _EPOCH_HEADS_PIN),
-        ("repo_integrity_sha256", _REPO_INTEGRITY_PIN),
-    ):
-        path = root / rel
-        payload[label] = hash_bytes(path.read_bytes()) if path.is_file() else None
-    bind_parts = [
-        f"{key}={payload[key]}"
-        for key in sorted(payload)
-        if str(key).endswith("_sha256") and payload[key] is not None
-    ]
-    bind_parts.append(f"jewels_intact={payload['jewels_intact']}")
-    payload["digest"] = hash_bytes("\n".join(bind_parts).encode("utf-8"))
-    return payload
 
 
 def collect_status(root: Path | None = None) -> dict[str, object]:
@@ -120,16 +79,21 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
     except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
         status["eval_bank_tasks"] = "unavailable"
     try:
+        from quant_fund.research.crown_jewels import distribution_lineage_digest
+
+        lineage = distribution_lineage_digest(root)
+        status["distribution_lineage"] = lineage["digest"]
+        status["distribution_jewels_intact"] = lineage["jewels_intact"]
+    except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
+        status["distribution_lineage"] = "unavailable"
+    try:
         from fx1.harness import HARNESS_REGISTRY
         from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-        lineage = _distribution_lineage(root)
-        status["distribution_lineage"] = lineage["digest"]
-        status["distribution_jewels_intact"] = lineage["jewels_intact"]
         harness_names = sorted(command.name for command in HARNESS_REGISTRY)
         status["harness_registry_digest"] = hash_bytes(canonical_json_bytes(harness_names))
     except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
-        status["distribution_lineage"] = "unavailable"
+        status["harness_registry_digest"] = "unavailable"
     try:
         from fx1.interactive.superpower import interactive_surface_digest
 

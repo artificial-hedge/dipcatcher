@@ -62,7 +62,23 @@ jobs:
           # --strict keeps new code strict at birth; no allowlist needed.
           uv run mypy --strict src/fx1
       - name: Tests
-        run: make fx1-test
+        run: |
+          set -o pipefail
+          make fx1-test 2>&1 | tee "$RUNNER_TEMP/fx1-test.log"
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          log = Path(os.environ["RUNNER_TEMP"]) / "fx1-test.log"
+          text = log.read_text(encoding="utf-8", errors="replace")
+          m = re.search(r"(\d+) passed(?:, (\d+) skipped)?", text)
+          if not m:
+              raise SystemExit("fx1-test log missing pytest pass/skip summary")
+          passed = int(m.group(1))
+          skipped = int(m.group(2) or 0)
+          print(f"fx1-test summary: passed={passed} skipped={skipped}")
+          PY
       # Documented contract (docs/FX1_TRAINING.md): honesty inheritance is
       # blocking — fails if fx-1's forbidden set drifts from the lab catalog.
       - name: Honesty inheritance gate

@@ -38,6 +38,11 @@ _BASE_CKPT = _ROOT / "artifacts" / "fx1_tiny_lm"
 _TEXT = "the journal replays every record; non-terminal means failed. " * 20
 
 
+def test_ship_gate_refuses_fixture_placeholder_eval_delta() -> None:
+    with pytest.raises(RuntimeError, match="ship gate"):
+        LocalWeightsEngine(_BASE_CKPT, enforce_ship_gate=True)
+
+
 def test_unmeasured_fixture_card_is_marked_non_release(tmp_path: Path) -> None:
     from fx1.modelcard import EvalDelta, ModelCard
     from fx1.train.tiny_lm import write_modelcard

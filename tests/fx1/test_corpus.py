@@ -4,7 +4,22 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from fx1.data import build_corpus, load_receipts
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_SFT_QUARANTINE_CATEGORIES = frozenset(
+    {"pre_seal_era", "admission_honesty_gap", "claim_absent"},
+)
+
+
+def _quarantine_registry_paths(repo_root: Path) -> set[str]:
+    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
+
+    registry = load_quarantine_or_empty(repo_root / "quality" / "legacy_quarantine.json")
+    receipts = repo_root / "receipts"
+    return {rel for rel in registry.files if (receipts / rel).is_file()}
 
 
 def _write_receipt(path: Path, *, research_only: bool, live_pnl_claim: bool) -> None:
@@ -77,6 +92,36 @@ def test_explicit_live_claim_overrides_research_only_claim(tmp_path: Path):
     _write_run_manifest(tmp_path / "run.json", claim="research_only", live_pnl_claim=True)
     records, refused = load_receipts(tmp_path)
     assert refused == 1 and records == []
+
+
+@pytest.mark.skipif(
+    not (_REPO_ROOT / "quality" / "legacy_quarantine.json").is_file(),
+    reason="requires committed quarantine registry",
+)
+def test_build_corpus_refuses_quarantined_registry_receipts_on_real_tree(tmp_path: Path):
+    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
+
+    registry = load_quarantine_or_empty(_REPO_ROOT / "quality" / "legacy_quarantine.json")
+    pinned = _quarantine_registry_paths(_REPO_ROOT)
+    sft_quarantined = {
+        rel
+        for rel in pinned
+        if registry.files[rel].category in _SFT_QUARANTINE_CATEGORIES
+    }
+    assert len(sft_quarantined) == 9
+    records, refused = load_receipts(_REPO_ROOT / "receipts", repo_root=_REPO_ROOT)
+    assert refused == len(pinned)
+    loaded_rels = {
+        Path(r.path).relative_to(_REPO_ROOT / "receipts").as_posix() for r in records
+    }
+    assert pinned.isdisjoint(loaded_rels)
+    out = tmp_path / "corpus.jsonl"
+    stats = build_corpus(_REPO_ROOT / "receipts", out, repo_root=_REPO_ROOT)
+    assert stats["refused"] == len(pinned)
+    corpus_text = out.read_text(encoding="utf-8")
+    for rel in pinned:
+        digest = hashlib.sha256((_REPO_ROOT / "receipts" / rel).read_bytes()).hexdigest()
+        assert digest not in corpus_text
 
 
 def test_build_corpus_refuses_quarantined_and_rejected_receipts(tmp_path: Path):

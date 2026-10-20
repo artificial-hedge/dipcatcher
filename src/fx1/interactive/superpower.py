@@ -1552,3 +1552,11 @@ def describe_capabilities(catalog: FamilyCatalog | None = None) -> str:
         lines += ["", catalog.describe()]
     lines += ["", f"interactive surface seal: {interactive_surface_digest()}"]
     return "\n".join(lines)
+
+
+def __getattr__(name: str) -> Any:
+    if name == "load_catalog":
+        from fx1.interactive.orchestration import load_catalog as _load_catalog
+
+        return _load_catalog
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
