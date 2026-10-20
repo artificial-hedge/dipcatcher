@@ -40,7 +40,7 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
 | Other `ci.yml` jobs | `make audit`, `make mc-engine-smoke`, `make native-lint`, `make market-sim-test`, `make parity-smoke`, `make examples`, `make audit-obs`, `make diffbacktest`, `make robustness-smoke`, `make formal`, `make evidence-audit`, `make pretrade-bench`, `make stress-smoke`, `make test-durations`; GitHub-only: `package`, `container`, `perf`, `smoke`, `rust-accel` |
 | fx1 suite | `make fx1-test` — separate lane (`fx1.yml`), ~200 tests |
 | fx1 full gate | `make fx1-gate` — lint + types + tests + honesty + corpus smoke |
-| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen`; tag releases require green `CI` + `evidence-audit` on the tagged SHA (`release.yml`) |
+| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen`. A `v*.*.*` tag does not sign unless the latest completed `CI` run on that SHA is green and its `evidence-audit` job succeeded (`scripts/require_release_gates.py`, `release.yml` preflight). |
 
 ## Honesty contract (hard rules — do not weaken)
 

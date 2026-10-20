@@ -117,7 +117,7 @@ native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` fi
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
-ci: lint typecheck security coverage ## Local mirror of ci.yml lint + PR test gate
+ci: lint typecheck security coverage ## Local mirror of the ci.yml lint job plus the PR test and coverage jobs
 
 code-inventory: ## Report tracked semantic Python LOC and feature/test counts
 	uv run python scripts/code_quality_inventory.py --summary-only
