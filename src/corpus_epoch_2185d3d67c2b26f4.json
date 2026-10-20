@@ -1,34 +1,146 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "bc913d60857610e4567071511809c7ed85bb57ac2254f30b9c21a2a46052e796",
+  "epoch_root_sha256": "35a5163d3b0404d511935885262a35a56cc2f2a5dc2799eba3db8db4d9a3eb60",
   "inputs_sha256": "058b9eef52fa657daa0f02820c06b473987dcc600032f7c2ac0a46a3e58b2b3b",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "a7c8c0e6d030ccdf8df2719390d4e7332763d58b2e8126c73b133bf654c12d78",
+  "member_tree_root": "2cce1bbd967c352c23da8a213cf70a32c6b98d2f28f50c8c5bbbfc4e37cc2dc2",
   "members": [
+    {
+      "name": "corpus_epoch_008bb1b48ed96c39.json",
+      "sha256": "8ff4bdb9c0eef5bb3f37964d51e508c642d1a73f7cf6847eebd43d7e7818b0b8"
+    },
+    {
+      "name": "corpus_epoch_023c6e439b9c1f6e.json",
+      "sha256": "9c8dc43c3343abfdee4f45bf99ef03a466b584dfcde313270a3681c2a9ace6cf"
+    },
+    {
+      "name": "corpus_epoch_03fc10ea2cb82fa0.json",
+      "sha256": "6e2164162b6b55842ad162a9c298ab68a6f3ad422f32a905886e435e4c356aa5"
+    },
     {
       "name": "corpus_epoch_0e52b4b63f34e399.json",
       "sha256": "f3e0391c1822f842bad1ddb6eb81d7a13af70327197b2e1dbc35b5894f633d86"
+    },
+    {
+      "name": "corpus_epoch_0ffd55cb76bbb3f7.json",
+      "sha256": "7aff3138a29527a79f72c5ad3b869808f8e164ec5207f2f321a0763bdefc6f78"
+    },
+    {
+      "name": "corpus_epoch_14f70c555c446f5a.json",
+      "sha256": "71fab486ba1bf335b2c4c5d04e550627036f51fdf1a53f4a659b6f86ad49e7df"
     },
     {
       "name": "corpus_epoch_1a64d9cdaa7209ad.json",
       "sha256": "2742e24aaabd034fc9d20769aa51e08f965695b38a0a9aa2adc96c3f0ffee42c"
     },
     {
+      "name": "corpus_epoch_1ed8b221de68f5c2.json",
+      "sha256": "46211d1f7ffd5fce0bd4ce58c377dbe1ebd326223f99805e5c6aef6387aaadc9"
+    },
+    {
+      "name": "corpus_epoch_20359d6079f7d7df.json",
+      "sha256": "78fc322a1f73307c60b867ded8f6d72404f2103c885bc94a147617ec8512797d"
+    },
+    {
+      "name": "corpus_epoch_24fce37db5cbe92d.json",
+      "sha256": "b7196d414faa849a066bb3c884eafb7dcb40c238032b9c4680bc3b0a6ed12a53"
+    },
+    {
+      "name": "corpus_epoch_266c9e6055993b29.json",
+      "sha256": "2d3ed8a26ee644767d88f9fa8d5d8e369c6b0d25001bc6fe5284d55fb3e87bca"
+    },
+    {
+      "name": "corpus_epoch_2ff93cef123af22f.json",
+      "sha256": "fb60f44d1d5f32d9549cf8b5d034812aa4393639980bc08136da3987dabc6fc4"
+    },
+    {
+      "name": "corpus_epoch_39373990e448b7aa.json",
+      "sha256": "e2a5e8b90ca80cbccc7586656c282d88b3808dfe022c3507aebe5c1ae8236070"
+    },
+    {
+      "name": "corpus_epoch_3cb0dc8751664895.json",
+      "sha256": "6dd0ef093fd5446afa81594fec9f286078da15f79492987d617d4d1d48040e11"
+    },
+    {
+      "name": "corpus_epoch_3e871d7df933eef7.json",
+      "sha256": "48129124fdb034d47bbe7e7f244ec2655129dcc7a8e2bdd0877d16d429adaddc"
+    },
+    {
+      "name": "corpus_epoch_3fd56a17828e1301.json",
+      "sha256": "d701e5582251bb61522a026fe5ed80b73c5be9d3568089613665eb859b713d4d"
+    },
+    {
+      "name": "corpus_epoch_407b065a9f6685a4.json",
+      "sha256": "422d008ebf5717e7c1e991765334589cdfecfb748108decf3bce4cc2727994ba"
+    },
+    {
       "name": "corpus_epoch_42e157180430a743.json",
       "sha256": "c61925dcd127b97dcd8e063a8b702a9a09b45f1d9cd0ef7d2b36578229bb39f4"
+    },
+    {
+      "name": "corpus_epoch_46f1efd6f8186426.json",
+      "sha256": "918470a974163e886d991a33429c6a2a79d434af5b695e474b0eeb9a1ee93e46"
+    },
+    {
+      "name": "corpus_epoch_476dc9d9face87f5.json",
+      "sha256": "6f6f67df56dddeb1fb72fb76a02b6f13ecb9117f39447e894f58455c624f0cf1"
     },
     {
       "name": "corpus_epoch_47f58bbd14adfa01.json",
       "sha256": "2e47be701eeb65522e2e5e5b5efa0e0ca5633f1188ee7bd68bc1ee7fb9f0a198"
     },
     {
+      "name": "corpus_epoch_4988acdf33ec7537.json",
+      "sha256": "93f8e1cbcf7b1d57ac96dad16a0e7854fb65695916e2b821dbb87a064a1ba5ca"
+    },
+    {
+      "name": "corpus_epoch_4993239a845a00e4.json",
+      "sha256": "6e13dcda28b99258cada6ff0c00894dc087bcf9ed5416a23e451152dfdf2fcd0"
+    },
+    {
+      "name": "corpus_epoch_4a844f51b82b2b0c.json",
+      "sha256": "39f67ff23deb5f4ceb31db0c607d453f0d41fca3f786704d148ac917c878e318"
+    },
+    {
+      "name": "corpus_epoch_4e044802800b08f2.json",
+      "sha256": "521484ab99c53ab40e2c9723fca28cb6366f6d0c18d2e7788f73d98ca1f05a66"
+    },
+    {
+      "name": "corpus_epoch_4e6b47dd2cba7abd.json",
+      "sha256": "424cb4aa3bdf7d8db8d44a2775f190d0337159f2b93ed2b7f707750e906f0873"
+    },
+    {
       "name": "corpus_epoch_506e738c29bcd629.json",
       "sha256": "f8d1da67027739c0686be0e1f7874583bb506d0f2d9ea75c95f977e45d481ec3"
     },
     {
+      "name": "corpus_epoch_52900236a145cedd.json",
+      "sha256": "0823afc0a1211df23f3accebe136c869e46d30322d9cece9d80a49e58e531c00"
+    },
+    {
+      "name": "corpus_epoch_57450e35574db048.json",
+      "sha256": "98f5d586eafcd69475a11d45de207eec5e97c0c6c6b0d54fcb03e330ac2a35f3"
+    },
+    {
       "name": "corpus_epoch_5c172504c353aeba.json",
       "sha256": "5769cc242cff49316f76a46bb8ed22f101ad40f2ade0dd7654d35c2e6cebcb73"
+    },
+    {
+      "name": "corpus_epoch_5ed3307efaacd84d.json",
+      "sha256": "abf2e027f47c79edb7746f76fc4d932fd7bc4a9f1b5da98d81ec9d418af9a55f"
+    },
+    {
+      "name": "corpus_epoch_6c8d2bcea8113b30.json",
+      "sha256": "49f362e6c95d1ca55550371c323d29b5ecd63ef07ff630043214f0e63828049d"
+    },
+    {
+      "name": "corpus_epoch_6f711eaadd25fef7.json",
+      "sha256": "d7e5407b4209d5d8a753274fd8bc9a927c74514216138d046ff1b6a62fd9df58"
+    },
+    {
+      "name": "corpus_epoch_7714170504b869ea.json",
+      "sha256": "b5116d01ecb008d1a4d258bec6e8da6328b97f58e08448d9df181f894ae36732"
     },
     {
       "name": "corpus_epoch_7b10d212cd791f48.json",
@@ -39,8 +151,12 @@
       "sha256": "73a819bf0d1550db6bbc5dabd61dbfc0e06b07837d3fe4cda7ef15cdca421bf2"
     },
     {
-      "name": "corpus_epoch_7d80ad9b952661ee.json",
-      "sha256": "ec4a057297f0eef822aff951ad0e9b04d259b461a87457f8334e92ce7ec21b4b"
+      "name": "corpus_epoch_7c5b7156f75f3b6d.json",
+      "sha256": "1eda7087181debd52e9e11e83079c9e83d87e5be45550641447b1297aaed4d2f"
+    },
+    {
+      "name": "corpus_epoch_87a041e5bfcf81bc.json",
+      "sha256": "d3c97a46861a2136b18b968834f86e854efdf7c73851c04521f40e50ac969476"
     },
     {
       "name": "corpus_epoch_88a7f4860fe02e5a.json",
@@ -75,8 +191,24 @@
       "sha256": "48c2cf64ee9912b9cd204a153d7fde02ffc7753008ca4dad0e728458d1afc94c"
     },
     {
+      "name": "corpus_epoch_9ddcb78d4b07b57b.json",
+      "sha256": "91378fba8fabe8e3f96120a3c61285428d69e6709dd5d4c99ed3825907c6435e"
+    },
+    {
+      "name": "corpus_epoch_9fe8e9e0fb5e342b.json",
+      "sha256": "c74e349514a43c2fe0bcb7ce3ae8ff63214644b6ce459876cca13d3fb6a205c3"
+    },
+    {
       "name": "corpus_epoch_a1bb39c87e9031f6.json",
       "sha256": "e12e9fdd794de1a89439e37ee9860c7c72269c68b483357f9c3c1378cb854289"
+    },
+    {
+      "name": "corpus_epoch_a2ac328743bf5723.json",
+      "sha256": "11391a88c5df0b03d79693844cf7e14ea040e49d59046d41fa9dca05aa9a6621"
+    },
+    {
+      "name": "corpus_epoch_a40cdaa7399bf3a4.json",
+      "sha256": "a83141ff611c2d329f0fa07f68ccce2d02ac215bfbcd3dfbc5e700d80e2c8fa0"
     },
     {
       "name": "corpus_epoch_a7d0f5e7b98521c8.json",
@@ -87,6 +219,14 @@
       "sha256": "bb7ab49c7f74d4aae7d2b46d08393bbe6975ff5d43896b7470bf3fabb2c08ea5"
     },
     {
+      "name": "corpus_epoch_b6e01ad5f099e5a6.json",
+      "sha256": "61dc8b029188708dc6d90d66212a1ca97219b50c4e82d0cc228e46baa922f034"
+    },
+    {
+      "name": "corpus_epoch_b93cbed455795f7f.json",
+      "sha256": "4df31c4940522dcaa2fdfde9f2c58c052857635d86cd22735356295debb90172"
+    },
+    {
       "name": "corpus_epoch_b961d873d8a56ca2.json",
       "sha256": "dab52e9f151ed621d647b276dc2bcf81ab384842d57e38ba6503d0fd47efe669"
     },
@@ -95,16 +235,64 @@
       "sha256": "dfdc48d3f997900851bc8b0ccae74a5355761ca7e512e00ef38adf7b5207a552"
     },
     {
+      "name": "corpus_epoch_bad4aa92ea6f47ac.json",
+      "sha256": "8c92915dd2f50d3bd15c74d55638f32243c17b2a0386e268b6abfd87cb0dbd2a"
+    },
+    {
+      "name": "corpus_epoch_bbe071c30f01a34d.json",
+      "sha256": "0ad7887b4753b75252f3e3e6c46f0bc5dda099dea471b6557070b8a4f4bf0648"
+    },
+    {
+      "name": "corpus_epoch_bf7bb8f279d0242c.json",
+      "sha256": "53079b42acabd2a417dd0b26a3a465982616bdfd4a9c9985492faefbf1cc90a3"
+    },
+    {
+      "name": "corpus_epoch_c8451d8d06ce5495.json",
+      "sha256": "6a10de52f64f2f9961aa10463a4ca1b7b069e4d4c369946e3463e25dd5ffcaa8"
+    },
+    {
+      "name": "corpus_epoch_c97881a2d5924b8a.json",
+      "sha256": "97d9d5126d1e347fed82a3c9408659d8ac16083afc2c7a9d4ac9c69734b68c2d"
+    },
+    {
+      "name": "corpus_epoch_cc702646a93671c7.json",
+      "sha256": "edc008288bdeccbe2fee62290862eb5a2989c248f570c8c0a80646a118636df0"
+    },
+    {
+      "name": "corpus_epoch_cd5ff8e98a370edd.json",
+      "sha256": "6de480a7ec109d6f289f8216449206702044758003a244316dca20869308fbdb"
+    },
+    {
       "name": "corpus_epoch_d43c325398ec6b1f.json",
       "sha256": "cf2d3c0cb0fe053f1b75086396866728553cbd9d997f4afd10c5def07726109a"
+    },
+    {
+      "name": "corpus_epoch_d477a503c4be20a0.json",
+      "sha256": "1f1377e411ef8f1953c4ae626f3d62acc08d428d7b2b2749d291dbb4141e35fd"
+    },
+    {
+      "name": "corpus_epoch_d5cbe7f68837c7bd.json",
+      "sha256": "f1f0774993337c3f126cc04fa60e84de844a096e57dc83801baf09946288fa62"
     },
     {
       "name": "corpus_epoch_de53e1aec0b37473.json",
       "sha256": "1c7492ba581fc24532966d9ec473a30374dc086b5c04794c20079a70710bb00b"
     },
     {
+      "name": "corpus_epoch_df5ae2737ec1a9b8.json",
+      "sha256": "ee40d543548272e36be8c38f82bf88397e9af947310f8dbcd298edf876785066"
+    },
+    {
+      "name": "corpus_epoch_e08f0c66dac674cf.json",
+      "sha256": "05bcd69dfe0d8774384781873fba782e8ba0eeb3f25cda5de0cf2610d4e2ee1b"
+    },
+    {
       "name": "corpus_epoch_e39af18e3151f0a3.json",
       "sha256": "cb7d331f86e6af796c4f3241b7c632949ca6fd96bc0e9f7e4724b6c79c6c8501"
+    },
+    {
+      "name": "corpus_epoch_effdb5e497bdd7b9.json",
+      "sha256": "ea05d0272beb9be1596bdee892410ba2c197d821c0713212a993a892fc6ae06e"
     },
     {
       "name": "corpus_epoch_f10cc85f30cca765.json",
@@ -115,8 +303,20 @@
       "sha256": "7ef0967a0e43d55727cfe78535c0c78267f6f96e71a38da336d032e95ea49f25"
     },
     {
+      "name": "corpus_epoch_f68c2bbc510ee1cb.json",
+      "sha256": "710d14f8e1ff4d89a0e034d7c7233ac19ec61b0c7cead011cd9e48ca5f67cb17"
+    },
+    {
+      "name": "corpus_epoch_faaa79f3a2d8d15b.json",
+      "sha256": "30256e55a3b9951de91df33095a990c8bc8cf89c64f07f419a30101bb436fe65"
+    },
+    {
       "name": "corpus_epoch_fb9b2238526d6bd0.json",
       "sha256": "3e713bd2b4712d10afc13dc8b9d9b406f3ce2c564b75e07d2c5656b9d7f8680c"
+    },
+    {
+      "name": "corpus_epoch_fec9ad2afa1f7030.json",
+      "sha256": "7428e5261b0047eaac1302d67527e7be119f41c28230590d62e82a713bb6dfee"
     },
     {
       "name": "dipcatcher_cli/__init__.py",
@@ -128,11 +328,31 @@
     },
     {
       "name": "dipcatcher_cli/app.py",
-      "sha256": "ce44386bbba85c4f1a4062b235c0a26a71fa591041dfe7c50ffff53c8dbf96c9"
+      "sha256": "9471f78714b811ef414c6f03103c400904767cbd82f3526d3c117cf4a016814e"
+    },
+    {
+      "name": "dipcatcher_cli/exec_cmd.py",
+      "sha256": "1f28ffa107ca58e36b82971e4abd9e8458406cecccafb22c6a0b34f65ce225bc"
+    },
+    {
+      "name": "dipcatcher_cli/models_cmd.py",
+      "sha256": "196275b80b3bc0222d35a638f2a9546da29bce640ec507a28dfa9dcdbe93c538"
+    },
+    {
+      "name": "dipcatcher_cli/paths.py",
+      "sha256": "94185592181f44f0047f877a1604ed1b8c939a94e22e8fb6dad6c95c94c62a2e"
+    },
+    {
+      "name": "dipcatcher_cli/sessions_cmd.py",
+      "sha256": "7c96c219bbdd3464adbd9b0f96d246a3f6876da3f69eb7c31ce28fdb75fe81a1"
+    },
+    {
+      "name": "dipcatcher_cli/truthfulness.py",
+      "sha256": "5b539b0148e7af50aa2f51f84099e613ee951b1f17be1deef4669d7a051af66f"
     },
     {
       "name": "fx1/__init__.py",
-      "sha256": "a0439addf05303661556539e9efcf146b3bbe45a7df2acb60374e5e4b15b109e"
+      "sha256": "136d52476eef47669e518b01527835e35920e88dbf9292099171d12da70d9fa4"
     },
     {
       "name": "fx1/bench/__init__.py",
@@ -159,12 +379,68 @@
       "sha256": "7c951891178ecc78a61cc97f169167b51d52fefc1b101248cb2a13efa17e0c44"
     },
     {
-      "name": "fx1/cli.py",
-      "sha256": "6445e158a2a740d5d3f07ff7d6618617ef6b951f0e9ff6b54c5304a6b4ce88f7"
+      "name": "fx1/cli/__init__.py",
+      "sha256": "1ffff07dcf2c99fd083318b428e8147448b17a5844a1fd7f496957e8ad25527c"
+    },
+    {
+      "name": "fx1/cli/__main__.py",
+      "sha256": "401f3866ab37b180dd23bc6e77ea3adc2fcfbbe56f0173b2358ab5beaa2d6c0a"
+    },
+    {
+      "name": "fx1/cli/_app.py",
+      "sha256": "a6d7aa5a6831eac168be56c8f30702e2724ac34e1b97c4531334815fd90852e3"
+    },
+    {
+      "name": "fx1/cli/data_cmds.py",
+      "sha256": "85b6dc3f7a68f768c32d2fb7c0ad4110ff5b1858612077613a903eb0b4842771"
+    },
+    {
+      "name": "fx1/cli/eval_cmds.py",
+      "sha256": "faa7459c7752af090d3721cf07875cd628ca5425128c022b4d5be5d0bb90734b"
+    },
+    {
+      "name": "fx1/cli/forecast_cmds.py",
+      "sha256": "952cf3decd600a042ac2643239ce01781f2d70ce7bac7ac9eec897f852420065"
+    },
+    {
+      "name": "fx1/cli/support.py",
+      "sha256": "e18d6ecc19c823e4adc7869d84f1ea59cb43a4e9aa09085930e83f15f1108622"
     },
     {
       "name": "fx1/cli_audit.py",
       "sha256": "e9b22d6167a63eca38c22876901942e7b109bb42276d5e873587231e5ff3752d"
+    },
+    {
+      "name": "fx1/cli_common.py",
+      "sha256": "3d8c5b629ec985c660bc838a3df7ea51011714239b31907241487e2766e2cb6f"
+    },
+    {
+      "name": "fx1/cli_harness.py",
+      "sha256": "d1f85fd61e1cd40bd478087027af419ca13a5f2aec46409cfb5d53c22df2006f"
+    },
+    {
+      "name": "fx1/cli_harness_chat.py",
+      "sha256": "7faf4b997da4b63ffc4ec0708a9dc91003e72e54c9e3b5f23b9f921295ae8a2e"
+    },
+    {
+      "name": "fx1/cli_harness_ft.py",
+      "sha256": "16722ade9c8e7d5f88b4b11d6554190e4e2c476348565151f2c77ed09fe48596"
+    },
+    {
+      "name": "fx1/cli_harness_jobs.py",
+      "sha256": "1eeb8edebf9b02ceb150a941b450a0b4282e96c5001d6cd62ffb7c50e1894f57"
+    },
+    {
+      "name": "fx1/cli_harness_ops.py",
+      "sha256": "6986252446024094f794e0ce51e5fc8bc7edab8178a0c183dfe21bd5bafaef2e"
+    },
+    {
+      "name": "fx1/cli_harness_vs.py",
+      "sha256": "c7edce757a607030ff53ae0bc6e373df7ccac662b1c71f57b0eee4cc9650c4ad"
+    },
+    {
+      "name": "fx1/cli_sign.py",
+      "sha256": "559b43a4851258042260b4762fd57b5c9c05e70d0478181bb0f8ca95815ceaf7"
     },
     {
       "name": "fx1/data/__init__.py",
@@ -172,11 +448,11 @@
     },
     {
       "name": "fx1/data/corpus.py",
-      "sha256": "7e345f9f4ca80a99c2c08bcd24c54961f986ff6009e58e5d1b27e89e5fb55de1"
+      "sha256": "58d4688236a072af52be84809c60af751e2b61b3e69f8998b5225d7f39993f8e"
     },
     {
       "name": "fx1/data/corpus_audit.py",
-      "sha256": "0319698dd71d49366e1d39b394a0c714f8929dfd924906be98ea1b3b30f184a1"
+      "sha256": "8e8655ca6da2bd0045a6e2eb6d9353e402803f2de3e132817d35dbfe14620e48"
     },
     {
       "name": "fx1/data/ledger.py",
@@ -204,11 +480,11 @@
     },
     {
       "name": "fx1/data/receipts.py",
-      "sha256": "482f75e90c15a1013367dcbcda43263f2f4dcaf2c18ea6ec0688608bb17c1aa4"
+      "sha256": "8878aca3fdec532a8eb0079a095ea85282430c3fe5d0ddcd1bff5148c425d01a"
     },
     {
       "name": "fx1/data/receipts_audit.py",
-      "sha256": "b22ce61b4ff16a770b493897c97cbf84b7eb09d95a37e211e1aa5e35b8f1f86d"
+      "sha256": "53ee3e31a9548be3e0d5bdc7f2c93aa62b425ad3313b9d85789f1bb8a3a4d05a"
     },
     {
       "name": "fx1/data/sources/__init__.py",
@@ -248,7 +524,7 @@
     },
     {
       "name": "fx1/doctor.py",
-      "sha256": "f35564bc68fff4aabd699ec9c93e685bff871cae5f91f5de3336fc228169979f"
+      "sha256": "9a7d690f6fafd45824503cf6ef1584472bad9e5efebe88617a94af0d9ee241c2"
     },
     {
       "name": "fx1/doctor_audit.py",
@@ -299,12 +575,16 @@
       "sha256": "2b12f8fa08fe9fb0fc428308bc3db3cbc42fc97bc246d88aea278932f132848e"
     },
     {
+      "name": "fx1/eval/evidence_contract.py",
+      "sha256": "cb55af744a4c8e99a997bdc8658f6c9b96fe159ebb17dc01bf34d73ceda8ecd0"
+    },
+    {
       "name": "fx1/eval/ext_bench.py",
       "sha256": "86b50976292ec1b4f1b731d2f9263cf6992e0733750d183e3cb4aed6b6e51716"
     },
     {
       "name": "fx1/eval/ext_bench_banks.py",
-      "sha256": "191a7b71da51ed25649293c3a81f368fd25bec1217a58bfec3b52c16e2c30fbc"
+      "sha256": "c5783e663c42d613460fefdc15324dd11ab537016533eb5755b9ed1f0947744a"
     },
     {
       "name": "fx1/eval/masking.py",
@@ -320,7 +600,7 @@
     },
     {
       "name": "fx1/eval/options_reasoning_eval.py",
-      "sha256": "a720449744b7b9d147e32a458bcbdf744494b7e4eacd9ceea34541ea9c30733f"
+      "sha256": "46bc4af05e2f7a171335729d0254ef4ce783d94ae4e6483c12f74d9b55e1c573"
     },
     {
       "name": "fx1/eval/redteam.py",
@@ -336,7 +616,7 @@
     },
     {
       "name": "fx1/eval/rubric_banks.py",
-      "sha256": "f578b908bb93c406756334cc915f444b08289f7c3106c8cbd3806d76c270d092"
+      "sha256": "67888f94721fef9495f7b2b3f911dae56576d3394ab02b564c3fc846f1e16c0a"
     },
     {
       "name": "fx1/eval/rubric_eval.py",
@@ -752,15 +1032,15 @@
     },
     {
       "name": "fx1/flash/refresh.py",
-      "sha256": "c683b4897fa6f8b1d41553db8eecedf9b41d95212c80d0576770d7cc48855ed3"
+      "sha256": "1160c3c1e8dea1da3d01b8d2a08d3caec4ca2fce0cfd8d129bc1ca90de49d8f3"
     },
     {
       "name": "fx1/flash/retrieve.py",
-      "sha256": "474704c37ccb839af3b4eac55b62f27a298f59f31344ce375c1de1aeba6ce214"
+      "sha256": "e9e70aa1a79ab377f9e3c1a380ad54a68afc51600bc012f75fa5a5b11e00a48f"
     },
     {
       "name": "fx1/flash/store.py",
-      "sha256": "e4a45079820d886ee430bb40ebd173750a78572de0ade5c95d8138b39a4211b9"
+      "sha256": "c4289d0358dd8a880593a116e1cf8b4ef481c34716f34476a5d085b3ec3e4ed3"
     },
     {
       "name": "fx1/forecast/__init__.py",
@@ -776,11 +1056,11 @@
     },
     {
       "name": "fx1/forecast/core_audit.py",
-      "sha256": "2715c059a1ce106da468693e9657fb6a90450d919d4690999ef2f935bc2af0a2"
+      "sha256": "2df7e865ac9b2d2d6c7b967f1076e7b5aa6d4db81246fa4436952b1be9dad7de"
     },
     {
       "name": "fx1/forecast/data_audit.py",
-      "sha256": "01ebecf2878db2ace2403c4a903ebc5715a1458bd3fcedcddaa97fe139c58997"
+      "sha256": "98c169abbcb795b1b3cfc9f652946f699b7f11b81cbcae0b2a31964e67fac1c6"
     },
     {
       "name": "fx1/forecast/dummy.py",
@@ -788,7 +1068,7 @@
     },
     {
       "name": "fx1/forecast/evaluate.py",
-      "sha256": "81a85537839ec909fa42846e60f12340c411589a507ba4a1d2c4a58283932e59"
+      "sha256": "f5385ca1ad8457027eef466d025dcbb8142cd80887ad10a44815f9e899c6c85f"
     },
     {
       "name": "fx1/forecast/features.py",
@@ -820,7 +1100,7 @@
     },
     {
       "name": "fx1/harness.py",
-      "sha256": "5ac69a6a3604907b0b2281bf70f224c003bf328e28520b397395481ca1cdbb9f"
+      "sha256": "10de24a2327985aeff24699868864070ae312bb3f9f1ccf7d2405e660a2d1ef3"
     },
     {
       "name": "fx1/harness_audit.py",
@@ -832,7 +1112,7 @@
     },
     {
       "name": "fx1/honesty.py",
-      "sha256": "6cabfeded72d19cda891844bce828842d8919618fc9b8a5bbb19e9d0b857a96d"
+      "sha256": "544a88fbbcd50292135f6d5a82bf3a5ee50bd47cfcf399b888d611516248a7fc"
     },
     {
       "name": "fx1/honesty_audit.py",
@@ -848,75 +1128,259 @@
     },
     {
       "name": "fx1/interactive/__init__.py",
-      "sha256": "af3934e46b7c887654c6dc3f7c8e2b48e743bb690271206ec81856880b87f64f"
+      "sha256": "c0676bc3e50f5a373479f50b18c6b0c25fca07505a30887abd921c85b097e117"
     },
     {
       "name": "fx1/interactive/actions.py",
-      "sha256": "7a485852fcea2d2fafba153b6df379df63e36d5920033409dd1f71144bc4ba0d"
+      "sha256": "b8538c6e8d1bfe420d018b2fbece68def1ebb746effae78f2807ea98d218d758"
     },
     {
       "name": "fx1/interactive/app.py",
-      "sha256": "f9186f8b2b0a47dd1cd885bba2f50757a130de13ce55b82710e9fa1d92f86691"
+      "sha256": "e3fbe9890e2c38f9ffd247f5fe8850703491aaeb42c4617dea6bee5d61613e2e"
     },
     {
       "name": "fx1/interactive/approvals.py",
-      "sha256": "860564205843a1aa6c2fe576f09b11d8cdaafc64e0b6ae9b1b9ddc6a83468b12"
+      "sha256": "abbd8b4686da5522b2e363f20b7c16a20a3c7111b958f05e741a74661c78474f"
+    },
+    {
+      "name": "fx1/interactive/atomicstore.py",
+      "sha256": "b026f76029bd53a6a9955596927033f31dadb5673d892ae8a07e85ef363b0c82"
+    },
+    {
+      "name": "fx1/interactive/budget.py",
+      "sha256": "8144ae8a3bc81f2dad71b82b78ce8d2036ae532db5dbc5d172d014bfe8ff8435"
     },
     {
       "name": "fx1/interactive/budgets.py",
-      "sha256": "31fbc7e609ef26ba8740680849115971bb27c00990625ebb4ad7d468cdc44e24"
+      "sha256": "aef117c6af932d48f49b4f18ab871f76c11b187fa89ea8f8c52b6c24790d9bbc"
+    },
+    {
+      "name": "fx1/interactive/chat_tools.py",
+      "sha256": "9b84161e5dee20744934ed0db3cec5e4a7137b200bb7e06b722d4a5df575a1cf"
+    },
+    {
+      "name": "fx1/interactive/chat_turn.py",
+      "sha256": "e1ec3a23621d9635df70cdb47ad484ef5aa6507a9884cbc8dc5202b78d686f0c"
     },
     {
       "name": "fx1/interactive/concierge.py",
-      "sha256": "f933d5ac6b3f68ca814e1c216465ad345a8bba3ef7c61033bdff4e4df41dbb27"
+      "sha256": "8e10a4ed93d668a614b0f608ccae36831aee107a5de11952f5bceb33fc1b3909"
+    },
+    {
+      "name": "fx1/interactive/concierge_console.py",
+      "sha256": "49a608a0512585cbb4ef0ddc6a9a19516866157ccd8b15072454606bae4e7b43"
+    },
+    {
+      "name": "fx1/interactive/concierge_data.py",
+      "sha256": "01b0ff24c3f5dbca251e69d76e363f6717357fbceeae233af8ed79688b80d6be"
+    },
+    {
+      "name": "fx1/interactive/concierge_display.py",
+      "sha256": "8722a45c6ab686ed858d97e6f2a1282866ccc1a11e8bc32077f5a9156fc913cf"
+    },
+    {
+      "name": "fx1/interactive/concierge_jobs.py",
+      "sha256": "5651fd0aed787a56f4ae6797d33199b69e5d6abb20f26c8c5613db9d7dfce64c"
+    },
+    {
+      "name": "fx1/interactive/concierge_slash.py",
+      "sha256": "97203cc68fed2601be1d24b2bd8d857a0e7e2e1b4d957c614b35299b130889ff"
+    },
+    {
+      "name": "fx1/interactive/console.py",
+      "sha256": "a2fed9f44668a442acfb055f3cc40b7ca37d1889b401e8c9c7fb36d988709763"
+    },
+    {
+      "name": "fx1/interactive/context_window.py",
+      "sha256": "c3d61e195b9388ee2d2119470c92e9481a8e1f626a164be05d75f49cf3a22f15"
+    },
+    {
+      "name": "fx1/interactive/contracts.py",
+      "sha256": "23c42f8c19ea27580bccde798e338039bd937ed81388f84c47caad49cb3de744"
+    },
+    {
+      "name": "fx1/interactive/data_ux.py",
+      "sha256": "f15e3c28d167a4a6b91fef02769da2e3b1d7f03a7fbe76c471b84994ec10d98e"
+    },
+    {
+      "name": "fx1/interactive/datasets.py",
+      "sha256": "a06f0638e1ab8f141493fdc37d41fc6d3972b4dcb7271a204fcee11ad6c80d4b"
+    },
+    {
+      "name": "fx1/interactive/diagnostics.py",
+      "sha256": "b3b0c8121149340b9a4c714a46569017d0fe34a00cba15bee02d86de94a28268"
+    },
+    {
+      "name": "fx1/interactive/diagnostics_ux.py",
+      "sha256": "ca8597c8302d14c919901bbb067c658fcdf7dcbd48eff4345db4ffad596f69dd"
+    },
+    {
+      "name": "fx1/interactive/endpoint.py",
+      "sha256": "025c8ffd3335d0da20cd73f53405127c8132bf36402911dbc8883c3422fa1235"
     },
     {
       "name": "fx1/interactive/evidence.py",
-      "sha256": "1eb939bfac099ad231875d761220e354bf1266bde27f7bcdd5e8bcea66c40eb2"
+      "sha256": "003ccc42df2eeddb8ad70d054268c4b4ace096d612872756a3375c708adab1f6"
+    },
+    {
+      "name": "fx1/interactive/evidence_ledger.py",
+      "sha256": "26c52a847850c35e9a5ba8fd67af5de9d7939686e7066943b3f162a8cdb149af"
     },
     {
       "name": "fx1/interactive/families.py",
-      "sha256": "2731a03b53b1f10a087bbb28fa288c508e83a2263e361a5efc4321f0f29bc057"
+      "sha256": "343923b70fff34d8f6fe385b3dc911a0b9e6cab45b24b85cb032b4d80fa004d4"
+    },
+    {
+      "name": "fx1/interactive/headless.py",
+      "sha256": "c6aa03da3f60c6d74fc87fed0abbb042973578548e1952b7970abbcd89406d9f"
     },
     {
       "name": "fx1/interactive/intent.py",
-      "sha256": "06fceb692f98d22ee96c0901c8e891fae24b4d2e3ff7a80a9b513c32f171e54c"
+      "sha256": "ad53ab849536a74e114575f6ac76e18a0c7dd53f4334511d4329af1eb5e69a01"
+    },
+    {
+      "name": "fx1/interactive/jobs.py",
+      "sha256": "209403e48fe9b47d260ca8d73637a463cd10b9271ccaa973b5d2d3adb0defe3d"
+    },
+    {
+      "name": "fx1/interactive/lineio.py",
+      "sha256": "68e49cba6660b983bfd9f04647893aaf9d3cd7b2ebd9abe8d38b2e991a8ef40b"
+    },
+    {
+      "name": "fx1/interactive/model_client.py",
+      "sha256": "ba06f898f2554ad6c489bc12ee630703cf04e226650d975cfda450a506cf13a0"
+    },
+    {
+      "name": "fx1/interactive/model_dial.py",
+      "sha256": "f5b9efc522bd12efbc77985f41e751218627f0529162bad9621863219b1b92bb"
+    },
+    {
+      "name": "fx1/interactive/model_ux.py",
+      "sha256": "75819a7fffef4a7b54829fd177c4865e805564d826b4545e1826081bba51aca8"
+    },
+    {
+      "name": "fx1/interactive/models_check.py",
+      "sha256": "1a1c212d9d64a472c7f301bb6f62104e62c2c656848d22e5574772b8eccf9e54"
     },
     {
       "name": "fx1/interactive/orb.py",
-      "sha256": "f77bc2d81bdd6100d8ad21741b1dcbdaa7defda67db3201a5dec9fe4edcb61a6"
+      "sha256": "fc3a666a3492da9bc5d7a527d0168845027022af3253213fb06ff802014d52d4"
+    },
+    {
+      "name": "fx1/interactive/orchestration.py",
+      "sha256": "1ea53da2e43ea1685f32190f2395a658a86219170d23e4f63340252517477638"
+    },
+    {
+      "name": "fx1/interactive/planner.py",
+      "sha256": "d754e519cce0bf11ea8122b768c92291a032506c21b42aaf1f0ee8f8c74f8f34"
+    },
+    {
+      "name": "fx1/interactive/policy.py",
+      "sha256": "d5f54b934fe75161c6542d86524009945f1f7320402ee457124b7bff2944400a"
+    },
+    {
+      "name": "fx1/interactive/procs.py",
+      "sha256": "e4cbbf88c6b17891298e9756152d3cbfc20baadecd03786883caddb9071be61a"
     },
     {
       "name": "fx1/interactive/profiles.py",
-      "sha256": "044f866bdccb17ae61b5088d43c07f8ef9cb7e0f42b28a1779bbbe7aeec2d473"
+      "sha256": "3567c4152e86f1edaef1b338d36aa38e6141bd0e17cfce386756e376e76d3020"
+    },
+    {
+      "name": "fx1/interactive/redact.py",
+      "sha256": "0540024442c73f3d86c3df4cdeba9654294fc59c937afcbb7546b9d4df2bf34a"
+    },
+    {
+      "name": "fx1/interactive/run_report.py",
+      "sha256": "669bdc5b562d5ddca6228eb63915c7bd2cd0ba8220f4a653f3eb27f22ed0acde"
+    },
+    {
+      "name": "fx1/interactive/runctx.py",
+      "sha256": "2e8a7d8d2727211b8f4c1e6fe7d29bf0b5f5a0e85e326ced1b6175ebaa03dd33"
+    },
+    {
+      "name": "fx1/interactive/runs_ux.py",
+      "sha256": "b5fc42e53ca2576597ec790f3a06395d2f460b8732322c43a2ab2eed0d915d5f"
+    },
+    {
+      "name": "fx1/interactive/session.py",
+      "sha256": "2b234c74b367b65a1f47446b8564da1cae8c3e0d018f4e7a652dfe2cba0bdb39"
+    },
+    {
+      "name": "fx1/interactive/session_ux.py",
+      "sha256": "c3f043a373883410b860fcf611cd720afa2679c1a0dc43a6e71559571c76c85d"
     },
     {
       "name": "fx1/interactive/sessions.py",
-      "sha256": "a2afa4d6ea7b467febc7c40150a1d1bf816ac469c136e54e79ba8420dd8e117a"
+      "sha256": "85cfaeb5f97681ffd65c14561a11f4acda3bdc9dcfbda7278fb57e763f4ae618"
     },
     {
       "name": "fx1/interactive/shell.py",
-      "sha256": "660de84dd3cd504fa9ba3c0141e074de6bf93c55da68b13600d1669ea07eb738"
+      "sha256": "6d77818e669c330ae837709be78b4fb32163a137e262eace5a25fe357c9963d1"
     },
     {
       "name": "fx1/interactive/superpower.py",
-      "sha256": "e44fc960021a0a6fe1bc12c631a7b1d410168771d3611981e7c05c14cc8a7987"
+      "sha256": "eeec6238a99db7d36db888fa397f0cdebfac451ec4a16337b286f3e89f2ca44d"
+    },
+    {
+      "name": "fx1/interactive/superpower_glue.py",
+      "sha256": "a975cb3713c518588b2bbb8aae8ae85d55780e9fb08252e7a657ea85fff0b81f"
+    },
+    {
+      "name": "fx1/interactive/surface_seal.py",
+      "sha256": "d4229afb2d39c6206fdd1b812af14ba35f57f50cd0ead7da117b0b377bd45ceb"
+    },
+    {
+      "name": "fx1/interactive/system_prompt.py",
+      "sha256": "75658960c97f9459ce5f7a8d6b29c108b822d9080e99c7a28e695abf08427c89"
+    },
+    {
+      "name": "fx1/interactive/telemetry.py",
+      "sha256": "3f406aeff3ffbf6982e5c43465f6aabb06f4b2eee2decfd885a529ae96aa8763"
+    },
+    {
+      "name": "fx1/interactive/terminal.py",
+      "sha256": "6c3cc393238c8a4373d4bfca17c0a54df0c8fa9c9513a08f877ad81fd14e6292"
+    },
+    {
+      "name": "fx1/interactive/trigger_lexicon.py",
+      "sha256": "a107270f20853981ffd04f42cfe8e1a35be7c3bf0d510d6049371c2f71875000"
+    },
+    {
+      "name": "fx1/interactive/tty_guard.py",
+      "sha256": "784a62e99011d698a6ba0dc1733d46c3b8c57a77db621f1e721d9deea1d87106"
+    },
+    {
+      "name": "fx1/interactive/usage_budget.py",
+      "sha256": "1662e6fbb81d8f4610bf8109080db7b48bae6403f66a7f198f470c6b371e0f77"
     },
     {
       "name": "fx1/interactive/wizard.py",
       "sha256": "3fdb57d9e5eeb1aba9b702e97fb82d9295974c3baafe3cc303438f6616e27c1e"
     },
     {
+      "name": "fx1/interactive/workflow.py",
+      "sha256": "fd30a8777cf4450b448184eda8355fa9926ec6912ba85388aa7e084a22af8cc5"
+    },
+    {
       "name": "fx1/modelcard.py",
-      "sha256": "83c124f449e83c0907a152ed56253068a7745a4b0fcabf75f1406fd5797ffe2b"
+      "sha256": "04c25d264d9ffa4b25577606593eab50f3b331f964ece896ec1b5033d7ba6e3b"
     },
     {
       "name": "fx1/modelcard_audit.py",
       "sha256": "c1ae8e7d83a9e16409ea07d31e2941907dea0b076818027817e4625c527ab14d"
     },
     {
+      "name": "fx1/models/__init__.py",
+      "sha256": "570448ec694d721dad0bc43ee62b21fc8ff1faca807f6352bd54daf574fe074d"
+    },
+    {
+      "name": "fx1/models/tiny_lm.py",
+      "sha256": "a0f419cb566ef5b6edb32646cd21017a3e58cc2651e6b150a4e17237ceb46bdf"
+    },
+    {
       "name": "fx1/mrm.py",
-      "sha256": "414a987712d42dc60663d21604cfdb110967a2874c45aae51cd3c4ff5fcb8e1d"
+      "sha256": "204af2e18a2adc8f8327976d92d0912a32719409aec073050b0f24eb2bacc1cd"
     },
     {
       "name": "fx1/mrm_audit.py",
@@ -1000,7 +1464,7 @@
     },
     {
       "name": "fx1/operations/inspect_zip.py",
-      "sha256": "9102f857505963583c60c687bb8ca018e802dbb3bb12bd9d781ae7486938573f"
+      "sha256": "9df5c7d81a983ce6dd3099345b622ae4b9f2afcd4ecd54306e60cae66fdb9163"
     },
     {
       "name": "fx1/operations/join_asof_observations.py",
@@ -1096,7 +1560,7 @@
     },
     {
       "name": "fx1/prompts/fx1_system.md",
-      "sha256": "2f5ac4707341f92bf4c4d12c70363427b1b0aa02003ac75fe2a81abce6848c14"
+      "sha256": "37128aecfaa0e702003e663bdecb8741a83fb49ef251ee08e2d4327bd25a9976"
     },
     {
       "name": "fx1/reward.py",
@@ -1124,7 +1588,7 @@
     },
     {
       "name": "fx1/sdk.py",
-      "sha256": "e5ea4c70d052eea027c572ef86d2fe09eebf64397d69c4d82204262530d2afaf"
+      "sha256": "17e557cb9f1fc1c4792ad7ec689e7c1f176a30634aed920146a7a70d277efe49"
     },
     {
       "name": "fx1/sdk_audit.py",
@@ -1132,11 +1596,15 @@
     },
     {
       "name": "fx1/selftest.py",
-      "sha256": "3604dd365021be3764b0fabe9c05b6d9447dc8f3ac00b74909c57eeab2e99918"
+      "sha256": "211d618ed0259f21843389e58ce5f27fa9b7502154917a39a49ab76068650099"
     },
     {
       "name": "fx1/serve/__init__.py",
       "sha256": "7c70502cef7948d8c16cb2a45d84d854fb56be7432439f99bca2c47abf5cb2de"
+    },
+    {
+      "name": "fx1/serve/_api_cli.py",
+      "sha256": "71b3506f3ced45bced29df4869840644aa5486cc29c7e85fa62a4754786a636c"
     },
     {
       "name": "fx1/serve/anthropic_compat.py",
@@ -1144,15 +1612,27 @@
     },
     {
       "name": "fx1/serve/anthropic_sdk_audit.py",
-      "sha256": "9999013e408638362e69c046526577b78b9756e522aa559b6973d53fefb21537"
+      "sha256": "4d7798bb42da1252891f3d7d9ab252215d064216a2976caebd1d8a7d4120829e"
     },
     {
       "name": "fx1/serve/api.py",
-      "sha256": "4bfdf6bbbd195b592cd434526b048323d095e77f48edb4258e7b404582403ef2"
+      "sha256": "4c57562d01f3d2649eef080e9f3bd35a4715c5bbf1540831d80ecbcc03252ca3"
     },
     {
       "name": "fx1/serve/api_audit.py",
-      "sha256": "0e34676a8fa2b2c0eed15029feb1aab129e659296f17edbeb4eb00c6ddbd1013"
+      "sha256": "be7b2172780d2c6d192317b55fd442090970e21a54e1dd852b8d0c4dde9e9788"
+    },
+    {
+      "name": "fx1/serve/api_audit_finetune.py",
+      "sha256": "0af0a489e1d271aef4c3bc3b825f1fa88702b8628b95677352bcf6788c3dd0e7"
+    },
+    {
+      "name": "fx1/serve/api_metrics.py",
+      "sha256": "da2fb603c11bf718707035d1d1a18329d20d8eeb7228a25b8be1ee50ba47ed59"
+    },
+    {
+      "name": "fx1/serve/api_request_ingress.py",
+      "sha256": "75b1184f0ed584f4696737451596419d8d197a98ecf057353c85a8571d0a032d"
     },
     {
       "name": "fx1/serve/attestation.py",
@@ -1164,23 +1644,27 @@
     },
     {
       "name": "fx1/serve/auth_audit.py",
-      "sha256": "1297194faf1ad3160cd078b3b38b8f60b6b940a865089b49ee34ec5a0f2d63ef"
+      "sha256": "71a900a12b1361a1c0d08d9198533229f77b266da1109571506b0f94e521ec36"
     },
     {
       "name": "fx1/serve/backends.py",
-      "sha256": "177323f0c5fc865d6d0166f2346fdc56f25605e1b05bb49873843ef5708339a4"
+      "sha256": "1ae4c70b5fd24e07bf2889aabd69aa4cab45854b252f4b5b69e997614d35c5bf"
+    },
+    {
+      "name": "fx1/serve/backends_stop.py",
+      "sha256": "0872aaedb815e7c1ed5a02ee2cc7354140205ce91cfafc479914dc37846f08f8"
     },
     {
       "name": "fx1/serve/batch_audit.py",
-      "sha256": "7b480e4e860adc9da086b366f0b50c93ff250cb0acfb6fe5f5fb79c8aeff87c1"
+      "sha256": "341a5df3363017cd5ad878e58725526fde07c65946fa708a6f03966e28de1fcb"
     },
     {
       "name": "fx1/serve/byok_audit.py",
-      "sha256": "02e848c29e6fc20dc28c797ddf96e522b3a60cf6adfc794e23f402fdac60e2c9"
+      "sha256": "8a7694ecd90660156c0c1c9de1c9a9bdc30af95402bded8fa555b7d0ea4bec42"
     },
     {
       "name": "fx1/serve/cap_audit.py",
-      "sha256": "d9972c57077e110b9fb58f9447472fe3c0c9b3215f80213329ad38bcf85aca6e"
+      "sha256": "d6a21bae1f5f3e74c38aeef82e8839e95d4cb868b18a4359b6923373aabf7ec7"
     },
     {
       "name": "fx1/serve/chat.py",
@@ -1188,11 +1672,11 @@
     },
     {
       "name": "fx1/serve/client.py",
-      "sha256": "9bd715cc663ec29f0032e5e90f5d51317f468e3f569b55dc9bce8b2c586f0575"
+      "sha256": "3cd819ae3e17474af1a1815032de1884b7440282a718750a2cdc569da0ed5272"
     },
     {
       "name": "fx1/serve/client_audit.py",
-      "sha256": "1f67f2d94b264c9813565a5de355994ab327857628487e2ac3ab4e2e6b899991"
+      "sha256": "87aad8fdb17a4b437fa6c7be1fea2e7d16f7acdb9f9d44862266573580b72ee5"
     },
     {
       "name": "fx1/serve/contract.py",
@@ -1200,23 +1684,23 @@
     },
     {
       "name": "fx1/serve/contract_audit.py",
-      "sha256": "76114c7e60bc26ebfeb71849f1dbfb9e349b03843b2f0c09d437502dad7dafcf"
+      "sha256": "a6aa1447c17123b1aea2d2d0602ea7e13e4ab6e115ca0d0907b812a2fd5d1a99"
     },
     {
       "name": "fx1/serve/conv_audit.py",
-      "sha256": "89479a7e93cd134051d090f59c6f371f02bbfb0a86283ce19cd73b1bc655d57a"
+      "sha256": "3f0f723a478eb46f5e55e6cb45c969e66f4ac2fc1bc7c4451fc634c25bfe3716"
     },
     {
       "name": "fx1/serve/drain_audit.py",
-      "sha256": "d44d26be376dc0be4f65f441251fb99818e8007be92d8fea50b23440d8b12114"
+      "sha256": "4c2aba8bde0d2d9068adcd17a573d71a0b2d931a516f8708a44b14cbe81ea883"
     },
     {
       "name": "fx1/serve/e2e_audit.py",
-      "sha256": "d43bf2ec32812c433ca32d7fdecb5332d8f87a64642643e41a70712c7086e2fc"
+      "sha256": "ece34dbd9f65cb8a7360d0f9489c71e487af8c4bd24c258ee7cc32757fb0c463"
     },
     {
       "name": "fx1/serve/eval_lifecycle_audit.py",
-      "sha256": "c1d4d38ed1cb5ca87b4c5e2d97921e6a41d949911c9e4bfa14cfa60105d895eb"
+      "sha256": "2eb74b41f5c9cca16774d6bfa6b06e2afdf79a60ae0a6be872cb54cdf112d6f7"
     },
     {
       "name": "fx1/serve/evals.py",
@@ -1224,11 +1708,11 @@
     },
     {
       "name": "fx1/serve/fault_audit.py",
-      "sha256": "715d94c56d862540f34d3e8df8bc631164da1a12297ddb94cc929411beb355a5"
+      "sha256": "afec5783346751ff6e2faacf9da29b1fa66a820dffb1a3a0fd78fe7e69c6c75d"
     },
     {
       "name": "fx1/serve/files_audit.py",
-      "sha256": "d158043bd20ea18671b921e15f83c14afd3adc37dcb9903b517b3e5ff21fe677"
+      "sha256": "21d4d477d008592a04384df2975875ec48c34c29a1f1f7a22e5a4135e39896c2"
     },
     {
       "name": "fx1/serve/finetune.py",
@@ -1240,7 +1724,7 @@
     },
     {
       "name": "fx1/serve/header_audit.py",
-      "sha256": "3d4cb045d2dc7f4136f5f6ddf397f6c88b955d3c7207edf8063eeee422574645"
+      "sha256": "09052efd142b52c1522e1a479ee3630bb675796d100918fa650893ce9773c266"
     },
     {
       "name": "fx1/serve/idem_audit.py",
@@ -1248,7 +1732,7 @@
     },
     {
       "name": "fx1/serve/jobs_audit.py",
-      "sha256": "6cb8bbedf090cf1410a34a9edb45f26617efaa388b40f860bd24f55ecc058d0c"
+      "sha256": "341c63af21cc9c796fc95ae951d0e1578ea2e72817b3fbce94ac2e96f311416a"
     },
     {
       "name": "fx1/serve/journal.py",
@@ -1264,27 +1748,35 @@
     },
     {
       "name": "fx1/serve/local_engine.py",
-      "sha256": "b3660a2faeade5f2f8197005e00ab4e8c56f26de5c3681e768c85a2158778810"
+      "sha256": "aa81d2458e48e61c9acfb7fd3c634866a01f9e4206111987ba208fc7d5952162"
+    },
+    {
+      "name": "fx1/serve/local_engine_process.py",
+      "sha256": "708e886e4e1c2bc397ff19af2b74e2b70b91ec2ae8d27b9eb692af524f81b4bc"
     },
     {
       "name": "fx1/serve/models_audit.py",
-      "sha256": "2b423849b75b0746988c49833e3aeec665247b07f1287ba8112ca4293ccc677f"
+      "sha256": "e4ab981808451b7c37b18dbca95ceb4f44cf114ee1d56fb4e4258c4ff746f85b"
     },
     {
       "name": "fx1/serve/oai_sdk_audit.py",
-      "sha256": "b155c560e27f703fe56ba78af3fa04d6f9de6c642a9c4b4457c33c0f0574cee3"
+      "sha256": "861a032cd48e3505cceda0d1fcb772f6e4fd96558c2e33cefde31d0834deaafc"
     },
     {
       "name": "fx1/serve/observe_audit.py",
-      "sha256": "ef42f97cb7bc1e8394d36abb3eb8d90677a97f0a35cbd6cd31fbb7ee6857b2b8"
+      "sha256": "b4f79df4277dfafa0692b60de707b8c2480ad6f1cefc01be6dd943ec7c79342b"
     },
     {
       "name": "fx1/serve/openai_compat.py",
-      "sha256": "bcd0649ea6165bc74b9db498a8b1a2c228ad2fd27ce0aba840f6e966881872a7"
+      "sha256": "98fc1024b1131b810b45c4fd32072ed7ee56217af74ea4b5612bc446db29f0bd"
+    },
+    {
+      "name": "fx1/serve/openai_request_options.py",
+      "sha256": "e0df9e24f69e7e6628d42ec214592fa2ed186db4a55409a1a0340cc61e514c81"
     },
     {
       "name": "fx1/serve/ops_audit.py",
-      "sha256": "48db9b6ea6f6aca5b751b6b552cf4160befd94ae3d7d33b3a9aa20bdd6893c92"
+      "sha256": "cc681e7302bdc3398ee259211f5ac02d32a198fafaf02dc807ec6949950cfe85"
     },
     {
       "name": "fx1/serve/ops_receipt.py",
@@ -1292,51 +1784,59 @@
     },
     {
       "name": "fx1/serve/parity_audit.py",
-      "sha256": "7aceca7e2c1cf700ce61aa55a92fe68e0186d809a0e109e52889b45106ea5735"
+      "sha256": "5fe61c0a143b35b24f142ad0bc86bef49ab5eae04788edc8ae62aa1da45107c2"
     },
     {
       "name": "fx1/serve/perf_audit.py",
-      "sha256": "88f4167de8ce3522aa844574a61f491b75bb6e836a500f32c3261a39b60220b3"
+      "sha256": "3491ff636376de4847496ae86d4be5c291016213f27fda427abb8ec2eda10adf"
     },
     {
       "name": "fx1/serve/quota2_audit.py",
-      "sha256": "99b786f03944af69041104ac5417926727bf6b9452402311af84b410bb06e9c6"
+      "sha256": "ed859ece8f2901cadee3baa8e63d1e906448583e6645c7acb4efa58926112319"
     },
     {
       "name": "fx1/serve/quota_audit.py",
-      "sha256": "0e5d7a77e0664b3b2fe1a0429542ac1476cf72ea0eb339ac4609120d6e451115"
+      "sha256": "5f1eeacce1fc3720135bcb8281e78823770bef8be9bd4648752ff8f2badcd067"
     },
     {
       "name": "fx1/serve/receipt_store.py",
-      "sha256": "e657825823ea8283d9c75f95a7a28905796df85a5d999c5812f4f3be938713cb"
+      "sha256": "7ca1576cacb6e3253c5165f65a367c4959326014b92c2d8f19aae4b53fc2f2f1"
+    },
+    {
+      "name": "fx1/serve/release_gate.py",
+      "sha256": "dcfe5bed274db4b6092a5be43ad0ae13bdf0af8d6eac857c32db2aac92e56ade"
     },
     {
       "name": "fx1/serve/replay_audit.py",
-      "sha256": "d501775e3d42340c360117d998fb0f0efda7d731cda82f2d41fec6f5e687f010"
+      "sha256": "225e148c77929fa11910210b80352d254e197ab371e03b0ef4c8f152b1e00ba7"
     },
     {
       "name": "fx1/serve/retrieval_audit.py",
-      "sha256": "024e451592f318e1ac2abd7c01e0e633a907a1f13399279acb6f2d94da32db3b"
+      "sha256": "6325be966bc67b213d95ca7cd55b5c850375f4f4b62d917c11ec1c9bc1a72c69"
     },
     {
       "name": "fx1/serve/serve_audit.py",
-      "sha256": "0b5f3b03d123d75fd790039a4ee924c2aa9b66b95286fdb421e5da62f3ca2db1"
+      "sha256": "b72b0e746f44bb61fb43b224d5d0bc51c2d8b80f71560a22ec3c3e9c9e31d4fc"
+    },
+    {
+      "name": "fx1/serve/ship_gate_env.py",
+      "sha256": "4df8516033ed6e18312b1f94d45cad100648333b43238b9b8da989c37ff7448f"
     },
     {
       "name": "fx1/serve/signing.py",
-      "sha256": "7a70204e837a0a891eda880c9d6b030dfbe6c5cc01b94b111800e74f8b3a6a96"
+      "sha256": "6d85b75b3b7fc2c229336c4041b4343d738ec3dba6d245fc5972e67217bd31f1"
     },
     {
       "name": "fx1/serve/spec_audit.py",
-      "sha256": "57336cc036d83bdb751f1aead0fd85faa6b7f7101871522ee6f1cc4f9ee12734"
+      "sha256": "7e3e6ce2e96236347e28f617d23b9eb5d3a132e4cb589761b9305aadeececcf6"
     },
     {
       "name": "fx1/serve/stream_audit.py",
-      "sha256": "dba4da15473126fd1e437fddf7a7da16eaa296204fc0c7855f016d95acbcef2d"
+      "sha256": "fcbbaddbbe648d83a46e5e65ff2a9cd9db7328511beb20c2e5cd3f460ce734ab"
     },
     {
       "name": "fx1/serve/tenancy_audit.py",
-      "sha256": "99659fb2756c403fd0d0cb147360da70009b9bc0b86730886e9fae523e42938b"
+      "sha256": "8dc5bdb7a0c808ea90e557872739214099e469e31c9719f12a180a028332f944"
     },
     {
       "name": "fx1/serve/uploads.py",
@@ -1344,11 +1844,11 @@
     },
     {
       "name": "fx1/serve/uploads_audit.py",
-      "sha256": "c1cf7591d492017322ed18503dea36459cb7e1fa0d54868ee45b7b1688c79403"
+      "sha256": "3d19af80452a7f51c8080553543448e8d1e3b1425c06b90b5f13a53992e4f676"
     },
     {
       "name": "fx1/serve/usage_audit.py",
-      "sha256": "6d055266996eb92587d517f5a8cddbcc3d0596f99b8999208ffc38920e5f621b"
+      "sha256": "5a7f5ef29550d9c05e6d06d751c98efa39705f2b6837a93a04eceacbedd8c30d"
     },
     {
       "name": "fx1/serve/usage_report.py",
@@ -1360,15 +1860,15 @@
     },
     {
       "name": "fx1/serve/vs_audit.py",
-      "sha256": "292527be375e2d81fabb907bc70800748e782d93730b011d3be257707482d35c"
+      "sha256": "0dbb1c29f087e318a852a39777d4f9a49921f8b1367400e23b705b39dfd00eb2"
     },
     {
       "name": "fx1/serve/webhook_audit.py",
-      "sha256": "52ed485f7433eb9acf895cb48a645ffd697f3548745ef24b514d34cea98e1906"
+      "sha256": "d1e0726648461ea5f58c85279140b9c91bb5761818fc6ac48eca728c2f0fb344"
     },
     {
       "name": "fx1/serve/webhooks.py",
-      "sha256": "a34ebb9e60eec1578a82f90b2221b7c7aac1a532c4202f14710893e133990868"
+      "sha256": "e5947cd5fb8bd723d7649757ebb675d2e106c91df13a42e1a0a6d85da3cc1e65"
     },
     {
       "name": "fx1/tail_audit.py",
@@ -1392,7 +1892,7 @@
     },
     {
       "name": "fx1/train/dpo.py",
-      "sha256": "beb3a3c1ff165b71e0876cafdaae03356bbcbeabd803961decc450af280463dd"
+      "sha256": "332237898fe70b2b1bb2683891b286ebaa95fba37b11a4d5b091619f7aacbacb"
     },
     {
       "name": "fx1/train/infra_audit.py",
@@ -1416,7 +1916,7 @@
     },
     {
       "name": "fx1/train/run.py",
-      "sha256": "de6b1f12cd64a883082254ad2a193a57e22f60bcd70c6f147115eae27fd33244"
+      "sha256": "a77e7e41a6fa80228efc2e5944965d280ad0e8682f631ff747ae1edad8b4476c"
     },
     {
       "name": "fx1/train/run_audit.py",
@@ -1424,7 +1924,7 @@
     },
     {
       "name": "fx1/train/tiny_lm.py",
-      "sha256": "e60a7d195c5a6c59a6f9908e74cb9455c5382509b901a1340fffe2ea6a85fbfb"
+      "sha256": "67997c6a0b0195ce89956d7814b909389fea2b95e6dc027ae3cec4ce0e198ba5"
     },
     {
       "name": "fx1/train/tracking.py",
@@ -1436,15 +1936,15 @@
     },
     {
       "name": "fx1/webresearch/engine.py",
-      "sha256": "5331ccc2e93476f4e5626e677e830dd7d74affd77802704980a20bf54712e12e"
+      "sha256": "c164165b9abcfbba7bc6b5c9886fa32bf4d3d1930965c1d9d755f9d51acf1fcc"
     },
     {
       "name": "fx1/webresearch/fetch.py",
-      "sha256": "e9a63ea2fdf727a552d6e2df5e7ee8664c7d830892ccedbd72de126e74cb62e7"
+      "sha256": "0497aaba7c5bb36319265cf497a4f6681c2b9e6f6fb63b3cfaf2516ad0c75bdf"
     },
     {
       "name": "fx1/webresearch/search.py",
-      "sha256": "8aa549fc2ef8038c5d73db0a1f6cd91fb01130d78b2b24d1c5a2df12c9f3ea84"
+      "sha256": "272115ccff7071d160cee65cde9571c004b03723130d32c9f5d637c55218ac8d"
     },
     {
       "name": "quant_fund/__init__.py",
@@ -1499,6 +1999,10 @@
       "sha256": "8a4db6d4a8c58bfed885400196826f5fd1bd452bb790cd1133099b17b95874d1"
     },
     {
+      "name": "quant_fund/audit/kernel_lineage.py",
+      "sha256": "e8bb408958b32cdcb82f030ab3d024e6aeb67f7ed7053603bfaa7b90cdbd869c"
+    },
+    {
       "name": "quant_fund/audit/ledger.py",
       "sha256": "1a39e798990d8875922454f4d820f4aebe694fdf7b5c073a4a16a177f2c70fb5"
     },
@@ -1512,7 +2016,7 @@
     },
     {
       "name": "quant_fund/audit/signing.py",
-      "sha256": "2cef55ca6560377f732b8a07e250805c87480c827dfb5128fed0d5b6bd43141e"
+      "sha256": "ef3e754462d45fea1af5cd53bd4d004e2f7e51b131433e9a5e7d57aa6866c788"
     },
     {
       "name": "quant_fund/audit/trace.py",
@@ -1532,11 +2036,11 @@
     },
     {
       "name": "quant_fund/backtest/carry_engine.py",
-      "sha256": "667d3a2a9a02d7af1eb74558b704fc1da3e0993120cf2d5fb3da7e8622a34f5d"
+      "sha256": "88085500fe5c2c5193cc911fe15508fd19df6c18cddd2720a7213b114d52e0d4"
     },
     {
       "name": "quant_fund/backtest/engine.py",
-      "sha256": "ba6ca482f0598d9f079600e8b40ee5c5a1475daa861ef88fa996f5f2c66c1212"
+      "sha256": "6752f0e2d580c940ca5b6b0cb40fc23a6b9935d12bf2ce12972abd7c33611768"
     },
     {
       "name": "quant_fund/backtest/event_sim/__init__.py",
@@ -1568,7 +2072,7 @@
     },
     {
       "name": "quant_fund/backtest/fast_replay.py",
-      "sha256": "d95e44de9a1355f1540ec1453d74eddd33745fd250c09899e5ca52a22673c62f"
+      "sha256": "b54741945a48176359fbb70c4cac657a9df5b0cb81c3506919867eee520d09c9"
     },
     {
       "name": "quant_fund/backtest/nautilus_conformance.py",
@@ -1612,7 +2116,7 @@
     },
     {
       "name": "quant_fund/calendars/sessions.py",
-      "sha256": "2d514c9de8a14bcd5ff84964c2f2c09cd99ddf5f2f68541c881c04724e168fad"
+      "sha256": "47b6226fced0817f25d4f2659bb3bc3860d3f19a9f9544e6ee7ccabee18317db"
     },
     {
       "name": "quant_fund/calendars/us_equities.py",
@@ -1623,8 +2127,12 @@
       "sha256": "a505b726bb829757039bce1e94cae7a92bdfa1c94867202848e6493928b29a4a"
     },
     {
+      "name": "quant_fund/cli/__main__.py",
+      "sha256": "6794918db3811ccca10abf6a697d3b689d38136fd8e7372cabfa3194fd8d3d3b"
+    },
+    {
       "name": "quant_fund/cli/_app.py",
-      "sha256": "bbf1d13976b119a779dedbe000399ddf4663e56d821fc20fb264a891a7cb425a"
+      "sha256": "d49ea0dc79202a8d8b726332b524e9838e9af3428c2942d7993c6de9ec240594"
     },
     {
       "name": "quant_fund/cli/app.py",
@@ -1643,8 +2151,36 @@
       "sha256": "d03ee149336107d0e2aa63d2516a5468cb7e3b6bbd091e6eeef9fc32dd2462ee"
     },
     {
+      "name": "quant_fund/cli/capability_audit.py",
+      "sha256": "77baa18c90fe2ee7be29587208ad51ac07708ae3a6992a08c3ad9543f352c0be"
+    },
+    {
+      "name": "quant_fund/cli/capability_cmds.py",
+      "sha256": "306e5af612461a4e179495e486fc7b2e9931e6e889361f01700bdd6e9ca707f8"
+    },
+    {
+      "name": "quant_fund/cli/capability_families.py",
+      "sha256": "ed4adc831b846a90c65988cc29423b6782cfd07353808c325f558f8b457e1b74"
+    },
+    {
+      "name": "quant_fund/cli/capability_introspect.py",
+      "sha256": "3cadcf9b9c2435026edaab5420aec666b865d43a7a1b33e5fb99378f48c852cd"
+    },
+    {
+      "name": "quant_fund/cli/capability_model.py",
+      "sha256": "7a1846715f1c39843a760e69accbdc2277d99129303103c321275aa76f27364c"
+    },
+    {
+      "name": "quant_fund/cli/capability_overlay.py",
+      "sha256": "9d86e707518219b81a02fe38a5c77d0b67a0b4e3a42bec0c4dab4531cf87ae80"
+    },
+    {
       "name": "quant_fund/cli/data_cmds.py",
-      "sha256": "9a3609945963e416e92367124c0fd4e6f3bbe0bc431b32892bd7947010474a16"
+      "sha256": "dc4f5a981010c4d37ce71dfeee5df265351a5ba6c09135428e1369ddbe1de3bc"
+    },
+    {
+      "name": "quant_fund/cli/families_cmds.py",
+      "sha256": "f3cb7e8fe186463507a5821098134a88db95c9ccaad8f8b9c5fca86b5d57ef80"
     },
     {
       "name": "quant_fund/cli/family_cmds.py",
@@ -1655,12 +2191,16 @@
       "sha256": "9ffe478e4ce698cf5e22eab967c604c16cb544744ae8503aee37e24a14ba9e88"
     },
     {
+      "name": "quant_fund/cli/key_material.py",
+      "sha256": "015e4ba3c741c427873a298d3a0cc443289351d8aa1a326fc81336c718a079c7"
+    },
+    {
       "name": "quant_fund/cli/lake_cmds.py",
       "sha256": "e73a5c7981c2b0c054c52ba29ff41b21b1f72d6d4f89fdf487aea309d490fd57"
     },
     {
       "name": "quant_fund/cli/main.py",
-      "sha256": "1fa5ac28276d1c5f61ef7d6f18938a561807bd3b1f0fff1eb4dc2801f8b63595"
+      "sha256": "939cc710c7c1ee6aa0d28a39f5c125d1992563acf4f637414f7af0ced0763562"
     },
     {
       "name": "quant_fund/cli/micro_cmds.py",
@@ -1668,19 +2208,43 @@
     },
     {
       "name": "quant_fund/cli/ops_cmds.py",
-      "sha256": "515f29607e7dbc7e4cb68205fd1e6c6a8f1c57ae8748ade26ae11b2de850266c"
+      "sha256": "fc2673b64b15a201a1f60004bd2469f123432a150dafaf563ee0dcbc516e067e"
+    },
+    {
+      "name": "quant_fund/cli/option_highlight.py",
+      "sha256": "b98718fd957b2e44fb3019798a2475124edbc3b229f5d9e745f4a4243afa2f56"
     },
     {
       "name": "quant_fund/cli/report_cmds.py",
       "sha256": "cbebe2fa19f347c756eefb46e13c99c055f014371a4e217545285083d91f0503"
     },
     {
+      "name": "quant_fund/cli/research_banner.py",
+      "sha256": "e53805987100843835d236cbd628deb2f4e4532effc608650bde0636c6109bb9"
+    },
+    {
       "name": "quant_fund/cli/research_cmds.py",
-      "sha256": "bfccf14a0f1ac8933087f62071051d17636f00f667aefb4370e0074f6f8948d9"
+      "sha256": "2dfd002866c1ac3a6006b6a76e918a0c7efa92c793863f02e0240f7865839c35"
+    },
+    {
+      "name": "quant_fund/cli/research_eval_cmds.py",
+      "sha256": "c909141b97c95c2c54be748816dc5df7177998d12a6c970ac3b21c8bb7388df1"
+    },
+    {
+      "name": "quant_fund/cli/research_pvalues.py",
+      "sha256": "9a14422e54ae69ebf6792ed94b5e38cc74eaa1d67f681820cf9d2c0785ed4b67"
+    },
+    {
+      "name": "quant_fund/cli/research_quorum_key_cmd.py",
+      "sha256": "f291a02457280c9007bd03d9c6f684e5a5faa270327a388f4a5a807b795fdc2a"
+    },
+    {
+      "name": "quant_fund/cli/score_cmds.py",
+      "sha256": "dec14eda319830df2c6bb3c800437446d18b1fb74b99439cde568b5c4ee9585f"
     },
     {
       "name": "quant_fund/cli/sota_cmds.py",
-      "sha256": "ad2d8c286eea58e99404b1bac08b4b3e25ac4162b9c0c2f49ab441a3c51807f2"
+      "sha256": "1068e071a749d754dc52e31780a4c52594d58eae02392845960c27b18042e10d"
     },
     {
       "name": "quant_fund/cli/support.py",
@@ -1692,7 +2256,11 @@
     },
     {
       "name": "quant_fund/combination/__init__.py",
-      "sha256": "59c666284fb34564a868b3c6b411adb4625f651276271c2605782e38c1ec5e8b"
+      "sha256": "212c8589b8e248e3d7df59dbb1b1f8f8e7412f695dd0f98765a3e2a59f31ab0e"
+    },
+    {
+      "name": "quant_fund/combination/adaptive_combo.py",
+      "sha256": "a21b6381d9f5503b5275067a9f68a936c47fb9e2415451f891b16080121f1723"
     },
     {
       "name": "quant_fund/combination/bma.py",
@@ -1703,8 +2271,32 @@
       "sha256": "56722b9e189d77fa1ee47d5217e3913c0aecc4a3c6afbdcdc7f8b1936a02e153"
     },
     {
+      "name": "quant_fund/combination/conformal_quantiles.py",
+      "sha256": "3b985edd0b9bc57cc24275051679cf05dc05a4ac277043b9f969c223786d71cc"
+    },
+    {
+      "name": "quant_fund/combination/diversity_metrics.py",
+      "sha256": "c792630f8ded53210b2f6ae42236324f82a3b5cbd384e019725a14d5bd4f94a3"
+    },
+    {
+      "name": "quant_fund/combination/ensemble_diag.py",
+      "sha256": "dcef8397bb22baeb0fc4360cc3483a288fbc7dd0d85941ef83d4f79229612691"
+    },
+    {
+      "name": "quant_fund/combination/ensemble_pruning.py",
+      "sha256": "66c38a4a095cbe31787ce49a47ade4bc1a3c274d0fa06efea021e617813116ed"
+    },
+    {
       "name": "quant_fund/combination/granger_ramanathan.py",
       "sha256": "eff8fe3612071768c798513968f386c8263532186ada190894f346bcdedbdd3c"
+    },
+    {
+      "name": "quant_fund/combination/interval_ensemble.py",
+      "sha256": "713a3be93c3ddee86958081551ab4d7aeeaa9615e0994676443e93ee061d63ba"
+    },
+    {
+      "name": "quant_fund/combination/member_health.py",
+      "sha256": "8a7087389240c2c8c61117005d55d908c77bcc575428e02e5fb706fc56f9e2a4"
     },
     {
       "name": "quant_fund/combination/online.py",
@@ -1719,8 +2311,20 @@
       "sha256": "e5f821368a5ca2f2ba56cd8a5337203929191a76a6ea3f95650e26d5e874f9f8"
     },
     {
+      "name": "quant_fund/combination/quantile_bias.py",
+      "sha256": "75eddbc43d9c22321735f1e0753bee375494e31e8f8abe229847598e6fa17ff8"
+    },
+    {
+      "name": "quant_fund/combination/quantile_regression_combo.py",
+      "sha256": "e2b7f86714150d384c5051b5839552399364b688df16795b08b63430cb3725ec"
+    },
+    {
       "name": "quant_fund/combination/trimming.py",
       "sha256": "a1ebbd4ced648ada3f993ca1505d6f5cbe6c55fb7bccea0b290d2721509d7212"
+    },
+    {
+      "name": "quant_fund/combination/variance_ensemble.py",
+      "sha256": "94ee638ca49929dddf9e1b5f110e51bce5df4d4351b2eae4bbd233d3670c7ac1"
     },
     {
       "name": "quant_fund/compute/__init__.py",
@@ -1739,8 +2343,12 @@
       "sha256": "68ed7f5a09a8e52963ccaefcb5534ffc40fd5112a1e4a2df10ca7dc1b2d629ac"
     },
     {
+      "name": "quant_fund/compute/numba_guard.py",
+      "sha256": "1b5f950f45d8235f00cca8f71fe285351f0656f9d9ba11b5fb546115f9d49a87"
+    },
+    {
       "name": "quant_fund/compute/parallel.py",
-      "sha256": "5c16e31607fe529bfb0030e1a9b3849f4d38e036f2817d644ce079b5ef40cf63"
+      "sha256": "46a7447284368e03049808e64fb18e0d6e1da9e1b6bc45af693221050baf7f33"
     },
     {
       "name": "quant_fund/compute/provenance.py",
@@ -1768,7 +2376,7 @@
     },
     {
       "name": "quant_fund/config/models.py",
-      "sha256": "2e5fed534cc28edc1ac8693f1a96eb98e63ddcd83fbc02c59544c87c6751a1ec"
+      "sha256": "685426f9b04b6a7247bcd629146167928aee749da8a5ef619fcaf5f7b330a83c"
     },
     {
       "name": "quant_fund/config/schema_fingerprint.py",
@@ -1788,11 +2396,11 @@
     },
     {
       "name": "quant_fund/data/adapters/dolthub_stocks.py",
-      "sha256": "5fbccdd0fac55ee50c2c183f5ad52aa17d43aec64444beb3309b6bf42254c47a"
+      "sha256": "ba71ec57b28cfd485bf6611e1622ba385a45dea8aadc75d8697e37b4d0fb00f5"
     },
     {
       "name": "quant_fund/data/adapters/hf_ohlcv_1m.py",
-      "sha256": "7f8338caa9f8b52b30c807dfe364ca3ef2c5506a97479650eaccbed8c740d56f"
+      "sha256": "0d5eb3c86e78041b868052914940b036bb02d1699a51cbdf1807a50bf7211619"
     },
     {
       "name": "quant_fund/data/adapters/order_book.py",
@@ -1804,7 +2412,7 @@
     },
     {
       "name": "quant_fund/data/adapters/stooq.py",
-      "sha256": "0f28a878d8fd14b3912a8152193bea179034427571f89c46663dea39aba4e446"
+      "sha256": "a9e86e9c9a32b782758def98c00b11c9dfa874f23865ac06b8d63ffecb79570e"
     },
     {
       "name": "quant_fund/data/adapters/synthetic.py",
@@ -1844,7 +2452,7 @@
     },
     {
       "name": "quant_fund/data/ingest_resume.py",
-      "sha256": "d2d036680da933bed62376117cdc49d6d17ad54acce2d98f01c6052b01ecca93"
+      "sha256": "f55b3bb8aa04ecf5cbd09c8f8af13728b51f7b693a68c9f18c303282330535da"
     },
     {
       "name": "quant_fund/data/lake.py",
@@ -1880,7 +2488,7 @@
     },
     {
       "name": "quant_fund/data/lakehouse/store.py",
-      "sha256": "fa0321cd65012f22d4e43241e2dcd1de77842f0cc2a9bb0d836909921cd3bff1"
+      "sha256": "ece8730c8922afa68a7bc2f265f3be6ccef71408a867e423a6ae4e07be7caaf3"
     },
     {
       "name": "quant_fund/data/point_in_time.py",
@@ -1960,23 +2568,59 @@
     },
     {
       "name": "quant_fund/decay/__init__.py",
-      "sha256": "563f09284df482da1cfdd011d73812665deb3c55695ad1eb0e18e473b87fde11"
+      "sha256": "093e4074a8d67fad429377ad1f59cfebd85ad9f1679a22035e1b835965751caa"
+    },
+    {
+      "name": "quant_fund/decay/bootstrap_ir.py",
+      "sha256": "d1f2516f4942e7923b7147405187003ddc8143c307d99f873fc94040a5f0f870"
     },
     {
       "name": "quant_fund/decay/ensemble_weights.py",
       "sha256": "378da29e7505dab880d7907759cc90be8f70f9d5ab3842543cc5fb1221483b96"
     },
     {
+      "name": "quant_fund/decay/frontier.py",
+      "sha256": "83c68a6d3c79b3addab217d8c5fb8c5e1d0d2b21377cb4d3138b0a7d4edf7edd"
+    },
+    {
       "name": "quant_fund/decay/half_life.py",
       "sha256": "626b2f639d10b2f83c7ab90b97f511755a0d5bde96bcf2ffca30ad077f042c1a"
+    },
+    {
+      "name": "quant_fund/decay/holding_period.py",
+      "sha256": "7c52124ae7a32a107b23b3dd075b6d51cabd2d96454a57f9c7ff66709b69e293"
+    },
+    {
+      "name": "quant_fund/decay/ic_attribution.py",
+      "sha256": "3bdeb98674a943c0e6dacbe5247b5f1207cef9ca740fdb720055a0d4ba3f7668"
     },
     {
       "name": "quant_fund/decay/ic_curve.py",
       "sha256": "a77a689f0c2db327c1a120c2c22d6f28df53a02a9408afbf0ceeb5dcae5bb0fb"
     },
     {
+      "name": "quant_fund/decay/ic_matrix.py",
+      "sha256": "f9f597f740591ef0c12cd3ddf2bca9138ed6207d6908fa6a035e9306c332623c"
+    },
+    {
       "name": "quant_fund/decay/ic_series.py",
       "sha256": "2797ac4554b5cd0fe2f5df5ea38549e0c9fcc9c289b698f0f8a55a3268dbbf7d"
+    },
+    {
+      "name": "quant_fund/decay/lag_weighting.py",
+      "sha256": "f458597a97b32a5fc1195c6a634b3483b5b6a3822f76b716bba16442b84ca05b"
+    },
+    {
+      "name": "quant_fund/decay/quantile_spread.py",
+      "sha256": "6207040fdf226981f259a07299a2f2207fa68dce74d06fe32c81077d1f07ae63"
+    },
+    {
+      "name": "quant_fund/decay/regime_ic.py",
+      "sha256": "80b5ec152e8627c3cc5ff117ba74a0583c7e7d21dff609d4f289b69134f4557f"
+    },
+    {
+      "name": "quant_fund/decay/signal_stability.py",
+      "sha256": "f2685f6a882e13d84c2255747f0fa2f4a2ae6ed923b5acbd39fd156331b01465"
     },
     {
       "name": "quant_fund/decay/significance.py",
@@ -1988,7 +2632,7 @@
     },
     {
       "name": "quant_fund/diffbacktest/__init__.py",
-      "sha256": "30a23de071588978ee0f5f5de416678c47af3621def3f8a3e53396bcbf7505a6"
+      "sha256": "0559b757529ded7e0c7967711536898daedaefca785fdd14e23549a9a9886678"
     },
     {
       "name": "quant_fund/diffbacktest/backend_parity.py",
@@ -2008,7 +2652,7 @@
     },
     {
       "name": "quant_fund/diffbacktest/spec.py",
-      "sha256": "f25b141cd5ececda1670be15ddd29446a865804a9826c4855ba83af6264ab95f"
+      "sha256": "8de4a591db01666de5b06a6eaf4e1f770a1834b78026db7ddb1773892b021667"
     },
     {
       "name": "quant_fund/diffbacktest/study.py",
@@ -2028,7 +2672,7 @@
     },
     {
       "name": "quant_fund/execution/arl_mm.py",
-      "sha256": "88eb834e3e60d679e59fac405a97957a055fa8593ef3dcbe029103608be0ea34"
+      "sha256": "cf8c9a1bff769698e05102f79ab4662583c9a079d3f60c8a5949a5a52769bacc"
     },
     {
       "name": "quant_fund/execution/cash_constrained_oe.py",
@@ -2048,15 +2692,15 @@
     },
     {
       "name": "quant_fund/execution/langevin_impact.py",
-      "sha256": "bc5c1d06a22b7a182cb15e8cd0a8776f8d94c4cf8204866aea2da16474d390d5"
+      "sha256": "2e3adeb9c22bd32a116157dfd51359f48285a0a4cff2876232a79341847aed8b"
     },
     {
       "name": "quant_fund/execution/order_recon.py",
-      "sha256": "3e9daf2fef79e0bd390d18856665fea473b3ca08c7cecb11453e2f9a959655e2"
+      "sha256": "6f155285078c7ab1aeff69bde85e9d8b3897afd1ffbab838764f090b5ba69f83"
     },
     {
       "name": "quant_fund/execution/passive_impact.py",
-      "sha256": "b5ee5887c1ff71253708027fb2331cda69d3bf15541060691fef6e374e231ecc"
+      "sha256": "e6bc218fd692db3bf7657bd4234cba5a7b9970a39208a441bcb98d04a8eaffab"
     },
     {
       "name": "quant_fund/execution/simulated_broker.py",
@@ -2068,7 +2712,7 @@
     },
     {
       "name": "quant_fund/execution/stochastic_tracking.py",
-      "sha256": "df63f198aab1b8336c166e4ca059e2f62af1b36f70a9973bdeea046564f79405"
+      "sha256": "a36463c6c0bf109aacf9d9bd2d168f094caa3342c8e4e1e6da41e9a65e491cf2"
     },
     {
       "name": "quant_fund/execution/sweep_bound.py",
@@ -2076,7 +2720,7 @@
     },
     {
       "name": "quant_fund/execution/varswap_stopping.py",
-      "sha256": "79996dd102388c0bfdd0ac6166d4fc2b69a33c3f78ee34d15d2b074c8a1f4727"
+      "sha256": "180bb8d8cbc57db03732967e1ed0cb4bd3aefbc8f6902e90ba050ddcc893dd29"
     },
     {
       "name": "quant_fund/features/__init__.py",
@@ -2084,7 +2728,7 @@
     },
     {
       "name": "quant_fund/features/_kernels.py",
-      "sha256": "38bafd3f341f253de3cd569e4461e6ac7cffd63cb7cfa60e90a9daea5cef8544"
+      "sha256": "1a0e52b200ac04c35e924f2247f41eba6554d36d4955f54453436a9028270345"
     },
     {
       "name": "quant_fund/features/bars.py",
@@ -2116,11 +2760,19 @@
     },
     {
       "name": "quant_fund/flowbars/__init__.py",
-      "sha256": "eeb60d2f867a4861450f2f4b8eeb2c167b6f1a1503f1e8509ed5da7d5b87cea1"
+      "sha256": "36ca540aaa09ca34d566470945fdc17626b02f60df65a8fbeb987ca65b58bdc6"
+    },
+    {
+      "name": "quant_fund/flowbars/bar_features.py",
+      "sha256": "1f8321fbd809c0dc0a1fb64de167174f7f2a5e1492ba6cb98be544e50291af31"
     },
     {
       "name": "quant_fund/flowbars/bars.py",
       "sha256": "a2df9ac11f02bdc330d7523e600dcd51032da28b5f9545c00f6dbbbaac31eee5"
+    },
+    {
+      "name": "quant_fund/flowbars/cross_impact.py",
+      "sha256": "5d2c2ec7cd2b7af654cfbff46c84e257a4fd5ddcf132c9f85dc27814982e9533"
     },
     {
       "name": "quant_fund/flowbars/entropy.py",
@@ -2139,6 +2791,18 @@
       "sha256": "0e49b0b587fc199aa18a1f2e1b198872e70beef690901f23644463301e268243"
     },
     {
+      "name": "quant_fund/flowbars/ofi_impact.py",
+      "sha256": "9b2ee1d1eb83c632d972036321cb7639cb632741fe26876c3eb56d0b6c7c6566"
+    },
+    {
+      "name": "quant_fund/flowbars/realized.py",
+      "sha256": "197963ce3559bc486b25a3887b6ec1eeb4e0eac238cdbe4771406d324a67623e"
+    },
+    {
+      "name": "quant_fund/flowbars/roundtrip.py",
+      "sha256": "76918f63cedceeed35ee148886997f78dd8e3b9580d3a0b95a4ede1ce7371ae9"
+    },
+    {
       "name": "quant_fund/flowbars/runs.py",
       "sha256": "35e72c37337df882559fa7d5cc816e8dc3b8f6cf96b035638b34a76f1e377b32"
     },
@@ -2147,8 +2811,24 @@
       "sha256": "26072c204bbd16ae2dfdc947aad8a0e56b104901c6bfae21fe263c9d9d94f5f1"
     },
     {
+      "name": "quant_fund/flowbars/seasonality.py",
+      "sha256": "a19075b47a0a97aaaef2ec627ef8a7c8568a93011ae30c2cffd7b16ba8d35aff"
+    },
+    {
+      "name": "quant_fund/flowbars/spread_estimators.py",
+      "sha256": "fa95b2e4a750508ea6afa7c27de2cd8d8d61a8bdafd6b85308425c11b8292683"
+    },
+    {
       "name": "quant_fund/flowbars/stats.py",
       "sha256": "a4c250f5a04b2964ef56262c0ded664fbee1f9a783190113f66000dce26db132"
+    },
+    {
+      "name": "quant_fund/flowbars/tape_quality.py",
+      "sha256": "dc818d2aba85f184cdfcbb6240099f5f68cd461bd67b176e81797cdc48e08da1"
+    },
+    {
+      "name": "quant_fund/flowbars/threshold_selection.py",
+      "sha256": "cfbe4e9f0678f775979276df05d1e34d22c2cb94c8cd22806fce21bd887e1dec"
     },
     {
       "name": "quant_fund/formal/__init__.py",
@@ -2244,7 +2924,7 @@
     },
     {
       "name": "quant_fund/hedge_lab/resources.py",
-      "sha256": "4ddfc6a7fd2c490f02e62d2dc23bf25a7388da4706d1fbec24b2a1656f41bedd"
+      "sha256": "1197dfb2184a56b3f53d300c290b2e7049ebbe4eb924cbbcb416bcd5e1b075bb"
     },
     {
       "name": "quant_fund/hedge_lab/runner.py",
@@ -2336,11 +3016,11 @@
     },
     {
       "name": "quant_fund/leakage/__init__.py",
-      "sha256": "a260f68e07733c12d804eb4742d9e0a9e148c2d74d40476cdf47237e6571d542"
+      "sha256": "50cec46a594344088462891c74807910fed5972b65e8d0e33f68eaf1f3129869"
     },
     {
       "name": "quant_fund/leakage/ast_scan.py",
-      "sha256": "3229f2226b1c4eccb4bae6e903420551d8d9164c6579dbf3b4b9037d5e98a0a9"
+      "sha256": "474d4f8efdd28d83ae0ca889ec880e794978ca43b53a259acd640622ad044843"
     },
     {
       "name": "quant_fund/leakage/cli.py",
@@ -2372,7 +3052,7 @@
     },
     {
       "name": "quant_fund/lightspeed/cli.py",
-      "sha256": "e7b5b5f8cb5f7771f01581af9ffce23aa92f488731c105ff2d92762d481bcbb9"
+      "sha256": "fff069ba37348282ee4264d6c648fe70d8644b15e5c21274f0d0bd6f3a3c74aa"
     },
     {
       "name": "quant_fund/lightspeed/ema.py",
@@ -2428,7 +3108,7 @@
     },
     {
       "name": "quant_fund/market_sim/honesty.py",
-      "sha256": "b26895c2354594dab17717cd27e7ff1dc71379abb09a998b02dec8f8bd326ab8"
+      "sha256": "b83a2cb64818acbdfe2ed7904fd65b93ca36b92d099fb66bf46f5020486b6066"
     },
     {
       "name": "quant_fund/market_sim/impact.py",
@@ -2512,7 +3192,7 @@
     },
     {
       "name": "quant_fund/metrics/adaptive_eps.py",
-      "sha256": "d4c8d9519736a2216a011a95c7a2b6a103b03a86e02eb1908d8df6a48ed3a504"
+      "sha256": "56cdb82509b98d195aaf6a1664adeef0cdb43829ab647f2833f325fcb13da49d"
     },
     {
       "name": "quant_fund/metrics/agreement.py",
@@ -2572,7 +3252,7 @@
     },
     {
       "name": "quant_fund/metrics/conformal_coverage_inference.py",
-      "sha256": "bb9fceeae238f01ecd2595f7325b6c56d3beeec63402e6ae4e647a620682aa43"
+      "sha256": "07801e17ea2cf64c637fbe0b29098b15b954088826cfd4342a31977264863ca7"
     },
     {
       "name": "quant_fund/metrics/conformal_e_detectors.py",
@@ -2596,7 +3276,7 @@
     },
     {
       "name": "quant_fund/metrics/dcp.py",
-      "sha256": "89f136a810d39d12e8ff5fc9fe9075ad9bb58d0251ec80e71486dc3f729c6ea8"
+      "sha256": "730757dc7b1519a92bef435d76ae4d2bbe7240d5d813381221dc6b343ec51d4e"
     },
     {
       "name": "quant_fund/metrics/density_forecast.py",
@@ -2664,7 +3344,7 @@
     },
     {
       "name": "quant_fund/metrics/fase_eval.py",
-      "sha256": "4d77ba86c8c727a049e2218ad193247606df91ed18ae1cf300660b61086bc434"
+      "sha256": "835215f62984a7dbef4cca5233e1a7810078a32b53e1b1e025241ab24910bd91"
     },
     {
       "name": "quant_fund/metrics/feature_select.py",
@@ -2700,7 +3380,7 @@
     },
     {
       "name": "quant_fund/metrics/inference.py",
-      "sha256": "8c04882d38f0f206dffb8332cc312a2bca4ec00826b026247f3ce549613dc09c"
+      "sha256": "2971115a10133fa69135bb2298770002d654d5be93980230bb30a4dd3e9d13df"
     },
     {
       "name": "quant_fund/metrics/instrumental_quantile.py",
@@ -2788,7 +3468,7 @@
     },
     {
       "name": "quant_fund/metrics/rank_confidence_sequences.py",
-      "sha256": "7fc93c765b46cde9d1b93f770c150f507e98fc75f30a048474f78a92b9b0c964"
+      "sha256": "4f6a187c842c301531f290d10447be2011ea0227cb716677c8b3670a2b748640"
     },
     {
       "name": "quant_fund/metrics/rccp.py",
@@ -2816,7 +3496,7 @@
     },
     {
       "name": "quant_fund/metrics/risk_parametric.py",
-      "sha256": "e59ab891fa5b10e023efc0eb140217b37eda101e4521c5d72be771394fe97b7c"
+      "sha256": "a109250c8e9b23cf73c2cf09cf9f0f817fbfa78ef23bc37a4c081eb400cda836"
     },
     {
       "name": "quant_fund/metrics/robust_location.py",
@@ -2836,7 +3516,7 @@
     },
     {
       "name": "quant_fund/metrics/scoring.py",
-      "sha256": "8876d1c7eea7910566ed7f52efcdc08c8c4c1d0bd31d6abbd5bed9c417399f3e"
+      "sha256": "b777683204ae0c82b9b4375a2ff946770ae5225efbec0abb0c95098549bd2f62"
     },
     {
       "name": "quant_fund/metrics/serial.py",
@@ -2860,7 +3540,7 @@
     },
     {
       "name": "quant_fund/metrics/sliced_wasserstein.py",
-      "sha256": "cb90ec95b94dd546166cfa1c43624bdc00f16915d2f16750f90f27caaebdf01b"
+      "sha256": "de9ad32ec7ff857ab2289b99aa37188cb8ae36adb25d7d9ac05cec016672c353"
     },
     {
       "name": "quant_fund/metrics/snooping.py",
@@ -2868,7 +3548,7 @@
     },
     {
       "name": "quant_fund/metrics/spectral_risk.py",
-      "sha256": "fff9dc5ed9831c54c9fd3d8706da6adda59fb8e1645a6e40d56224825baed6ed"
+      "sha256": "378f4c2caf48a2a01f63f50475992b6361ce35337a1434bd5ddb8d100bb8b004"
     },
     {
       "name": "quant_fund/metrics/stationary_bootstrap.py",
@@ -2892,7 +3572,7 @@
     },
     {
       "name": "quant_fund/metrics/twcrps.py",
-      "sha256": "ebf7cfc2739abcb94ea40bbc56a517b69f28b59e43078a1313b8ed827aa9e5e9"
+      "sha256": "f0ae3ebedee1847cbb11de163de9ba0288670c3cf36bca2a07ad1e8380b0a045"
     },
     {
       "name": "quant_fund/metrics/two_way_cluster.py",
@@ -2900,7 +3580,7 @@
     },
     {
       "name": "quant_fund/metrics/twosample.py",
-      "sha256": "605f54ba55b3a823cff6f5673eaf2c5668917fa707ffd411cc8ae1002ce53484"
+      "sha256": "08fb76d54451be4f861489fc787191c4f2869c6e43aa2833e9f00b455f8f1523"
     },
     {
       "name": "quant_fund/metrics/utility.py",
@@ -2916,7 +3596,7 @@
     },
     {
       "name": "quant_fund/metrics/vol_eval.py",
-      "sha256": "ad5ceb090bfe28103451d39f8741f2123facf8da658506a66f0fc462ffbffd79"
+      "sha256": "653dafec5392362872d230de71d84540546a35e44dfade45bc6c09b0261ab17e"
     },
     {
       "name": "quant_fund/metrics/vol_loss_decomposition.py",
@@ -2924,7 +3604,7 @@
     },
     {
       "name": "quant_fund/metrics/wasserstein.py",
-      "sha256": "ffe967574cd6501765718b194b6f706025ed49f93bc0ca186407ba52565af88f"
+      "sha256": "21a55d5271386428d27715f77343cacc4df926727411c1d94c9ce9a9ea8b33cd"
     },
     {
       "name": "quant_fund/metrics/watch.py",
@@ -2936,7 +3616,7 @@
     },
     {
       "name": "quant_fund/microstructure/__init__.py",
-      "sha256": "f1360400b0250a6e39f7ba523c98a43bcefe5c70516b6a6891c01892aa11605e"
+      "sha256": "b9a44be18e459590f6e51e7233bad310325bb7f1dd0190f843c1c1e6e6e15c07"
     },
     {
       "name": "quant_fund/microstructure/abc_calibrate.py",
@@ -2944,7 +3624,7 @@
     },
     {
       "name": "quant_fund/microstructure/adversarial_mm.py",
-      "sha256": "83e0d9f8bceddf3fa55b0bc389b63c7afcbe04f8599dc1489d86a6be83d9f425"
+      "sha256": "1e1f37d6e02924fb2a4e8e8c70051ea60773e60e7e398c5a1d51688b56c8a6fb"
     },
     {
       "name": "quant_fund/microstructure/aftermath_flow_bench.py",
@@ -2952,7 +3632,7 @@
     },
     {
       "name": "quant_fund/microstructure/agentic_lob.py",
-      "sha256": "cdb5f6231f14e9a8e3e0056dddcea5f019edb534fcb8c293db2392f4c4999b31"
+      "sha256": "02d1e4f81a6f6ccb39e3c3c56994ef6b292406b11be5d05670958111c723a5cd"
     },
     {
       "name": "quant_fund/microstructure/almgren_chriss.py",
@@ -2976,7 +3656,7 @@
     },
     {
       "name": "quant_fund/microstructure/book_depletion.py",
-      "sha256": "1422fa69f7e27dc1653dd581e62623aa617494f473bb63179cf35d1f84f004eb"
+      "sha256": "5f497e493a02ef938f504c7a5a9735393d49b93627f479733c693ec5cb0f289b"
     },
     {
       "name": "quant_fund/microstructure/book_metrics.py",
@@ -3016,7 +3696,7 @@
     },
     {
       "name": "quant_fund/microstructure/closure_fit.py",
-      "sha256": "523c00f1e49229f7e730010e5055c5c3d0e4b7017d9e669da9824fb7b52c3551"
+      "sha256": "f35ed94bc82a1a1e65acd943d0e7d1b17709bc5e423ba85adddd8229cd96654d"
     },
     {
       "name": "quant_fund/microstructure/closure_stack_bench.py",
@@ -3088,7 +3768,7 @@
     },
     {
       "name": "quant_fund/microstructure/event_time_flow.py",
-      "sha256": "465e0d1fab159a0f5963ab17457b4ebeca4375d760768da2e191b396bb2b8865"
+      "sha256": "a0bca0299453a1fcc190670f95f8e4efdd4efd471f7934a997095a005d1e57d5"
     },
     {
       "name": "quant_fund/microstructure/excursion_geometry.py",
@@ -3172,7 +3852,7 @@
     },
     {
       "name": "quant_fund/microstructure/hawkes_mv.py",
-      "sha256": "cb0983faad88377bbb5f490ec5d74734680bbc7bda8a3dbf503de3dc95484cdc"
+      "sha256": "88a1e3f3b965cb82aa0dc2f600229bb591eae3627d2cf16cbf3eee0a7376d6e7"
     },
     {
       "name": "quant_fund/microstructure/hawkes_real.py",
@@ -3240,7 +3920,7 @@
     },
     {
       "name": "quant_fund/microstructure/impulse_mm.py",
-      "sha256": "ee7a85a333fbb16bfe3f360f9aeca25ca4180084559ecfe47df95ce8acf7a568"
+      "sha256": "e12811b115378823859892ef261530dbf369601b1db42df6b2f5e2b1bdb7b733"
     },
     {
       "name": "quant_fund/microstructure/initiative_fade_bench.py",
@@ -3284,7 +3964,7 @@
     },
     {
       "name": "quant_fund/microstructure/liquidity_tail_lob.py",
-      "sha256": "f9aeb2e8bed8c1d0fe6680165b71ea95d81694b6692e8acec04c7c0d234fbd1e"
+      "sha256": "776bcd18f56878e85fc1e00b7547b2bea34110bfd510d55d3e9031f1cec60de2"
     },
     {
       "name": "quant_fund/microstructure/lo_response_bench.py",
@@ -3316,7 +3996,7 @@
     },
     {
       "name": "quant_fund/microstructure/markout.py",
-      "sha256": "8e8ea2b83bec5863c9b9b20df19dccc5ba1867b21f4824134144c4b225796f7a"
+      "sha256": "29ee5262335ef66e422f5de5c1fcb3ea41a7a516c2b0e82ca3149f47a6ae0ff4"
     },
     {
       "name": "quant_fund/microstructure/metaorder_decay.py",
@@ -3344,7 +4024,7 @@
     },
     {
       "name": "quant_fund/microstructure/multilevel_mm.py",
-      "sha256": "b8db3284d00a71e76753ece20c95bcb6f5f97a986436dd6716fb201551849ed6"
+      "sha256": "85699ec82f4158502674f079971db49bbf7f973af3bf1480ab66bf2f09becaa0"
     },
     {
       "name": "quant_fund/microstructure/ofi_forecast.py",
@@ -3380,7 +4060,7 @@
     },
     {
       "name": "quant_fund/microstructure/price_clustering.py",
-      "sha256": "a093dd029644c8a5c1b77fd1d36d945d86a42c6d2111dbc1a4ec5e6a33ae08f2"
+      "sha256": "e7e4c556007c6a6367af0a5f2ab64650df2e9878a3fb19801cbd97b114f4db41"
     },
     {
       "name": "quant_fund/microstructure/price_improvement.py",
@@ -3416,7 +4096,7 @@
     },
     {
       "name": "quant_fund/microstructure/queue_priority.py",
-      "sha256": "6ab3eb28983f63ba6916e75677d2ee7ff636c49a4e9b56d4048e000ba0cb9af1"
+      "sha256": "58a2e9eae873dedc777c5d1004e0b4217d85d986ded5986c5e8d8b46249a83dd"
     },
     {
       "name": "quant_fund/microstructure/queue_reactive.py",
@@ -3468,11 +4148,11 @@
     },
     {
       "name": "quant_fund/microstructure/rl_market_maker.py",
-      "sha256": "48f578c70b2b35c74e43da5d0c8bf8774f15ed8e7befa7d0133d7226469ef52d"
+      "sha256": "c2eb9825acff78e695ec3ba85a17df9c75cbc29117414f614bad471c34b52124"
     },
     {
       "name": "quant_fund/microstructure/rlmm_c51.py",
-      "sha256": "03aefe03eaf9823aeb9cfab2f86abaaf1280df97ddac6c00f26a0f4206931eae"
+      "sha256": "4d406b0b5441f03712ece84a75fbe54bc3b06ab9b15a8cc85e928ed205e5c675"
     },
     {
       "name": "quant_fund/microstructure/round_lot.py",
@@ -3480,7 +4160,7 @@
     },
     {
       "name": "quant_fund/microstructure/scenario_bandit.py",
-      "sha256": "d610abc197a0cc5bdea429d7f23ef5d3796ae5e741ff4430057aeb19a3982e46"
+      "sha256": "9a162994187bf864eacd90494bbb4df565103bd82dc4bea9810efa8102ccfeb3"
     },
     {
       "name": "quant_fund/microstructure/shield_decay_bench.py",
@@ -3508,7 +4188,7 @@
     },
     {
       "name": "quant_fund/microstructure/sim_sensitivity.py",
-      "sha256": "1002a4c6e0d1ff0c74854c38b94555212fa575bc060c2dfe49a75edb01095371"
+      "sha256": "328936cfbb4dfb70c1d4057ead0b781f859974f7c6adbdd0802edeecc46d4d7c"
     },
     {
       "name": "quant_fund/microstructure/split_flow.py",
@@ -3636,7 +4316,7 @@
     },
     {
       "name": "quant_fund/microstructure/zi_lob_simulator.py",
-      "sha256": "f1766818ebef715c4e456c1f24c839165845c6efc73032303c3a39e8ff27d4f9"
+      "sha256": "0338ce32d254bf378dff9a90e23600baac5e3b02593c572554ab6aa72d9219a5"
     },
     {
       "name": "quant_fund/microstructure/zone_card_bench.py",
@@ -4952,7 +5632,7 @@
     },
     {
       "name": "quant_fund/models/american_lsm.py",
-      "sha256": "529e568fdc6d6068e76356c89f15db5ac8287c3367a99a2928ad03b6872f0426"
+      "sha256": "b79063795503a0dddeb50a28cff213a55b4c5e523b06cb4b423913d5c949f2ea"
     },
     {
       "name": "quant_fund/models/american_politics.py",
@@ -6460,7 +7140,7 @@
     },
     {
       "name": "quant_fund/models/base.py",
-      "sha256": "4c74c4e88eb0010259ca811a6c020f1d667f8a45e0df6a265164170d8ff106a3"
+      "sha256": "91c4daa06e39f3f6cb77800f6409bcf804b5a3c96221654a509a9b8232970f3a"
     },
     {
       "name": "quant_fund/models/base_change.py",
@@ -6976,7 +7656,7 @@
     },
     {
       "name": "quant_fund/models/bfv_fhe.py",
-      "sha256": "3f542e157687ac95bc8f686835571cf42863029f701d7248af1c1997083aaa2a"
+      "sha256": "2a6dd820c7061e0ab30f8e54e497e1674bad162dc7334cd249b14232554ddba8"
     },
     {
       "name": "quant_fund/models/bgk_model.py",
@@ -8412,7 +9092,7 @@
     },
     {
       "name": "quant_fund/models/c51_rl.py",
-      "sha256": "a0a73744234fe4e13a2e7df2bc70a6f7d507643a543d6dc8591b289f5102781e"
+      "sha256": "cbc6e545233b8a081d980824d0fc0e3f38aec3fcda8abfe58f32eb8bde2006a3"
     },
     {
       "name": "quant_fund/models/c_star_algebra.py",
@@ -9388,7 +10068,7 @@
     },
     {
       "name": "quant_fund/models/chacha_stream.py",
-      "sha256": "d4b11b3d9eb373fba6a5c5e12a2d34a6839b76b3a0fc9133e26db6273dd58397"
+      "sha256": "1cf1dfa93a0896a81b86390bd7af4d9dd8a3a3b58fab2774a13edb2af7474add"
     },
     {
       "name": "quant_fund/models/chafai_rmt.py",
@@ -10232,7 +10912,7 @@
     },
     {
       "name": "quant_fund/models/cma_es.py",
-      "sha256": "540af9fc2674d3dc8dc78ba26bded1f8e3462a991412a7661df7a2f7f2f2ff3e"
+      "sha256": "4aa88287fbe387ef36a47da8799354776fdb16d6dd4213c7e7436d704b53163d"
     },
     {
       "name": "quant_fund/models/cmb_anisotropy.py",
@@ -10880,7 +11560,7 @@
     },
     {
       "name": "quant_fund/models/conformal_dist.py",
-      "sha256": "147caa8309100a891affacf510a5efc439aee153a4c613804d046b042d35f0ed"
+      "sha256": "4b29724989f0a04c9a0ed6e2c30e45f08c077b6686e2615da7dcfb25e7a79b4b"
     },
     {
       "name": "quant_fund/models/conformal_field_theory.py",
@@ -11496,7 +12176,7 @@
     },
     {
       "name": "quant_fund/models/covariance.py",
-      "sha256": "25306853eb0cb07c8b2654aa99a0ff7589ecf110dad59b2c2e83c097195f89d5"
+      "sha256": "a993f7e3f4f645b1deddba168609d028850606129707ab296f90eceb65ef8116"
     },
     {
       "name": "quant_fund/models/covariation.py",
@@ -12596,7 +13276,7 @@
     },
     {
       "name": "quant_fund/models/deep_bsde.py",
-      "sha256": "2a545ed65d88f036cefd6862543c33482614edce4ca11878f73535890b80460d"
+      "sha256": "5a794b8713a0373e79955718c812f540f2625c282e06d47c20a5513495a79b17"
     },
     {
       "name": "quant_fund/models/deep_cfr.py",
@@ -12612,7 +13292,7 @@
     },
     {
       "name": "quant_fund/models/deep_hedging.py",
-      "sha256": "d6a99ced09484d94dc6e0a91a79b47226141445008b6d810cf0b33b3e22a022f"
+      "sha256": "6de668d2355ba616464fecbecaa0c1eef9b72356a20555e0008d98859972b4af"
     },
     {
       "name": "quant_fund/models/deep_iv.py",
@@ -12624,7 +13304,7 @@
     },
     {
       "name": "quant_fund/models/deep_kernel_hedging.py",
-      "sha256": "f33d31c943a6c69f0fbc9ead131d09c71a58ec237afb8b811bb1842c1ec2be3b"
+      "sha256": "d243caab2795acc14f27af95a27e2dc03c7e6ffcfb106dd0431b5cffe24ccd87"
     },
     {
       "name": "quant_fund/models/deep_leak_studies.py",
@@ -12632,7 +13312,7 @@
     },
     {
       "name": "quant_fund/models/deep_regime_mixture.py",
-      "sha256": "64386e7e1c5981117fa1aefb9c8f99cfd2dc17feb3b2dcbeb7016c232dbe769f"
+      "sha256": "bf2e52271f74a4497d58817e6317657fc5de0a26736b58cc05a6549e9019cf4f"
     },
     {
       "name": "quant_fund/models/deep_rl.py",
@@ -12744,7 +13424,7 @@
     },
     {
       "name": "quant_fund/models/delayed_aci.py",
-      "sha256": "306885c08a1d5257d4f513ca6aa4657aaab5efed6146b22aa77fdea09cafbb90"
+      "sha256": "76ad10ef1cfbc88bf44e374ef12d672fd439f651ec7b90d5490d9d2de695bede"
     },
     {
       "name": "quant_fund/models/delayed_renewal.py",
@@ -13460,7 +14140,7 @@
     },
     {
       "name": "quant_fund/models/diffpts.py",
-      "sha256": "0033c2ac40e35eccbe6b6b9230c64db4f361f72542ff24176a746354e21355f3"
+      "sha256": "e54a2721b0625f3164ea07b1bcc585fed9d7489ba516048b0f392477f8b66fec"
     },
     {
       "name": "quant_fund/models/diffraction_grating.py",
@@ -13488,7 +14168,7 @@
     },
     {
       "name": "quant_fund/models/diffusion_forecaster.py",
-      "sha256": "e267be454877358470facb14aa03c5fb520d4a91cf6a5d7c2f29b1c21ed04c8f"
+      "sha256": "0e8fda9797d8b6b883101bc5fc8f915f8a76a7bc133a382697280502b96aa528"
     },
     {
       "name": "quant_fund/models/diffusion_index.py",
@@ -13748,7 +14428,7 @@
     },
     {
       "name": "quant_fund/models/distribution.py",
-      "sha256": "7a0253d30bd9af890583121089e9a8c935f407bd794bce43359d7bc2562d190a"
+      "sha256": "7536ef1753c7862bee28816bd4c90041d5feb4a68ab7034e5e46b28f7f3c9d33"
     },
     {
       "name": "quant_fund/models/distribution_regression.py",
@@ -15168,7 +15848,7 @@
     },
     {
       "name": "quant_fund/models/enbpi_multihorizon.py",
-      "sha256": "959400ae1ec53c45b050c63bbcc1944e010de5dcb290252ccdb65df9e2b2a17f"
+      "sha256": "7cdfe71fa8f7f985e4bae6a43999b8283bc76f9a6335bee8d95b280f58af4418"
     },
     {
       "name": "quant_fund/models/endo_coend.py",
@@ -15512,7 +16192,7 @@
     },
     {
       "name": "quant_fund/models/epoch_reclaim.py",
-      "sha256": "74e57bcb66247caa638c383994fa8fef8dd0c1dce3801da034c1ea6735da2b17"
+      "sha256": "68a12d64a01635e6ca85af26f36d55e1081eca3efd9dc86768998d79c809b457"
     },
     {
       "name": "quant_fund/models/epps_singleton.py",
@@ -16692,7 +17372,7 @@
     },
     {
       "name": "quant_fund/models/fhs.py",
-      "sha256": "4b3c3a24d4e52d56900c647619aa438072995a5940970964eb07b668828db932"
+      "sha256": "5eda95b757c9e04803dc7ae701882eb05a6e4af4ccec041c6314ab8c8ffba214"
     },
     {
       "name": "quant_fund/models/fiat_shamir.py",
@@ -17864,7 +18544,7 @@
     },
     {
       "name": "quant_fund/models/fukasawa_iv.py",
-      "sha256": "2007115d174fddfd59a6337825723550bb9f481b84bcbc61926cafe606f807b3"
+      "sha256": "e7b0da1fd134047941afc859176695162ba91e026785048421e7e3718c3943dc"
     },
     {
       "name": "quant_fund/models/fukaya_cat.py",
@@ -19404,7 +20084,7 @@
     },
     {
       "name": "quant_fund/models/greek_neutral_portfolios.py",
-      "sha256": "6d97380049a247261bcca148a7e946f05e36c3d04ba0070b86d32039ab2c6ab0"
+      "sha256": "905f2be20f73795dc8bb90f330487585177aed54769cb23d2df78c4d6e428c88"
     },
     {
       "name": "quant_fund/models/green_fn.py",
@@ -20020,7 +20700,7 @@
     },
     {
       "name": "quant_fund/models/har.py",
-      "sha256": "2585dbf16661835fb93f287d13eda1e375ffaee807342802512b2d751f16069c"
+      "sha256": "7d0b96bcf4cc619e51d51c41e853ef506b78018e37eb6b0c5b36bffd8f7dd891"
     },
     {
       "name": "quant_fund/models/har_rv.py",
@@ -20212,7 +20892,7 @@
     },
     {
       "name": "quant_fund/models/hazard_pointer.py",
-      "sha256": "193c2779d894669c6e5a6555f7bbabc15e3cd18e34b7744ebddc9c7b0c49987c"
+      "sha256": "652c09bc21b4b6272d363cef6d707e2285a9f72b135dd77ec660e25fbb5566b1"
     },
     {
       "name": "quant_fund/models/hazard_rate_order.py",
@@ -22864,7 +23544,7 @@
     },
     {
       "name": "quant_fund/models/ivs_diffusion.py",
-      "sha256": "13b269c1640b0d6ce2a1df05b60e84675e425630a4df1dfa72d28ee2434d100b"
+      "sha256": "44c8515f752cb9d0f39ca8ca4396e5b76b95c3b9da49f4aa5c978a8f58631fdd"
     },
     {
       "name": "quant_fund/models/ivx.py",
@@ -23768,7 +24448,7 @@
     },
     {
       "name": "quant_fund/models/kit_paths.py",
-      "sha256": "3334c169eacada68f776fe20116af0aa555db7a4ab5aad5b746a443ff0dfbfd8"
+      "sha256": "a4c6979a0328d634ce5cab20a5a885e2a95c083413b9eca0dd90659c989b2d8b"
     },
     {
       "name": "quant_fund/models/kite_qa_studies.py",
@@ -25464,7 +26144,7 @@
     },
     {
       "name": "quant_fund/models/local_stoch_vol.py",
-      "sha256": "0ed54bcf70b611b58e382383c8323353ba6c65205e2f3b2773a64507a34ceae1"
+      "sha256": "e72601497be8f1e1c104d50fdb1ffc2a21feef9781b666e902cd2f92c89114c6"
     },
     {
       "name": "quant_fund/models/local_time.py",
@@ -25908,7 +26588,7 @@
     },
     {
       "name": "quant_fund/models/lwe_kex.py",
-      "sha256": "48afe76c058643bd38229b4b385a0d0632afd97eaefbed7280b6aed7fbdc677e"
+      "sha256": "8fa3344ac28f174f26e4c83fe0fa71909ef6ae2a6b1cca428d21fc6fc886b814"
     },
     {
       "name": "quant_fund/models/lwf_cl.py",
@@ -26560,7 +27240,7 @@
     },
     {
       "name": "quant_fund/models/martingale_ot.py",
-      "sha256": "ac678bcfb8e7ce4774401a22006baefd228fd19e1bc506effad4c27381c7ff76"
+      "sha256": "bee562031446a441372688e098cf4eda341cb68d20a1dfb791ad34b32b76623c"
     },
     {
       "name": "quant_fund/models/mask_autoencoder.py",
@@ -26900,7 +27580,7 @@
     },
     {
       "name": "quant_fund/models/mean_field_games.py",
-      "sha256": "e1fde9f599c4e332f920d2c3634728db4d9aadf433732af395054e73d58c5ca8"
+      "sha256": "e35ec75bb5434559338c33c7e280eaa8f1784acf27e4129d63522b7e3b396c1f"
     },
     {
       "name": "quant_fund/models/mean_value.py",
@@ -29384,7 +30064,7 @@
     },
     {
       "name": "quant_fund/models/nbeats.py",
-      "sha256": "33adeed8b015f099634c03b7f237ffa3c70e6ad7b47b4cba0ec56d419451ee6c"
+      "sha256": "9b703b2e155378a6c66f72282e8551bdefd489ec03f3c9d1f289a29c2da0bb3a"
     },
     {
       "name": "quant_fund/models/nbeats_deep.py",
@@ -29592,7 +30272,7 @@
     },
     {
       "name": "quant_fund/models/neural_sde.py",
-      "sha256": "4245dc84d07dea12725b937fc52bf4548bae38deee546b61acacc0a1e8183910"
+      "sha256": "fa304ea817aa4c2abf87531de613d2cb7ccd7ce9110dda18b9110e88d0175edb"
     },
     {
       "name": "quant_fund/models/neural_sort_ltr.py",
@@ -30168,7 +30848,7 @@
     },
     {
       "name": "quant_fund/models/ntru_toy.py",
-      "sha256": "9888f7f05b2c9b83bc0e85c83045647b7d78b4c63d77524c0ecb38d54f0c1a3e"
+      "sha256": "2ce2ad42d88e6bebd292f2b606463015f067ed3202ea88d06c1bd7f594e9bd4a"
     },
     {
       "name": "quant_fund/models/ntt.py",
@@ -30548,7 +31228,7 @@
     },
     {
       "name": "quant_fund/models/odd_residual_flows.py",
-      "sha256": "0ed2481bedbe862061f3bfd870f25df0128edde6bb4211a20ae64c1525e8d66f"
+      "sha256": "86b4fc24b2ff4b1c820dc2d9340c14434d8e38e4c282ee5c027645116c17f47c"
     },
     {
       "name": "quant_fund/models/odd_variables.py",
@@ -31408,7 +32088,7 @@
     },
     {
       "name": "quant_fund/models/paillier_he.py",
-      "sha256": "cb781b2a1f3816ba81445713e06f472a9bc3654c48879033ab64f7306c8975df"
+      "sha256": "bdc4b3033ee5dc31b9e30de5329b813c147f57189b98203f2d5e7be08a40ef8e"
     },
     {
       "name": "quant_fund/models/pain_management.py",
@@ -31784,7 +32464,7 @@
     },
     {
       "name": "quant_fund/models/path_signatures.py",
-      "sha256": "5e23ffba9d1275b117d37e316865770efd4b72c1ecd3ceaa2923020ce3c78a58"
+      "sha256": "e46605baf55d0a7a3435e947ae20be4d54bd1a8bcb4d3387b2ee2a04af887685"
     },
     {
       "name": "quant_fund/models/path_sobolev.py",
@@ -33116,7 +33796,7 @@
     },
     {
       "name": "quant_fund/models/poly1305_mac.py",
-      "sha256": "91b649dd8d57e0a64f07660ce8569d914c2199eb7a5d078bc2c31f894c261cd4"
+      "sha256": "8e22db578a4b89af72cc77dde49f20b334a7afa307e36e1c6442c736830ee715"
     },
     {
       "name": "quant_fund/models/poly_chaos_uq.py",
@@ -35212,7 +35892,7 @@
     },
     {
       "name": "quant_fund/models/realized.py",
-      "sha256": "4eda9d78d2e8a4b887941ed22dd368d5e3c20ed7fd26622e5620782ef6f78869"
+      "sha256": "6e9950993179884dd163295a226120117c83611f8d0326436350a49f16dc2305"
     },
     {
       "name": "quant_fund/models/realized_garch.py",
@@ -35456,7 +36136,7 @@
     },
     {
       "name": "quant_fund/models/regime_conformal_var.py",
-      "sha256": "daec63b524ac8bb21364f5d7fcf2069ebb9119590b6b847676cff9c9d981b4af"
+      "sha256": "cd7ae85cb595cb09561fcd9555dfca31a0bccc3a0d876a3c7392b457dedca6a0"
     },
     {
       "name": "quant_fund/models/regime_dist.py",
@@ -36188,7 +36868,7 @@
     },
     {
       "name": "quant_fund/models/robinhood_plus/torch_backend.py",
-      "sha256": "22ae09e55f65d1d76f787814f1f0919a113bf1c568d1e757811a7b893a07b627"
+      "sha256": "07f3ef03bd5e8490c741a773cbdc780c976c69be5989adccadd141b01c5ec599"
     },
     {
       "name": "quant_fund/models/robinhood_plus/transformer.py",
@@ -36404,7 +37084,7 @@
     },
     {
       "name": "quant_fund/models/rough_vol.py",
-      "sha256": "2348b6bbb862a456517a3dad59953647cc11f03e58285f29cd9c1ad783e8f6bc"
+      "sha256": "921afe3bfccb5e914cd4f4881fddaefb8f3dcc557db2fc37d26630269171c9b4"
     },
     {
       "name": "quant_fund/models/rough_vol2.py",
@@ -37772,7 +38452,7 @@
     },
     {
       "name": "quant_fund/models/sheppard_heavy.py",
-      "sha256": "29363357237f33ba3babff4fad25461c7a711f4b34c67f5b6dd73619eb1b37dc"
+      "sha256": "3edcc3a29d67a88153af54817d8d64fd9c4078aa8d6ca93264557127b4b1da44"
     },
     {
       "name": "quant_fund/models/shield_mantis_qa_studies.py",
@@ -37888,7 +38568,7 @@
     },
     {
       "name": "quant_fund/models/sig_gan.py",
-      "sha256": "23608adfe0d17c96e4126c788b516d55c6f309d391ef71525ded3f07e04b10d3"
+      "sha256": "62a4562f215fed7b99bf2a3467a7d5997cb03635b0820042dfcc85d50965bed8"
     },
     {
       "name": "quant_fund/models/sig_inversion.py",
@@ -38204,7 +38884,7 @@
     },
     {
       "name": "quant_fund/models/skew_t.py",
-      "sha256": "cffe949cbece9e4fe0454e54600fb609ba07c17e2f30b55f9b1829a926edc972"
+      "sha256": "b7ffbde967f71b5a2eabd6e7f4cb3592ed2e4cf5b083ccf944056900590c3807"
     },
     {
       "name": "quant_fund/models/ski_combinator.py",
@@ -40472,7 +41152,7 @@
     },
     {
       "name": "quant_fund/models/sundial.py",
-      "sha256": "4e87f38b998b8147ed982cbc6d79e463895745b875bc7dbf967f1a59254ec022"
+      "sha256": "3c57b3e3374342b7e94329a03ed7dd87e7aac644762dc69f804b793e2af63bee"
     },
     {
       "name": "quant_fund/models/sungrebe_qa_studies.py",
@@ -40672,7 +41352,7 @@
     },
     {
       "name": "quant_fund/models/svi_surface.py",
-      "sha256": "bcbd27a4f651a535fec6901b082bf123ed17e098fa2a1b6e1ec762f52cc4a71d"
+      "sha256": "d71f8912c8140d84e73c437d369994999b8325ff5fc06ae8382037ac54b7d8ff"
     },
     {
       "name": "quant_fund/models/svm_classifiers.py",
@@ -43896,15 +44576,15 @@
     },
     {
       "name": "quant_fund/models/vol_per_security.py",
-      "sha256": "e491cf002a0c710fe5ef3b6dc19f5e4718c545cc251b7a6f721cc3ad7f2b694f"
+      "sha256": "e472c34b499fa2503793d72e51124088cbf235c9edf18f1c72bb8cd279369679"
     },
     {
       "name": "quant_fund/models/vol_scope.py",
-      "sha256": "10b5c6e5dd50ba9a0392151f83ab6ca769107fc6fecdace4a1dfd02d6975df13"
+      "sha256": "7b142526ac24d6431d96df16a3ed5ebece59a395440f19ec402e2d17f19c64dd"
     },
     {
       "name": "quant_fund/models/volatility.py",
-      "sha256": "35edcb820bf86b0d3016fecf416fb7c77942ca083e9052aaeaaeb070af15708b"
+      "sha256": "97ef4c82a5e6edb5eb10cbf9fab80d20ec939ae68f00218b51d48ee00409e7f9"
     },
     {
       "name": "quant_fund/models/volcano_qa_studies.py",
@@ -44136,7 +44816,7 @@
     },
     {
       "name": "quant_fund/models/watch.py",
-      "sha256": "ed0b831ce6444e302d12b419f213aa13283d4f0cf4d97ba3fd5202cbbc48bba0"
+      "sha256": "fc5fc7f602d33ca670792c5a921c0202d9ba3dcba8a26be23e32e3967aaf0abc"
     },
     {
       "name": "quant_fund/models/watchdog_task.py",
@@ -45272,7 +45952,7 @@
     },
     {
       "name": "quant_fund/monitoring/dashboard.py",
-      "sha256": "545cd1633e11e6672fc410ac6bf3b097f0239fd98f2204f4329522305be0df04"
+      "sha256": "7754719c409000f5e63d35f72fb7236e0a528800ae0a2f47742715ad7f3cc69c"
     },
     {
       "name": "quant_fund/monitoring/drift.py",
@@ -45376,7 +46056,7 @@
     },
     {
       "name": "quant_fund/observe/metrics.py",
-      "sha256": "f704398f1b61dcf40efbf7b7aabaa4abc6c92e4b03402dd6488e80f9a1b66e81"
+      "sha256": "7d6b2c55a4fc5e0985673946c4de60cadb17b7be71c7ef99165a70840be5a5ff"
     },
     {
       "name": "quant_fund/observe/overhead.py",
@@ -45400,7 +46080,7 @@
     },
     {
       "name": "quant_fund/paper/broker_adapter.py",
-      "sha256": "ac8f31d53f3e415198b72b9aedf01e963546b7323c4faf67ea9331bf67aa80dc"
+      "sha256": "adcae71b529e38a0f30775cd1091c15ed969ca8f2ad9b0e938470ac2abdefacd"
     },
     {
       "name": "quant_fund/paper/clock.py",
@@ -45412,7 +46092,7 @@
     },
     {
       "name": "quant_fund/paper/ledger.py",
-      "sha256": "8f407dbbe324104a61c2f9445a205bbc776ba9aee555c7e78f4f084c2c3ede1e"
+      "sha256": "ea66767da9aa574cc2b7e36c852491ff8c38062be768d068b025d4633505a024"
     },
     {
       "name": "quant_fund/paper/loop.py",
@@ -45424,7 +46104,7 @@
     },
     {
       "name": "quant_fund/paper/recon.py",
-      "sha256": "0808608dbef2da58a12105620d7e166d07cb6b65747f3b77ef8e9f29eb06e7f4"
+      "sha256": "ee5bb4a87ee1e59b31a6cda52ad2f95e37c14cea8a165ff26a2ac1fd406fa044"
     },
     {
       "name": "quant_fund/paper/sim_live.py",
@@ -45456,7 +46136,7 @@
     },
     {
       "name": "quant_fund/parity/report.py",
-      "sha256": "0482ad3cd3862816f104cc44a2fe856a5eb40b8702faf85686623fa8e1a19117"
+      "sha256": "0c3f779608b64ad092b0a36e68ed2e94deac0dcb4e5c3bd7076146c43c83b00f"
     },
     {
       "name": "quant_fund/parity/session.py",
@@ -45488,7 +46168,7 @@
     },
     {
       "name": "quant_fund/pipeline/artifact_manifest.py",
-      "sha256": "8d298ec6bdb8a158aa41525f5e5a09f640b3f2c2130174264cbd8361046d12fa"
+      "sha256": "65a4b80cdfa979a394423d0a5eea7cf78b6b8c4de7bfa80c4b75e3cc617d06fa"
     },
     {
       "name": "quant_fund/pipeline/dataset.py",
@@ -45496,7 +46176,7 @@
     },
     {
       "name": "quant_fund/pipeline/doctor.py",
-      "sha256": "c8586dcf9fea70914cb13002570bda56f6ddf6478e082a2afb36abb039f37c13"
+      "sha256": "a2a315eb1a42defbe79c760a4c8f6787be52f73f945da0e448c7d3d0f6a822a5"
     },
     {
       "name": "quant_fund/pipeline/flat_audit.py",
@@ -45508,7 +46188,7 @@
     },
     {
       "name": "quant_fund/pipeline/forecast/artifacts.py",
-      "sha256": "84b9164336b7908c611a416603b360a3069a857d75cdd82ec9f49930a645f234"
+      "sha256": "fc71f5db1c15b25d75710ae1ad7cc5079573378d26e5a778bffaf56337c5add7"
     },
     {
       "name": "quant_fund/pipeline/forecast/conformal.py",
@@ -45560,7 +46240,7 @@
     },
     {
       "name": "quant_fund/pipeline/train/families.py",
-      "sha256": "ca8a3d9b2b2161f10e11623a0afeb01024b0e5d542f5d33074946e6a5d93ffcd"
+      "sha256": "e6edc82528bcc7a04121aa2008bd5d014b81f44c8bcb56250b95f839855aab17"
     },
     {
       "name": "quant_fund/pipeline/train/garch_data.py",
@@ -45704,7 +46384,7 @@
     },
     {
       "name": "quant_fund/proof/__init__.py",
-      "sha256": "350e16b3aec3d15bdbd023b69b1ed1535d3e18cbaa5257d9e1bafb68b8a07189"
+      "sha256": "1d63e6f614ef12cdb39588e750b8d2b042c947c529f531084bc0cf920053bc4e"
     },
     {
       "name": "quant_fund/proof/bundle.py",
@@ -45717,10 +46397,6 @@
     {
       "name": "quant_fund/proof/estimators.py",
       "sha256": "ed33764cf6cbec91242362cde1bd9a8894d62e6774cf4fad11b17ba6ddc55592"
-    },
-    {
-      "name": "quant_fund/proof/promotion_receipt.py",
-      "sha256": "5bb4fbff7aac3546edbbeffd2a0a93ad2da61e3ff67ec921b5e0406fda3293c8"
     },
     {
       "name": "quant_fund/proof/recorder.py",
@@ -45740,11 +46416,11 @@
     },
     {
       "name": "quant_fund/proof/verify.py",
-      "sha256": "d19255405a5fa5a27ac74d2ed504be2b203dd76f9185c3187e2c4790c27799f1"
+      "sha256": "e1bdfece1dbf55fc7f4240cc573361a3e918ce11810bf876dec0c447f17668cf"
     },
     {
       "name": "quant_fund/proofcore/__init__.py",
-      "sha256": "0005587729537359a4c503aa2764131fc94698609f2f33fcefa072ddbd57a22b"
+      "sha256": "e89892d47ccb5139fea6186d7e01e2bd143298e951ead638f5c70f17d6bb9c57"
     },
     {
       "name": "quant_fund/proofcore/ci.py",
@@ -45752,7 +46428,7 @@
     },
     {
       "name": "quant_fund/proofcore/cli.py",
-      "sha256": "9fabd61fb8fef3a337cbaf66b8c4cef1217dadb77506e2cfc7b288822e043b14"
+      "sha256": "6defcabe028d0f91948513cb34086bf41b07cc2a58700e093580e4260dd44316"
     },
     {
       "name": "quant_fund/proofcore/contracts.py",
@@ -45772,7 +46448,7 @@
     },
     {
       "name": "quant_fund/public.py",
-      "sha256": "2728625ace9f0951684988f6a6013cc8de040d4a9c7d1d6d084ce6c075b0a9ed"
+      "sha256": "8665a8b89e62bd33da92e7a3d41b30669a9a4535b1c38ce7e61d94df852e2562"
     },
     {
       "name": "quant_fund/py.typed",
@@ -45796,7 +46472,7 @@
     },
     {
       "name": "quant_fund/quant_models/cli.py",
-      "sha256": "a6137fe2815b93500f0ca84eaa045f03efe366e57a77e953f24869e2a6b574f9"
+      "sha256": "2558c38aed6e7b460cc512437153181fa53bc43eb12feb8cff667d33134c8b98"
     },
     {
       "name": "quant_fund/quant_models/gex.py",
@@ -45852,7 +46528,7 @@
     },
     {
       "name": "quant_fund/reality/cli.py",
-      "sha256": "9f5dce06bc14306ac1033877ae53c6bd74c7fbb971d285e3d49ae1f3ececa2ff"
+      "sha256": "c5b1e7863e6ba9213e11f6a4f167347ec75274f1e04527afbc0370f4f1f3c9a5"
     },
     {
       "name": "quant_fund/reality/cscv.py",
@@ -45884,7 +46560,7 @@
     },
     {
       "name": "quant_fund/realized/hf_rv.py",
-      "sha256": "6d0a1c5a61aa0d0b7fc8e9be08a2616e9827402c338723cb68a2767713239d31"
+      "sha256": "4cf14536b73a698c0502c61850d2322b10ff96189abc33f0fc70e615d036676f"
     },
     {
       "name": "quant_fund/registry/__init__.py",
@@ -45912,7 +46588,7 @@
     },
     {
       "name": "quant_fund/registry/schema_drift.py",
-      "sha256": "ea4e92921e0f26fbaa0e6d99dcfb3752509b928fee96c6fca9d8ded152839ab0"
+      "sha256": "229b0c986036b8f3c9a2f4658007d152d63513031aa95e986a8629093cc2c17e"
     },
     {
       "name": "quant_fund/reporting/__init__.py",
@@ -45948,11 +46624,15 @@
     },
     {
       "name": "quant_fund/research/admission.py",
-      "sha256": "51dd043e5d49a76e67a95e332391b4a741a9709adf51908dcf5bb26b00df43de"
+      "sha256": "428603e3e2c8bb63fe391174d60db7ce929efa7436e7038dcc4359e718fe2d7f"
     },
     {
       "name": "quant_fund/research/agent.py",
-      "sha256": "4fabd882f578f55a279832c0513c27d61aa1c6582a971ee1445ae49cfec86dff"
+      "sha256": "f818051c99a443a8d959bd595353e3d37d03a42d5bfa2589a133108c44d755c7"
+    },
+    {
+      "name": "quant_fund/research/agent_report_io.py",
+      "sha256": "1f9cc99db8d1b9f721feafd864b13648726b3b27594d33eddff31cba6ad03802"
     },
     {
       "name": "quant_fund/research/allocation/__init__.py",
@@ -48672,7 +49352,7 @@
     },
     {
       "name": "quant_fund/research/benches_w16.py",
-      "sha256": "913f8dff21360c5d9f70d97705ea2c7bc44a39bf25e1a3d848a10a21f19d067b"
+      "sha256": "ee2b9dc2d9cdede9a3662075bf6e82f8f6de30d9ad3ff4e7193e8a0c677b2ac6"
     },
     {
       "name": "quant_fund/research/benches_w160.py",
@@ -49116,7 +49796,7 @@
     },
     {
       "name": "quant_fund/research/benches_w17.py",
-      "sha256": "0c0b55065643b171e25cc842d697bdb2a4ec4f7ad9e9b19e82e6450650c0fa36"
+      "sha256": "6940135e8781aac6917c485122bd47fb58205f486618dba374928aca450c49bc"
     },
     {
       "name": "quant_fund/research/benches_w170.py",
@@ -49300,7 +49980,7 @@
     },
     {
       "name": "quant_fund/research/benches_w20.py",
-      "sha256": "0d3d79f8b58352fe38f8c6bbcfc9a723def08eb01deef540e9f02edaa79dadff"
+      "sha256": "6a7e8b1c37bc8f54d76fd69d0d4e5728ee6552de56ca76825083d68297418b78"
     },
     {
       "name": "quant_fund/research/benches_w200.py",
@@ -52832,7 +53512,7 @@
     },
     {
       "name": "quant_fund/research/capacity_overlay.py",
-      "sha256": "ea6b2587413eb8480602feecdf22f7ca94a4111c1e51a43ad7e3277fcd35e386"
+      "sha256": "b3538df302a276f8bf10b532768b780b228cdce86b6a2ef9569a475edd2e1146"
     },
     {
       "name": "quant_fund/research/catalog/__init__.py",
@@ -52892,7 +53572,7 @@
     },
     {
       "name": "quant_fund/research/catalog/optional_classification.py",
-      "sha256": "e0b25e4a6f80641d6b82bc1d49024b748c138652fd9172404d8236dc469097a2"
+      "sha256": "f9b295177f1af8ad9b6488f0d571e0094d4d6e3ad496831e457e4b4966d21b92"
     },
     {
       "name": "quant_fund/research/catalog/predicates.py",
@@ -52912,11 +53592,15 @@
     },
     {
       "name": "quant_fund/research/catalog/registry.py",
-      "sha256": "d53c4916bc9a67471cb296b1c5d9f888eab08605fb315eac5579bfa09e5f6e11"
+      "sha256": "030749bf9ec7485fa019cc38763fb7073ab16a7514954af719d4c696da4d30ee"
+    },
+    {
+      "name": "quant_fund/research/catalog/registry_blob_checks.py",
+      "sha256": "c07dc9aecbdca4b167e7a9b38bc695bfd17c6008d4f94763d52d19ec90ce8a7a"
     },
     {
       "name": "quant_fund/research/catalog/retired_families.py",
-      "sha256": "acd6d01ff280705d35ff30ef862c795c3cd644924d0f681cb27611af199c79e7"
+      "sha256": "70bd73a7eddfc9c399e79327e6b9581ba3e2891039ad1187828de82e86cacaca"
     },
     {
       "name": "quant_fund/research/catalog/session.py",
@@ -52932,7 +53616,7 @@
     },
     {
       "name": "quant_fund/research/checkpoint_chain.py",
-      "sha256": "e84d7880356a72d4579d7b65e9af7b5f381ad6c04241ef0df0945a228c3623ef"
+      "sha256": "336575468038c6c3ff5ef32ebabf961f165e90c868ec4146f3dc7b32c0292977"
     },
     {
       "name": "quant_fund/research/coherence.py",
@@ -52940,7 +53624,7 @@
     },
     {
       "name": "quant_fund/research/compare.py",
-      "sha256": "c6474c12c9b317e41b60bafaa73a642d23ac3baccdf305ad38844540c8584452"
+      "sha256": "89b56a8aa5ea759d864492c43d431836b115c00562537b6278c19812557d448f"
     },
     {
       "name": "quant_fund/research/concordance.py",
@@ -52952,7 +53636,7 @@
     },
     {
       "name": "quant_fund/research/corpus_epoch.py",
-      "sha256": "8ffe062db9a653239e09fda256d34f811104f75552e5da7e690853fec0471148"
+      "sha256": "114418778c7d863fe2a310152d1483ee5a9e76152bb48c460ada0f5f303a1e5b"
     },
     {
       "name": "quant_fund/research/corpus_inference.py",
@@ -52988,7 +53672,7 @@
     },
     {
       "name": "quant_fund/research/crown_jewels.py",
-      "sha256": "b5594ceb273fb79d2f010b92ceacabf5db5412e3200dc01faa4f591f55339432"
+      "sha256": "e71ba8b829df2780adfdd01b71b8676bc00c0a1b711307d2413c8d895ac304e6"
     },
     {
       "name": "quant_fund/research/custody.py",
@@ -53008,7 +53692,7 @@
     },
     {
       "name": "quant_fund/research/epoch_consistency.py",
-      "sha256": "0a4cdeab566ef64f7c2608e890e9fd7f65bb2fa6f9aa2c05d69b8efb1e3a2871"
+      "sha256": "5c281219d88725eea5cfad9faf35a630aa641ed8b8b8b67532405ad21518f597"
     },
     {
       "name": "quant_fund/research/epoch_delta.py",
@@ -53020,7 +53704,7 @@
     },
     {
       "name": "quant_fund/research/evalue_contracts.py",
-      "sha256": "60600ada3796b51b749483081f2406d71d15b7349e053620ca19543b21548768"
+      "sha256": "605896d4911c46d72e848680bd43c5994828ca0bf7d8e431e9ef68a3df767e95"
     },
     {
       "name": "quant_fund/research/evalues.py",
@@ -53028,7 +53712,11 @@
     },
     {
       "name": "quant_fund/research/evidence_audit.py",
-      "sha256": "1c455fc70305627c07c3ad5c08b2ac4d044ac1fd68e75056cc66bc6c0e31c150"
+      "sha256": "6cb3c372c4ec595f2af53480488f91336d6f64e03dd735af740fc744dbf5ca6c"
+    },
+    {
+      "name": "quant_fund/research/evidence_base.py",
+      "sha256": "a2c29eef7cc1d192d9b62c4e57cec37fe0413ae8758b72a0aab55ed530eaf4ae"
     },
     {
       "name": "quant_fund/research/evidence_export.py",
@@ -53044,7 +53732,7 @@
     },
     {
       "name": "quant_fund/research/explainability/attribution.py",
-      "sha256": "318b34c4a2cd78d9a523531aabeb5eff4acc53f39523080d17c5502107463e88"
+      "sha256": "797338b22ad8c14618be9c8a4539d576ce2b7df5745ce81a5f7dd15fd9a69bc4"
     },
     {
       "name": "quant_fund/research/explainability/drift.py",
@@ -53068,19 +53756,23 @@
     },
     {
       "name": "quant_fund/research/explainability_cli.py",
-      "sha256": "c975e526903ec58104e16bb094679e695a9a8ae251d5cbd1e0d489746027733b"
+      "sha256": "d49ecd519fbafed0be2a8569ba5d348e498f69037ce5aaebe37cb13446688630"
     },
     {
       "name": "quant_fund/research/family_surface.py",
-      "sha256": "826130e7c998b4d48fa4464165c92f996639104db615b23d3ce70c29aff850ca"
+      "sha256": "de940aa73e7d4929d3d6dff7f60273f5dc03fd9b9ee9725394572e1ba7013bf2"
     },
     {
       "name": "quant_fund/research/fleet_eval.py",
-      "sha256": "12008584f620629625c239baf1407bc6e74870aa86a8c5afa76e57ca0cf25fca"
+      "sha256": "a6eb10f061dc31ae18c78a6ab2d60f4befc997840122aba0b823f36be9059ace"
     },
     {
       "name": "quant_fund/research/fleet_race.py",
       "sha256": "bd0d2a7fd123508a5cfd4fa202af591976a802460a828f396caf62a7932ffc7e"
+    },
+    {
+      "name": "quant_fund/research/forecast_scoring.py",
+      "sha256": "44a71926ac3d918e8938abea3e96ccca387416a68ce6f86caf49ead48dcfc295"
     },
     {
       "name": "quant_fund/research/forward_evidence.py",
@@ -53088,11 +53780,11 @@
     },
     {
       "name": "quant_fund/research/forward_shadow.py",
-      "sha256": "7369bb60ce84abae15388a25d9baf9546cb2c683a2a6fb077be297fe0a9b96db"
+      "sha256": "a5bb30f8f12867502c47c355678629cf8b114c049a81e0cf64648413289814a1"
     },
     {
       "name": "quant_fund/research/fuzz_drill.py",
-      "sha256": "8098e52628ad9881c31e5da6442d034bd3d37d7f3d12f1ee659022a3f9ebeebd"
+      "sha256": "3815a0f0996c9ce6b87e16177522c45d42e4d71a4f22a83fd5c8bdeadb249727"
     },
     {
       "name": "quant_fund/research/garch_benchmark.py",
@@ -53100,7 +53792,7 @@
     },
     {
       "name": "quant_fund/research/gate_signatures.py",
-      "sha256": "1170b32d1ed40927a1f3304594e1c29863705017732dd90e2df96e61379708cd"
+      "sha256": "f9cb68e0f2d6786a381863a2663bc1b46b34619245fddb771175e9744fb45802"
     },
     {
       "name": "quant_fund/research/honest_verdict.py",
@@ -53116,7 +53808,7 @@
     },
     {
       "name": "quant_fund/research/integrity_checkpoint.py",
-      "sha256": "8ae2c64e2aeccd4bc0782fc1fb7296936b4588ec58cb53ffcedc16045a61687b"
+      "sha256": "768e4c3868e1ac30e6c9c0e5c03471b69be1d981d0263a36b8336b2ce1aa5705"
     },
     {
       "name": "quant_fund/research/integrity_witness.py",
@@ -53124,11 +53816,11 @@
     },
     {
       "name": "quant_fund/research/key_rotation.py",
-      "sha256": "e05ef63fad0aac99f74257d589113cdd6a262844f80cebd559df4116f6d02927"
+      "sha256": "7bfea14fb5e53bf901ed3d54a477370894ebc96bac6ad11cf95cf6b91fec2a3f"
     },
     {
       "name": "quant_fund/research/lane_contracts.py",
-      "sha256": "bc7b2f14ac6f606e81545f83a4c683d8294809168d80b0aa03b9f1eaec42e1c8"
+      "sha256": "8c6fd794db258ce0938b2ff135a5c0d44c2e2d3b756806ab5e911477c3929769"
     },
     {
       "name": "quant_fund/research/lane_power.py",
@@ -53136,7 +53828,7 @@
     },
     {
       "name": "quant_fund/research/legacy_unsealed.py",
-      "sha256": "9fbce7b2b10a3eae91c5418089c120209eb7fb66452c8e7af86c6580d514fe25"
+      "sha256": "2cf12fab02e1e0066a0c7d4d166a38395f7012abc6ecb57c9d0992c52f23fa03"
     },
     {
       "name": "quant_fund/research/loss_cs.py",
@@ -53204,11 +53896,19 @@
     },
     {
       "name": "quant_fund/research/phase1_verify.py",
-      "sha256": "40ad6ccc60fdf1885870672fc05a558cb4c2d03e2b31f8445895f9918e6cc75f"
+      "sha256": "9f5f8161478b4b66f27d880608b6053ce64fb09c152c190896321a968513b3c3"
     },
     {
       "name": "quant_fund/research/policy_eprocess.py",
-      "sha256": "58f0d173ac49f7d5b49a623c6598f743294a60e8bcf7d9d9135e20d867b27104"
+      "sha256": "9335ad72e481e3c917be596935cc1fd7e4d958feb9593825ba3f170c5b94ac00"
+    },
+    {
+      "name": "quant_fund/research/prereg_timestamp.py",
+      "sha256": "52efb3c2fe82c8e6dfe288f6627cb6d73c61467d24b39e2a66d1d43347c4f41d"
+    },
+    {
+      "name": "quant_fund/research/promotion_receipt.py",
+      "sha256": "5bb4fbff7aac3546edbbeffd2a0a93ad2da61e3ff67ec921b5e0406fda3293c8"
     },
     {
       "name": "quant_fund/research/prospective_sota.py",
@@ -53224,7 +53924,7 @@
     },
     {
       "name": "quant_fund/research/quorum_rotation.py",
-      "sha256": "152f364ce3fca6d57ca9de763e9b7027af15ef7a19cbb530bf8024a85c74d414"
+      "sha256": "127b001a4b2160e59c0918a82b1ae59672f95dcc1cd478ecde8b943693bcc57c"
     },
     {
       "name": "quant_fund/research/ranker_probability.py",
@@ -53236,11 +53936,11 @@
     },
     {
       "name": "quant_fund/research/reality_survivorship.py",
-      "sha256": "e8cce2da4a557fdeeb1986d2876f8b3d8a72f3717e0f8d1ca79df20ee39ca853"
+      "sha256": "723b4502c1db40e9f743dc5f05baab6d3016934bb2f9bd6beaa5b9579f038eec"
     },
     {
       "name": "quant_fund/research/reality_sweep.py",
-      "sha256": "861f8115db3714db36839496250c31421a8a0930731fe6b33b5a59aa4af4a3c1"
+      "sha256": "6451f6f0e5650458a98bb75c13096f8e4c483d94f762bebc8e9f7cf1504a0497"
     },
     {
       "name": "quant_fund/research/receipt_graph.py",
@@ -53248,7 +53948,7 @@
     },
     {
       "name": "quant_fund/research/receipt_lattice.py",
-      "sha256": "84ecc947900be5afd691739650bffda6b8bedb238e5b95db1cbc3008e2f6a3e4"
+      "sha256": "e6c44dacc25b04cde99fac5cf2f7d15f84a48dbe33f0b01bb11018e9df2b893d"
     },
     {
       "name": "quant_fund/research/receipt_schema.py",
@@ -53268,19 +53968,19 @@
     },
     {
       "name": "quant_fund/research/release_attestation.py",
-      "sha256": "7ebc40a70e7a26f81333fe57e2bc5662db4b98420062edaf64239403e412ab78"
+      "sha256": "b49ae02e80d49041cd9daf01f57a4460e4890c716b751abe5900ec15ac8ef767"
     },
     {
       "name": "quant_fund/research/replay_proof.py",
-      "sha256": "bca1cf8dae371669f676f02a6c91915aa5d96f5922e962f758ec69d810703248"
+      "sha256": "5118916ddaa9d6e83ef1085a9489e08a72d4be25333091e0719be3b938438eea"
     },
     {
       "name": "quant_fund/research/replay_sweep.py",
-      "sha256": "6ce506e0067976c500a1212193009c4558756e79774a20c899b5eafe0264389c"
+      "sha256": "fea264654ae4a1fbf52c6d1c92374ea9049a91928855ba40d4f153abd2bc8ba9"
     },
     {
       "name": "quant_fund/research/repo_integrity.py",
-      "sha256": "4e8354f0e920a94f74e8c25b6f55abd42a924268437025dcb7a99857fa3d2230"
+      "sha256": "8148c0efda7d8bc5b204484da9b87202f94cbb85f49ae43236153c4a6e7089c5"
     },
     {
       "name": "quant_fund/research/research100.json",
@@ -53288,7 +53988,7 @@
     },
     {
       "name": "quant_fund/research/research100.py",
-      "sha256": "716b3ce1ab2323878ee769164393b0df78e2a06d7b8b91876ba33047a7d5578f"
+      "sha256": "bdcb29220be6c00457aedff146a9fd190a472576d381babcfa3dca8e34d4b790"
     },
     {
       "name": "quant_fund/research/research100_benchmark.py",
@@ -53297,6 +53997,10 @@
     {
       "name": "quant_fund/research/research100_cli.py",
       "sha256": "868d48dc628c123c14a793fcecbc1ded7afeb1a752b3d4c15a2253795017cd03"
+    },
+    {
+      "name": "quant_fund/research/research_flags.py",
+      "sha256": "d6a5440a10e31c691557048ce1e1176d4a804ae73a81cbede4e86519bdaa2f6d"
     },
     {
       "name": "quant_fund/research/script_receipts.py",
@@ -53336,7 +54040,7 @@
     },
     {
       "name": "quant_fund/research/suite_health.py",
-      "sha256": "e9c94f676c20a06f046271c47c7bd252458655d677f0d158c22957881713b63f"
+      "sha256": "3d8302c5ce67b0d89265962854ce98875af034b359861e7892054a9013da9dd5"
     },
     {
       "name": "quant_fund/research/tail_watch.py",
@@ -53344,15 +54048,15 @@
     },
     {
       "name": "quant_fund/research/tamper_drill.py",
-      "sha256": "39ea5edec298b8d26f3c7614379046082b48de2a6b8735592efc0ae90cf31047"
+      "sha256": "b7a38aeffe8a700b38a796b2ae8837a234cfef11b51b13e9a962ece003e85263"
     },
     {
       "name": "quant_fund/research/tape_registry.py",
-      "sha256": "5e03d667d05d5a6c1de1a0ac7c1724aab3def0cb2685dae8f23cfda927c96a42"
+      "sha256": "b8dc5ee9049a551864f2f22ada2b079f5c93da14bd8c1aecd732ae7e157b99e3"
     },
     {
       "name": "quant_fund/research/timestamp_anchor.py",
-      "sha256": "2a504facaea79184b87af5b9ce0dbd816060ad14ebd0991080bb65fee9e45905"
+      "sha256": "de327f1e1595f761efb57256567ed0fb7d1e0b42e95478bf43dab1afd6355a5c"
     },
     {
       "name": "quant_fund/research/total_return.py",
@@ -53364,7 +54068,7 @@
     },
     {
       "name": "quant_fund/research/verify.py",
-      "sha256": "14b21fab4f6d324d9ccd697dbec9bc2abfa89559506861b941817482d29aed01"
+      "sha256": "85afa7399d44d424653321e63d52aca9752a5d40143f773d082aef8655a55b83"
     },
     {
       "name": "quant_fund/research/vine_dominance.py",
@@ -53376,7 +54080,7 @@
     },
     {
       "name": "quant_fund/research/vol_bench.py",
-      "sha256": "1b3355abf8042262b55498e8233516cec3eabcfed61f3042825eaff4191c6615"
+      "sha256": "cb70948f7a127686a3e777e7dad6d73a4d40d10acb335f7c2fd660831e84c437"
     },
     {
       "name": "quant_fund/research/vol_of_vol.py",
@@ -53440,7 +54144,7 @@
     },
     {
       "name": "quant_fund/robustness/certify.py",
-      "sha256": "01010f0486355db453d5bcfc0a725ea6ed5a1b8786d5e0151282731db66306d9"
+      "sha256": "5c35d3813ab8809acb30589c8dfff55778286781beda14bb330325d0f4a4b60b"
     },
     {
       "name": "quant_fund/robustness/dro.py",
@@ -53508,7 +54212,7 @@
     },
     {
       "name": "quant_fund/schemas/receipt_v2_leaf.py",
-      "sha256": "0c8289e3d2dc865d8f7737446b1804d50015cc06cc562fe13d0880f55f2e1b87"
+      "sha256": "90838be0769e72677b96a48b68d45b7d3ac0c3c20fa43c1a305bdbf14d3866a9"
     },
     {
       "name": "quant_fund/simtest/__init__.py",
@@ -53592,7 +54296,7 @@
     },
     {
       "name": "quant_fund/stress/report.py",
-      "sha256": "7e2850d41cdebd944a3573a071a899e5e8929a65394e7703916eb7f67974437d"
+      "sha256": "589c7262790f3d05fc0a0c7d88b7356cd258961b97ba345784019a872353d683"
     },
     {
       "name": "quant_fund/stress/reverse.py",
@@ -53615,12 +54319,36 @@
       "sha256": "91b4542a46fd34a86dc5d4399a6e58cbc449a4993be2c6faf7b79190ade5ec03"
     },
     {
+      "name": "quant_fund/utils/absdiff.py",
+      "sha256": "a7810d138eb459ed2f00a1847a704e88444ef9a93773186ad69677a3eaafcdc7"
+    },
+    {
       "name": "quant_fund/utils/atomicio.py",
-      "sha256": "26b3c04a3c55cf7777989edb91dea774656ea97af86699bc214e7de7c7823ca1"
+      "sha256": "f63d1498e7dc3470c354c9b021e963923e7aa57ee3407112d2dc1400357afc2d"
+    },
+    {
+      "name": "quant_fund/utils/bundled_configs.py",
+      "sha256": "cfac93d2200575788da344d81c12b41268a7a0fd4a58f3bba09c62491180b2e9"
+    },
+    {
+      "name": "quant_fund/utils/distribution_lineage.py",
+      "sha256": "0f5efd52e3eeda8ddadd24214558e7e4923bbd740cdad5b394237460e0154190"
+    },
+    {
+      "name": "quant_fund/utils/ed25519_public.py",
+      "sha256": "802a00b8d67d56dd5b030c0e6c79e302172d8bc74cd382a7ea072ecbe09f1450"
+    },
+    {
+      "name": "quant_fund/utils/forbidden_research_keys.py",
+      "sha256": "3544bddad91d4c331908b8126f20ad7e8c5b30ae6fc3d00d0265bf30c2301ee1"
     },
     {
       "name": "quant_fund/utils/hashing.py",
       "sha256": "99d4720d78c3079f189c0f367b55e1631ac4ccf25f4c76e5682aaa241b6f5da0"
+    },
+    {
+      "name": "quant_fund/utils/lab_paths.py",
+      "sha256": "41f2797cc2925c25e9726cafe993a5b6fd2a367309fae2b0f37ecf97486a6766"
     },
     {
       "name": "quant_fund/utils/logging.py",
@@ -53631,8 +54359,12 @@
       "sha256": "f113ce6d2a880dd745263e13c830ccaf652ada7edb266d4c98f2b6c85d9abe39"
     },
     {
+      "name": "quant_fund/utils/portable_fp.py",
+      "sha256": "439ceced7ce62ea8a4081e9339e25d4593461785810719b256176e7f3bb7eec8"
+    },
+    {
       "name": "quant_fund/utils/receipt.py",
-      "sha256": "02c928b2f7ed776958304c0b964fe6aaaf273af18ae46fbf3c9d94cd94c348ec"
+      "sha256": "c1dd76081d237e4325d39919fb0464f1e0279f26f065e8a745cf0b7db0d56540"
     },
     {
       "name": "quant_fund/utils/reproducibility.py",
@@ -53692,7 +54424,7 @@
     },
     {
       "name": "quant_fund/validation/vintage_eval.py",
-      "sha256": "2bd69cfdadfbb5b99f8663fd7267aaf5856be442c2da3e75b41752aa38de3c00"
+      "sha256": "38a7e6cecec25c71e846e07371bd196435192a96025323fb0f456727a01197ab"
     },
     {
       "name": "quant_fund/validation/walk_forward.py",
@@ -53700,19 +54432,102 @@
     }
   ],
   "members_added": [
-    "corpus_epoch_7d80ad9b952661ee.json"
+    "corpus_epoch_b6e01ad5f099e5a6.json",
+    "dipcatcher_cli/exec_cmd.py",
+    "dipcatcher_cli/models_cmd.py",
+    "dipcatcher_cli/sessions_cmd.py",
+    "fx1/cli/__init__.py",
+    "fx1/cli/__main__.py",
+    "fx1/cli/_app.py",
+    "fx1/cli/forecast_cmds.py",
+    "fx1/cli/support.py",
+    "fx1/cli_sign.py",
+    "fx1/eval/evidence_contract.py",
+    "fx1/interactive/atomicstore.py",
+    "fx1/interactive/budgets.py",
+    "fx1/interactive/chat_tools.py",
+    "fx1/interactive/chat_turn.py",
+    "fx1/interactive/concierge_console.py",
+    "fx1/interactive/concierge_data.py",
+    "fx1/interactive/concierge_display.py",
+    "fx1/interactive/concierge_jobs.py",
+    "fx1/interactive/concierge_slash.py",
+    "fx1/interactive/console.py",
+    "fx1/interactive/context_window.py",
+    "fx1/interactive/contracts.py",
+    "fx1/interactive/data_ux.py",
+    "fx1/interactive/datasets.py",
+    "fx1/interactive/diagnostics.py",
+    "fx1/interactive/diagnostics_ux.py",
+    "fx1/interactive/evidence.py",
+    "fx1/interactive/evidence_ledger.py",
+    "fx1/interactive/headless.py",
+    "fx1/interactive/intent.py",
+    "fx1/interactive/jobs.py",
+    "fx1/interactive/model_client.py",
+    "fx1/interactive/model_dial.py",
+    "fx1/interactive/model_ux.py",
+    "fx1/interactive/models_check.py",
+    "fx1/interactive/orchestration.py",
+    "fx1/interactive/planner.py",
+    "fx1/interactive/policy.py",
+    "fx1/interactive/procs.py",
+    "fx1/interactive/redact.py",
+    "fx1/interactive/run_report.py",
+    "fx1/interactive/runctx.py",
+    "fx1/interactive/runs_ux.py",
+    "fx1/interactive/session_ux.py",
+    "fx1/interactive/sessions.py",
+    "fx1/interactive/superpower_glue.py",
+    "fx1/interactive/system_prompt.py",
+    "fx1/interactive/telemetry.py",
+    "fx1/interactive/terminal.py",
+    "fx1/interactive/tty_guard.py",
+    "fx1/interactive/usage_budget.py",
+    "fx1/models/__init__.py",
+    "fx1/models/tiny_lm.py",
+    "fx1/serve/api_audit_finetune.py",
+    "fx1/serve/api_metrics.py",
+    "fx1/serve/api_request_ingress.py",
+    "fx1/serve/backends_stop.py",
+    "fx1/serve/local_engine_process.py",
+    "fx1/serve/openai_request_options.py",
+    "fx1/serve/release_gate.py",
+    "quant_fund/cli/capability_audit.py",
+    "quant_fund/cli/capability_cmds.py",
+    "quant_fund/cli/capability_families.py",
+    "quant_fund/cli/capability_introspect.py",
+    "quant_fund/cli/capability_model.py",
+    "quant_fund/cli/capability_overlay.py",
+    "quant_fund/cli/family_cmds.py",
+    "quant_fund/cli/research_banner.py",
+    "quant_fund/cli/research_pvalues.py",
+    "quant_fund/cli/research_quorum_key_cmd.py",
+    "quant_fund/cli/score_cmds.py",
+    "quant_fund/research/agent_report_io.py",
+    "quant_fund/research/catalog/registry_blob_checks.py",
+    "quant_fund/research/evidence_base.py",
+    "quant_fund/research/family_surface.py",
+    "quant_fund/research/forecast_scoring.py",
+    "quant_fund/research/prereg_timestamp.py",
+    "quant_fund/utils/bundled_configs.py",
+    "quant_fund/utils/distribution_lineage.py",
+    "quant_fund/utils/ed25519_public.py",
+    "quant_fund/utils/lab_paths.py"
   ],
-  "members_removed": [],
-  "n_members": 13423,
+  "members_removed": [
+    "fx1/cli.py"
+  ],
+  "n_members": 13606,
   "params": {
-    "head_sha": "a86996272d869eaaf4ac03edb6c4c1ce34e41c0f",
+    "head_sha": "c4b8fe993080bee86c6e224bd94fdb68d5e4f4b2",
     "pattern": "*"
   },
-  "prev_epoch_receipt": "corpus_epoch_7d80ad9b952661ee.json",
-  "prev_epoch_sha256": "7a79f00fba1b649440db2bd3484b15125db0d625ebaefaf8722a34281eba8665",
-  "receipt_sha256": "c08b64aec434a53eaeb7faf62e4c15708594e5c5df655217a5081a342bf7868b",
+  "prev_epoch_receipt": "corpus_epoch_b6e01ad5f099e5a6.json",
+  "prev_epoch_sha256": "2bdc1099818c80a330b157246acac647bf179b92db14a691b19345c882f14be8",
+  "receipt_sha256": "2185d3d67c2b26f4bcfeeca835c6b516e7c186e8d0c014eeba191331a3c6e93b",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,
-  "verdict": "advancing"
+  "verdict": "shrinking"
 }

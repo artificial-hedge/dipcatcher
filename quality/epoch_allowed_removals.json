@@ -413,6 +413,51 @@
       "reason": "de56f5a9e moved HF-RV scaffolding tests to tests/unit/test_hf_rv_scaffolding.py; root-level name dropped at this epoch.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "src/*",
+      "epoch": "corpus_epoch_2185d3d67c2b26f4.json",
+      "from_sha256": "87f8b70dd577abf9df3095ecf841597ed171e32fba1ce3445e000b57eeaec7cc",
+      "member": "fx1/cli.py",
+      "reason": "KX-7Q split fx1/cli.py into fx1/cli/* package; recovered stack on main at c4b8fe993. Prior bytes remain in git; pin line records the removal at this epoch.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "web/*",
+      "epoch": "corpus_epoch_e9e7c66f8c672304.json",
+      "from_sha256": "618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f",
+      "member": "public/fixtures/receipts/cost_aware_rerun_20261007.json",
+      "reason": "Fixture no longer in the published web tree at recovered-stack tip c4b8fe993; recorded as shrinking at this epoch. Bytes remain in git history.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "web/*",
+      "epoch": "corpus_epoch_e9e7c66f8c672304.json",
+      "from_sha256": "62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1",
+      "member": "public/fixtures/receipts/cost_aware_rerun_20261007.json.seal.json",
+      "reason": "Seal fixture companion removed with cost_aware_rerun_20261007.json at this epoch.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "web/*",
+      "epoch": "corpus_epoch_e9e7c66f8c672304.json",
+      "from_sha256": "d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3",
+      "member": "public/fixtures/receipts/forward_record_preregistration_v1.json",
+      "reason": "Fixture no longer in the published web tree at recovered-stack tip c4b8fe993; recorded as shrinking at this epoch.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "web/*",
+      "epoch": "corpus_epoch_e9e7c66f8c672304.json",
+      "from_sha256": "afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc",
+      "member": "public/fixtures/receipts/forward_record_preregistration_v1.json.seal.json",
+      "reason": "Seal fixture companion removed with forward_record_preregistration_v1.json at this epoch.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"
