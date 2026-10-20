@@ -737,13 +737,16 @@ class Harness:
 
     def __init__(
         self,
-        runner: Runner | None = None,
+        runner: Runner | OwnedRunner | None = None,
         *,
         cancellable_runner: CancellableRunner | None = None,
     ) -> None:
         self._use_default_runner = runner is None and cancellable_runner is None
         chosen: CancellableRunner
-        if runner is not None:
+        if isinstance(runner, OwnedRunner):
+            chosen = _adapt_owned_runner(runner)
+            self._use_default_runner = False
+        elif runner is not None:
             chosen = _adapt_legacy_runner(runner)
         elif cancellable_runner is not None:
             chosen = cancellable_runner

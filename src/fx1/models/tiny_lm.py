@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from torch import Tensor as TorchTensor
@@ -61,6 +61,6 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> TorchModule:
             x = self.tok_emb(ids) + self.pos_emb.weight[: ids.shape[1]]
             for blk in self.blocks:
                 x = blk(x)
-            return cast(TorchTensor, self.lm_head(self.ln_f(x)))
+            return self.lm_head(self.ln_f(x))
 
     return _TinyLM()

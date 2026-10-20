@@ -269,6 +269,10 @@ class LocalWeightsEngine:
             raise RuntimeError(
                 f"{card.version} failed the ship gate{detail}; refusing to serve its weights"
             )
+        if not synthetic_fixture:
+            from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
+
+            require_nonfixture_or_test_opt_in(card)
         self.evidence_class = "SYNTHETIC" if synthetic_fixture else "measured"
         manifest = self._load_manifest(root)
         weights_rel = manifest["weights_file"]

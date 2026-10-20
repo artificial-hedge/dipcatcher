@@ -19,7 +19,8 @@ from fx1.honesty import (
     validate_fx1_output,
 )
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas, execute_tool_call
-from fx1.interactive.evidence import EvidenceError, ground_summary
+from fx1.interactive.evidence import EvidenceError
+from fx1.interactive.evidence import ground_summary as ground_summary
 from fx1.interactive.model_client import ErrorKind, ModelError
 from fx1.interactive.model_ux import (
     CallSnapshot,

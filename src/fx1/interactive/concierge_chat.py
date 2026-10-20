@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
@@ -21,6 +22,15 @@ from fx1.interactive.endpoint import (
 )
 from fx1.interactive.orb import OrbAnimator, OrbState
 
+
+class _ModelTurnError(Exception):
+    """A hosted model failure. The outer retry loop must not call the model again."""
+
+    def __init__(self, model_error: Any) -> None:
+        self.model_error = model_error
+        super().__init__("model turn failed")
+
+
 _HARNESS_TOOL_DESCRIPTION = (
     "Run one registered dipcatcher harness command "
     "(e.g. doctor, verify-research). Research cannot be run "
@@ -33,6 +43,36 @@ _HARNESS_TOOL_DESCRIPTION = (
 
 class ChatCommands:
     """Plain-text turns: tool schemas, execution, and the model loop."""
+
+    model: str
+    _messages: list[dict[str, Any]]
+    _animated: bool
+    _retry_policy: Any
+    _store: Any
+    _researcher: Any
+
+    def _backend(self, model: str | None = None) -> Any | None:
+        raise NotImplementedError
+
+    def _say(self, text: str = "") -> None:
+        raise NotImplementedError
+
+    def _say_error(self, exc: Exception) -> None:
+        raise NotImplementedError
+
+    def _journal_turn(self, role: str, text: str) -> None:
+        raise NotImplementedError
+
+    def _journal_event(self, kind: str, **data: Any) -> None:
+        raise NotImplementedError
+
+    def _run_harness(self, name: str, extra_args: list[str]) -> str:
+        raise NotImplementedError
+
+    _emit: Callable[[str, Mapping[str, Any]], None]
+
+    def _assign_status(self, status: str) -> None:
+        raise NotImplementedError
 
     def _chat_tools(self) -> list[dict[str, Any]]:
         """OpenAI-style tools for one turn. Research stays off this list's contract."""
@@ -55,55 +95,72 @@ class ChatCommands:
             return
         start = len(self._messages)
         self._messages.append({"role": "user", "content": text})
-        tools = self._chat_tools()
         try:
-            for _ in range(6):
-                completion = self._complete_with_tools(backend, tools)
-                content = validate_fx1_output(completion.content or "")
-                if not completion.tool_calls:
-                    self._messages.append({"role": "assistant", "content": content})
-                    self._journal_turn("assistant", content)
-                    self._say(content)
-                    return
-                self._messages.append(
-                    {
-                        "role": "assistant",
-                        "content": completion.content,
-                        "tool_calls": list(completion.tool_calls),
-                    }
-                )
-                for call in completion.tool_calls:
-                    result_text = self._execute_tool_result(call)
-                    self._messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": call["id"],
-                            "content": result_text,
-                        }
-                    )
-            self._say("(tool loop budget exhausted — ask a follow-up to continue)")
+            self._run_chat_rounds(backend)
         except Fx1HonestyError as exc:
-            refusal = (
-                f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
-            )
-            if any(message.get("role") == "tool" for message in self._messages[start:]):
-                # A blocked answer cannot undo completed tool actions. Keep
-                # their validated call/result transcript for the next turn.
-                self._messages.append({"role": "assistant", "content": refusal})
-            else:
-                del self._messages[start:]
-            self._journal_turn("system", refusal)
-            self._say(refusal)
+            self._withhold_chat(start, exc)
         except OperationCancelled:
-            self._keep_completed_tool_work(start)
-            self._say("model turn cancelled before completion")
+            self._cancel_chat(start)
+        except _ModelTurnError as exc:
+            self._fail_model_turn(start, exc.model_error)
         except Exception as exc:  # noqa: BLE001 — a dead network must not kill the shell
-            self._keep_completed_tool_work(start)
-            guidance = explain_backend_error(exc, model=self.model)
-            self._say_error(RuntimeError(format_guidance(guidance)))
-            self._journal_event(
-                "model_error", failure=str(guidance.failure), http_status=guidance.http_status
+            self._fail_chat_transport(start, exc)
+
+    def _run_chat_rounds(self, backend: Any) -> None:
+        tools = self._chat_tools()
+        for _ in range(6):
+            completion = self._complete_with_tools(backend, tools)
+            content = self._visible_model_text(completion.content or "")
+            if not completion.tool_calls:
+                self._record_assistant(content)
+                return
+            self._record_tool_round(completion)
+        self._say("(tool loop budget exhausted — ask a follow-up to continue)")
+
+    def _record_assistant(self, content: str) -> None:
+        self._messages.append({"role": "assistant", "content": content})
+        self._journal_turn("assistant", content)
+        self._say(content)
+
+    def _record_tool_round(self, completion: Any) -> None:
+        self._messages.append(
+            {
+                "role": "assistant",
+                "content": completion.content,
+                "tool_calls": list(completion.tool_calls),
+            }
+        )
+        for call in completion.tool_calls:
+            result_text = self._execute_tool_result(call)
+            self._messages.append(
+                {"role": "tool", "tool_call_id": call["id"], "content": result_text}
             )
+
+    def _withhold_chat(self, start: int, exc: Fx1HonestyError) -> None:
+        refusal = f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
+        if any(message.get("role") == "tool" for message in self._messages[start:]):
+            # A blocked answer cannot undo completed tool actions. Keep
+            # their validated call/result transcript for the next turn.
+            self._messages.append({"role": "assistant", "content": refusal})
+        else:
+            del self._messages[start:]
+        self._journal_turn("system", refusal)
+        self._assign_status("withheld")
+        self._say(refusal)
+
+    def _cancel_chat(self, start: int) -> None:
+        self._keep_completed_tool_work(start)
+        self._assign_status("cancelled")
+        self._say("model turn cancelled before completion")
+
+    def _fail_chat_transport(self, start: int, exc: Exception) -> None:
+        self._keep_completed_tool_work(start)
+        guidance = explain_backend_error(exc, model=self.model)
+        self._assign_status("error")
+        self._say_error(RuntimeError(format_guidance(guidance)))
+        self._journal_event(
+            "model_error", failure=str(guidance.failure), http_status=guidance.http_status
+        )
 
     def _keep_completed_tool_work(self, start: int) -> None:
         """Roll back an unfinished turn, but never erase tool calls that ran."""
@@ -120,9 +177,7 @@ class ChatCommands:
     def _complete_with_tools(self, backend: Any, tools: list[dict[str, Any]]) -> Any:
         with OrbAnimator(OrbState.COMPOSING, preset="inline") if self._animated else _null():
             return call_with_retries(
-                lambda: backend.complete_with_tools(
-                    self._messages, tools=tools, tool_choice="auto"
-                ),
+                lambda: self._complete_once(backend, tools),
                 policy=self._retry_policy,
                 on_retry=lambda n, g, d: self._say(
                     f"[model] retry {n}/{self._retry_policy.max_retries} in {d:.1f}s "
@@ -130,6 +185,34 @@ class ChatCommands:
                 ),
                 model=self.model,
             )
+
+    def _complete_once(self, backend: Any, tools: list[dict[str, Any]]) -> Any:
+        from fx1.interactive.model_client import ModelError
+
+        try:
+            return backend.complete_with_tools(self._messages, tools=tools, tool_choice="auto")
+        except ModelError as exc:
+            raise _ModelTurnError(exc) from exc
+
+    def _fail_model_turn(self, start: int, exc: Any) -> None:
+        from fx1.interactive.model_ux import render_model_error
+
+        self._keep_completed_tool_work(start)
+        self._assign_status("error")
+        self._say_error(RuntimeError(render_model_error(exc)))
+        self._emit("concierge.model_error", {"kind": str(exc.kind), "status": exc.status})
+
+    def _visible_model_text(self, raw: str) -> str:
+        """Ground verification claims, then apply the honesty gate."""
+        from fx1.interactive import chat_turn as chat_turn_mod
+        from fx1.interactive.evidence import EvidenceError
+
+        try:
+            grounded = chat_turn_mod.ground_summary(raw, verified_receipts=set())
+        except EvidenceError as exc:
+            self._assign_status("withheld")
+            raise Fx1HonestyError("withheld") from exc
+        return validate_fx1_output(grounded)
 
     def _on_keyboard_interrupt(self) -> None:
         cancel_chat_keyboard(self)

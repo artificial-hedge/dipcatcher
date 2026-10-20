@@ -235,7 +235,7 @@ _SUMMARIES: dict[FailureClass, str] = {
     FailureClass.AUTH: "authentication failed",
     FailureClass.NOT_FOUND: "the endpoint route was not found",
     FailureClass.RATE_LIMITED: "the endpoint asked the client to retry later",
-    FailureClass.SERVER: "the endpoint returned a server error",
+    FailureClass.SERVER: "the model server failed; the endpoint returned a server error",
     FailureClass.TIMEOUT: "the endpoint timed out",
     FailureClass.UNREACHABLE: "the endpoint is unreachable (DNS or connection)",
     FailureClass.MALFORMED: "the endpoint returned a malformed response",

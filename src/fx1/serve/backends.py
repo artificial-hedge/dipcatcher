@@ -33,15 +33,15 @@ from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard, synthetic_fixture_from_env
-from fx1.serve.backends_stop import (
-    chat_completions_url as _chat_completions_url,
-)
+from fx1.serve.backends_stop import chat_completions_url as chat_completions_url
 from fx1.serve.backends_stop import (
     env_float as _env_float,
 )
 from fx1.serve.backends_stop import (
     openai_sibling_url as _openai_sibling_url,
 )
+
+_chat_completions_url = chat_completions_url
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
@@ -1535,6 +1535,10 @@ def _load_local_fx1_card(
             else " (honesty/domain/general deltas)"
         )
         raise RuntimeError(f"{card.version} failed the ship gate{detail}; refusing to serve")
+    if not synthetic_fixture:
+        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
+
+        require_nonfixture_or_test_opt_in(card)
     return card, synthetic_fixture
 
 
@@ -1919,7 +1923,9 @@ def get_backend(kind: str, **kwargs: object) -> InferenceBackend:
     return cast(InferenceBackend, backends[kind](**kwargs))
 
 
-from fx1.serve.backends_stop import (  # noqa: E402,F401 — stable api/chat imports
-    truncate_at_stops,
-    truncate_chunks,
+from fx1.serve.backends_stop import (  # noqa: E402 — stable api/chat imports
+    truncate_at_stops as truncate_at_stops,
+)
+from fx1.serve.backends_stop import (  # noqa: E402 — stable api/chat imports
+    truncate_chunks as truncate_chunks,
 )

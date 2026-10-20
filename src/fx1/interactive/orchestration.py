@@ -1355,9 +1355,10 @@ def _data_labels(stdout: str) -> str:
 def _active_catalog(plan: SuperpowerPlan, ctx: SuperpowerContext) -> CapabilityCatalog | None:
     if plan.bound_catalog is not None:
         return plan.bound_catalog
-    if ctx.catalog is None:
-        return None
-    return gate_to_registry(ctx.catalog)
+    catalog = ctx.catalog
+    if isinstance(catalog, CapabilityCatalog):
+        return gate_to_registry(catalog)
+    return None
 
 
 def _ensure_run_dir(ctx: SuperpowerContext, run_id: str, needed: bool) -> Path | None:
@@ -1434,7 +1435,8 @@ def _step_token(state: RunState, begun: StepRecord | None) -> str | None:
 
 
 def _exec_roots(state: RunState, out: Path | None) -> dict[str, list[Path]]:
-    merged: dict[str, list[Path]] = {key: list(values) for key, values in state.ctx.roots.items()}
+    roots = state.ctx.roots or {}
+    merged: dict[str, list[Path]] = {key: list(values) for key, values in roots.items()}
     if state.run_dir is not None:
         merged.setdefault("output_dir", []).append(state.run_dir)
     if out is not None:

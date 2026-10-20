@@ -41,6 +41,7 @@ class DataCommands:
     _prepared: Any
     _evidence: Any
     _job: Any
+    _emit: Callable[[str, Mapping[str, Any]], None]
 
     def _cmd_models(self, rest: str) -> bool:
         with self._state_lock:
@@ -208,9 +209,6 @@ class DataCommands:
         on_event: Callable[[str, str], None] | None,
         cancel_event: threading.Event | None,
     ) -> Any:
-        raise NotImplementedError
-
-    def _emit(self, event: str, fields: Mapping[str, Any]) -> None:
         raise NotImplementedError
 
     def _current_cancel(self) -> threading.Event | None:

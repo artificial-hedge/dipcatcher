@@ -687,7 +687,10 @@ def _parse_model_selection(raw: str) -> tuple[list[str], str]:
 
 
 def _validated_ids(
-    ids: list[str], registry: dict[str, dict[str, Any]], blocked: set[str], max_harness: int
+    ids: list[str],
+    registry: Mapping[str, Mapping[str, Any]],
+    blocked: set[str],
+    max_harness: int,
 ) -> list[str]:
     """Registered, unblocked, deduplicated ids under the harness cap, around the
     mandatory spine (retrieval first, synthesis last) that the model cannot move."""
@@ -736,6 +739,7 @@ class SuperpowerResult:
     evidence: dict[str, Any] | None = None
     status: str = ""
     run_id: str = ""
+    job_id: str = ""
 
     @property
     def partial(self) -> bool:
@@ -799,7 +803,7 @@ class SuperpowerContext:
     budget_ledger: Any | None = None
     journal: Any | None = None
     job_id: str = ""
-    catalog: FamilyCatalog | None = None
+    catalog: FamilyCatalog | CapabilityCatalog | None = None
     datasets: tuple[Any, ...] = ()
     roots: Mapping[str, Any] | None = None
     job_ledger: Any | None = None
@@ -987,6 +991,15 @@ def _harness_evidence(cap_id: str, code: int, labels: str, stdout: str) -> str:
     return EvidenceClass.HARNESS_OUTPUT.value
 
 
+def _as_family_catalog(
+    catalog: FamilyCatalog | CapabilityCatalog | None,
+) -> FamilyCatalog | None:
+    """Family eligibility checks do not apply to a capability registry."""
+    if isinstance(catalog, FamilyCatalog):
+        return catalog
+    return None
+
+
 def _research_runtime_block_reason(goal: str, catalog: FamilyCatalog | None) -> str | None:
     """Enforce the family gate even for a handcrafted or stale plan."""
     if catalog is None or not catalog.available:
@@ -1028,10 +1041,10 @@ def _skip_blocked_research(
             runs_lock,
         )
         return True
-    reason = _research_runtime_block_reason(result.goal, ctx.catalog)
-    if reason is None:
+    block_reason = _research_runtime_block_reason(result.goal, _as_family_catalog(ctx.catalog))
+    if block_reason is None:
         return False
-    _record_locked(result, ctx, CapabilityRun(cap_id, cap_id, "skipped", reason), runs_lock)
+    _record_locked(result, ctx, CapabilityRun(cap_id, cap_id, "skipped", block_reason), runs_lock)
     return True
 
 
@@ -1629,8 +1642,9 @@ def _deterministic_synthesis(
 def _prepare_synthesis(
     plan: SuperpowerPlan, ctx: SuperpowerContext, result: SuperpowerResult, parts: list[str]
 ) -> bool:
-    if plan.family_selection is not None and ctx.catalog is not None:
-        block = families_prompt_block(plan.family_selection, ctx.catalog)
+    family_catalog = _as_family_catalog(ctx.catalog)
+    if plan.family_selection is not None and family_catalog is not None:
+        block = families_prompt_block(plan.family_selection, family_catalog)
         if block:
             parts.append(block)
     if _cancelled(ctx):

@@ -37,7 +37,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from getpass import getuser
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 from fx1.interactive.atomicstore import (
     FileLock,
@@ -279,31 +279,6 @@ def _normalize(entry: Mapping[str, str]) -> dict[str, str]:
     api_key = entry.get("api_key") or entry.get("key") or ""
     base_url = entry.get("base_url") or default_base_url()
     return {"api_key": api_key, "base_url": base_url, "set_at": entry.get("set_at", "")}
-
-
-def _load(path: Path | None = None) -> dict[str, dict[str, str]]:
-    path = path or store_path()
-    if os.name == "nt":
-        try:
-            mode = path.stat().st_mode
-        except FileNotFoundError:
-            return {}
-        except OSError as exc:
-            raise RuntimeError("cannot inspect Windows credential path") from exc
-        if not stat.S_ISREG(mode):
-            raise RuntimeError("Windows credential path is not a regular file")
-        _restrict_windows_acl(_windows_config_parent(path), directory=True, verify_only=True)
-        _restrict_windows_acl(path, verify_only=True)
-    elif not path.is_file():
-        return {}
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
-    profiles = raw.get("profiles")
-    if isinstance(profiles, dict):
-        return cast("dict[str, dict[str, str]]", profiles)
-    return {}
 
 
 def _prepare_store_directory(path: Path) -> None:

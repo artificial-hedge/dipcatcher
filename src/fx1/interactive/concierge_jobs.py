@@ -10,7 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from fx1.interactive.approvals import ApprovalGate
+from fx1.interactive.approvals import ActionBounds, ApprovalGate
 
 
 @dataclass
@@ -87,8 +87,16 @@ class JournaledApprovalGate(ApprovalGate):
 
     journal: Any | None = None
 
-    def ask(self, question: str, *, kind: str = "action") -> bool:
-        approved = super().ask(question, kind=kind)
+    def ask(
+        self,
+        question: str,
+        *,
+        kind: str = "action",
+        key: str | None = None,
+        bounds: ActionBounds | None = None,
+        timeout_s: float | None = None,
+    ) -> bool:
+        approved = super().ask(question, kind=kind, key=key, bounds=bounds, timeout_s=timeout_s)
         if self.journal is not None:
             # Journaling never blocks a decision.
             with contextlib.suppress(Exception):

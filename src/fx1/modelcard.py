@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -68,6 +69,8 @@ class ModelCard(BaseModel):
     eval_delta: EvalDelta
     license_tier: str = "internal_research"
     known_limits: list[str] = Field(default_factory=list)
+    public_model_id: Literal["fx1", "fx1-lite"] | None = None
+    fixture_only: bool = False
     live_pnl_claim: bool = False
     research_only: bool = True
 

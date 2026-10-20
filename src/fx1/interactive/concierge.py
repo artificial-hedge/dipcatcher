@@ -57,10 +57,8 @@ from fx1.interactive import session as session_mod
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import BudgetExceeded, BudgetLedger, RunBudget
 from fx1.interactive.concierge_chat import ChatCommands
-from fx1.interactive.concierge_console import (
-    _null,
-    run_console,  # noqa: F401
-)
+from fx1.interactive.concierge_console import _null
+from fx1.interactive.concierge_console import run_console as run_console
 from fx1.interactive.concierge_data import DataCommands
 from fx1.interactive.concierge_display import (
     ApprovalTap as _ApprovalTap,  # noqa: F401 — historical name for red-team tests
@@ -80,7 +78,8 @@ from fx1.interactive.concierge_display import (
 from fx1.interactive.concierge_display import (
     scrub_user as _scrub_user,
 )
-from fx1.interactive.concierge_jobs import BackgroundJob, JournaledApprovalGate
+from fx1.interactive.concierge_jobs import BackgroundJob as BackgroundJob
+from fx1.interactive.concierge_jobs import JournaledApprovalGate
 from fx1.interactive.concierge_slash import (
     BUDGET_DIMENSIONS as _BUDGET_DIMENSIONS,
 )
@@ -112,6 +111,7 @@ from fx1.interactive.jobs import JobLedger
 from fx1.interactive.model_ux import endpoint_stored_line, public_error, render_approvals
 from fx1.interactive.orb import OrbAnimator, OrbState
 from fx1.interactive.profiles import DEFAULT_MODEL
+from fx1.interactive.runctx import new_run_id, new_session_id
 from fx1.interactive.session_ux import (
     export_session,
     format_session_line,
@@ -137,26 +137,37 @@ from fx1.interactive.superpower_glue import (
     evidence_status_line,
     make_plan,
     operator_status,
+    reconcile_lines,
 )
-from fx1.interactive.usage_budget import UsageTracker
+from fx1.interactive.usage_budget import UsageLimits, UsageTracker
 
 HELP_TEXT = """\
-conversation          plain text chats with the active model (tools: flash, web, harness)
+Chat                  plain text with the active model (tools: flash, web, harness)
+/use <model>          activate fx1 | fx1-lite (conversation continues; the switch is noted)
+/model                show the active model and endpoint host
+/models [check]       model table, or models-check of requested vs served
 /superpower <goal>    plan + run the relevant research capabilities (--sync inline; --web or FX1_WEB_RESEARCH=1 opts into search)
 /superpower help      list every capability the planner may select
-/families [goal]      research-family catalog; with a goal, show which families are eligible
+/data attach|list|remove|inspect   session datasets
+/runs                 read-only job ledger
 /research <goal>      deep web research in the background (--budget-s, --max-sources, --queries)
 /status               background job progress, elapsed time, and budget
 /cancel               cancel the background job (research or superpower)
 /redirect <goal>      re-target the background research at a new goal
+/evidence             receipts for the latest job
 /budget [dim value]   show or tighten run budgets (wall, harness, calls, retries, sources)
-/flash add|list|show|remove|correct|search|refresh ...
+/session              the active persisted session
 /sessions [n]         list recent sessions (journal); /resume <id> shows one transcript
-/use <model>          activate fx1 | fx1-lite (conversation continues; the switch is noted)
-/model                show the active model and endpoint host
-/keys list|set|test|remove  manage model endpoints (presence-only); test = identity probe
-/doctor               readiness: endpoint, store, session journal, budgets, family catalog
+/resume <id>          restore a stored session, or show a journal transcript
+/export [json|md]     redacted session export; refuses to overwrite
+/new                  start a session without changing the model
+/families [goal]      research-family catalog; with a goal, show which families are eligible
+/flash add|list|show|remove|correct|search|refresh ...
 /harness list|describe|run  registered dipcatcher harness commands (fail-closed)
+/keys list|set|test|remove  manage model endpoints (presence-only); test = identity probe
+/approvals [revoke]   show or revoke operator approvals
+/diagnostics          content-free diagnostics; --bundle writes a private zip
+/doctor               readiness: endpoint, store, session journal, budgets, family catalog
 /help                 this help
 /exit                 leave (Ctrl-C twice also exits; once cancels the running job)
 """
@@ -222,15 +233,18 @@ def _session_limit(rest: str) -> int:
         raise ValueError("usage: /sessions [N]") from None
 
 
+_EXPORT_KINDS = {"json": "json", "md": "markdown", "markdown": "markdown"}
+
+
 def _export_args(rest: str) -> tuple[str, Path | None]:
     tokens = shlex.split(rest)
     if not tokens:
         return "json", None
-    if tokens[0] == "markdown" and len(tokens) == 2:
-        return "markdown", Path(tokens[1])
-    if len(tokens) == 1:
-        return tokens[0], None
-    raise ValueError("usage: /export [json|markdown] [PATH]")
+    kind = _EXPORT_KINDS.get(tokens[0])
+    if kind is None or len(tokens) > 2:
+        raise ValueError("usage: /export [json|markdown] [PATH]")
+    dest = Path(tokens[1]) if len(tokens) == 2 else None
+    return kind, dest
 
 
 def _superpower_memory(result: SuperpowerResult) -> str:
@@ -284,6 +298,9 @@ class Concierge(ChatCommands, DataCommands):
         run_budget: RunBudget | None = None,
         retry_policy: RetryPolicy | None = None,
         catalog: FamilyCatalog | None = None,
+        session_store: Any | None = None,
+        harness_validator: Any | None = None,
+        usage_preset: UsageLimits | None = None,
     ) -> None:
         from fx1.flash.store import FlashStore
         from fx1.webresearch.engine import ResearchBudget, Researcher
@@ -332,12 +349,25 @@ class Concierge(ChatCommands, DataCommands):
         self._turn_cancel: threading.Event | None = None
         self._status_explicit = False
         self._last_status = "ok"
-        self._session_store = None
-        self._session = None
+        self._session_store = session_store
+        self._harness_validator = harness_validator
+        self._last_backend: Any = None
+        self._session: dict[str, Any] | None = None
         self._skip_turn_record = False
         self._turn_label = "turn"
         self._budget_overrides: dict[str, Any] = {}
-        self._emit: Callable[[str, Mapping[str, Any]], None] = lambda *_a, **_k: None
+        self.resume_notice = ""
+        self._corr_session = new_session_id()
+        self._telemetry_box: Any = None
+        self._telemetry: Callable[..., Any] | None = None
+        self._usage_preset = usage_preset if usage_preset is not None else UsageLimits()
+
+        def _forward_emit(event: str, fields: Mapping[str, Any]) -> None:
+            sink = self._telemetry
+            if callable(sink):
+                sink(event, fields)
+
+        self._emit = _forward_emit
 
     @property
     def last_status(self) -> str:
@@ -351,9 +381,26 @@ class Concierge(ChatCommands, DataCommands):
     def last_latency_s(self) -> float:
         return 0.0
 
+    def startup_checks(self) -> list[str]:
+        """Store warnings and jobs left by a previous process. Nothing is restarted."""
+        lines = [
+            line
+            for line in profiles.store_health()
+            if line != "credentials directory permissions were tightened to 0700"
+        ]
+        lines.extend(reconcile_lines(JobLedger().reconcile()))
+        return lines
+
+    def messages(self) -> list[dict[str, Any]]:
+        """Transcript retained for this process. Resume restores it from the store."""
+        return list(self._messages)
+
     @property
     def last_identity(self) -> Any:
-        return None
+        backend = self._last_backend
+        if backend is None:
+            return None
+        return getattr(backend, "last_identity", None)
 
     def _assign_status(self, status: str) -> None:
         self._last_status = status
@@ -408,6 +455,11 @@ class Concierge(ChatCommands, DataCommands):
     def job(self) -> BackgroundJob | None:
         return self._job
 
+    @property
+    def job_running(self) -> bool:
+        job = self._job
+        return job is not None and job.running
+
     def cancel_job(self) -> bool:
         """Cancel the running background job; True when a cancel was issued."""
         if self._job is None or not self._job.running:
@@ -456,10 +508,12 @@ class Concierge(ChatCommands, DataCommands):
 
             factory = HostedK3Backend
         try:
-            return factory(api_key=api_key, model=target, api_url=base_url)
+            backend = factory(api_key=api_key, model=target, api_url=base_url)
         except Exception as exc:  # noqa: BLE001
             self._say_error(RuntimeError(format_guidance(explain_backend_error(exc, model=target))))
             return None
+        self._last_backend = backend
+        return backend
 
     def _catalog(self, goal: str | None = None) -> FamilyCatalog:
         from fx1.harness import Harness
@@ -536,7 +590,10 @@ class Concierge(ChatCommands, DataCommands):
         if text.startswith("/"):
             if not text.lower().startswith("/keys"):
                 self._journal_turn("user", text)
-            return self._slash(text)
+            ended = self._slash(text)
+            if not ended:
+                self._persist_session()
+            return ended
         if text.lower() in {"exit", "quit"}:
             self.shutdown()
             self._persist_session()
@@ -682,6 +739,7 @@ class Concierge(ChatCommands, DataCommands):
     def _slash(self, text: str) -> bool:
         command, _, rest = text[1:].partition(" ")
         command = _SLASH_ALIASES.get(command.lower(), command.lower())
+        self._emit("concierge.command", {"name": command})
         handler = getattr(self, f"_cmd_{command.replace('-', '_')}", None)
         if handler is None:
             self._say_error(ValueError(f"unknown command /{command}; {_suggest_slash(command)}"))
@@ -807,18 +865,73 @@ class Concierge(ChatCommands, DataCommands):
         return False
 
     def _cmd_sessions(self, rest: str) -> bool:
-        if self._session_store is None:
+        if self._session_store is not None:
+            return self._list_stored_sessions(rest)
+        return self._list_journal_sessions(rest)
+
+    def _list_stored_sessions(self, rest: str) -> bool:
+        store = self._session_store
+        if store is None:
             raise ValueError("session store is not configured")
         limit = _session_limit(rest)
-        rows, warnings = self._session_store.list(limit)
+        rows, warnings = store.list(limit)
         self._say(format_session_list(rows))
         for warning in warnings:
             self._say(f"warning: {warning}")
         return False
 
+    def _list_journal_sessions(self, rest: str) -> bool:
+        tokens = shlex.split(rest)
+        limit = 10
+        if tokens:
+            try:
+                limit = max(1, int(tokens[0]))
+            except ValueError:
+                raise ValueError("usage: /sessions [n]") from None
+        summaries = session_mod.list_sessions(limit=limit)
+        if not summaries:
+            self._say("(no recorded sessions)")
+            return False
+        rows = [
+            {
+                "session": s.session_id,
+                "started": s.started_at[:19],
+                "model": s.model,
+                "turns": str(s.turns),
+                "jobs": f"{s.jobs_total}" + (f" ({s.jobs_open} open)" if s.jobs_open else ""),
+                "ended": (s.ended_at or "-")[:19],
+                "last goal": (s.last_goal or "-")[:40],
+            }
+            for s in summaries
+        ]
+        self._say(actions.render_table(rows))
+        self._say("current session: " + self.session_id + " — /resume <id> shows a transcript")
+        return False
+
     def _cmd_resume(self, rest: str) -> bool:
-        record = self._load_resume(rest.strip())
-        self._adopt_resume(record)
+        if self._session_store is not None:
+            record = self._load_resume(rest.strip())
+            self._adopt_resume(record)
+            return False
+        return self._show_journal_transcript(rest)
+
+    def _show_journal_transcript(self, rest: str) -> bool:
+        target = rest.strip()
+        if not target:
+            raise ValueError("usage: /resume <session-id or unique prefix>")
+        try:
+            events = session_mod.load_session(target)
+        except ValueError as exc:
+            raise ValueError(str(exc)) from None
+        if events is None:
+            raise ValueError(f"no session matches {target!r}; /sessions lists them")
+        header = session_mod.load_header(target) or {}
+        self._say(
+            f"session {header.get('session_id', target)} — model {header.get('model', '?')} @ "
+            f"{header.get('endpoint_host', '?')} (started {header.get('started_at', '?')}); "
+            "read-only transcript — nothing is re-executed"
+        )
+        self._say(session_mod.transcript(events))
         return False
 
     def _load_resume(self, text: str) -> dict[str, Any]:
@@ -954,24 +1067,64 @@ class Concierge(ChatCommands, DataCommands):
         return False
 
     def _cmd_budget(self, rest: str) -> bool:
-        """Show the run ceilings, or store one override on this session."""
+        """Show both budget surfaces, or apply one wall or session override."""
+        tokens = shlex.split(rest)
+        if not tokens or tokens[0] in {"show", "list"}:
+            self._say_wall_budget()
+            self._say_session_budget()
+            return False
+        if tokens[0] in _BUDGET_DIMENSIONS:
+            return self._set_wall_budget(tokens)
+        return self._set_session_budget(tokens)
+
+    def _say_wall_budget(self) -> None:
+        self._say(f"run budget: {self._wall_budget.describe()}")
+        self._say(
+            "tighten with /budget <wall|harness|calls|retries|sources|tokens> <value>; "
+            "environment defaults: FX1_BUDGET_WALL_S, FX1_BUDGET_HARNESS_STEPS, "
+            "FX1_BUDGET_MODEL_CALLS, FX1_BUDGET_RETRIES, FX1_BUDGET_WEB_SOURCES, "
+            "FX1_BUDGET_PROMPT_TOKENS"
+        )
+
+    def _say_session_budget(self) -> None:
+        budget = self._run_budget()
+        if budget is None:
+            self._say("budget unavailable")
+            return
+        public = budget.as_public()
+        self._say(
+            "budget "
+            f"max_steps={public['max_steps']} max_seconds={public['max_seconds']} "
+            f"max_families={public['max_families']} max_harness={public['max_harness']} "
+            f"max_retries={public['max_retries']}; {public['spend_cap_note']}"
+        )
+        self._say(UsageTracker(self._usage_preset).describe())
+
+    def _set_wall_budget(self, tokens: list[str]) -> bool:
+        if len(tokens) != 2 or tokens[0] not in _BUDGET_DIMENSIONS:
+            raise ValueError(
+                "usage: /budget [show | <wall|harness|calls|retries|sources|tokens> <value>]"
+            )
+        dimension = tokens[0]
+        try:
+            if dimension == "wall":
+                candidate = dataclasses.replace(self._wall_budget, max_wall_s=float(tokens[1]))
+            else:
+                amount = int(tokens[1])
+                candidate = dataclasses.replace(
+                    self._wall_budget, **{_BUDGET_DIMENSIONS[dimension]: amount}
+                )
+        except ValueError:
+            raise ValueError(f"/budget {dimension} needs a number") from None
+        candidate.validate()
+        self._wall_budget = candidate
+        self._journal_event("budget_set", dimension=dimension, value=tokens[1])
+        self._say(f"run budget: {self._wall_budget.describe()}")
+        return False
+
+    def _set_session_budget(self, tokens: list[str]) -> bool:
         from fx1.interactive.budgets import BudgetError, RunBudget, merge_budget
 
-        tokens = shlex.split(rest)
-        if not tokens:
-            budget = self._run_budget()
-            if budget is None:
-                self._say("budget unavailable")
-                return False
-            public = budget.as_public()
-            self._say(
-                "budget "
-                f"max_steps={public['max_steps']} max_seconds={public['max_seconds']} "
-                f"max_families={public['max_families']} max_harness={public['max_harness']} "
-                f"max_retries={public['max_retries']}; {public['spend_cap_note']}"
-            )
-            self._say(UsageTracker(self._usage_preset).describe())
-            return False
         if len(tokens) != 2:
             raise ValueError(
                 "usage: /budget [max-steps N | max-seconds N | max-families N | "
@@ -1168,6 +1321,22 @@ class Concierge(ChatCommands, DataCommands):
             return False
         raise ValueError("usage: /harness [list | describe <name> | run <name> [args...]]")
 
+    def _invoke_harness(self, harness: Any, name: str, extra_args: list[str]) -> Any:
+        """Pass session ids when the runner accepts the extended harness signature."""
+        run: Any = harness.run
+        if _accepts_keyword(run, "env_extra"):
+            cancel = self._turn_cancel if self._turn_cancel is not None else threading.Event()
+            return run(
+                name,
+                extra_args,
+                cancel_event=cancel,
+                env_extra={
+                    "DIPCATCHER_SESSION_ID": self._corr_session,
+                    "DIPCATCHER_RUN_ID": new_run_id(),
+                },
+            )
+        return run(name, extra_args)
+
     def _run_harness(self, name: str, extra_args: list[str]) -> str:
         """Approval-gated, registry-constrained harness execution."""
         from fx1.harness import HARNESS_REGISTRY, Harness
@@ -1186,10 +1355,11 @@ class Concierge(ChatCommands, DataCommands):
             self._say(f"[harness] {name}: not approved — skipped")
             return f"harness {name!r}: approval denied; command was not run"
         harness = self._harness if self._harness is not None else Harness()
-        result = harness.run(name, extra_args)
+        result = self._invoke_harness(harness, name, extra_args)
         exit_code = int(result.exit_code)
         cancelled = bool(getattr(result, "cancelled", False))
         timed_out = bool(getattr(result, "timed_out", False))
+        truncated = bool(getattr(result, "truncated", False))
         self._journal_event(
             "harness_run",
             command=name,
@@ -1206,6 +1376,8 @@ class Concierge(ChatCommands, DataCommands):
                 if timed_out
                 else f"failed (exit {exit_code})"
             )
+            if truncated:
+                status = f"{status}; truncated"
             self._say(f"[harness] {name}: {status}; output below is incomplete")
         if result.stdout:
             self._say(result.stdout.rstrip()[-4000:])
@@ -1236,38 +1408,6 @@ class Concierge(ChatCommands, DataCommands):
         self._say(actions.status_json(status))
         return False
 
-    def _cmd_budget(self, rest: str) -> bool:
-        tokens = shlex.split(rest)
-        if not tokens or tokens[0] in {"show", "list"}:
-            self._say(f"run budget: {self._wall_budget.describe()}")
-            self._say(
-                "tighten with /budget <wall|harness|calls|retries|sources|tokens> <value>; "
-                "environment defaults: FX1_BUDGET_WALL_S, FX1_BUDGET_HARNESS_STEPS, "
-                "FX1_BUDGET_MODEL_CALLS, FX1_BUDGET_RETRIES, FX1_BUDGET_WEB_SOURCES, "
-                "FX1_BUDGET_PROMPT_TOKENS"
-            )
-            return False
-        if len(tokens) != 2 or tokens[0] not in _BUDGET_DIMENSIONS:
-            raise ValueError(
-                "usage: /budget [show | <wall|harness|calls|retries|sources|tokens> <value>]"
-            )
-        dimension = tokens[0]
-        try:
-            if dimension == "wall":
-                candidate = dataclasses.replace(self._wall_budget, max_wall_s=float(tokens[1]))
-            else:
-                amount = int(tokens[1])
-                candidate = dataclasses.replace(
-                    self._wall_budget, **{_BUDGET_DIMENSIONS[dimension]: amount}
-                )
-        except ValueError:
-            raise ValueError(f"/budget {dimension} needs a number") from None
-        candidate.validate()
-        self._wall_budget = candidate
-        self._journal_event("budget_set", dimension=dimension, value=tokens[1])
-        self._say(f"run budget: {self._wall_budget.describe()}")
-        return False
-
     def _cmd_families(self, rest: str) -> bool:
         goal = rest.strip()
         with OrbAnimator(OrbState.WORKING, preset="inline") if self._animated else _null():
@@ -1288,53 +1428,6 @@ class Concierge(ChatCommands, DataCommands):
                     "is excluded when a goal names a family. /harness run research requests "
                     "the configured full scorecard"
                 )
-        return False
-
-    def _cmd_sessions(self, rest: str) -> bool:
-        tokens = shlex.split(rest)
-        limit = 10
-        if tokens:
-            try:
-                limit = max(1, int(tokens[0]))
-            except ValueError:
-                raise ValueError("usage: /sessions [n]") from None
-        summaries = session_mod.list_sessions(limit=limit)
-        if not summaries:
-            self._say("(no recorded sessions)")
-            return False
-        rows = [
-            {
-                "session": s.session_id,
-                "started": s.started_at[:19],
-                "model": s.model,
-                "turns": str(s.turns),
-                "jobs": f"{s.jobs_total}" + (f" ({s.jobs_open} open)" if s.jobs_open else ""),
-                "ended": (s.ended_at or "-")[:19],
-                "last goal": (s.last_goal or "-")[:40],
-            }
-            for s in summaries
-        ]
-        self._say(actions.render_table(rows))
-        self._say("current session: " + self.session_id + " — /resume <id> shows a transcript")
-        return False
-
-    def _cmd_resume(self, rest: str) -> bool:
-        target = rest.strip()
-        if not target:
-            raise ValueError("usage: /resume <session-id or unique prefix>")
-        try:
-            events = session_mod.load_session(target)
-        except ValueError as exc:
-            raise ValueError(str(exc)) from None
-        if events is None:
-            raise ValueError(f"no session matches {target!r}; /sessions lists them")
-        header = session_mod.load_header(target) or {}
-        self._say(
-            f"session {header.get('session_id', target)} — model {header.get('model', '?')} @ "
-            f"{header.get('endpoint_host', '?')} (started {header.get('started_at', '?')}); "
-            "read-only transcript — nothing is re-executed"
-        )
-        self._say(session_mod.transcript(events))
         return False
 
     # -- /superpower ---------------------------------------------------------

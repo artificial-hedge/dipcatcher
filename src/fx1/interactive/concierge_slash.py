@@ -44,7 +44,7 @@ def suggest_slash(command: str) -> str:
     if not matches:
         return "try /help"
     listed = ", ".join(f"/{name}" for name in matches)
-    return f"did you mean {listed}?  /help lists every command"
+    return f"did you mean {listed}? try /help"
 
 
 def doctor_next_actions(status: dict[str, Any], model: str) -> list[str]:

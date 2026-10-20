@@ -431,11 +431,12 @@ def _ask_harness(name: str, argv: Sequence[str], env: ToolEnv) -> bool:
 def _invoke(name: str, argv: list[str], env: ToolEnv) -> Any:
     from fx1.harness import Harness
 
-    harness = env.harness if env.harness is not None else Harness()
+    harness: Any = env.harness if env.harness is not None else Harness()
     if not _accepts_extended(harness):
         return harness.run(name, argv)
     extra = {"DIPCATCHER_SESSION_ID": env.session_id, "DIPCATCHER_RUN_ID": new_run_id()}
-    return harness.run(name, argv, cancel_event=env.cancel_event, env_extra=extra)
+    extended: Any = harness
+    return extended.run(name, argv, cancel_event=env.cancel_event, env_extra=extra)
 
 
 def _accepts_extended(harness: Any) -> bool:
