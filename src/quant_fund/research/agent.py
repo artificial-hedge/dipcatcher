@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
 import platform
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Any, cast
 from uuid import uuid4
 
@@ -30,7 +28,16 @@ from quant_fund.metrics.inference import (
 from quant_fund.metrics.overfitting import overfitting_diagnostics
 from quant_fund.northset.benches import bench_northset
 from quant_fund.pipeline.dataset import build_gold, ensure_silver, panel
-from quant_fund.reporting.report import latest_report_dir, write_report
+from quant_fund.reporting.report import latest_report_dir
+from quant_fund.research.agent_report_io import (
+    atomic_write_text as _atomic_write_text,
+)
+from quant_fund.research.agent_report_io import (
+    publish_research_run_once as _publish_research_run_once,
+)
+from quant_fund.research.agent_report_io import (
+    render_research_report as _render_research_report,
+)
 from quant_fund.research.benches import (
     bench_alpha,
     bench_conformal,
@@ -2355,61 +2362,9 @@ from quant_fund.research.catalog import (
     tail_var_battery_keys_present,
 )
 from quant_fund.research.research_flags import research_required_only
-from quant_fund.utils.atomicio import publish_text_once
 from quant_fund.utils.hashing import canonical_frame_fingerprint, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 from quant_fund.utils.seeds import set_global_seed
-
-
-def _atomic_write_text(path: Path, content: str) -> None:
-    """Publish a complete text artifact without exposing partial bytes."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path: Path | None = None
-    try:
-        with NamedTemporaryFile(
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            mode="wb",
-            delete=False,
-        ) as temporary:
-            temporary_path = Path(temporary.name)
-            temporary.write(content.encode("utf-8"))
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        os.replace(temporary_path, path)
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
-
-
-def _render_research_report(
-    directory: Path, title: str, sections: dict[str, Any], *, synthetic: bool
-) -> str:
-    """Render with the shared report writer before publishing immutable bytes."""
-    with NamedTemporaryFile(
-        dir=directory, prefix=".research-report.", suffix=".tmp", delete=False
-    ) as temporary:
-        temporary_path = Path(temporary.name)
-    try:
-        write_report(temporary_path, title, sections, synthetic=synthetic)
-        return temporary_path.read_text(encoding="utf-8")
-    finally:
-        temporary_path.unlink(missing_ok=True)
-
-
-def _publish_research_run_once(
-    json_path: Path, serialized: str, markdown_path: Path, markdown: str
-) -> None:
-    """Keep a repeated run ID from replacing either immutable artifact."""
-    artifacts = ((markdown_path, markdown), (json_path, serialized))
-    for path, content in artifacts:
-        if path.is_symlink() or (path.exists() and path.read_bytes() != content.encode("utf-8")):
-            raise FileExistsError(
-                f"research run artifact already exists with different bytes: {path}"
-            )
-    for path, content in artifacts:
-        publish_text_once(path, content)
 
 
 @dataclass
