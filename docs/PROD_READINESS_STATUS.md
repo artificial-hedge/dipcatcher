@@ -1,6 +1,6 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `ce36d0464` (2026-10-20 UTC). Integrity lane tip: `b34527e55` (ZR-9V), merge repair `6f2bbfedb`.  
+**Measured at:** `origin/main` `7e5fbc655` (2026-10-20 UTC). Prior doc: `465d8cd23`.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. Do not call the repo production-ready until every exit line is **green** on a completed CI run of `main`, or **parked** below with an owner action.
 
@@ -11,10 +11,11 @@
 | RL-4C | `de448576d` | `release.yml` preflight requires green CI + evidence-audit; `persist-credentials: false`; `AGENTS.md` / `Makefile` ci targets aligned with `ci.yml`. |
 | VT-2M | `b5f1f6d11`, `0febe4d69`, `ead2bd4f9` | Replay lane `HOME`/`TMP`/`GIT_CEILING_DIRECTORIES` isolation; `mcs_vol` producer shrink + carrier re-pin (`claims_equal: false`, `lane_evolution`; `receipts/mcs_vol_drill.json` unchanged); CI uploads replay / verify-repo / tamper / fuzz artifacts. Migration: `quality/evidence_migrations/evidence_migration_20261019.json` (`mcs_vol_smaller_inputs`). |
 | ZR-9V | `b34527e55` | **ZR-9V-1** `make evidence-audit` runs all seven trailing gates via Makefile `_ea` (fail-closed: every gate executes before exit). **ZR-9V-2** CI `ADMISSION_BASE` / `EPOCH_BASE` resolve from last green **evidence-audit** (`evidence-base-ref`); `tests/unit/research/test_evidence_base.py`; owner list [`UNGATED_EPOCH_ACKS.md`](UNGATED_EPOCH_ACKS.md) (**39** acks, not reverted). **ZR-9V-3** `verify-repo` `timestamp_anchors` reports **stale with age** (no fake-green attestation). **ZR-9V-4** replay coverage headlines **executed vs skipped** separately. **ZR-9V-5** `coverage_closure` **FAIL** on unchained `data/manifests/*` (+ `packaging/`); proposal [`PROPOSED_EVIDENCE_CHAINS.md`](PROPOSED_EVIDENCE_CHAINS.md) — agents **do not** stamp that chain or `epoch_heads.json` here. |
+| PD-8S | `7e5fbc655` | **P0** `quant` lab CLI import restored (`capabilities_app` `NameError` fixed in `6f2bbfedb`). **PD-8S-1** stored credentials do not leak into harness/lab subprocess env (`/use`, `Harness.run` scrub). **PD-8S-2** endpoint normalization + profile/credential imports repaired. **PD-8S-3** repo-root path resolution and `quant doctor` from non-repo cwd (`/tmp`). **PD-8S-4** sim-live default stdout passes honesty validator; `--diagnostic` may headline sharpe. **PD-8S-5** superpower `--sync` partial run exits non-zero. **PD-8S-6** README receipt census + `.env.example` vars documented on operator surfaces (incl. CI/OS parity test). **PD-8S-7** superpower web research requires explicit opt-in; capability catalog works off-repo cwd. Acceptance: `tests/unit/frontdoor/test_pd8s_frontdoor.py`. Chat launcher `dipcatcher` ≠ lab CLI `quant`. |
+
+**Parked follow-up (not a gate weaken):** `src/fx1/interactive/concierge.py` still has ruff **F821** undefined names on **unhit** interactive code paths; PD-8S restored the exercised paths only. Owner cleanup later — do not silence ruff globally to greenwash.
 
 **mcs_vol epoch stamp:** `needs-stamp: mcs_vol` on `b5f1f6d11` satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp.** `data/manifests/replay/mcs_vol.json` remains uncovered until manifests chain lands (ZR-9V-5).
-
-**Lab CLI note (PD-8S follow-up):** At `ba9537459`, `uv run quant` failed on import (`NameError: capabilities_app` in `quant_fund.cli._app`). `6f2bbfedb` repaired harness imports; `uv run quant verify-repo` runs at `ce36d0464`. Chat launcher `dipcatcher` is not the lab CLI on `main`.
 
 Supporting lists: [`D1_02_EPOCH_ACK_INVENTORY.md`](D1_02_EPOCH_ACK_INVENTORY.md), [`UNGATED_EPOCH_ACKS_84d3d31b7.md`](UNGATED_EPOCH_ACKS_84d3d31b7.md), [`UNGATED_EPOCH_ACKS.md`](UNGATED_EPOCH_ACKS.md), [`D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md`](D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md).
 
@@ -47,4 +48,5 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 |---|---|---|
 | 2026-10-19 | `d0b9d45cd` | Stamp `scripts`/`src`/`tests`/`docs`/`workflows`/`quality` through `b5f1f6d11` (includes **mcs_vol** producer). |
 | 2026-10-20 | `b34527e55` | **ZR-9V** honest evidence gates (landed; docs `needs-stamp` not applied). |
-| 2026-10-20 | `ce36d0464` | QA-0K: prior readiness refresh; this doc updated for ZR-9V + PD-8S quant CLI note. |
+| 2026-10-20 | `465d8cd23` | QA-0K: ZR-9V recorded in readiness doc. |
+| 2026-10-20 | `7e5fbc655` | **PD-8S** FrontDoor landed; readiness doc updated (concierge F821 follow-up parked). |
