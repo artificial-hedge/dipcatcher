@@ -1906,3 +1906,9 @@ def get_backend(kind: str, **kwargs: object) -> InferenceBackend:
     if kind not in backends:
         raise KeyError(f"unknown backend {kind!r}; choose from {sorted(backends)}")
     return cast(InferenceBackend, backends[kind](**kwargs))
+
+
+from fx1.serve.backends_stop import (  # noqa: E402,F401 — stable api/chat imports
+    truncate_at_stops,
+    truncate_chunks,
+)

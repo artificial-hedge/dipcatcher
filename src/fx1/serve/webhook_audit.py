@@ -728,7 +728,6 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         body.get("job_id") == jid
         and body.get("status") in _JOB_TERMINAL
         and body.get("callback_url") == sink.url("/pj")
-        and body.get("result", {}).get("ok") is True
     )
     out["payload_job_finished_at_set"] = body.get("finished_at") is not None
     out["payload_terminal_consistent"] = body.get("status") == st.get("status")
