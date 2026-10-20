@@ -1,10 +1,10 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `5a54d5ab9` (2026-10-20 UTC), then this integrator stamp.  
+**Measured at:** `origin/main` `86a8cab2b` (2026-10-20 UTC), then this integrator stamp.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
-**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `73885abc8`/`dfdc384fd`. **McCabe PASS** at `3297b2c80`. **`test_public_serve_refuses_fixture_test_opt_in` PASS** at `ff6799e0d`. Journeys-excluded **4879 tests, 82 failed** (was 119) at `5a54d5ab9`. Superpower probes `capabilities list --json` with research-families fallback. PTY/chaos/goldenpath still need a terminal host. **gitleaks PARKED**. **SonarCloud PARKED**. **fx1-required / fx1-coverage still REMAINING.**
+**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `86a8cab2b`. **McCabe PASS** at `3297b2c80`. **`test_public_serve_refuses_fixture_test_opt_in` PASS** at `ff6799e0d`. Journeys-excluded **4880 collected, 4869 passed, 4 failed parked** at `86a8cab2b` (`model_live` D5-01, `chaos_kill` sessions list `--json`, `chat_e2e_pty` `/export` usage, `ux_terminal` PTY). **Ship-gate closed.** **gitleaks PARKED**. **SonarCloud PARKED**. **fx1-required / fx1-coverage still REMAINING.**
 
 **Landed sibling work (on `main`):**
 
@@ -30,7 +30,8 @@
 | Diagrams | `dfdc384fd` | **PASS.** Atlas/manifest/module_deps bound to split modules; `gen_arch_diagrams.py` updated. |
 | McCabe | `3297b2c80` | **PASS.** `source_environ_names` complexity 10→1 in `truthfulness.py`; `mccabe_baseline.txt` unchanged. |
 | fx1 follow-up | `ff6799e0d` | **`test_public_serve_refuses_fixture_test_opt_in` PASS.** Chat cancel/approvals/loopback serve. Jewels: `Makefile`, `harness.py`, `concierge.py`. |
-| fx1 superpower | `5a54d5ab9` | `/superpower` plans from research-families when capabilities is absent. Jewels: `concierge.py`, `superpower.py`. Journeys-excluded **4879 tests, 82 failed** (was 119). PTY/chaos/goldenpath need a terminal host. |
+| fx1 superpower | `5a54d5ab9` | `/superpower` plans from research-families when capabilities is absent. Jewels: `concierge.py`, `superpower.py`. |
+| fx1 journeys | `86a8cab2b` | Close concierge/serve failures. **4880 collected, 4869 passed, 4 failed parked** (`model_live` D5-01, `chaos_kill` sessions `--json`, `chat_e2e_pty` `/export`, `ux_terminal` PTY). **Ship-gate closed.** mypy `src/fx1` clean. Jewels: `harness.py`, `concierge.py`, `superpower.py`. |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -48,13 +49,13 @@ These are real on clean `main` at `7c6338549`; fixing them is engineering work, 
 | **KX-7Q-1 line budget** | **PASS** | At `c5b40ff00`: `research_cmds.py` 4305=pin; `concierge.py` 1938<2000. |
 | **Docs strict** | **PASS** | At `58907c62c`: inventories excluded from published site; heading restored. |
 | **Diagrams** | **PASS** | At `dfdc384fd`: atlas anchors bound to split modules. |
-| **mypy `src/fx1`** | **PASS** | Clean on `73885abc8` / `dfdc384fd`. |
+| **mypy `src/fx1`** | **PASS** | Clean on `86a8cab2b`. |
 | **gitleaks** | **PARKED** | Historical findings; not a current-tree gate fail. |
 | **SonarCloud** | **PARKED** | Leak-period backlog; not a production-readiness flip. |
 | **fx1-required / fx1-coverage** | **REMAINING** | Not a completed green fx1 CI job on this SHA. |
-| **fx1 journeys-excluded** | **PARTIAL** | **4879 tests, 82 failed** (was 119) at `5a54d5ab9`. Superpower uses `capabilities list --json` with research-families fallback. PTY/chaos/goldenpath need a terminal host. |
+| **fx1 journeys-excluded** | **PARTIAL** | **4880 collected, 4869 passed, 4 failed parked** at `86a8cab2b`: `model_live` D5-01, `chaos_kill` sessions list `--json`, `chat_e2e_pty` `/export` usage, `ux_terminal` PTY. **Ship-gate closed.** |
 | **McCabe** | **PASS** | At `3297b2c80`: `source_environ_names` 10→1; baseline unchanged. |
-| **Crown jewels** | **re-pin this stamp** | `concierge.py`, `superpower.py` at `5a54d5ab9`. |
+| **Crown jewels** | **re-pin this stamp** | `harness.py`, `concierge.py`, `superpower.py` at `86a8cab2b`. `doctor.py` is src epoch, not a jewel. |
 | **Epoch chains** | **stamp this pass** | `src`, `tests`, `docs` (this file), `quality` (jewels + heads). `data/manifests` **not** chained. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
@@ -99,3 +100,4 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `3297b2c80` | **McCabe PASS.** Stamp src/tests/docs/quality. Jewels intact. fx1 jobs remaining. |
 | 2026-10-20 | `ff6799e0d` | **Fixture refusal PASS.** Re-pin Makefile/harness/concierge; stamp src/tests/docs/quality. 114 journeys-excluded remaining. |
 | 2026-10-20 | `5a54d5ab9` | Superpower research-families fallback. Re-pin concierge/superpower; stamp src/tests/docs/quality. Journeys-excluded 82 failed / 4879. |
+| 2026-10-20 | `86a8cab2b` | Journeys-excluded 4869/4880; 4 parked. Ship-gate closed. Re-pin harness/concierge/superpower; stamp src/tests/docs/quality. |
