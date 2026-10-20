@@ -272,9 +272,7 @@ def _run_legacy(
             telemetry_factory=telemetry_factory,
         )
         _emit(tel, "console.start", _model_of(concierge, model))
-        _legacy_banner(concierge, output_fn)
-        if resume_id:
-            concierge.handle_line(f"/resume {resume_id}")
+        _legacy_banner(concierge, output_fn, resume_id)
         _legacy_loop(concierge, input_fn, output_fn, poll_timeout_s)
     except (EOFError, KeyboardInterrupt):
         _blank(output_fn)
@@ -430,12 +428,21 @@ def _legacy_loop(
     output: Callable[..., None],
     poll_timeout_s: float,
 ) -> None:
+    from fx1.interactive.lineio import History, InterruptPolicy
+
     pending = True
-    while True:
-        nxt = _legacy_step(concierge, input_fn, output, poll_timeout_s, pending)
-        if nxt is None:
-            return
-        pending = nxt
+    policy = InterruptPolicy()
+    history = History()
+    try:
+        while True:
+            nxt = _legacy_step(
+                concierge, input_fn, output, poll_timeout_s, pending, policy, history
+            )
+            if nxt is None:
+                return
+            pending = nxt
+    finally:
+        history.save()
 
 
 def _legacy_step(
@@ -444,17 +451,33 @@ def _legacy_step(
     output: Callable[..., None],
     poll_timeout_s: float,
     pending: bool,
+    policy: Any,
+    history: Any,
 ) -> bool | None:
     """Next prompt flag, or None when the session ended."""
     try:
         line = _tty_polling_read(input_fn, _legacy_prompt(pending), poll_timeout_s)
-    except (EOFError, KeyboardInterrupt):
+    except EOFError:
         _blank(output)
         return None
+    except KeyboardInterrupt:
+        if _legacy_interrupt(concierge, policy, output):
+            return None
+        return True
     except UnicodeError:
         output("error: input is not valid UTF-8")
         return None
+    if line:
+        history.append(line)
+        policy.reset()
     return _legacy_after(concierge, line, output)
+
+
+def _legacy_interrupt(concierge: Any, policy: Any, output: Callable[..., None]) -> bool:
+    """True when a second Ctrl-C should leave the session."""
+    from fx1.interactive.concierge_console import _on_interrupt
+
+    return bool(_on_interrupt(concierge, policy, output))
 
 
 def _dispatch_line(
@@ -515,9 +538,19 @@ def _emit_engine_banner(concierge: Any, caps: TermCaps, output: Callable[..., No
     _emit_notice(concierge, output)
 
 
-def _legacy_banner(concierge: Any, output: Callable[..., None]) -> None:
-    for line in startup_lines(_model_of(concierge, DEFAULT_MODEL)):
-        output(line)
+def _legacy_banner(
+    concierge: Any, output: Callable[..., None], resume_id: str | None = None
+) -> None:
+    budget = getattr(concierge, "run_budget", None)
+    if getattr(concierge, "session_id", None) and callable(getattr(budget, "describe", None)):
+        from fx1.interactive.concierge_console import _print_startup
+
+        _print_startup(concierge, output, resume_id)
+    else:
+        for line in startup_lines(_model_of(concierge, DEFAULT_MODEL)):
+            output(line)
+        if resume_id and hasattr(concierge, "handle_line"):
+            concierge.handle_line(f"/resume {resume_id}")
     _emit_notice(concierge, output)
     if sys.platform == "win32":
         output(_WINDOWS_NOTICE)

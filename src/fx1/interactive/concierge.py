@@ -129,7 +129,9 @@ from fx1.interactive.superpower import (
     SuperpowerContext,
     SuperpowerResult,
     bounded_call,
+    bounded_model_call,
     describe_capabilities,
+    plan_goal,
 )
 from fx1.interactive.superpower_glue import (
     PreparedRun,
@@ -137,7 +139,6 @@ from fx1.interactive.superpower_glue import (
     build_context,
     evidence_report,
     evidence_status_line,
-    make_plan,
     operator_status,
     reconcile_lines,
 )
@@ -531,7 +532,9 @@ class Concierge(ChatCommands, DataCommands):
         self._journal_call("record", kind, **data)
 
     def _journal_turn(self, role: str, text: str) -> None:
-        self._journal_call("turn", role, text)
+        from fx1.interactive.redact import redact_text
+
+        self._journal_call("turn", role, redact_text(text))
 
     def _backend(self, model: str | None = None) -> Any | None:
         target = model or self.model
@@ -677,7 +680,9 @@ class Concierge(ChatCommands, DataCommands):
         self._status_explicit = True
 
     def _record_superpower_answer(self, result: SuperpowerResult) -> None:
-        text = _superpower_memory(result)
+        from fx1.interactive.redact import redact_text
+
+        text = redact_text(_superpower_memory(result))
         if not text:
             return
         self._append_if_new("assistant", text)
@@ -698,6 +703,10 @@ class Concierge(ChatCommands, DataCommands):
             self._messages.append({"role": role, "content": cleaned})
 
     def _announce_job(self, job: BackgroundJob) -> None:
+        if not job.job_id:
+            job.job_id = str(getattr(self, "_active_job_id", "") or "")
+        if job.ledger is None:
+            job.ledger = getattr(self, "_planned_budget_ledger", None)
         if job.error:
             self._say(f"[{job.label}] failed: {job.error}")
             self._finish_job_record(job, "failed", job.error)
@@ -707,10 +716,12 @@ class Concierge(ChatCommands, DataCommands):
             self._publish_superpower(result)
             self._record_superpower_answer(result)
             self._say("")
-            self._say(scrub_model_text(result.summary or "(no summary)"))
+            from fx1.interactive.redact import redact_text
+
+            self._say(redact_text(scrub_model_text(result.summary or "(no summary)")))
             self._say(evidence_status_line(result))
             self._say("")
-            self._say(result.explain())
+            self._say(redact_text(result.explain()))
             status = "cancelled" if result.cancelled else "done"
             detail = "partial" if result.partial else "complete"
             artifacts = [a for run in result.runs for a in run.artifacts][:20]
@@ -1524,25 +1535,147 @@ class Concierge(ChatCommands, DataCommands):
         *,
         sync: bool,
     ) -> bool:
-        plan = make_plan(
-            goal,
-            prepared,
-            model_fn=model_fn,
-            family_selector=self._family_selector(),
-            max_harness=self._planner_step_cap(),
-            budget_s=self._planner_budget_s(),
-            allow_web=bool(getattr(self, "_superpower_allow_web", False)),
-        )
+        if not sync:
+            return self._start_superpower_async(prepared, goal, model_fn)
+        plan = self._plan_documented(goal, model_fn, cancel)
         self._say_superpower_plan(plan)
         if cancel.is_set():
             self._say("turn cancelled")
             self._set_status("cancelled")
             return False
-        if sync:
-            self._superpower_sync(prepared, plan, model_fn)
-            return False
-        self._superpower_async(prepared, plan, model_fn)
+        self._active_job_id = new_run_id()
+        from fx1.interactive.redact import redact_text
+
+        self._journal_call(
+            "job_started", self._active_job_id, "superpower", redact_text(goal), plan.ids()
+        )
+        self._superpower_sync(prepared, plan, model_fn)
         return False
+
+    def _start_superpower_async(
+        self,
+        prepared: PreparedRun,
+        goal: str,
+        model_fn: Callable[[str], str] | None,
+    ) -> bool:
+        """Plan inside the worker so a family-catalog lookup stays cancellable."""
+
+        def run_fn(
+            cancel_event: threading.Event, on_event: Callable[[str, str], None]
+        ) -> SuperpowerResult:
+            self._arm_superpower_cancel(cancel_event)
+            plan = self._plan_documented(goal, model_fn, cancel_event)
+            self._say_superpower_plan(plan)
+            from fx1.interactive.redact import redact_text
+
+            self._journal_call(
+                "job_started",
+                str(getattr(self, "_active_job_id", "") or ""),
+                "superpower",
+                redact_text(goal),
+                plan.ids(),
+            )
+            if cancel_event.is_set():
+                return SuperpowerResult(
+                    goal=goal,
+                    plan=plan,
+                    cancelled=True,
+                    summary="cancelled before a complete report was available",
+                    status="cancelled",
+                )
+            blocked = self._dataset_block()
+            if blocked:
+                from fx1.interactive.concierge_data import _blocked_result
+
+                return _blocked_result(plan, blocked)
+            return self._executed_plan(prepared, plan, model_fn, on_event, cancel_event)
+
+        self._emit("concierge.job", {"label": "superpower", "state": "started"})
+        job = BackgroundJob(label="superpower", run_fn=run_fn)
+        job.job_id = new_run_id()
+        job.goal = goal
+        job.ledger = getattr(self, "_planned_budget_ledger", None)
+        self._active_job_id = job.job_id
+        self._job = job.start()
+        self._say("[superpower] running in the background — /status, /cancel; chat stays open")
+        return False
+
+    def _plan_documented(
+        self,
+        goal: str,
+        model_fn: Callable[[str], str] | None,
+        cancel: threading.Event | None,
+    ) -> Any:
+        """Keyword plan plus the lab ``research-families`` catalog.
+
+        ``capabilities list --json`` is probed first. A qualified catalog
+        selects executable steps. When that command is missing or not a
+        capabilities document, planning uses the documented family catalog
+        instead of stopping at ``catalog-unavailable``.
+        """
+        from fx1.interactive.budget import BudgetLedger
+        from fx1.interactive.contracts import CapabilityCatalog
+
+        ledger = BudgetLedger(self._wall_budget)
+        holder = getattr(self, "_superpower_cancel", None)
+        if isinstance(holder, dict):
+            holder["ledger"] = ledger
+        qualified = self._qualified_catalog()
+        planner_fn = self._bounded_planner_model(model_fn, cancel, ledger)
+        if isinstance(qualified, CapabilityCatalog):
+            from fx1.interactive.superpower_glue import make_plan
+
+            prepared = self._prepared
+            prepared.catalog = qualified
+            prepared.unavailable = None
+            plan = make_plan(
+                goal,
+                prepared,
+                model_fn=planner_fn,
+                family_selector=self._family_selector(),
+                max_harness=self._planner_step_cap(),
+                budget_s=self._planner_budget_s(),
+                allow_web=bool(getattr(self, "_superpower_allow_web", False)),
+            )
+            self._planned_family_catalog = None
+            self._planned_budget_ledger = ledger
+            return plan
+        family_catalog = self._catalog_for_run(goal, cancel, ledger)
+        plan = plan_goal(
+            goal,
+            model_fn=planner_fn,
+            max_harness=self._planner_step_cap(),
+            catalog=family_catalog,
+            budget_s=self._planner_budget_s(),
+            allow_web=bool(getattr(self, "_superpower_allow_web", False)),
+        )
+        if not family_catalog.available:
+            plan.catalog_unavailable = family_catalog.note or "catalog unavailable"
+        self._planned_family_catalog = family_catalog
+        self._planned_budget_ledger = ledger
+        return plan
+
+    def _bounded_planner_model(
+        self,
+        model_fn: Callable[[str], str] | None,
+        cancel: threading.Event | None,
+        ledger: Any,
+    ) -> Callable[[str], str] | None:
+        """Stop waiting on planner refinement when the operator cancels or the wall elapses."""
+        if model_fn is None:
+            return None
+
+        def bounded(prompt: str) -> str:
+            return bounded_model_call(model_fn, prompt, cancel_event=cancel, budget_ledger=ledger)
+
+        return bounded
+
+    def _qualified_catalog(self) -> Any:
+        """Probe ``capabilities list --json``. None when it is not a catalog."""
+        from fx1.interactive.orchestration import load_catalog
+
+        loaded = load_catalog(self._harness_obj(), config_dir=profiles.config_dir())
+        return loaded.catalog
 
     def _bind_model_fn(self, backend: Any | None) -> Callable[[str], str] | None:
         if backend is None:
@@ -1552,9 +1685,11 @@ class Concierge(ChatCommands, DataCommands):
         self._superpower_cancel = holder
 
         def bound(prompt: str) -> str:
-            return self._model_fn(
-                backend, cancel_event=holder["cancel"], ledger=BudgetLedger(self._wall_budget)
-            )(prompt)
+            from fx1.interactive.budget import BudgetLedger
+
+            active = holder.get("ledger")
+            ledger = active if active is not None else BudgetLedger(self._wall_budget)
+            return self._model_fn(backend, cancel_event=holder["cancel"], ledger=ledger)(prompt)
 
         return bound
 
@@ -1673,6 +1808,14 @@ class Concierge(ChatCommands, DataCommands):
             datasets=tuple(getattr(self, "_datasets", ())),
         )
         ctx.allow_web = getattr(self, "_superpower_allow_web", False)
+        ctx.journal = self._journal
+        ctx.job_id = str(getattr(self, "_active_job_id", "") or "")
+        family_catalog = getattr(self, "_planned_family_catalog", None)
+        if family_catalog is not None and ctx.catalog is None:
+            ctx.catalog = family_catalog
+        ledger = getattr(self, "_planned_budget_ledger", None)
+        if ledger is not None:
+            ctx.budget_ledger = ledger
         return ctx
 
     def _harness_obj(self) -> Any:
@@ -1903,6 +2046,8 @@ class Concierge(ChatCommands, DataCommands):
             f"[{self._job.label}] cancel requested — the run stops waiting now; "
             "active network requests may finish at their transport timeout"
         )
+        if self._job.running:
+            self._say("cancellation pending")
         self._journal_event("cancel_requested", job_id=self._job.job_id)
         return False
 

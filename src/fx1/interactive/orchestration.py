@@ -914,7 +914,7 @@ def _save_flash(state: RunState) -> None:
     goal = redact_text(state.plan.goal)
     entry = store.add(
         text=redact_text(f"/superpower run on: {goal} — capabilities: {', '.join(selected)}"),
-        task=goal,
+        task=redact_text(goal),
         tags=["superpower"],
         uncertainty="medium",
     )

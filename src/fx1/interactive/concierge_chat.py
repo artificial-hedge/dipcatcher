@@ -26,6 +26,21 @@ from fx1.interactive.model_ux import footer_lines, outbound_messages, scrub_tran
 from fx1.interactive.orb import OrbAnimator, OrbState
 
 
+def _scrubbed_tool_call(call: Mapping[str, Any]) -> dict[str, Any]:
+    """Copy one tool call with registered secrets removed from its arguments."""
+    from fx1.interactive.redact import redact_text
+
+    copied = dict(call)
+    function = copied.get("function")
+    if isinstance(function, Mapping):
+        cleaned = dict(function)
+        arguments = cleaned.get("arguments")
+        if isinstance(arguments, str):
+            cleaned["arguments"] = redact_text(arguments)
+        copied["function"] = cleaned
+    return copied
+
+
 def _refuse_non_object_arguments(call: Mapping[str, Any]) -> str | None:
     """Reject argument blobs that are not a JSON object before any tool runs.
 
@@ -190,18 +205,28 @@ class ChatCommands:
                 raise Fx1HonestyError("fx-1 output failed the honesty gate")
 
     def _record_tool_round(self, completion: Any) -> None:
+        from fx1.interactive.redact import redact_text
+
         self._reject_dirty_tool_calls(completion.tool_calls)
+        calls = [_scrubbed_tool_call(call) for call in completion.tool_calls]
+        content = completion.content
+        if isinstance(content, str):
+            content = redact_text(content)
         self._messages.append(
             {
                 "role": "assistant",
-                "content": completion.content,
-                "tool_calls": list(completion.tool_calls),
+                "content": content,
+                "tool_calls": calls,
             }
         )
-        for call in completion.tool_calls:
+        for call in calls:
             result_text = self._execute_tool_result(call)
             self._messages.append(
-                {"role": "tool", "tool_call_id": call["id"], "content": result_text}
+                {
+                    "role": "tool",
+                    "tool_call_id": call["id"],
+                    "content": redact_text(result_text),
+                }
             )
 
     def _withhold_chat(self, start: int, exc: Fx1HonestyError) -> None:

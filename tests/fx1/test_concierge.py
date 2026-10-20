@@ -1306,6 +1306,7 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     assert "[ran] research" in text  # harness ran and was explained
     # The family catalog is consulted before the research bench runs.
     assert harness.calls == [
+        ("capabilities", ["list", "--json"]),
         (
             "research-families",
             ["--lookup-hashes", goal_lookup_hashes("run the research benchmark")],
@@ -1329,10 +1330,11 @@ def test_superpower_named_family_does_not_run_full_scorecard(env: Path, tmp_path
     assert "excluded: research: named-family execution unavailable" in text
     assert "result: partial" in text
     assert harness.calls == [
+        ("capabilities", ["list", "--json"]),
         (
             "research-families",
             ["--lookup-hashes", goal_lookup_hashes("run the conformal volatility benchmark")],
-        )
+        ),
     ]
 
 
@@ -1343,7 +1345,7 @@ def test_superpower_background_job(env: Path, tmp_path: Path) -> None:
     concierge.join_job(timeout_s=10)
     text = joined(out)
     assert "capabilities used and why" in text
-    assert "catalog unavailable" in text
+    assert "planner: deterministic" in text
     assert "evidence status:" in text
 
 
@@ -1354,7 +1356,7 @@ def test_superpower_denies_consequential(env: Path, tmp_path: Path) -> None:
     )
     concierge.handle_line("/superpower train and optimize a model --sync")
     assert all(call[0] != "train" for call in harness.calls)
-    assert "catalog unavailable" in joined(out)
+    assert "approval-denied" in joined(out)
 
 
 # ---------------------------------------------------------------------------
@@ -1588,13 +1590,14 @@ def test_resume_marks_a_running_session_interrupted(env: Path, tmp_path: Path) -
     assert loaded["job"]["resume"] == "manual"
 
 
-def test_superpower_skips_research_without_an_eligible_family(env: Path, tmp_path: Path) -> None:
+def test_superpower_unscoped_benchmark_runs_the_scorecard(env: Path, tmp_path: Path) -> None:
     harness = FakeHarness()
     concierge, out = make_concierge(tmp_path, harness=harness)
     concierge.handle_line("/superpower run the benchmark family --sync")
     text = joined(out)
-    assert "catalog unavailable" in text
-    assert all(call[0] != "research" for call in harness.calls)
+    assert "planner: deterministic" in text
+    assert "[ran] research" in text
+    assert any(call[0] == "research" for call in harness.calls)
 
 
 def test_chat_scrubs_an_api_key_out_of_the_transcript(
@@ -1639,5 +1642,5 @@ def test_budget_command_limits_family_selection(env: Path, tmp_path: Path) -> No
     concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
     text = joined(out)
     assert "budget max_families=1" in text
-    assert "catalog unavailable" in text
+    assert "family 'conformal' — eligible (required)" in text
     assert all(call[0] != "research" for call in harness.calls)

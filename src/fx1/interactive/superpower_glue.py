@@ -104,15 +104,26 @@ def prepare_qualified_run(
     *,
     config_dir: Path | None = None,
     datasets: Sequence[DatasetRef] = (),
+    load_capabilities: bool = True,
 ) -> PreparedRun:
-    """Load the catalog and allocate one evidence ledger plus a run directory."""
-    loaded = load_catalog(harness, config_dir=config_dir)
+    """Allocate one evidence ledger plus a run directory.
+
+    ``load_capabilities`` fetches ``capabilities list --json``. The chat
+    planner probes that command itself and falls back to ``research-families``
+    when the qualified catalog is absent, so it passes False here to avoid a
+    second fetch.
+    """
+    catalog = None
+    unavailable = None
+    if load_capabilities:
+        loaded = load_catalog(harness, config_dir=config_dir)
+        catalog = loaded.catalog
+        unavailable = None if catalog is not None else (loaded.reason or "catalog unavailable")
     attached = tuple(datasets)
     roots = qualified_roots(config_dir=config_dir, extra_inputs=_dataset_files(attached))
     run_id = new_run_id()
-    unavailable = None if loaded.catalog is not None else (loaded.reason or "catalog unavailable")
     return PreparedRun(
-        catalog=loaded.catalog,
+        catalog=catalog,
         roots=roots,
         run_id=run_id,
         run_dir=prepare_run_dir(roots["runs"][0], run_id),

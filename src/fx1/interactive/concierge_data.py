@@ -124,13 +124,16 @@ class DataCommands:
             self._harness_obj(),
             config_dir=profiles.config_dir(),
             datasets=dataset_refs(self._attachment_snapshot()),
+            load_capabilities=False,
         )
         self._prepared = prepared
         self._evidence = prepared.evidence
         return prepared
 
     def _say_superpower_plan(self, plan: Any) -> None:
-        self._say(plan.describe())
+        from fx1.interactive.redact import redact_text
+
+        self._say(redact_text(plan.describe()))
         budget = self._run_budget()
         if budget is not None:
             public = budget.as_public()

@@ -91,6 +91,13 @@ def _lookup_call(goal: str) -> tuple[str, list[str]]:
     return ("research-families", ["--lookup-hashes", goal_lookup_hashes(goal)])
 
 
+_CAPABILITIES_PROBE = ("capabilities", ["list", "--json"])
+
+
+def _probed(*calls: tuple[str, list[str] | None]) -> list[tuple[str, list[str] | None]]:
+    return [_CAPABILITIES_PROBE, *calls]
+
+
 class Result:
     def __init__(
         self,
@@ -321,7 +328,7 @@ def test_use_keeps_the_conversation_and_notes_the_switch(env: Path, tmp_path: Pa
     messages = concierge._messages  # noqa: SLF001
     assert [m["role"] for m in messages] == ["user", "assistant", "system"]
     assert "produced by fx1" in messages[-1]["content"]
-    assert "conversation continues (3 messages kept)" in joined(out)
+    assert "conversation kept (3 messages kept)" in joined(out)
     assert "lite.example.test" in joined(out)
     assert "model_switch" in journal_kinds(concierge)
 
@@ -379,7 +386,9 @@ def test_budget_limits_harness_steps_in_a_superpower_run(env: Path, tmp_path: Pa
     text = joined(out)
     assert "[budget-exceeded]" in text
     assert "result: partial" in text
-    executed = [name for name, _ in harness.calls if name != "research-families"]
+    executed = [
+        name for name, _ in harness.calls if name not in {"research-families", "capabilities"}
+    ]
     assert len(executed) == 1
     # the harness received the cancel event and a deadline derived from the budget
     assert all(k["cancel_event"] is not None for k in harness.kwargs[1:])
@@ -442,7 +451,7 @@ def test_background_superpower_planner_can_be_cancelled(
         concierge.join_job(timeout_s=1)
         assert concierge.job is not None and not concierge.job.running
         assert concierge.job.result.cancelled is True
-        assert [name for name, _ in harness.calls] == []
+        assert [name for name, _ in harness.calls] == ["capabilities", "research-families"]
     finally:
         release.set()
 
@@ -474,7 +483,9 @@ def test_superpower_planner_stops_at_wall_deadline(
         assert concierge.job is not None
         assert concierge.job.result.partial is True
         assert all(run.status == "budget-exceeded" for run in concierge.job.result.runs)
-        assert not harness.calls
+        assert [
+            name for name, _ in harness.calls if name not in {"capabilities", "research-families"}
+        ] == []
         assert len(timeouts) == 1 and 0 < timeouts[0] <= 0.5
     finally:
         release.set()
@@ -824,7 +835,7 @@ def test_superpower_named_family_reports_eligibility_without_running_bench(
     assert "family 'conformal' — eligible (required)" in text
     assert "excluded: research: named-family execution unavailable" in text
     assert "result: partial" in text
-    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
+    assert harness.calls == _probed(_lookup_call("run the conformal volatility benchmark"))
     out.clear()
     concierge.handle_line("/superpower help")
     assert "family catalog v2" in joined(out)  # cached catalog shown in the help listing
@@ -841,9 +852,10 @@ def test_superpower_bare_exploratory_name_does_not_launch_full_scorecard(
     assert "'a1_homotopy' — not a planner-selectable family" in text
     assert "excluded: research:" in text
     assert "result: partial" in text
-    assert harness.calls[0] == _lookup_call(goal)
+    assert harness.calls[0] == _CAPABILITIES_PROBE
+    assert harness.calls[1] == _lookup_call(goal)
     assert all(name != "research" for name, _ in harness.calls)
-    assert goal not in harness.calls[0][1][1]
+    assert goal not in harness.calls[1][1][1]
 
 
 @pytest.mark.parametrize(
@@ -864,7 +876,8 @@ def test_goal_lookup_blocks_punctuation_separated_family_names(
     assert explanation in text
     assert "excluded: research:" in text
     assert "result: partial" in text
-    assert harness.calls[0] == _lookup_call(goal)
+    assert harness.calls[0] == _CAPABILITIES_PROBE
+    assert harness.calls[1] == _lookup_call(goal)
     assert all(name != "research" for name, _ in harness.calls)
 
 
@@ -873,7 +886,7 @@ def test_superpower_unscoped_research_runs_full_scorecard(env: Path, tmp_path: P
     concierge, out = make(tmp_path, harness=harness)
     concierge.handle_line("/superpower run the research benchmark --sync")
     assert "[ran] research <synthetic-correctness>" in joined(out)
-    assert harness.calls == [_lookup_call("run the research benchmark"), ("research", None)]
+    assert harness.calls == _probed(_lookup_call("run the research benchmark"), ("research", None))
 
 
 def test_legacy_catalog_without_lookup_args_fails_closed(env: Path, tmp_path: Path) -> None:
@@ -914,7 +927,7 @@ def test_superpower_run_with_unavailable_catalog_excludes_research(
     text = joined(out)
     assert "excluded: research: family catalog unavailable (catalog offline)" in text
     assert "result: partial" in text
-    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
+    assert harness.calls == _probed(_lookup_call("run the conformal volatility benchmark"))
 
 
 def test_background_superpower_catalog_lookup_can_be_cancelled(env: Path, tmp_path: Path) -> None:
@@ -951,7 +964,7 @@ def test_background_superpower_catalog_lookup_can_be_cancelled(env: Path, tmp_pa
     assert stopped.wait(1)
     assert concierge.job is not None and not concierge.job.running
     assert concierge.job.result.cancelled is True
-    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
+    assert harness.calls == _probed(_lookup_call("run the conformal volatility benchmark"))
 
 
 def test_background_catalog_legacy_runner_does_not_hold_cancel(env: Path, tmp_path: Path) -> None:
@@ -1015,7 +1028,7 @@ def test_superpower_catalog_lookup_stops_at_wall_deadline(env: Path, tmp_path: P
     assert concierge.job is not None
     assert concierge.job.result.partial is True
     assert all(run.status == "budget-exceeded" for run in concierge.job.result.runs)
-    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
+    assert harness.calls == _probed(_lookup_call("run the conformal volatility benchmark"))
 
 
 # ---------------------------------------------------------------------------

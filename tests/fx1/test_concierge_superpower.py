@@ -60,7 +60,7 @@ def test_cancel_reports_pending_until_the_worker_stops(env: Path, tmp_path: Path
     concierge, out = make_concierge(
         tmp_path, researcher=researcher, harness=_CatalogHarness(fail=True)
     )
-    concierge.handle_line("/superpower latest public news on rates")
+    concierge.handle_line("/superpower latest public news on rates --web")
     assert concierge.job_running
     concierge.handle_line("/cancel")
     text = _joined(out)

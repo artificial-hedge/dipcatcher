@@ -850,7 +850,10 @@ def _compose_user_answer(
     sink: _RunEvidence,
     draft: str,
 ) -> None:
-    notes = answer_notes(plan.notes, plan.orchestration_exclusions)
+    from fx1.interactive.redact import redact_text
+
+    draft = redact_text(draft)
+    notes = [redact_text(note) for note in answer_notes(plan.notes, plan.orchestration_exclusions)]
     composed = compose_run_answer(
         draft,
         sink.ledger,
@@ -881,7 +884,9 @@ def _journal_step(ctx: SuperpowerContext, run: CapabilityRun) -> None:
         return
     # The journal must never block a run.
     with contextlib.suppress(Exception):
-        ctx.journal.job_step(ctx.job_id, run.id, run.status, run.detail[:300])
+        from fx1.interactive.redact import redact_text
+
+        ctx.journal.job_step(ctx.job_id, run.id, run.status, redact_text(run.detail[:300]))
 
 
 def _record(result: SuperpowerResult, ctx: SuperpowerContext, run: CapabilityRun) -> None:
@@ -1593,9 +1598,13 @@ def _stage_flash_save(
 ) -> None:
     name = "flash context (save)"
     try:
+        from fx1.interactive.redact import redact_text
+
         entry = store.add(
-            text=(f"/superpower run on: {plan.goal} — capabilities: {', '.join(selected)}"),
-            task=plan.goal,
+            text=redact_text(
+                f"/superpower run on: {plan.goal} — capabilities: {', '.join(selected)}"
+            ),
+            task=redact_text(plan.goal),
             tags=["superpower"],
             uncertainty="medium",
         )
@@ -1607,6 +1616,9 @@ def _stage_flash_save(
             artifacts=[entry.id],
             evidence=EvidenceClass.MEMORY.value,
         )
+        sink = ctx._run_evidence
+        if sink is not None:
+            sink.ledger.add_flash(str(entry.id), verified_flag=False)
     except Exception:  # noqa: BLE001
         run = CapabilityRun("flash_save", name, "failed", "flash save failed")
         result.errors.append("flash_save: flash save failed")
