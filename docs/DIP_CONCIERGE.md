@@ -1,4 +1,4 @@
-# dipcatcher CLI — chat-first orchestration for fx1 and fx1-lite
+# dipcatcher CLI — chat with fx1 and fx1-lite
 
 dipcatcher is Artificial Hedge's state-of-the-art harness for the **fx1**
 and **fx1-lite** chat ids (no released weights;
@@ -34,41 +34,60 @@ why.
 > moderated trial have not been run. Nothing here is proof of live model
 > availability.
 
-## Design: Codex-style, chat-first
+> **Status (2026-10-12).** On a terminal, bare `dipcatcher` opens chat.
+> With stdin or stdout redirected, bare `dipcatcher` prints a short preface
+> and the lab help, and does not read a prompt. `dipcatcher chat` refuses
+> a non-terminal and exits 2. `fxi` opens the same concierge and, with
+> stdin closed, prints the banner and exits on EOF. `quant` is the lab CLI
+> without that preface. `/superpower` loads the capability catalog and the
+> read-only family surface; a family that cannot be bound with `--only` is
+> refused instead of widening to the full scorecard. Selective family
+> records are partial (`verified=false` on the evidence item) and are not
+> sealed receipts. `/data` attaches a CSV or Parquet that already sits
+> under `<cwd>/data`. `/runs` reads the job ledger and does not start
+> work. `/models check` is offline unless `--live` is set. Sessions persist
+> under `$FX1_SESSION_DIR`, else `$FX1_CONFIG_DIR/sessions`, else
+> `~/.fx1/sessions`, including dataset attachments. A job that was still
+> `running` is marked `interrupted` on resume and is not started again.
+> The chat process treats SIGHUP as exit 129 and SIGTERM as exit 143.
+> `dipcatcher exec --help` maps SIGINT and SIGHUP to 130 and SIGTERM to
+> 143. Two automated journey suites, a relevance suite, chaos tests, and
+> red-team tests exist. They do not close gates P1–P7. Live authenticated
+> smoke for both models, a five-user trial, a 24-hour soak, the
+> macOS/Windows matrix, and signed release artifacts are open. See
+> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md) and
+> [the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md).
 
-About 99% of the interface is the conversation. The rules:
+## Honesty contract
 
-| Principle | What it means here |
-|---|---|
-| One command, one conversation | Bare `dipcatcher` opens the chat. There is no subcommand tree to learn first. |
-| Plain text is a turn | Ask in your own words; the active model answers and calls tools (memory, web, harness) as needed. |
-| Slash commands for control | `/superpower`, `/research`, `/use`, `/status`, `/cancel` — discoverable with `/help`, never required to get started. |
-| Approval before consequence | Consequential lab work (`train`, `optimize`, `paper`) asks first; a refusal is recorded, not retried. |
-| Long work runs in the background | Jobs stream progress while you keep typing; `/cancel` and `/redirect` take effect at the next step. |
-| Honest by default | Ordinary chat and `/superpower` synthesis pass the existing honesty validator before display. This lexical check does not establish semantic correctness or verify a cited receipt. |
-| Subcommands are the other 1% | `dipcatcher research --config …` and the rest stay for scripts, CI, and receipts — the non-interactive path. |
+Research results are proper scores (pinball, CRPS, PIT, QLIKE, Brier, ECE,
+Kupiec, HMM likelihood). The honesty gate withholds an answer that
+headlines Sharpe, Sortino, Calmar, P&L, or NAV, that makes a
+live-performance claim, or that presents synthetic evidence with a number
+and no `SYNTHETIC` label. SYNTHETIC results are correctness tests, always
+labeled, and are not market evidence. There is no broker connectivity and
+no live-trading claim. Receipts are immutable evidence; a verification
+claim needs a receipt the harness checked. The lexical gate does not prove
+that a cited receipt is the right one for the sentence. A decimal glued to
+the token (`sharpe3.2`, `sharpe_3.2`, `NAV1.9`, `pnl4.2`) is a headline. A
+bare integer glued on (`sharpe2`) is not. Spelled-out numbers ("sharpe of
+two point one"), a token glued onto a prefix ("mySharpe 2.1"), and a bare
+metric name with no number stay outside the gate. A compromised endpoint
+can still return false but well-formed prose that this gate does not catch.
 
-New operator-facing features belong in the conversation (a slash command or
-a model tool in `src/fx1/interactive`), not as new top-level subcommands.
+A loopback reply of `The strategy Sharpe 2.1 beat the book.` came back as
+exec status `withheld`, exit code 3, with this answer:
 
-**Boundary rule.** The chat lives on the fx1 side (`src/fx1/interactive`),
-and `quant_fund` never imports `fx1` (enforced by
-`tests/unit/test_fx1_dependency_edge.py` and `configs/arch_boundaries.toml`).
-The outer launcher is `src/dipcatcher_cli`, outside both libraries. The chat
-reaches the lab exclusively through the registered
-harness commands in `fx1.harness.HARNESS_REGISTRY`, executed as
-subprocesses — the model can never touch an unregistered lab surface.
+```text
+answer withheld by the fx-1 honesty gate (fx-1 output headlines forbidden research metric token 'sharpe'; research results are proper scores, not Sharpe/P&L headlines.). Ask a follow-up to continue.
+```
 
-## Quickstart
+## Install and first run
+
+From a checkout, with [uv](https://docs.astral.sh/uv/):
 
 ```sh
 uv sync --frozen --all-groups --all-extras
-dipcatcher              # opens chat in an interactive terminal
-# Inside chat: /keys set fx1 prompts for a masked API key and endpoint URL.
-# Use the completion URL supplied by your service; no endpoint is assumed live.
-# Inside chat: /help, /superpower help, /use fx1-lite, /exit
-# Or select the starting model explicitly:
-dipcatcher chat --model fx1-lite
 ```
 
 Without an endpoint the console still works: slash commands run and flash
@@ -343,7 +362,9 @@ dipcatcher research-families --text   # the family catalog the planner consults
 Non-interactive runs never wait for an approval: consequential commands are
 denied unless `--approve-consequential` states the policy for that run.
 
-## Tests and verification
+Without an endpoint the console still accepts slash commands. A model turn
+says no endpoint is configured and does not invent a reply. Observed exec
+JSON (`status` `no_endpoint`, exit 5):
 
 Offline suites (network seams injected; run with `make fx1-test` or
 `uv run pytest tests/fx1/test_flash.py tests/fx1/test_webresearch.py
@@ -375,35 +396,23 @@ tests/fx1/test_families.py tests/fx1/test_lineio.py tests/fx1/test_harness.py`):
   console startup reconciliation, Ctrl-C cancel/exit, history without
   secrets.
 
-- `tests/fx1/test_flash.py` — CRUD, tombstones, torn-line reporting, threaded
-  appends, relevance ranking, staleness, privacy flags, context blocks,
-  refresh, cross-process persistence.
-- `tests/fx1/test_webresearch.py` — URL/SSRF policy, redirect re-checks,
-  size caps, robots subset + caching, DDG parsing against the live HTML
-  shape, claim extraction filters, contradiction detection, budgets
-  (time/search/source), cancel with partial results, redirect, fragment
-  dedupe, IRI encoding.
-- `tests/fx1/test_superpower.py` — registry/harness parity, consequential
-  set, planner selection + caps, model-refinement validation and fallbacks,
-  coordination order, approval denial, honesty-gate withholding, offline
-  summary, cancel semantics.
-- `tests/fx1/test_concierge.py` — slash dispatch, chat tool loop (flash
-  retrieve/save, harness approval + registry refusal, backend fault
-  rollback), background research lifecycle (status/cancel/redirect/error),
-  superpower sync/background, flash commands, console driver over scripted
-  stdin.
+## Entry points
 
-Live verification (performed against the real internet during development):
-`fxi research --sync` fetched real sources (DDG lite), extracted real claims
-with URLs, and deduped fragments; `fxi superpower --sync` planned, ran live
-web research, saved to flash, and produced the offline synthesis; a separate
-`fxi flash list/search` process retrieved the saved entry — cross-session
-memory confirmed; a full piped REPL session (help → flash add/search/list →
-plain chat → exit) ran end-to-end, with the no-endpoint chat turn answering
-honestly instead of fabricating a model reply. Live *model* turns were not
-verifiable with the stored credentials — see Known limitations.
+| Command | What happened here |
+|---|---|
+| `dipcatcher` | Terminal: chat. Not a terminal: preface, then lab `--help`. Does not read stdin. |
+| `dipcatcher chat [--model fx1\|fx1-lite] [--resume]` | Chat. Requires a terminal on stdin and stdout. `--resume` reloads the newest session and does not restart an interrupted job. |
+| `dipcatcher exec ...` | One turn, no prompts. Plain mode prints the answer on stdout and the footer on stderr. `--json` prints one `dipcatcher.exec.v1` document and, in the run below, also wrote the footer on stderr. `--data` is repeatable and uses the same resolver as `/data`. |
+| `dipcatcher models list [--json]` | Presence table for both models. Not a liveness claim. |
+| `dipcatcher models check [model] [--live] [--json] [--out PATH] [--timeout-s N]` | Offline configuration check, or one call per model with `--live`. `--out` is atomic mode `0600`. |
+| `dipcatcher sessions list\|show\|export\|rm\|prune` | Saved chats. JSON schema `dipcatcher.sessions.v1`. |
+| `dipcatcher resume [session] [--model fx1\|fx1-lite]` | Opens chat on a session. Requires a terminal. `last` or a unique prefix. |
+| `dipcatcher version` | Package version. Extra arguments exit 2: `usage: dipcatcher version`. |
+| `dipcatcher <lab-command>` | Passed to the lab CLI. Examples: `capabilities`, `families`, `doctor`, `research`. |
+| `quant` | Lab CLI only. No chat preface. |
+| `fxi` | Same concierge. `fxi shell` is the older one-line shell. `fxi setup` is the endpoint wizard. |
 
-## Known limitations (honest gaps)
+The preface printed by redirected `dipcatcher` is:
 
 - **Search provider**: keyless DDG HTML parsing breaks if DDG changes markup;
   the failure mode is an explicit error plus zero hits, never fabricated

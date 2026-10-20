@@ -41,6 +41,14 @@ exit                              leave the shell
 """
 
 
+def _prompt_glyphs() -> tuple[str, str]:
+    from fx1.interactive.terminal import unicode_stdout
+
+    if unicode_stdout():
+        return " · ", " › "
+    return " | ", " > "
+
+
 def _endpoint_host(model: str) -> str:
     resolved = profiles.resolve_endpoint(model)
     base_url = resolved[1] if resolved else profiles.default_base_url()
@@ -59,7 +67,8 @@ class FxiShell(cmd.Cmd):
     # -- session ------------------------------------------------------------
 
     def _refresh_prompt(self) -> None:
-        self.prompt = f"fxi · {self.model}@{_endpoint_host(self.model)} › "
+        sep, mark = _prompt_glyphs()
+        self.prompt = f"fxi{sep}{self.model}@{_endpoint_host(self.model)}{mark}"
 
     def _say_error(self, exc: Exception) -> None:
         typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)

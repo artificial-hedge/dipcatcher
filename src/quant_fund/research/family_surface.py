@@ -1,0 +1,970 @@
+"""Read-only qualified family surface and selective runners.
+
+``/superpower`` must choose known, qualified, non-retired families that have
+an implemented runner, then execute only that subset. Catalog membership is
+not permission. This module lives on the research side of the architecture
+boundary so the model package never imports the catalog.
+
+A selective run is a partial record. It is not a full research receipt and
+``verified`` stays false until ``verify-research`` accepts one.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import importlib
+import json
+import math
+import os
+import re
+import subprocess
+import time
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, cast
+
+SURFACE_SCHEMA = "dipcatcher.family_surface.v1"
+RUN_SCHEMA = "dipcatcher.family_run.v1"
+_FAMILY_ID = re.compile(r"^[a-z][a-z0-9_]*$")
+_GOAL_TOKEN = re.compile(r"[a-z][a-z0-9_]*")
+_MAX_FAMILY_ID = 64
+_MAX_GOAL = 4096
+_EXCLUSION_CODE = {
+    "retired": "retired",
+    "unknown": "unknown",
+    "live_optional": "no_runner",
+}
+
+Runner = Callable[..., Any]
+
+
+class FamilySurfaceError(ValueError):
+    """Fail-closed refusal: unknown, retired, unqualified, or unsafe ids."""
+
+
+@dataclass(frozen=True)
+class PanelBundle:
+    """Panel inputs a selective runner may use. Missing market data is not filled."""
+
+    frame: Any
+    label: str
+    northset: Any
+
+
+@dataclass(frozen=True)
+class FamilyRunner:
+    """One implemented bench the selective surface is allowed to call."""
+
+    family_id: str
+    purpose: str
+    tasks: tuple[str, ...]
+    trigger_terms: tuple[str, ...]
+    scores: tuple[str, ...]
+    required_inputs: tuple[str, ...]
+    needs: str
+    target: str
+    resource_limit_s: int
+
+
+def _runner(
+    family_id: str,
+    purpose: str,
+    tasks: tuple[str, ...],
+    trigger_terms: tuple[str, ...],
+    scores: tuple[str, ...],
+    required_inputs: tuple[str, ...],
+    needs: str,
+    target: str,
+    resource_limit_s: int = 120,
+) -> FamilyRunner:
+    return FamilyRunner(
+        family_id=family_id,
+        purpose=purpose,
+        tasks=tasks,
+        trigger_terms=trigger_terms,
+        scores=scores,
+        required_inputs=required_inputs,
+        needs=needs,
+        target=target,
+        resource_limit_s=resource_limit_s,
+    )
+
+
+# REQUIRED scorecard families with a real bench callable. Live-optional names
+# stay visible to status lookups and are refused here until a runner is added.
+RUNNERS: dict[str, FamilyRunner] = {
+    spec.family_id: spec
+    for spec in (
+        _runner(
+            "ranking",
+            "Cross-sectional ranking diagnostics on the research panel.",
+            ("ranking",),
+            ("ranking", "rankic", "cross-section", "cross sectional"),
+            ("mean_ic", "rank_ic"),
+            ("panel", "ranking target"),
+            "panel_config_label",
+            "quant_fund.research.benches:bench_ranking",
+            180,
+        ),
+        _runner(
+            "alpha",
+            "Cross-sectional alpha diagnostics on the research panel.",
+            ("alpha",),
+            ("alpha", "factor premium"),
+            ("proper scores",),
+            ("panel", "ranking target"),
+            "panel_config_label",
+            "quant_fund.research.benches:bench_alpha",
+        ),
+        _runner(
+            "volatility",
+            "Variance-forecast diagnostics scored with QLIKE.",
+            ("volatility",),
+            ("volatility", "qlike", "variance forecast", "vol forecast"),
+            ("qlike",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_volatility",
+        ),
+        _runner(
+            "distribution",
+            "Distributional forecast diagnostics.",
+            ("distribution",),
+            ("distribution", "crps", "density forecast"),
+            ("crps",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_distribution",
+        ),
+        _runner(
+            "regime",
+            "Regime-state diagnostics.",
+            ("regime",),
+            ("regime", "hmm", "regime switch"),
+            ("likelihood",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_regime",
+        ),
+        _runner(
+            "tail",
+            "Tail-risk diagnostics.",
+            ("tail",),
+            ("tail risk", "expected shortfall", "evt"),
+            ("tail score",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_tail",
+        ),
+        _runner(
+            "drawdown",
+            "Drawdown-path diagnostics.",
+            ("drawdown",),
+            ("drawdown",),
+            ("drawdown score",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_drawdown",
+        ),
+        _runner(
+            "liquidity",
+            "Liquidity diagnostics on the research panel.",
+            ("liquidity",),
+            ("liquidity", "amihud"),
+            ("liquidity score",),
+            ("panel",),
+            "panel",
+            "quant_fund.research.benches:bench_liquidity",
+        ),
+        _runner(
+            "reinforcement",
+            "Contextual-bandit policy diagnostics.",
+            ("reinforcement",),
+            ("reinforcement", "linucb", "contextual bandit"),
+            ("regret",),
+            ("panel", "ranking target"),
+            "panel_label",
+            "quant_fund.research.benches:bench_rl",
+        ),
+        _runner(
+            "conformal",
+            "Conformal prediction-interval diagnostics.",
+            ("conformal",),
+            ("conformal", "prediction interval"),
+            ("coverage", "mean_width"),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_conformal",
+        ),
+        _runner(
+            "evalues",
+            "E-value and e-process diagnostics.",
+            ("e-values",),
+            ("e-value", "evalue", "e-values"),
+            ("e_process",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_evalues",
+        ),
+        _runner(
+            "jackknife_plus",
+            "Jackknife+ interval diagnostics.",
+            ("jackknife+",),
+            ("jackknife",),
+            ("coverage", "mean_width"),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_jackknife_plus",
+        ),
+        _runner(
+            "crc",
+            "Conformal risk-control diagnostics.",
+            ("crc",),
+            ("conformal risk", "crc"),
+            ("risk",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_crc",
+        ),
+        _runner(
+            "weighted_conformal",
+            "Weighted conformal diagnostics.",
+            ("weighted conformal",),
+            ("weighted conformal", "covariate shift"),
+            ("coverage",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_weighted_conformal",
+        ),
+        _runner(
+            "interval_risk",
+            "Interval-cap risk diagnostics.",
+            ("interval risk",),
+            ("interval risk", "interval cap"),
+            ("mean_cap",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_interval_risk",
+        ),
+        _runner(
+            "quantile_bandit",
+            "Quantile bandit diagnostics.",
+            ("quantile bandit",),
+            ("quantile bandit",),
+            ("regret",),
+            ("panel", "ranking target"),
+            "panel_label",
+            "quant_fund.research.benches:bench_quantile_bandit",
+        ),
+        _runner(
+            "cv_plus",
+            "CV+ interval diagnostics.",
+            ("cv+",),
+            ("cv+", "cv plus"),
+            ("coverage",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_cv_plus",
+        ),
+        _runner(
+            "cpcv",
+            "Combinatorial purged cross-validation audit.",
+            ("cpcv",),
+            ("cpcv", "purged cv", "combinatorial purged"),
+            ("fold_separation",),
+            (),
+            "none",
+            "quant_fund.research.benches:bench_cpcv_audit",
+        ),
+        _runner(
+            "localized_conformal",
+            "Localized conformal diagnostics.",
+            ("localized conformal",),
+            ("localized conformal",),
+            ("coverage",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_localized_from_panel",
+        ),
+        _runner(
+            "conformal_rank",
+            "Conformal top-k ranking diagnostics.",
+            ("conformal rank",),
+            ("conformal rank", "top-k", "topk"),
+            ("coverage",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_conformal_topk_from_panel",
+        ),
+        _runner(
+            "online_crc",
+            "Online conformal risk-control diagnostics.",
+            ("online crc",),
+            ("online crc", "online conformal"),
+            ("risk",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_online_crc_from_panel",
+        ),
+        _runner(
+            "portfolio_conformal",
+            "Portfolio conformal-set diagnostics.",
+            ("portfolio conformal",),
+            ("portfolio conformal",),
+            ("coverage",),
+            ("panel",),
+            "panel_config",
+            "quant_fund.research.benches:bench_portfolio_from_panel",
+        ),
+        _runner(
+            "northset",
+            "Order-book and candlestick identity diagnostics.",
+            ("northset",),
+            ("northset", "order book", "vpin"),
+            ("identity",),
+            ("silver bars",),
+            "northset",
+            "quant_fund.northset.benches:bench_northset",
+            180,
+        ),
+    )
+}
+
+
+def _catalog() -> tuple[frozenset[str], Mapping[str, Any], frozenset[str], frozenset[str]]:
+    from quant_fund.research.catalog import registry
+
+    return (
+        frozenset(registry.REQUIRED_BENCHMARK_FAMILIES),
+        registry.RETIRED_BENCHMARK_FAMILIES,
+        frozenset(registry.LIVE_OPTIONAL_BENCHMARK_FAMILIES),
+        frozenset(registry.OPTIONAL_BENCHMARK_FAMILIES),
+    )
+
+
+def _check_id(family_id: str) -> str:
+    if (
+        not isinstance(family_id, str)
+        or len(family_id) > _MAX_FAMILY_ID
+        or _FAMILY_ID.fullmatch(family_id) is None
+    ):
+        raise FamilySurfaceError(
+            f"refusing family id {_id_preview(family_id)}; "
+            f"ids must match {_FAMILY_ID.pattern} and be at most {_MAX_FAMILY_ID} characters"
+        )
+    return family_id
+
+
+def _id_preview(family_id: object) -> str:
+    """Keep a hostile or huge id out of the refusal text."""
+    if not isinstance(family_id, str):
+        return repr(type(family_id).__name__)
+    if len(family_id) <= 80:
+        return repr(family_id)
+    return repr(f"{family_id[:32]}...({len(family_id)} chars)")
+
+
+def qualification_of(family_id: str) -> str:
+    """Return required, live_optional, retired, or unknown. Unknown is not eligible."""
+    family_id = _check_id(family_id)
+    required, retired, live, optional = _catalog()
+    if family_id in required:
+        return "required"
+    if family_id in retired or family_id in optional - live:
+        return "retired"
+    if family_id in live:
+        return "live_optional"
+    return "unknown"
+
+
+def _retirement_reason(family_id: str) -> str | None:
+    _required, retired, _live, _optional = _catalog()
+    record = retired.get(family_id) if isinstance(retired, Mapping) else None
+    if isinstance(record, Mapping):
+        reason = record.get("reason")
+        return str(reason) if reason else None
+    if qualification_of(family_id) == "retired":
+        return "retired from the live scorecard; historical receipts remain verifiable"
+    return None
+
+
+def _order_index() -> dict[str, int]:
+    from quant_fund.research.catalog import registry
+
+    return {name: index for index, name in enumerate(registry.BENCHMARK_FAMILY_ORDER)}
+
+
+def family_contract(family_id: str) -> dict[str, Any]:
+    """Machine-readable contract. Non-executable families fail closed for runs."""
+    family_id = _check_id(family_id)
+    qualification = qualification_of(family_id)
+    runner = RUNNERS.get(family_id)
+    executable = runner is not None and qualification == "required"
+    reason = None if executable else _ineligible_reason(family_id, qualification, runner)
+    return {
+        "schema": SURFACE_SCHEMA,
+        "id": family_id,
+        "version": "1",
+        "purpose": runner.purpose if runner else "",
+        "tasks": list(runner.tasks) if runner else [],
+        "trigger_terms": list(runner.trigger_terms) if runner else [],
+        "scores": list(runner.scores) if runner else [],
+        "required_inputs": list(runner.required_inputs) if runner else [],
+        "data_labels": ["SYNTHETIC", "market"],
+        "runner": f"research --only {family_id}" if executable else "",
+        "resource_limit_s": runner.resource_limit_s if runner else 0,
+        "dependencies": [],
+        "qualification": qualification,
+        "executable": executable,
+        "retirement_reason": _retirement_reason(family_id),
+        "refusal": reason,
+    }
+
+
+def _ineligible_reason(family_id: str, qualification: str, runner: FamilyRunner | None) -> str:
+    if qualification == "retired":
+        return (
+            f"{family_id} is retired; new selection is refused and historical receipts still verify"
+        )
+    if qualification == "unknown":
+        return f"{family_id} is not a known benchmark family"
+    if qualification == "live_optional" and runner is None:
+        return (
+            f"{family_id} is live-optional but has no selective runner; "
+            "refusing to execute it from the family surface"
+        )
+    if qualification != "required":
+        return f"{family_id} is not a required qualified family (qualification={qualification})"
+    return f"{family_id} has no implemented selective runner"
+
+
+def list_executable() -> list[dict[str, Any]]:
+    """Qualified families the selective surface can actually run."""
+    order = _order_index()
+    ids = [family_id for family_id in RUNNERS if qualification_of(family_id) == "required"]
+    ids.sort(key=lambda family_id: (order.get(family_id, 10_000), family_id))
+    return [family_contract(family_id) for family_id in ids]
+
+
+def _bounded_term(term: str) -> str:
+    """Match ``term`` even when it begins or ends on a non-word character.
+
+    ``\\b`` does not fire between two non-word characters, so a documented
+    trigger such as ``cv+`` never matched its own text.
+    """
+    return rf"(?<!\w){re.escape(term)}(?!\w)"
+
+
+def _score(goal: str, runner: FamilyRunner) -> int:
+    lowered = goal.lower()
+    score = 0
+    for term in runner.trigger_terms:
+        if re.search(_bounded_term(term), lowered):
+            score += 1
+    if re.search(_bounded_term(runner.family_id), lowered):
+        score += 5
+    return score
+
+
+def _require_goal(goal: str) -> str:
+    if not isinstance(goal, str) or "\x00" in goal or not goal.strip():
+        raise FamilySurfaceError("goal must be non-empty text without NUL")
+    if len(goal) > _MAX_GOAL:
+        raise FamilySurfaceError(f"goal exceeds {_MAX_GOAL} characters")
+    return goal
+
+
+def _require_max(max_families: int) -> int:
+    if isinstance(max_families, bool) or not isinstance(max_families, int):
+        raise FamilySurfaceError("max_families must be an integer")
+    if max_families < 0:
+        raise FamilySurfaceError("max_families must be nonnegative")
+    return max_families
+
+
+def _ranked(goal: str) -> list[tuple[int, str]]:
+    order = _order_index()
+    scored = [
+        (_score(goal, runner), runner.family_id)
+        for runner in RUNNERS.values()
+        if qualification_of(runner.family_id) == "required"
+    ]
+    scored = [(score, family_id) for score, family_id in scored if score > 0]
+    scored.sort(key=lambda item: (-item[0], order.get(item[1], 10_000), item[1]))
+    return scored
+
+
+def _cap_exclusions(overflow: list[tuple[int, str]], cap: int) -> list[dict[str, str]]:
+    return [
+        {
+            "id": family_id,
+            "code": "over_cap",
+            "reason": f"eligible but over the max_families={cap} cap",
+        }
+        for _score_value, family_id in overflow
+    ]
+
+
+def _refusal_exclusion(token: str, contract: Mapping[str, Any]) -> dict[str, str]:
+    qualification = str(contract["qualification"])
+    return {
+        "id": token,
+        "code": _EXCLUSION_CODE.get(qualification, "not_qualified"),
+        "reason": str(contract["refusal"]),
+    }
+
+
+def _token_exclusions(goal: str, chosen: set[str]) -> list[dict[str, str]]:
+    exclusions: list[dict[str, str]] = []
+    known = _known_ids()
+    for token in dict.fromkeys(_GOAL_TOKEN.findall(goal.lower())):
+        if token in chosen or token not in known:
+            continue
+        contract = family_contract(token)
+        if contract["executable"]:
+            continue
+        exclusions.append(_refusal_exclusion(token, contract))
+    return exclusions
+
+
+def select_families(goal: str, *, max_families: int = 4) -> dict[str, Any]:
+    """Choose eligible runners for a goal and list every material exclusion."""
+    text = _require_goal(goal)
+    cap = _require_max(max_families)
+    scored = _ranked(text)
+    chosen = [family_id for _score_value, family_id in scored[:cap]]
+    exclusions = _cap_exclusions(scored[cap:], cap)
+    exclusions.extend(_token_exclusions(text, set(chosen)))
+    return {
+        "schema": SURFACE_SCHEMA,
+        "goal": text,
+        "max_families": cap,
+        "selected": [family_contract(family_id) for family_id in chosen],
+        "exclusions": exclusions,
+    }
+
+
+def _known_ids() -> set[str]:
+    required, retired, live, optional = _catalog()
+    return set(required) | set(retired) | set(live) | set(optional) | set(RUNNERS)
+
+
+def parse_only(text: str) -> list[str]:
+    """Parse a comma-separated id list. Rejects blanks, duplicates, and unsafe ids."""
+    if not isinstance(text, str) or not text.strip():
+        raise FamilySurfaceError("--only requires at least one family id")
+    ids: list[str] = []
+    for raw in text.split(","):
+        family_id = _check_id(raw.strip())
+        if family_id in ids:
+            raise FamilySurfaceError(f"duplicate family id {family_id}")
+        ids.append(family_id)
+    return ids
+
+
+def _default_load_panel(config: Any) -> PanelBundle:
+    import polars as pl
+
+    from quant_fund.pipeline.dataset import build_gold, ensure_silver, panel
+    from quant_fund.utils.seeds import set_global_seed
+
+    set_global_seed(int(config.train.random_seed))
+    claimed = _claimed_source(config)
+    build_gold(config, refresh=claimed == "synthetic")
+    frame = panel(config)
+    benchmark = config.data.benchmark_id
+    if "security_id" in frame.columns:
+        frame = frame.filter(pl.col("security_id") != benchmark)
+    label = str(config.train.ranking_target)
+    if label not in frame.columns:
+        candidates = [c for c in frame.columns if c.startswith("future_idio_return")]
+        if not candidates:
+            candidates = [c for c in frame.columns if c.startswith("future_excess_return")]
+        if not candidates and "future_return_1" in frame.columns:
+            candidates = ["future_return_1"]
+        if not candidates:
+            raise FamilySurfaceError(
+                "ranking target is absent from the panel; refusing to invent a label "
+                "or substitute synthetic rows"
+            )
+        label = candidates[0]
+    northset = ensure_silver(config)
+    if "security_id" in northset.columns:
+        northset = northset.filter(pl.col("security_id") != benchmark)
+    bundle = PanelBundle(frame=frame, label=label, northset=northset)
+    _assert_manifest(config, claimed)
+    return bundle
+
+
+def _callable(target: str) -> Runner:
+    module_name, _, attr = target.partition(":")
+    if not module_name or not attr:
+        raise FamilySurfaceError(f"runner target {target!r} is malformed")
+    module = importlib.import_module(module_name)
+    fn = getattr(module, attr, None)
+    if not callable(fn):
+        raise FamilySurfaceError(f"runner {target} is not callable")
+    return cast(Runner, fn)
+
+
+def _invoke(runner: FamilyRunner, fn: Runner, bundle: PanelBundle | None, config: Any) -> Any:
+    if runner.needs == "none":
+        return fn()
+    if bundle is None:
+        raise FamilySurfaceError(f"{runner.family_id} requires a panel and none was loaded")
+    if runner.needs == "panel_config_label":
+        return fn(bundle.frame, config, bundle.label)
+    if runner.needs == "panel_config":
+        return fn(bundle.frame, config)
+    if runner.needs == "panel":
+        return fn(bundle.frame)
+    if runner.needs == "panel_label":
+        return fn(bundle.frame, bundle.label)
+    if runner.needs == "northset":
+        return fn(bundle.northset, config)
+    raise FamilySurfaceError(f"unknown runner needs {runner.needs!r}")
+
+
+def _code_revision() -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+    if completed.returncode != 0:
+        return "unknown"
+    revision = completed.stdout.strip()
+    return revision or "unknown"
+
+
+def _artifact_dir(config: Any) -> Path | None:
+    data = getattr(config, "data", None)
+    root = getattr(data, "root", None)
+    if root is None:
+        return None
+    return Path(root) / "family_runs"
+
+
+def _reject_forbidden(family_id: str, cooked: Any) -> None:
+    from quant_fund.research.catalog.registry import family_blob_forbidden_metrics_absent
+
+    if not family_blob_forbidden_metrics_absent(cooked):
+        raise FamilySurfaceError(
+            f"{family_id} output contains a forbidden research metric key; "
+            "the partial record was not sealed"
+        )
+
+
+def _jsonable(value: Any) -> Any:
+    """Make bench output safe for JSON without turning a score into a headline."""
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return value
+    item = getattr(value, "item", None)
+    if callable(item):
+        try:
+            return _jsonable(item())
+        except (TypeError, ValueError):
+            return str(value)
+    return str(value)
+
+
+def canonical_record_bytes(payload: Mapping[str, Any]) -> bytes:
+    """Bytes covered by ``sha256``. The artifact path and the digest are excluded."""
+    body = {
+        key: _jsonable(value) for key, value in payload.items() if key not in {"sha256", "artifact"}
+    }
+    return (json.dumps(body, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+
+
+def verify_family_record(payload: Mapping[str, Any]) -> list[str]:
+    """Check a partial record. An empty list means the digest matches and it stays unverified."""
+    errors: list[str] = []
+    if payload.get("schema") != RUN_SCHEMA:
+        errors.append("unexpected schema")
+    if payload.get("partial") is not True:
+        errors.append("partial must be true")
+    if payload.get("verified") is not False:
+        errors.append("verified must stay false until verify-research accepts a receipt")
+    digest = hashlib.sha256(canonical_record_bytes(payload)).hexdigest()
+    if payload.get("sha256") != digest:
+        errors.append("sha256 does not match the canonical record")
+    return errors
+
+
+def verify_family_artifact(path: Path) -> list[str]:
+    """Check the written file bytes and the canonical record inside them."""
+    if not path.is_file():
+        return ["artifact missing"]
+    raw = path.read_bytes()
+    errors: list[str] = []
+    sidecar = path.with_name(path.name + ".sha256")
+    actual = hashlib.sha256(raw).hexdigest()
+    if not sidecar.is_file():
+        errors.append("sha256 sidecar missing")
+    elif sidecar.read_text(encoding="utf-8").strip() != actual:
+        errors.append("file sha256 mismatch")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        return [*errors, "artifact is not json"]
+    if not isinstance(payload, dict):
+        return [*errors, "artifact is not an object"]
+    return [*errors, *verify_family_record(payload)]
+
+
+def _write_artifact(directory: Path, payload: dict[str, Any]) -> str:
+    directory.mkdir(parents=True, exist_ok=True)
+    digest = str(payload["sha256"])
+    target = directory / f"{digest[:16]}.json"
+    encoded = (json.dumps(_jsonable(payload), indent=2, sort_keys=True) + "\n").encode("utf-8")
+    temporary = directory / f".{digest[:16]}.tmp"
+    temporary.write_bytes(encoded)
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, target)
+    os.chmod(target, 0o600)
+    sidecar = target.with_name(target.name + ".sha256")
+    sidecar.write_text(hashlib.sha256(encoded).hexdigest() + "\n", encoding="utf-8")
+    os.chmod(sidecar, 0o600)
+    return str(target)
+
+
+def _claimed_source(config: Any) -> str:
+    raw = getattr(getattr(config, "data", None), "source", None)
+    if not isinstance(raw, str) or not raw.strip():
+        raise FamilySurfaceError("config data.source is missing; refusing to label the run")
+    return raw.strip().lower()
+
+
+def _source_labels(frame: Any) -> set[str] | None:
+    columns = getattr(frame, "columns", None)
+    if columns is None or "source" not in columns:
+        return None
+    getter = getattr(frame, "get_column", None)
+    if not callable(getter):
+        return None
+    series = getter("source")
+    unique = getattr(series, "unique", None)
+    if not callable(unique):
+        return None
+    values = unique()
+    to_list = getattr(values, "to_list", None)
+    items = to_list() if callable(to_list) else list(values)
+    return _normalize_sources(items)
+
+
+def _normalize_sources(items: Any) -> set[str]:
+    labels: set[str] = set()
+    for item in items:
+        if item is None:
+            continue
+        text = str(item).strip().lower()
+        if text:
+            labels.add(text)
+    return labels
+
+
+def _merged_sources(bundle: PanelBundle) -> set[str] | None:
+    merged: set[str] = set()
+    saw = False
+    for frame in (bundle.frame, bundle.northset):
+        labels = _source_labels(frame)
+        if labels is None:
+            continue
+        saw = True
+        merged.update(labels)
+    if not saw:
+        return None
+    return merged
+
+
+def _expected_sources(claimed: str) -> set[str]:
+    if claimed == "synthetic":
+        return {"synthetic"}
+    return {claimed}
+
+
+def _refuse_unmarked(claimed: str) -> None:
+    if claimed == "synthetic":
+        return
+    raise FamilySurfaceError(
+        "refusing to label the run as non-synthetic without a panel source column"
+    )
+
+
+def _assert_bundle_honest(claimed: str, bundle: PanelBundle) -> None:
+    merged = _merged_sources(bundle)
+    if merged is None:
+        _refuse_unmarked(claimed)
+        return
+    if merged != _expected_sources(claimed):
+        found = ", ".join(sorted(merged)) or "(empty)"
+        raise FamilySurfaceError(
+            f"config source {claimed!r} does not match panel source [{found}]; "
+            "refusing a mislabeled record"
+        )
+
+
+def _manifest_path(config: Any) -> Path | None:
+    root = getattr(getattr(config, "data", None), "root", None)
+    if root is None:
+        return None
+    return Path(root) / "metadata" / "data_manifest.json"
+
+
+def _read_manifest(path: Path) -> Mapping[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise FamilySurfaceError(
+            "data manifest is unreadable; refusing to label the panel"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise FamilySurfaceError("data manifest is not an object; refusing to label the panel")
+    return payload
+
+
+def _manifest_source(config: Any) -> str:
+    path = _manifest_path(config)
+    if path is None or not path.is_file():
+        raise FamilySurfaceError(
+            "data manifest is missing; refusing to label an unprovenanced panel"
+        )
+    source = _read_manifest(path).get("source")
+    if not isinstance(source, str) or not source.strip():
+        raise FamilySurfaceError("data manifest has no source; refusing to label the panel")
+    return source.strip().lower()
+
+
+def _assert_manifest(config: Any, claimed: str) -> None:
+    manifest = _manifest_source(config)
+    if manifest != claimed:
+        raise FamilySurfaceError(
+            f"data manifest source {manifest!r} does not match config source {claimed!r}"
+        )
+
+
+def _checked_runners(family_ids: list[str]) -> list[FamilyRunner]:
+    if not family_ids:
+        raise FamilySurfaceError("refusing to run an empty family selection")
+    checked = [_check_id(family_id) for family_id in family_ids]
+    if len(checked) != len(set(checked)):
+        raise FamilySurfaceError("duplicate family ids are refused")
+    selected: list[FamilyRunner] = []
+    for family_id in checked:
+        contract = family_contract(family_id)
+        if not contract["executable"]:
+            raise FamilySurfaceError(str(contract["refusal"]))
+        selected.append(RUNNERS[family_id])
+    return selected
+
+
+def _refuse_over_budget(estimated: int, budget_s: float | None) -> None:
+    if budget_s is not None and estimated > budget_s:
+        raise FamilySurfaceError(
+            f"estimated resource_limit_s {estimated} exceeds budget_s {budget_s}; "
+            "refusing before execution. This is an estimate, not a spend guarantee."
+        )
+
+
+def _load_bundle(
+    selected: list[FamilyRunner],
+    config: Any,
+    load_panel: Callable[[Any], PanelBundle] | None,
+) -> PanelBundle | None:
+    if any(runner.needs != "none" for runner in selected):
+        loader = load_panel or _default_load_panel
+        return loader(config)
+    return None
+
+
+def _execute(
+    selected: list[FamilyRunner],
+    overrides: Mapping[str, Runner],
+    bundle: PanelBundle | None,
+    config: Any,
+) -> dict[str, Any]:
+    results: dict[str, Any] = {}
+    for runner in selected:
+        fn = overrides.get(runner.family_id, _callable(runner.target))
+        cooked = _jsonable(_invoke(runner, fn, bundle, config))
+        _reject_forbidden(runner.family_id, cooked)
+        results[runner.family_id] = cooked
+    return results
+
+
+def _label_run(config: Any, bundle: PanelBundle | None) -> tuple[str, str]:
+    """Evidence class and data source. A panel-less bench is not market evidence."""
+    if bundle is None:
+        return "SYNTHETIC", "SYNTHETIC"
+    claimed = _claimed_source(config)
+    _assert_bundle_honest(claimed, bundle)
+    if claimed == "synthetic":
+        return "SYNTHETIC", "SYNTHETIC"
+    return claimed, claimed
+
+
+def _attach_artifact(payload: dict[str, Any], config: Any, write_artifact: bool) -> None:
+    payload["artifact"] = ""
+    payload["sha256"] = hashlib.sha256(canonical_record_bytes(payload)).hexdigest()
+    if not write_artifact:
+        return
+    directory = _artifact_dir(config)
+    if directory is None:
+        return
+    payload["artifact"] = str(directory / f"{payload['sha256'][:16]}.json")
+    _write_artifact(directory, payload)
+
+
+def run_families(
+    config: Any,
+    family_ids: list[str],
+    *,
+    runners: Mapping[str, Runner] | None = None,
+    load_panel: Callable[[Any], PanelBundle] | None = None,
+    write_artifact: bool = True,
+    budget_s: float | None = None,
+) -> dict[str, Any]:
+    """Execute only the named eligible runners. Refuses the rest before any bench."""
+    selected = _checked_runners(family_ids)
+    estimated = sum(runner.resource_limit_s for runner in selected)
+    _refuse_over_budget(estimated, budget_s)
+    bundle = _load_bundle(selected, config, load_panel)
+    evidence_class, data_source = _label_run(config, bundle)
+    started = time.monotonic()
+    results = _execute(selected, dict(runners or {}), bundle, config)
+    elapsed = time.monotonic() - started
+    payload: dict[str, Any] = {
+        "schema": RUN_SCHEMA,
+        "partial": True,
+        "verified": False,
+        "evidence_class": evidence_class,
+        "data_source": data_source,
+        "family_ids": [runner.family_id for runner in selected],
+        "results": results,
+        "elapsed_s": elapsed,
+        "estimated_limit_s": estimated,
+        "within_estimate": elapsed <= estimated,
+        "code_revision": _code_revision(),
+        "note": (
+            "Partial family run. Not a full research receipt. "
+            "verified stays false until verify-research accepts a receipt."
+        ),
+    }
+    _attach_artifact(payload, config, write_artifact)
+    return payload

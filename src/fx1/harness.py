@@ -33,6 +33,9 @@ from typing import IO
 
 from pydantic import BaseModel, Field
 
+if TYPE_CHECKING:
+    from fx1.interactive.procs import ProcessRegistry, ProcResult
+
 
 class HarnessRole(StrEnum):
     DATA_ENGINE = "data_engine"
@@ -121,6 +124,49 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         timeout_s=3600,
     ),
     _cmd(
+        "families",
+        HarnessRole.EVALUATION,
+        "Read-only qualified research-family surface. Does not execute benches.",
+        timeout_s=120,
+    ),
+    _cmd(
+        "vol-bench",
+        HarnessRole.EVALUATION,
+        "SYNTHETIC volatility bench: QLIKE + MSE with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "calibration-eval",
+        HarnessRole.EVALUATION,
+        "SYNTHETIC calibration lane: PIT, coverage, reliability with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "rankic",
+        HarnessRole.EVALUATION,
+        "SYNTHETIC cross-sectional rank-IC bench with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "serial-watch",
+        HarnessRole.EVALUATION,
+        "Serial-dependence watch over supplied PIT series with a sealed receipt.",
+        timeout_s=600,
+    ),
+    _cmd(
+        "lane-power",
+        HarnessRole.EVALUATION,
+        "Detection-power lane for monitors on SYNTHETIC streams with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "score-forecasts",
+        HarnessRole.EVALUATION,
+        "Score user-supplied volatility, quantile, or probability forecasts with proper "
+        "scores and seal a receipt.",
+        timeout_s=300,
+    ),
+    _cmd(
         "northset",
         HarnessRole.EVALUATION,
         "Order-book/candlestick slice: identities, OHLC vol, Kyle/Roll/OFI/VPIN.",
@@ -183,6 +229,10 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
     ),
 )
 
+# Captured at import so a later mutation of a registry object cannot raise
+# the deadline the runner is allowed to use.
+_TIMEOUT_CEILING: dict[str, int] = {command.name: command.timeout_s for command in HARNESS_REGISTRY}
+
 
 class HarnessResult(BaseModel):
     command: str
@@ -198,8 +248,11 @@ class HarnessResult(BaseModel):
         return self.exit_code == 0 and not self.cancelled and not self.timed_out
 
 
-# Runner signature: (argv, timeout_s) -> (exit_code, stdout, stderr)
+# Runner signature: (argv, timeout_s) -> (exit_code, stdout, stderr).
+# Extended runners set supports_extended and accept the keyword arguments
+# passed by Harness.run; they return ProcResult.
 Runner = Callable[[list[str], int], tuple[int, str, str]]
+_Emit = Callable[[str, Mapping[str, Any]], None]
 
 _MISSING_EXECUTABLE = (
     "dipcatcher executable not found on PATH; install the fx-1 distribution "
@@ -563,7 +616,7 @@ class Harness:
     def list_commands(self, role: HarnessRole | None = None) -> list[HarnessCommand]:
         commands = list(self._registry.values())
         if role is not None:
-            commands = [c for c in commands if c.role == role]
+            commands = [command for command in commands if command.role == role]
         return commands
 
     def get(self, name: str) -> HarnessCommand:
@@ -597,11 +650,18 @@ class Harness:
 
         configs_dir = (default_repo_root() / "configs").resolve()
 
-        def check_contained(raw: str) -> Path:
-            resolved = Path(raw).resolve()
-            if configs_dir not in resolved.parents and resolved != configs_dir:
-                raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
-            return resolved
+    def _dispatch(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        cancel_event: threading.Event | None,
+        env_extra: Mapping[str, str] | None,
+        step: str | None,
+    ) -> ProcResult | tuple[int, str, str]:
+        try:
+            return self._call_runner(argv, timeout_s, cancel_event, env_extra, step)
+        except subprocess.TimeoutExpired as exc:
+            return _timeout_result(exc)
 
         if config is not None:
             argv += ["--config", str(check_contained(str(config)))]

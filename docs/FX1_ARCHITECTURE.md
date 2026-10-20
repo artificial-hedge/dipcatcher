@@ -41,11 +41,27 @@ layout.
                │                                   │
         ┌──────▼───────────────────────────────────▼──────┐
         │ HARNESS  (fx1.harness → dipcatcher / quant_fund) │
-        │  23 registered lab commands, 4 roles, fail-closed│
+        │  32 registered lab commands, 4 roles, fail-closed│
         │  benches (proper scores) · verify-research ·     │
         │  honesty gates (FORBIDDEN metrics) · PIT data    │
         └──────────────────────────────────────────────────┘
 ```
+
+## Interactive layer
+
+The chat is `fx1.interactive`, launched by `dipcatcher` (`dipcatcher_cli`)
+or by `fxi`. Plain text is a turn with fx1 or fx1-lite. Slash commands
+and `dipcatcher exec` are the other doors. The model may run a lab command
+only when it is one of the 32 entries in `fx1.harness.HARNESS_REGISTRY`
+(verification, data engine, evaluation, model training). `/diagnostics`
+in this tree reported `harness: commands: 32`. The lab CLI that
+`dipcatcher <name>` forwards to is larger; unqualified names are listed
+by `dipcatcher capabilities list` and are not executed by the qualified
+planner.
+
+Operator detail, exit codes, and the honesty gate are in
+[the dipcatcher CLI guide](DIP_CONCIERGE.md). That guide's model checks
+used a loopback stub. They are not a live-model or release claim.
 
 ## Trust flow (what an auditor should trace)
 

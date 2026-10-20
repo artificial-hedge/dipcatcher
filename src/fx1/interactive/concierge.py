@@ -36,11 +36,11 @@ import dataclasses
 import json
 import select
 import shlex
-import sys
+import sys  # noqa: F401 — tests patch this module's sys; console shares the object
 import threading
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from difflib import get_close_matches
 from typing import Any
@@ -64,11 +64,21 @@ from fx1.interactive.families import FamilyCatalog, load_catalog, resolve_famili
 from fx1.interactive.orb import OrbAnimator, OrbState, orbs_enabled
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
+from fx1.interactive.runctx import new_session_id
+from fx1.interactive.session_ux import (
+    export_session,
+    format_session_line,
+    format_session_list,
+    interrupted_hint,
+    record_turn,
+    stage_record,
+    turn_detail,
+    turn_outcome,
+)
+from fx1.interactive.sessions import SessionConflict, SessionError
 from fx1.interactive.superpower import (
-    SuperpowerContext,
     SuperpowerResult,
     describe_capabilities,
-    plan_goal,
     run_plan,
 )
 
@@ -179,14 +189,16 @@ class BackgroundJob:
     thread: threading.Thread | None = field(default=None, init=False, repr=False)
 
     def start(self) -> BackgroundJob:
+        from fx1.interactive.redact import redact_text
+
         def on_event(event: str, detail: str) -> None:
-            self.events.append((event, detail))
+            self.events.append((redact_text(event), redact_text(detail)))
 
         def target() -> None:
             try:
                 self.result = self.run_fn(self.cancel_event, on_event)
             except Exception as exc:  # noqa: BLE001 — report, never crash the shell
-                self.error = f"{type(exc).__name__}: {exc}"
+                self.error = redact_text(f"{type(exc).__name__}: {exc}")
             finally:
                 self.done_event.set()
 
@@ -253,7 +265,110 @@ class JournaledApprovalGate(ApprovalGate):
 # ---------------------------------------------------------------------------
 
 
-class Concierge:
+def _safe_slash_error(exc: Exception) -> str:
+    """Operator-facing slash errors. Do not echo credential-shaped text."""
+    return public_error(exc)
+
+
+def _stdout_color() -> bool:
+    from fx1.interactive.terminal import detect_caps
+
+    try:
+        return bool(detect_caps().color)
+    except (OSError, ValueError):
+        return False
+
+
+def _int_field(obj: Any, name: str, default: int) -> int:
+    limit = getattr(obj, name, default)
+    if isinstance(limit, bool) or not isinstance(limit, int):
+        return default
+    return limit
+
+
+def _superpower_memory(result: SuperpowerResult) -> str:
+    parts = (
+        _scrub_user(result.summary or ""),
+        evidence_status_line(result),
+        _scrub_user(result.explain()),
+    )
+    text = "\n\n".join(part for part in parts if part.strip())
+    return _memory_text(text)
+
+
+def _memory_text(text: str) -> str:
+    if not text.strip():
+        return ""
+    try:
+        validate_fx1_output(text)
+    except Fx1HonestyError:
+        return "answer withheld by the fx-1 honesty gate"
+    return text
+
+
+def _scrub_user(text: str) -> str:
+    from fx1.interactive.model_ux import scrub_transcript
+
+    return scrub_transcript(text)
+
+
+def _scrub_maybe(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    return _scrub_user(value)
+
+
+def _scrub_patch_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return _scrub_user(value)
+    if isinstance(value, list):
+        return [_scrub_patch_value(item) for item in value]
+    return value
+
+
+def _scrub_patch(patch: dict[str, Any]) -> dict[str, Any]:
+    return {key: _scrub_patch_value(value) for key, value in patch.items()}
+
+
+def _for_display(text: str, *, keep_color: bool | None = None) -> str:
+    """Sanitize for the terminal after callers have validated the text."""
+    from fx1.interactive.redact import redact_text
+    from fx1.interactive.terminal import sanitize_for_terminal
+
+    color = _stdout_color() if keep_color is None else keep_color
+    return sanitize_for_terminal(redact_text(text), keep_sgr=color)
+
+
+class _ApprovalTap:
+    """Forwards approvals and emits the key plus the decision, never the question."""
+
+    def __init__(self, gate: ApprovalGate, emit: Callable[[str, Mapping[str, Any]], None]) -> None:
+        self._gate = gate
+        self._emit = emit
+
+    def ask(
+        self,
+        question: str,
+        *,
+        kind: str = "action",
+        key: str | None = None,
+        bounds: Any = None,
+        timeout_s: float | None = None,
+    ) -> bool:
+        approved = bool(
+            self._gate.ask(question, kind=kind, key=key, bounds=bounds, timeout_s=timeout_s)
+        )
+        self._emit(
+            "concierge.approval",
+            {"key": key or "", "kind": kind, "approved": approved},
+        )
+        return approved
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._gate, name)
+
+
+class Concierge(DataCommands):
     """Conversational orchestrator; one instance per session."""
 
     def __init__(
@@ -292,6 +407,8 @@ class Concierge:
         self._output = output_fn
         self._animated = True if animated is None else animated
         self._messages: list[dict[str, Any]] = []
+        self._context_budget = ContextBudget.from_env()
+        self._context_trim_said = False
         self._job: BackgroundJob | None = None
         self._job_counter = 0
         self._catalog_cache: dict[str, FamilyCatalog] = {}
@@ -361,10 +478,11 @@ class Concierge:
     # -- output helpers ------------------------------------------------------
 
     def _say(self, text: str = "") -> None:
-        self._output(text)
+        self._output(_for_display(text))
 
     def _say_error(self, exc: Exception) -> None:
-        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        message = _for_display(f"error: {public_error(exc)}", keep_color=False)
+        typer.secho(message, err=True, fg=typer.colors.RED)
 
     def _journal_call(self, method: str, *args: Any, **kwargs: Any) -> None:
         """Invoke a journal recorder; journaling never blocks or breaks the chat."""
@@ -413,16 +531,54 @@ class Concierge:
         text = line.strip()
         if not text:
             return False
+        self._open_cancel_scope()
+        try:
+            return self._run_line(text)
+        finally:
+            self._close_cancel_scope()
+
+    def _run_line(self, text: str) -> bool:
+        self._status_explicit = False
+        self._emit("concierge.turn", {"phase": "start", "model": self.model})
+        try:
+            ended = self._handle_text(text)
+        except KeyboardInterrupt:
+            self._on_keyboard_interrupt()
+            self._persist_session()
+            self._finish_turn()
+            return False
+        if not self._status_explicit:
+            self._assign_status("ok")
+        self._finish_turn()
+        return ended
+
+    def _handle_text(self, text: str) -> bool:
         if text.startswith("/"):
             if not text.lower().startswith("/keys"):
                 self._journal_turn("user", text)
             return self._slash(text)
         if text.lower() in {"exit", "quit"}:
             self.shutdown()
+            self._persist_session()
             return True
         self._journal_turn("user", text)
         self._chat_turn(text)
+        self._persist_session()
         return False
+
+    def _finish_turn(self) -> None:
+        usage = self.last_usage or {}
+        self._emit(
+            "concierge.turn",
+            {
+                "phase": "end",
+                "model": self.model,
+                "outcome": turn_outcome(self.last_status),
+                "latency_s": self.last_latency_s,
+                "usage": usage,
+            },
+        )
+        self._note_turn()
 
     def tick(self) -> None:
         """Drain background progress and announce completion — call between
@@ -442,8 +598,11 @@ class Concierge:
             return
         result = job.result
         if isinstance(result, SuperpowerResult):
+            self._publish_superpower(result)
+            self._record_superpower_answer(result)
             self._say("")
-            self._say(result.summary or "(no summary)")
+            self._say(scrub_model_text(result.summary or "(no summary)"))
+            self._say(evidence_status_line(result))
             self._say("")
             self._say(result.explain())
             status = "cancelled" if result.cancelled else "done"
@@ -478,6 +637,7 @@ class Concierge:
         if job is None:
             self.close()
             return True
+        stopped = True
         if job.running:
             job.cancel()
             stopped = job.join(timeout_s)
@@ -523,6 +683,8 @@ class Concierge:
         except (ValueError, KeyError) as exc:
             self._say_error(ValueError(str(exc)))
             return False
+        self._persist_session()
+        return ended
 
     def _cmd_help(self, rest: str) -> bool:
         del rest
@@ -576,6 +738,310 @@ class Concierge:
                 f"endpoint with /keys set {model} before model turns"
             )
         return False
+
+    def _cmd_diagnostics(self, rest: str) -> bool:
+        bundle = _bundle_path(rest)
+        diag, text = render_diagnostics(
+            config_dir=profiles.config_dir(),
+            session_id=self._corr_session,
+            model=self.model,
+            endpoint_rows=profiles.list_models,
+            job_counts=self._job_counts,
+            session_counts=self._session_counts,
+            telemetry=self._telemetry_box,
+        )
+        self._say(text)
+        if bundle is not None:
+            self._say(write_diagnostics_bundle(diag, bundle, telemetry=self._telemetry_box))
+        return False
+
+    def _job_counts(self) -> dict[str, int]:
+        records = self._job_ledger().list(limit=500)
+        counts: dict[str, int] = {}
+        for record in records:
+            key = str(record.state)
+            counts[key] = counts.get(key, 0) + 1
+        counts["total"] = len(records)
+        return counts
+
+    def _session_counts(self) -> dict[str, int]:
+        store = self._session_store
+        if store is None:
+            return {"total": 0}
+        rows, _warnings = store.list(limit=500)
+        return {"total": len(rows)}
+
+    def _ledger_state(self) -> str | None:
+        result = self._job.result if self._job is not None else None
+        job_id = getattr(result, "job_id", None)
+        if not isinstance(job_id, str) or self._jobs is None:
+            return None
+        try:
+            return str(self._jobs.get(job_id).state)
+        except Exception:  # noqa: BLE001 — cancel text stays honest if the ledger is unreadable
+            return None
+
+    def _cmd_approvals(self, rest: str) -> bool:
+        tokens = shlex.split(rest)
+        if not tokens:
+            self._say(render_approvals(self._approvals.snapshot()))
+            return False
+        if tokens[0] != "revoke" or len(tokens) > 2:
+            raise ValueError("usage: /approvals [revoke [key]]")
+        self._approvals.revoke(tokens[1] if len(tokens) == 2 else None)
+        self._say("approvals revoked" if len(tokens) == 1 else "approval revoked")
+        return False
+
+    def _cmd_session(self, rest: str) -> bool:
+        del rest
+        if self._session is None:
+            self._say(f"no persisted session; active model {self.model}")
+            return False
+        self._say(format_session_line(self._session, self.model))
+        return False
+
+    def _cmd_sessions(self, rest: str) -> bool:
+        if self._session_store is None:
+            raise ValueError("session store is not configured")
+        limit = _session_limit(rest)
+        rows, warnings = self._session_store.list(limit)
+        self._say(format_session_list(rows))
+        for warning in warnings:
+            self._say(f"warning: {warning}")
+        return False
+
+    def _cmd_resume(self, rest: str) -> bool:
+        record = self._load_resume(rest.strip())
+        self._adopt_resume(record)
+        return False
+
+    def _load_resume(self, text: str) -> dict[str, Any]:
+        store = self._session_store
+        if store is None:
+            raise ValueError("session store is not configured")
+        if not text:
+            record = store.latest()
+        else:
+            record = store.load(store.resolve_prefix(text))
+        if not isinstance(record, dict):
+            raise ValueError("no saved session to resume")
+        return record
+
+    def _adopt_resume(self, record: dict[str, Any]) -> None:
+        job = record.get("job") or {}
+        if job.get("state") == "running" and self._session_store is not None:
+            record = self._session_store.mark_interrupted(str(record["id"]))
+            self.resume_notice = (
+                f"session {record.get('id')} was running; marked interrupted and not restarted"
+            )
+            self._say(self.resume_notice)
+        self._install_record(record)
+        self._say(f"resumed session {record.get('id')} on model {self.model}")
+        if (record.get("job") or {}).get("state") == "interrupted":
+            self._say(interrupted_hint())
+
+    def _install_record(self, record: dict[str, Any]) -> None:
+        self._session = record
+        restored = str(record.get("model") or self.model)
+        profiles.check_model(restored)
+        with self._state_lock:
+            self.model = restored
+        self._messages = scrub_model_transcript(
+            [item for item in record.get("messages") or [] if isinstance(item, dict)]
+        )
+        stored_budget = record.get("budget")
+        self._budget_overrides = dict(stored_budget) if isinstance(stored_budget, dict) else {}
+        self._restore_attachments(record.get("attachments"), record.get("datasets"))
+
+    def _cmd_export(self, rest: str) -> bool:
+        if self._session_store is None or self._session is None:
+            raise ValueError("no persisted session to export")
+        self._stage_current()
+        kind, dest = _export_args(rest)
+        _path, message = export_session(
+            self._session_store, self._session, kind, dest, profiles.config_dir()
+        )
+        self._say(message)
+        return False
+
+    def _stage_current(self) -> None:
+        record = self._session
+        if not isinstance(record, dict):
+            return
+        job = self._job
+        stage_record(
+            record,
+            model=self.model,
+            messages=list(self._messages),
+            job_running=job is not None and job.running,
+            job_error="" if job is None else job.error,
+            job_present=job is not None,
+            budget=self._budget_overrides,
+            approvals=self._approvals.snapshot(),
+        )
+
+    def _cmd_new(self, rest: str) -> bool:
+        del rest
+        if self.job_running:
+            self._say("a background job is running; /cancel it before /new")
+            return False
+        self._persist_session()
+        self._messages = []
+        self._budget_overrides = {}
+        self._set_attachments([])
+        self._job = None
+        self._session = None
+        if self._session_store is not None:
+            self._session = self._session_store.create(model=self.model, messages=[])
+        self._say(f"new session on model {self.model}")
+        return False
+
+    def restore(self, session_id: str, *, preferred_model: str | None = None) -> None:
+        """Load one session by id or unique prefix. A running job is not restarted."""
+        if self._session_store is None:
+            self.resume_notice = "session store is not configured"
+            return
+        self._install_restored(self._load_by_reference(session_id), preferred_model)
+
+    def restore_latest(self, *, preferred_model: str | None = None) -> None:
+        """Load the newest session. A running job is marked interrupted, not restarted."""
+        store = self._session_store
+        if store is None:
+            self.resume_notice = "session store is not configured"
+            return
+        record = store.latest()
+        if not record:
+            self.resume_notice = "no saved session to resume"
+            return
+        self._install_restored(record, preferred_model)
+
+    def _load_by_reference(self, session_id: str) -> dict[str, Any]:
+        store = self._session_store
+        if store is None:
+            raise SessionError("session store is not configured")
+        try:
+            loaded = store.load(store.resolve_prefix(session_id))
+        except SessionError as exc:
+            raise SessionError(public_error(exc)) from exc
+        if not isinstance(loaded, dict):
+            raise SessionError("session record must be an object")
+        return loaded
+
+    def _install_restored(self, record: dict[str, Any], preferred_model: str | None) -> None:
+        store = self._session_store
+        loaded = record
+        job = record.get("job") or {}
+        if job.get("state") == "running" and store is not None:
+            loaded = store.mark_interrupted(str(record["id"]))
+        if preferred_model is not None:
+            profiles.check_model(preferred_model)
+            loaded["model"] = preferred_model
+        self._install_record(loaded)
+        notice = f"resumed session {loaded.get('id')} on model {self.model}"
+        if (loaded.get("job") or {}).get("state") == "interrupted":
+            notice += "; the previous job was not restarted"
+        self.resume_notice = notice
+
+    def _cmd_evidence(self, rest: str) -> bool:
+        result = self._job.result if self._job is not None else None
+        self._say(evidence_report(result, self._evidence, rest.strip()))
+        return False
+
+    def _cmd_budget(self, rest: str) -> bool:
+        """Show the run ceilings, or store one override on this session."""
+        from fx1.interactive.budgets import BudgetError, RunBudget, merge_budget
+
+        tokens = shlex.split(rest)
+        if not tokens:
+            budget = self._run_budget()
+            if budget is None:
+                self._say("budget unavailable")
+                return False
+            public = budget.as_public()
+            self._say(
+                "budget "
+                f"max_steps={public['max_steps']} max_seconds={public['max_seconds']} "
+                f"max_families={public['max_families']} max_harness={public['max_harness']} "
+                f"max_retries={public['max_retries']}; {public['spend_cap_note']}"
+            )
+            self._say(UsageTracker(self._usage_preset).describe())
+            return False
+        if len(tokens) != 2:
+            raise ValueError(
+                "usage: /budget [max-steps N | max-seconds N | max-families N | "
+                "max-harness N | max-retries N]"
+            )
+        key = tokens[0].replace("-", "_")
+        if key not in {"max_steps", "max_seconds", "max_families", "max_harness", "max_retries"}:
+            raise ValueError(f"unknown budget field {tokens[0]!r}")
+        try:
+            number: int | float = float(tokens[1]) if key == "max_seconds" else int(tokens[1])
+        except ValueError as exc:
+            raise ValueError(f"{tokens[0]} needs a number") from exc
+        current = dict(self._budget_overrides)
+        current[key] = number
+        try:
+            merge_budget(RunBudget(), current)
+        except BudgetError as exc:
+            raise ValueError(str(exc)) from exc
+        self._budget_overrides = current
+        if isinstance(self._session, dict):
+            self._session["budget"] = dict(current)
+        self._say(f"budget {key}={number}")
+        return False
+
+    def _persist_session(self) -> None:
+        store = self._session_store
+        if store is None:
+            return
+        self._skip_turn_record = False
+        try:
+            self._write_session(store)
+        except SessionConflict:
+            self._skip_turn_record = True
+            self._say("session changed on disk; not saved over the newer revision")
+        except SessionError:
+            self._skip_turn_record = True
+            self._say("session was not saved")
+
+    def _write_session(self, store: Any) -> None:
+        record = self._session
+        if record is None:
+            record = store.create(model=self.model, messages=list(self._messages))
+            self._session = record
+        job = self._job
+        stage_record(
+            record,
+            model=self.model,
+            messages=list(self._messages),
+            job_running=job is not None and job.running,
+            job_error="" if job is None else job.error,
+            job_present=job is not None,
+            budget=self._budget_overrides,
+            approvals=self._approvals.snapshot(),
+            attachments=attachment_payload(self._attachment_snapshot()),
+        )
+        self._stage_datasets(record)
+        store.save(record)
+
+    def _note_turn(self) -> None:
+        store = self._session_store
+        record = self._session
+        if store is None or not isinstance(record, dict) or self._skip_turn_record:
+            return
+        record["approvals"] = self._approvals.snapshot()
+        served = None if self.last_identity is None else self.last_identity.served
+        warning = record_turn(
+            store,
+            record,
+            model=self.model,
+            served_model=served,
+            usage=self.last_usage,
+            outcome=self.last_status,
+            detail=turn_detail(self._turn_label),
+        )
+        if warning:
+            self._say(warning)
 
     def _cmd_keys(self, rest: str) -> bool:
         tokens = shlex.split(rest)
@@ -650,6 +1116,38 @@ class Concierge:
             latency_ms=round(report.latency_ms, 1),
             failure=str(report.failure) if report.failure else None,
         )
+
+    def _keys_set(self, model: str) -> bool:
+        profiles.check_model(model)
+        prompted = self._prompt_endpoint(model)
+        if prompted is None:
+            return False
+        api_key, base_url = prompted
+        try:
+            path, spec = profiles.set_endpoint_spec(model, api_key, base_url)
+        except (ValueError, KeyError) as exc:
+            raise type(exc)(public_error(exc)) from None
+        self._say(endpoint_stored_line(model, path, spec.describe()))
+        self._say_store_warnings()
+        return False
+
+    def _prompt_endpoint(self, model: str) -> tuple[str, str] | None:
+        import getpass
+
+        endpoint = profiles.resolve_endpoint(model)
+        default_url = endpoint[1] if endpoint else profiles.default_base_url()
+        mark = _prompt_mark()
+        try:
+            api_key = getpass.getpass(f"{mark} {model} API key: ")
+            base_url = self._input(f"{mark} {model} endpoint URL [{default_url}]: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            self._say(f"endpoint setup for {model!r} cancelled; no changes saved")
+            return None
+        return api_key, base_url or default_url
+
+    def _say_store_warnings(self) -> None:
+        for warning in profiles.store_health():
+            self._say(f"warning: {warning}")
 
     def _cmd_harness(self, rest: str) -> bool:
         tokens = shlex.split(rest)
@@ -864,6 +1362,15 @@ class Concierge:
             self._job = job
             self._announce_job(job)
             return False
+        prepared = self._prepare_superpower()
+        model_fn = self._bind_model_fn(self._backend())
+        cancel = threading.Event()
+        self._arm_turn(cancel)
+        self._arm_superpower_cancel(cancel)
+        try:
+            return self._start_superpower(prepared, goal, model_fn, cancel, sync=sync)
+        finally:
+            self._disarm_turn()
 
         def run_fn(
             cancel_event: threading.Event, on_event: Callable[[str, str], None]
@@ -929,6 +1436,121 @@ class Concierge:
             catalog=catalog,
             allow_web=allow_web,
         )
+        kwargs = completion_kwargs(
+            tracker, backend, cancel, pass_deadline=self._pass_deadline, tools=None
+        )
+        tracker.charge_model_call()
+        with self._orb():
+            text = str(backend.complete(messages, **kwargs))
+        _refuse_cancelled(cancel)
+        charge_reported_usage(tracker, backend)
+        return text
+
+    def _arm_superpower_cancel(self, cancel: threading.Event | None) -> None:
+        carry = self._carry_superpower_cancel(cancel)
+        if cancel is not None and carry:
+            cancel.set()
+
+    def _carry_superpower_cancel(self, cancel: threading.Event | None) -> bool:
+        with self._state_lock:
+            holder = self._superpower_cancel
+            carry = self._cancel_requested
+            if holder is None:
+                return carry
+            previous = holder.get("cancel")
+            if previous is not None and previous.is_set():
+                carry = True
+            holder["cancel"] = cancel
+            return carry
+
+    def _context_for(
+        self,
+        prepared: PreparedRun,
+        model_fn: Callable[[str], str] | None,
+        on_event: Callable[[str, str], None] | None,
+        cancel_event: threading.Event | None,
+    ) -> Any:
+        return build_context(
+            prepared,
+            RunSeams(
+                model_fn=model_fn,
+                harness=self._harness_obj(),
+                approvals=self._approvals,
+                researcher=self._researcher,
+                research_budget=self._research_budget,
+                flash_store=self._store,
+                on_event=on_event,
+                cancel_event=cancel_event,
+                budget=self._run_budget(),
+                job_ledger=self._job_ledger(),
+                session_id=self._corr_session,
+                telemetry_emit=self._telemetry,
+            ),
+            datasets=tuple(self._datasets),
+        )
+
+    def _harness_obj(self) -> Any:
+        from fx1.harness import Harness
+
+        if self._harness is not None:
+            return self._harness
+        return Harness()
+
+    def _job_ledger(self) -> JobLedger:
+        if self._jobs is None:
+            self._jobs = JobLedger()
+        return self._jobs
+
+    def _max_families(self) -> int:
+        budget = self._run_budget()
+        if budget is None:
+            return 4
+        return _int_field(budget, "max_families", 4)
+
+    def _planner_step_cap(self) -> int:
+        """Harness-step ceiling for the planner. Family count is separate."""
+        budget = self._run_budget()
+        if budget is None:
+            return 4
+        return _int_field(budget, "max_harness", 4)
+
+    def _planner_budget_s(self) -> float | None:
+        """Estimated-runtime ceiling only after the operator sets max-seconds."""
+        if "max_seconds" not in self._budget_overrides:
+            return None
+        raw = self._budget_overrides.get("max_seconds")
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            return None
+        return float(raw)
+
+    def _run_budget(self) -> Any | None:
+        try:
+            from fx1.interactive.budgets import RunBudget
+        except ImportError:
+            return None
+        budget = RunBudget()
+        overrides = {str(key): value for key, value in self._budget_overrides.items()}
+        if overrides:
+            from fx1.interactive.budgets import merge_budget
+
+            return merge_budget(budget, overrides)
+        budget.validate()
+        return budget
+
+    def _family_selector(self) -> Callable[[str], dict[str, Any]]:
+        def select(goal: str) -> dict[str, Any]:
+            from fx1.harness import Harness
+
+            harness = self._harness if self._harness is not None else Harness()
+            try:
+                from fx1.interactive.families import FamilyClient, harness_family_runner
+            except ImportError:
+                return _family_payload_from_harness(harness, goal, self._max_families())
+            return FamilyClient(harness_family_runner(harness)).select(
+                goal, max_families=self._max_families()
+            )
+
+        return select
 
     # -- /research -----------------------------------------------------------
 
@@ -1008,13 +1630,16 @@ class Concierge:
             search_pause_s=base.search_pause_s,
         )
 
+    def _research_runner(
+        self, goal: str, budget: Any, queries: Any
+    ) -> Callable[[threading.Event, Callable[[str, str], None]], Any]:
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
             return self._researcher.run(
                 goal,
                 budget=budget,
                 queries=queries,
                 cancel_event=cancel_event,
-                on_progress=lambda p: on_event(p.event, p.detail),
+                on_progress=lambda progress: on_event(progress.event, progress.detail),
             )
 
         job_id = self._new_job_id("research")
@@ -1141,12 +1766,12 @@ class Concierge:
         if not text.strip():
             raise ValueError("usage: /flash add <text> [--task T] [--tags a,b] [--source URL] ...")
         entry = self._store.add(
-            text=text,
-            task=options.get("task", ""),
-            tags=[t.strip() for t in options.get("tags", "").split(",") if t.strip()],
-            sources=[{"url": options["source"]}] if options.get("source") else [],
-            uncertainty=options.get("uncertainty"),
-            conflicts=[options["conflict"]] if options.get("conflict") else [],
+            text=_scrub_user(text),
+            task=_scrub_user(str(options.get("task", ""))),
+            tags=[_scrub_user(t.strip()) for t in options.get("tags", "").split(",") if t.strip()],
+            sources=[{"url": _scrub_user(options["source"])}] if options.get("source") else [],
+            uncertainty=_scrub_maybe(options.get("uncertainty")),
+            conflicts=[_scrub_user(options["conflict"])] if options.get("conflict") else [],
             private=bool(options.get("private")),
             verified=bool(options.get("verified")),
         )
@@ -1213,7 +1838,7 @@ class Concierge:
                 i += 2
                 continue
             raise ValueError(f"unknown /flash correct option {token!r}")
-        revised = self._store.update(entry_id, patch)
+        revised = self._store.update(entry_id, _scrub_patch(patch))
         if revised is None:
             raise KeyError(f"no flash entry {entry_id!r}")
         self._say(f"corrected {entry_id} (revision kept; history preserved)")
@@ -1329,80 +1954,8 @@ class Concierge:
                 model=self.model,
             )
 
-    def _chat_tools(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "type": "function",
-                "function": {
-                    "name": "flash_retrieve",
-                    "description": (
-                        "Search persistent research memory (flash context) for "
-                        "prior findings relevant to a query. Returns findings with "
-                        "sources, uncertainty, and conflicts."
-                    ),
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"query": {"type": "string"}},
-                        "required": ["query"],
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "web_lookup",
-                    "description": (
-                        "A bounded public-web lookup: search and read up to two "
-                        "sources. Use for facts outside the conversation; deep "
-                        "research belongs to /research."
-                    ),
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"query": {"type": "string"}},
-                        "required": ["query"],
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "flash_save",
-                    "description": "Persist a finding to flash context for later sessions.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "text": {"type": "string"},
-                            "task": {"type": "string"},
-                            "uncertainty": {
-                                "type": "string",
-                                "enum": ["low", "medium", "high"],
-                            },
-                        },
-                        "required": ["text"],
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "harness_run",
-                    "description": (
-                        "Run one registered dipcatcher harness command "
-                        "(e.g. doctor, verify-research, research). Consequential "
-                        "commands require operator approval. Fail-closed on "
-                        "unknown names."
-                    ),
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "args": {"type": "array", "items": {"type": "string"}},
-                        },
-                        "required": ["name"],
-                    },
-                },
-            },
-        ]
+    def _on_keyboard_interrupt(self) -> None:
+        cancel_chat_keyboard(self)
 
     def _execute_tool(self, call: dict[str, Any]) -> str:
         fn = call.get("function", {})

@@ -32,13 +32,12 @@ import inspect
 import json
 import re
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
 from fx1.harness import HARNESS_REGISTRY, Harness, HarnessRole
-from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import BudgetExceeded
 from fx1.interactive.families import (
@@ -234,6 +233,16 @@ CAPABILITIES: dict[str, dict[str, Any]] = {
 }
 
 ModelFn = Callable[[str], str]
+Selector = Callable[[str], dict[str, Any]]
+TelemetryEmit = Callable[[str, Mapping[str, Any]], None]
+
+
+@dataclass(frozen=True)
+class CatalogResult:
+    """A capabilities fetch. ``catalog`` is None when the fetch failed closed."""
+
+    catalog: CapabilityCatalog | None
+    reason: str | None = None
 
 
 def _score_goal(goal: str, terms: tuple[str, ...]) -> int:
@@ -279,6 +288,33 @@ class SuperpowerPlan:
         return "\n".join(lines)
 
 
+def _append_capability_lines(lines: list[str], capabilities: Sequence[PlannedCapability]) -> None:
+    for cap in capabilities:
+        meta = CAPABILITIES.get(cap.id, {})
+        lines.append(
+            f"- {cap.id} ({meta.get('kind', '?')}, {meta.get('cost', '?')}): {cap.rationale}"
+        )
+
+
+def _append_family_lines(lines: list[str], plan: SuperpowerPlan) -> None:
+    if not plan.research_constrained:
+        return
+    chosen = ", ".join(plan.families) if plan.families else "none eligible"
+    lines.append(f"families: {chosen}")
+    for item in plan.family_exclusions:
+        lines.append(f"  excluded {item.get('id', '?')}: {item.get('reason', '')}")
+
+
+def _append_plan_notes(lines: list[str], plan: SuperpowerPlan) -> None:
+    for item in plan.exclusions:
+        cap = item.get("capability_id") or "-"
+        lines.append(f"excluded {cap}: {item.get('code', '')}: {item.get('detail', '')}")
+    for note in plan.notes:
+        lines.append(f"note: {note}")
+    if plan.catalog_unavailable:
+        lines.append(f"catalog unavailable: {plan.catalog_unavailable}")
+
+
 def plan_goal(
     goal: str,
     *,
@@ -302,6 +338,40 @@ def plan_goal(
     """
     if max_harness < 0:
         raise ValueError("max_harness must be nonnegative")
+    if catalog is None and catalog_unavailable:
+        from fx1.interactive.orchestration import plan_catalog_unavailable
+
+        return plan_catalog_unavailable(goal, catalog_unavailable)
+    if catalog is not None:
+        from fx1.interactive.orchestration import plan_with_catalog
+
+        return plan_with_catalog(
+            goal,
+            catalog,
+            datasets=datasets,
+            roots=roots,
+            model_fn=model_fn,
+            max_harness=max_harness,
+            family_selector=family_selector,
+            budget_s=budget_s,
+        )
+    return _plan_keyword(
+        goal,
+        capabilities=capabilities,
+        model_fn=model_fn,
+        max_harness=max_harness,
+        family_selector=family_selector,
+    )
+
+
+def _plan_keyword(
+    goal: str,
+    *,
+    capabilities: dict[str, dict[str, Any]] | None,
+    model_fn: ModelFn | None,
+    max_harness: int,
+    family_selector: Selector | None,
+) -> SuperpowerPlan:
     registry = capabilities or CAPABILITIES
     fold = _TRIGGER_LEXICON.fold(goal)
     harness_ids = _scored_harness_ids(fold, registry, max_harness)
@@ -377,6 +447,7 @@ def _deterministic_selection(
 ) -> list[PlannedCapability]:
     selected: list[PlannedCapability] = [
         PlannedCapability("flash_retrieve", "memory is cheap and may already hold this research"),
+        *_harness_plans(goal, registry, harness_ids),
     ]
     for cap_id in harness_ids:
         meta = registry[cap_id]
@@ -397,15 +468,16 @@ def _deterministic_selection(
                 "matched — public web research fills the gap",
             )
         )
-    selected.append(
-        PlannedCapability(
-            "flash_save",
-            "new findings belong in flash context with sources and uncertainty",
-        )
-    )
-    selected.append(
-        PlannedCapability(
-            "synthesize", "compose the final answer and explain the capability choices"
+    selected.extend(
+        (
+            PlannedCapability(
+                "flash_save",
+                "new findings belong in flash context with sources and uncertainty",
+            ),
+            PlannedCapability(
+                "synthesize",
+                "compose the final answer and explain the capability choices",
+            ),
         )
     )
     return selected
@@ -414,7 +486,7 @@ def _deterministic_selection(
 def _model_refine(
     fallback: SuperpowerPlan,
     goal: str,
-    registry: dict[str, dict[str, Any]],
+    registry: Mapping[str, Mapping[str, Any]],
     model_fn: ModelFn,
     *,
     max_harness: int,
@@ -561,6 +633,7 @@ class SuperpowerContext:
     flash_store: Any | None = None
     on_event: Callable[[str, str], None] | None = None
     cancel_event: threading.Event | None = None
+    budget: Any | None = None
     max_stdout_chars: int = 12000
     save_to_flash: bool = True
     # Public web search sends the raw goal to a third party. Off until the
@@ -572,9 +645,11 @@ class SuperpowerContext:
     catalog: FamilyCatalog | None = None
 
 
-def _emit(ctx: SuperpowerContext, event: str, detail: str) -> None:
-    if ctx.on_event is not None:
-        ctx.on_event(event, detail)
+def _evidence_count(evidence: Mapping[str, Any]) -> int | None:
+    items = evidence.get("items")
+    if isinstance(items, list):
+        return len(items)
+    return None
 
 
 def _journal_step(ctx: SuperpowerContext, run: CapabilityRun) -> None:

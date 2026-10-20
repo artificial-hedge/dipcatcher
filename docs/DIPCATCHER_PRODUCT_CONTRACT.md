@@ -82,10 +82,12 @@ not a claim of feature parity or a requirement to duplicate another product.
    budget, evidence class, and cancellation state. Keep raw logs and full
    configuration available as optional details. A spinner is not progress.
 5. **Control:** provide discoverable model selection, help, status, cancel,
-   session resume, and evidence inspection. Existing `/use`, `/model`, `/help`,
-   `/status`, and `/cancel` are starting points; resume and evidence inspection
-   still need a defined command/API. Keep multiline input, paste, history,
-   keyboard navigation, narrow terminals, `NO_COLOR`, and plain output usable.
+   session resume, and evidence inspection. `/use`, `/model`, `/help`,
+   `/status`, `/cancel`, `/resume`, `/evidence`, `/runs`, `/data`, and
+   `/models check` exist. Keep multiline input, paste, history, keyboard
+   navigation, narrow terminals, `NO_COLOR`, and plain output usable. A
+   background job uses a cbreak line reader, so that line has no history
+   and no arrow keys.
 6. **Finish:** explain what was learned, what failed or remains uncertain,
    and link the verified receipt/artifacts. A partial run must say partial.
    Unconfigured models may return a clearly labeled deterministic status
@@ -194,10 +196,12 @@ incremental approach exists. Never trade the honesty gate for typing effects.
 
 ## Production acceptance gates
 
-All rows are **OPEN / not verified by this document**. Numeric limits below
-are proposed initial release targets, not measured performance or a service
-promise. Freeze the supported OS/Python/terminal matrix and reference hardware
-before measuring; record sample sizes and failures.
+All rows are **OPEN**. Numeric limits below are proposed initial release
+targets, not a service promise. The measurements in
+[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md) do not close
+any row. Freeze the supported OS/Python/terminal matrix and reference
+hardware before treating a number as the gate. Record sample sizes and
+failures.
 
 | Gate | Acceptance evidence |
 |---|---|
@@ -209,9 +213,12 @@ before measuring; record sample sizes and failures.
 | P6 — Bounded operation | Hard time, step, retry, token and spend ceilings cover planning through synthesis. Unknown price cannot imply a guaranteed spend cap. A 24-hour mixed-workload soak leaves no orphan local children or unaccounted jobs; injected failures remain recoverable. Redacted diagnostics correlate session/run/step and model/family identity. |
 | P7 — Repeatable release | Repository gates and required CI pass at the candidate revision; clean install/upgrade/uninstall, supported-platform smoke tests, dependency/security checks, signed artifacts, checksums, rollback drill, and support/runbooks are evidenced. Existing production-audit blockers are explicitly closed or the release remains blocked. |
 
-Maintain a release evidence table with gate ID, owner, candidate SHA, exact
-command/scenario, platform, artifact path/hash, timestamp, result, and remaining
-blocker. Docs or a merged implementation never substitute for passing evidence.
+The release evidence table is
+[DIPCATCHER_RELEASE_EVIDENCE.md](DIPCATCHER_RELEASE_EVIDENCE.md). Columns are
+gate ID, owner, candidate SHA, exact command/scenario, platform, artifact
+path/hash, timestamp, result, and remaining blocker. Owner is unassigned
+in that table. Docs or a merged implementation never substitute for passing
+evidence.
 Use the existing [Operations runbook](OPERATIONS_RUNBOOK.md) and
 [API stability contract](FX1_API_STABILITY.md) for release and recovery details.
 Model-release claims additionally require each model's own evaluation/card and

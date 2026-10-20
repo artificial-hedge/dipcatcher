@@ -1,0 +1,16 @@
+- id: planning-002
+  category: planning
+  title: A request with no eligible capability says so plainly
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+  steps:
+    - say: check the crps teapot
+      expect:
+        - routing this to research orchestration
+        - "No suitable capability"
+    - wait_job: true

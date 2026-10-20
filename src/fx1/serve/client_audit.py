@@ -113,7 +113,7 @@ import threading
 import time
 import urllib.error
 import urllib.parse
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -1139,7 +1139,10 @@ def _idem_probes() -> dict[str, bool]:  # NOSONAR(S3776)
         timeout_s: float,
     ) -> tuple[int, Mapping[str, str], bytes]:
         state["n"] += 1
-        res = real_send(method, url, payload, headers, timeout_s)
+        res = cast(
+            "tuple[int, Mapping[str, str], bytes]",
+            real_send(method, url, payload, headers, timeout_s),
+        )
         if state["n"] == 1:
             # the work landed server-side; the wire answer was lost.
             raise HarnessTransportError("response lost on the wire")

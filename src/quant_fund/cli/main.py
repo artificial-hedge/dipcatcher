@@ -189,6 +189,7 @@ __all__ = [
     "backtest",
     "candle_book",
     "kyle_ofi",
+    "families_cmd",
     "research",
     "research_families",
     "execution_sensitivity_cmd",

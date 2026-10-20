@@ -1494,13 +1494,18 @@ the chat is the way in:
 
 ```bash
 make sync
-uv run dipcatcher           # opens the chat in an interactive terminal
+uv run dipcatcher           # terminal: chat. redirected: help, no stdin read
 # inside the chat:
 #   /keys set fx1           masked API key + endpoint URL (or /keys set fx1-lite)
 #   /use fx1-lite           switch model
 #   /superpower <goal>      plan and run the research families that fit
 #   /superpower --web ...   opt in before any public web search
 #   /help, /exit
+uv run dipcatcher exec "ping"          # one turn; exit 5 until an endpoint exists
+uv run dipcatcher models list          # presence only, not a liveness claim
+uv run dipcatcher models check         # offline; does not open a socket
+uv run dipcatcher models check --live  # one call per configured model; not a release claim
+uv run dipcatcher exec --data vol.csv "ping"  # ./data/vol.csv; same resolver as /data
 ```
 
 `dipcatcher chat --model fx1-lite` picks the starting model. Without an
@@ -1593,7 +1598,7 @@ generated diagrams in [Visual tour](#visual-tour).
 
 | Command | What it does |
 |---|---|
-| `uv run dipcatcher` | In a terminal, opens the chat: plain text talks to `fx1`/`fx1-lite`; `/superpower <goal>` runs the research families that fit. `fxi` opens the same chat. |
+| `uv run dipcatcher` | Terminal: chat with `fx1`/`fx1-lite`. Redirected: help, no stdin read. `fxi` opens the same chat. `dipcatcher exec` is the one-turn script path. `exec --data` attaches a file under `./data`. |
 | `uv run dipcatcher research --config <cfg>` | Builds a panel, runs the research pipeline, writes a sealed notebook. |
 | `uv run dipcatcher verify-research [path]` | Recomputes a notebook or run directory's receipt hash; fails closed. |
 | `uv run dipcatcher doctor --config <cfg>` | Environment/data/receipt readiness check; exit code is the answer. |
@@ -3116,7 +3121,15 @@ From [`.env.example`](.env.example); secrets are never committed and
 | `MLFLOW_TRACKING_URI` | `./mlruns` | local tracking store |
 | `QUANT_VENDOR_API_KEY` | unset | licensed vendor adapter; unset means fail-closed |
 | `QUANT_API_KEY` | unset | required for non-loopback API access (`X-API-Key`) |
-| `MOONSHOT_API_KEY` | unset | hosted Kimi K3 eval (`make fx1-eval`) |
+| `MOONSHOT_API_KEY` | unset | shared chat key, and hosted Kimi K3 eval (`make fx1-eval`). A stored profile wins. |
+| `FX1_BASE_URL` | Moonshot chat-completions URL | shared completion URL when no stored or per-model URL is set |
+| `FX1_CONFIG_DIR` | `~/.fx1` | credentials, sessions, jobs, logs, runs, history |
+| `FX1_SESSION_DIR` | unset | chat sessions; else `$FX1_CONFIG_DIR/sessions` |
+| `DIPCATCHER_FX1_API_KEY` | unset | fx1 key when no profile is stored |
+| `DIPCATCHER_FX1_BASE_URL` | unset | fx1 completion URL; with a per-model key and no URL, `FX1_BASE_URL` is used |
+| `DIPCATCHER_FX1_LITE_API_KEY` | unset | fx1-lite key when no profile is stored |
+| `DIPCATCHER_FX1_LITE_BASE_URL` | unset | fx1-lite completion URL |
+| `DIPCATCHER_LOG` | `info` | local chat telemetry level: `off`, `error`, `info`, `debug` |
 | `FX1_SIGNING_KEY` | unset | checkpoint signature enforcement for local fx-1 serving |
 | `DIPCATCHER_OBSERVE` | unset | opt-in audit ledger / observability |
 | `DIPCATCHER_OTEL_ENDPOINT` | `http://127.0.0.1:4318/v1/traces` | OTLP traces endpoint |
@@ -3272,9 +3285,11 @@ flowchart TD
 
 ```text
 +---------------------------------------------------------------------+
-|  dipcatcher — the ten commands that matter                          |
+|  dipcatcher — common commands                                       |
 +---------------------------------------------------------------------+
 |  make sync                     frozen env from uv.lock              |
+|  uv run dipcatcher             terminal chat; redirected prints help|
+|  uv run dipcatcher exec "…"    one turn; exit codes in --help       |
 |  uv run dipcatcher research --config configs/research.yaml          |
 |  uv run dipcatcher verify-research                                  |
 |  uv run dipcatcher doctor --config configs/research.yaml            |
@@ -3282,6 +3297,7 @@ flowchart TD
 |  make demo-data                labeled offline dataset              |
 |  make lint && make typecheck && make test                           |
 |  make fx1-gate                 fx-1 lane: lint+types+tests+honesty  |
+|  make dipcatcher-gate          chat harness gate; gates P1-P7 stay open |
 |  make receipts-reverify        re-verify every committed receipt    |
 |  uv run fx1 corpus build --receipts-dir receipts --out <path>       |
 +---------------------------------------------------------------------+

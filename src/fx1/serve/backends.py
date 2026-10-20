@@ -270,7 +270,10 @@ def _apply_byok_destination_policy(request: _ByokRequest) -> None:
 
 
 def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
-    address = ipaddress.ip_address(raw.split("%", 1)[0])
+    # A zone id or ``%00`` suffix must not inherit the address before ``%``.
+    if "%" in raw:
+        raise ValueError("zone identifiers are not literal addresses")
+    address = ipaddress.ip_address(raw)
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
         return address.ipv4_mapped
     return address
@@ -1308,6 +1311,26 @@ class HostedK3Backend(_UsageTracker):
         )
 
 
+def _parsed_port_problem(parsed: urllib.parse.ParseResult) -> str | None:
+    try:
+        port = parsed.port
+    except ValueError:
+        return "port must be 1-65535"
+    if port is not None and not 0 < port < 65536:
+        return "port must be 1-65535"
+    return None
+
+
+def _hosted_plain_http_problem(host: str) -> str | None:
+    try:
+        address = _normalized_address(host)
+    except ValueError:
+        return "must use HTTPS unless the host is a literal loopback address"
+    if not address.is_loopback:
+        return "must use HTTPS unless the host is a literal loopback address"
+    return None
+
+
 def hosted_api_url_problem(url: str) -> str | None:
     """Why a credentialed hosted-model URL is unsafe — ``None`` when safe.
 
@@ -1325,22 +1348,14 @@ def hosted_api_url_problem(url: str) -> str | None:
         return "must not embed userinfo credentials"
     if parsed.params or parsed.query or parsed.fragment:
         return "must not carry params, query, or fragment"
-    try:
-        port = parsed.port
-    except ValueError:
-        return "port must be 1-65535"
-    if port is not None and not 0 < port < 65536:
-        return "port must be 1-65535"
+    port_problem = _parsed_port_problem(parsed)
+    if port_problem is not None:
+        return port_problem
     host = parsed.hostname
     if not host:
         return "must name a host"
     if parsed.scheme == "http":
-        try:
-            address = _normalized_address(host)
-        except ValueError:
-            return "must use HTTPS unless the host is a literal loopback address"
-        if not address.is_loopback:
-            return "must use HTTPS unless the host is a literal loopback address"
+        return _hosted_plain_http_problem(host)
     return None
 
 

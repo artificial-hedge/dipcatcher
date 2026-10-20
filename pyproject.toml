@@ -137,6 +137,14 @@ packages = ["src/fx1", "src/quant_fund", "src/dipcatcher_cli"]
 [tool.hatch.build.targets.wheel.force-include]
 "src/quant_fund/py.typed" = "quant_fund/py.typed"
 "src/quant_fund/stress/public_domain/fred_h10_h15.json" = "quant_fund/stress/public_domain/fred_h10_h15.json"
+# Lab defaults and their inherit closure. Checkout cwd/configs/<file> still wins
+# at runtime; these copies are the installed fallback (quant_fund/_bundled/configs).
+"configs/base.yaml" = "quant_fund/_bundled/configs/base.yaml"
+"configs/research.yaml" = "quant_fund/_bundled/configs/research.yaml"
+"configs/backtest.yaml" = "quant_fund/_bundled/configs/backtest.yaml"
+"configs/paper.yaml" = "quant_fund/_bundled/configs/paper.yaml"
+"configs/sim_live.yaml" = "quant_fund/_bundled/configs/sim_live.yaml"
+"configs/net_tournament.json" = "quant_fund/_bundled/configs/net_tournament.json"
 
 # Default sdist = every VCS-tracked file (data/, notebooks, host symlinks —
 # 37k files). The distributable source is the buildable package + tests.

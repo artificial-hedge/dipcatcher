@@ -1,0 +1,34 @@
+- id: execution-002
+  category: execution
+  title: A once approval lets one consequential train command run
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    approvals:
+      - decision: once
+        key: harness:train
+    harness:
+      mode: fake
+      commands:
+        train:
+          exit: 0
+          stdout: "DATA_LABEL=SYNTHETIC\ntrain finished\n"
+    replies:
+      - tool_call:
+          name: harness_run
+          args:
+            name: train
+            args: []
+      - ok: The synthetic train command finished.
+  steps:
+    - say: please train the lab model
+      expect:
+        - DATA_LABEL=SYNTHETIC
+        - train finished
+        - The synthetic train command finished.
+      approvals:
+        - key: harness:train
+          approved: true
+          scope: once

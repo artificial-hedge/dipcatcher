@@ -2765,29 +2765,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipt",
     )
     def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
-        try:
-            result = verify_receipt_payload(body.receipt, path=Path("<api>"))
-        except Exception as exc:  # verifier must fail closed, never 500
-            return ReceiptVerifyResponse(
-                valid=False,
-                path="<api>",
-                schema_tag="",
-                kind=None,
-                verdict=None,
-                digest_convention=None,
-                errors=[str(exc)],
-                warnings=[],
-            )
-        return ReceiptVerifyResponse(
-            valid=result["valid"],
-            path=result["path"],
-            schema_tag=result["schema"],
-            kind=result["kind"] if isinstance(result["kind"], str) else None,
-            verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
-            digest_convention=result["digest_convention"],
-            errors=list(result["errors"]),
-            warnings=list(result["warnings"]),
-        )
+        return ReceiptVerifyResponse(**_receipt_verify_fields(body.receipt))
 
     @app.post(
         "/receipts/verify/batch",
@@ -2795,38 +2773,10 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipts_batch",
     )
     def verify_receipts_batch(body: ReceiptVerifyBatchRequest) -> ReceiptVerifyBatchResponse:
-        items: list[ReceiptVerifyBatchItem] = []
-        for i, receipt in enumerate(body.receipts):
-            try:
-                result = verify_receipt_payload(receipt, path=Path("<api>"))
-            except Exception as exc:  # verifier must fail item-local, never 500
-                items.append(
-                    ReceiptVerifyBatchItem(
-                        index=i,
-                        valid=False,
-                        path="<api>",
-                        schema_tag="",
-                        kind=None,
-                        verdict=None,
-                        digest_convention=None,
-                        errors=[str(exc)],
-                        warnings=[],
-                    )
-                )
-                continue
-            items.append(
-                ReceiptVerifyBatchItem(
-                    index=i,
-                    valid=result["valid"],
-                    path=result["path"],
-                    schema_tag=result["schema"],
-                    kind=result["kind"] if isinstance(result["kind"], str) else None,
-                    verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
-                    digest_convention=result["digest_convention"],
-                    errors=list(result["errors"]),
-                    warnings=list(result["warnings"]),
-                )
-            )
+        items = [
+            ReceiptVerifyBatchItem(index=i, **_receipt_verify_fields(receipt))
+            for i, receipt in enumerate(body.receipts)
+        ]
         verified = sum(1 for it in items if it.valid)
         return ReceiptVerifyBatchResponse(
             verified=verified,
@@ -2864,8 +2814,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         verifier is reported on ``X-Fx1-Receipt-Valid`` so a caller learns
         the receipt it fetched still verifies without a second round trip.
         """
-        if not _SHA256_HEX.fullmatch(sha256):
-            raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
+        _reject_bad_receipt_sha(sha256)
         if not receipt_index.available():
             raise ApiError(503, "receipts store unavailable", code="receipts_unavailable")
         path = receipt_index.lookup(sha256)

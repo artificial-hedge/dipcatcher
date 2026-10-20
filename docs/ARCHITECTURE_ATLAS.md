@@ -222,6 +222,7 @@ flowchart LR
   fx1_forecast -->|6| quant_fund_schemas
   fx1_forecast -->|9| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
+  fx1_harness -->|2| fx1_interactive
   fx1_harness_audit -->|1| fx1_harness
   fx1_harness_audit -->|2| quant_fund_utils
   fx1_honesty_audit -->|1| fx1_honesty
@@ -318,9 +319,10 @@ flowchart LR
   quant_fund_backtest -->|2| quant_fund_risk
   quant_fund_backtest -->|9| quant_fund_schemas
   quant_fund_backtest -->|1| quant_fund_utils
+  quant_fund_cli -->|1| quant_fund
   quant_fund_cli -->|2| quant_fund_audit
   quant_fund_cli -->|3| quant_fund_backtest
-  quant_fund_cli -->|3| quant_fund_config
+  quant_fund_cli -->|4| quant_fund_config
   quant_fund_cli -->|12| quant_fund_data
   quant_fund_cli -->|3| quant_fund_features
   quant_fund_cli -->|1| quant_fund_hmm
@@ -341,7 +343,7 @@ flowchart LR
   quant_fund_cli -->|73| quant_fund_research
   quant_fund_cli -->|3| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
-  quant_fund_cli -->|13| quant_fund_utils
+  quant_fund_cli -->|14| quant_fund_utils
   quant_fund_cli -->|1| quant_fund_validation
   quant_fund_compute -->|8| quant_fund_utils
   quant_fund_config -->|1| quant_fund_models
@@ -520,7 +522,7 @@ flowchart LR
   quant_fund_research -->|14| quant_fund_config
   quant_fund_research -->|7| quant_fund_data
   quant_fund_research -->|9| quant_fund_execution
-  quant_fund_research -->|122| quant_fund_metrics
+  quant_fund_research -->|125| quant_fund_metrics
   quant_fund_research -->|19| quant_fund_microstructure
   quant_fund_research -->|10226| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
@@ -747,7 +749,7 @@ sequenceDiagram
 <!-- BEGIN GENERATED: coverage -->
 | Package | Modules |
 |---|---|
-| `dipcatcher_cli` | 3 |
+| `dipcatcher_cli` | 6 |
 | `fx1` | 1 |
 | `fx1.bench` | 5 |
 | `fx1.capabilities` | 1 |

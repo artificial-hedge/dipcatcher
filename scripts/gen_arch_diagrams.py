@@ -838,6 +838,9 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.honesty_audit", "quant_fund.utils.reproducibility"),
         ("fx1.hypotheses_audit", "quant_fund.utils.hashing"),
         ("fx1.hypotheses_audit", "quant_fund.utils.reproducibility"),
+        # In-process receipt verification for the chat's evidence ledger: the
+        # harness leaf verifier is the only research-side module fx1 reads.
+        ("fx1.interactive.evidence_ledger", "quant_fund.schemas.receipt_v2_leaf"),
         ("fx1.modelcard_audit", "quant_fund.utils.hashing"),
         ("fx1.modelcard_audit", "quant_fund.utils.reproducibility"),
         ("fx1.mrm", "quant_fund.utils.atomicio"),

@@ -72,6 +72,13 @@ def _complete_with_orb(
         return backend.complete(messages)
 
 
+def _you_prompt() -> str:
+    from fx1.interactive.terminal import unicode_stdout
+
+    mark = "›" if unicode_stdout() else ">"
+    return f"you {mark} "
+
+
 def chat(
     model: str = DEFAULT_MODEL,
     prompt: str | None = None,
@@ -110,7 +117,7 @@ def chat(
     output_fn(f"fxi chat — model {model} @ {host}; 'exit' or Ctrl-D to leave")
     while True:
         try:
-            line = input_fn("you › ").strip()
+            line = input_fn(_you_prompt()).strip()
         except (EOFError, KeyboardInterrupt):
             output_fn("")
             return 0

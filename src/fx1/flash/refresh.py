@@ -79,23 +79,26 @@ def refresh_entry(
     if not report.checked:
         report.note = "no sources recorded; nothing to refresh"
         return report
+    attempted_at = _now_iso()
     if report.all_reachable:
         report.note = (
             f"{len(report.reachable)}/{len(report.checked)} sources reachable; "
             "finding refreshed without change"
         )
+        patch = {
+            "refresh_attempted_at": attempted_at,
+            "refresh_note": report.note,
+            "refreshed_at": attempted_at,
+        }
     else:
         report.note = (
             f"{len(report.reachable)}/{len(report.checked)} sources reachable; "
             f"unreachable: {', '.join(report.unreachable)}"
         )
-    attempted_at = _now_iso()
-    patch = {
-        "refresh_attempted_at": attempted_at,
-        "refresh_note": report.note,
-    }
-    if report.all_reachable:
-        patch["refreshed_at"] = attempted_at
+        patch = {
+            "refresh_attempted_at": attempted_at,
+            "refresh_note": report.note,
+        }
     store.update(entry.id, patch)
     return report
 

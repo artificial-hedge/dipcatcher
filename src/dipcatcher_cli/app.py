@@ -16,6 +16,7 @@ explained rather than forwarded to the lab as an unknown subcommand.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 
@@ -34,6 +35,8 @@ _DEFAULT_CHAT_MODEL = "fx1"
 
 
 def _interactive() -> bool:
+    if _harness_child():
+        return False
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
@@ -144,6 +147,16 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(_slash_argv_message(args[0]), file=sys.stderr)
         raise SystemExit(2)
 
+
+def _version_args(args: Sequence[str]) -> None:
+    if args == [VERSION_COMMAND]:
+        _version()
+        return
+    print("usage: dipcatcher version", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def _forward_lab(args: Sequence[str]) -> None:
     # Import the lab only on the automation/help path. No library imports this
     # outer launcher; quant_fund continues to have no dependency on the UI.
     from quant_fund.cli.main import app
