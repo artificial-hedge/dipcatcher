@@ -58,3 +58,19 @@ def test_committed_receipt_still_verifies() -> None:
     verdict = verify_receipt_payload(payload)
     assert verdict["valid"] is True
     assert verdict["errors"] == []
+
+
+def test_cap_audit_is_idempotent_across_calls() -> None:
+    """Calling cap_audit() twice in sequence must see every probe still
+    passing on the second call. The unconf probe flips a per-config
+    harness into drain=open mid-battery; the audit must self-contain
+    that state so the next call still observes byok__chat__200 (a
+    503 'draining' on the second call would mean drain state leaked
+    across the audit boundary)."""
+    first = cap_audit()
+    assert first["byok__chat__200"] is True
+    second = cap_audit()
+    assert second["byok__chat__200"] is True
+    # And no probe flipped False on the second pass:
+    for name, ok in second.items():
+        assert ok is True, f"probe {name} regressed on the second cap_audit() call"

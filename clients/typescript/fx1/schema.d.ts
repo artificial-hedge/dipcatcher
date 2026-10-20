@@ -978,6 +978,15 @@ export interface paths {
          *     and a stored record for that key (otherwise 409 — executing
          *     fresh and skipping would graft a different completion onto the
          *     client's earlier frames).
+         *
+         *     Slow generations keepalived under `sse_keepalive_s` emit
+         *     `: keepalive` comment frames — spec-valid and invisible to both
+         *     SSE parsers and the `id:` sequence resume counts — until the
+         *     gated call lands, then the normal chunk sequence; a backend
+         *     fault mid-window answers an in-band `{error}` + `[DONE]` instead
+         *     of a hang. The `X-Fx1-Completion-Id` header only exists once the
+         *     completion lands, so keepalived legs carry the fingerprint
+         *     in-band as `chatcmpl-<cid>` on every chunk.
          */
         post: operations["openai_chat_completions"];
         delete?: never;
@@ -1062,7 +1071,10 @@ export interface paths {
          *     retrieval twin); ``Idempotency-Key`` replay and ``Last-Event-ID``
          *     stream resume work exactly like the chat surface — a pinned call
          *     replays byte-identically (JSON or SSE) and a resumed keyed stream
-         *     drops frames at or below the delivered index.
+         *     drops frames at or below the delivered index. Slow generations
+         *     keepalived under ``sse_keepalive_s`` emit ``: keepalive`` comment
+         *     frames, and a mid-window backend fault answers an in-band
+         *     ``{error}`` + ``[DONE]`` — same contract as the chat surface.
          */
         post: operations["openai_completions"];
         delete?: never;
@@ -1587,6 +1599,14 @@ export interface paths {
          *     record (`GET /harness/completions/{id}`) and its sealed receipt.
          *     `X-Fx1-*` backend headers and the `fx1` extension object carry
          *     over from the OpenAI surface (backend selection, BYOK, deadline).
+         *
+         *     Slow generations keepalived under `sse_keepalive_s` emit
+         *     unnumbered `ping` frames until the gated call lands — Anthropic's
+         *     own keepalive grammar — then the normal event sequence; a backend
+         *     fault mid-window answers `event: error` in grammar instead of a
+         *     hang. The `X-Fx1-Completion-Id` header only exists once the
+         *     completion lands, so keepalived legs carry the same fingerprint
+         *     in-band as `msg_<cid>` on `message_start`.
          */
         post: operations["anthropic_messages"];
         delete?: never;
@@ -1840,6 +1860,10 @@ export interface paths {
          *     (``{type: "message", role, content: [{type: "input_text", text}]}``
          *     or the shorthand ``{role, content: "..."}``); ``instructions``
          *     prepends a system turn; ``developer`` roles map to ``system``.
+         *     Slow generations keepalived under ``sse_keepalive_s`` emit
+         *     ``: keepalive`` comment frames (no ``id:`` slot consumed — resume
+         *     still counts only real events), then the normal event sequence;
+         *     a mid-window backend fault answers ``event: error`` in grammar.
          *     ``max_output_tokens`` lands on the decode cap, ``reasoning.effort``
          *     on the reasoning hint, ``text.format`` on the post-validated
          *     ``response_format`` channel (a violation is a provider-side 502),

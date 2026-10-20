@@ -326,6 +326,8 @@ def _serve_audit_body() -> dict[str, Any]:
                 spawned_n[0] += 1
                 return real_popen(*a, **kw)
 
+            _models_seen: list[bool] = []
+
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
                 # Down until Popen runs, so both pre-spawn probes still miss
                 # and the lock's re-check cannot skip the spawn.

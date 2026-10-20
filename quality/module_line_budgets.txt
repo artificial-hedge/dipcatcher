@@ -6,10 +6,10 @@
 # (see test_budget_never_exceeds_its_frozen_ceiling).
 fx1/cli_audit.py 4942
 fx1/sdk.py 4532
-fx1/serve/api.py 11333
+fx1/serve/api.py 11348
 fx1/serve/api_audit.py 11073
 fx1/serve/client.py 3544
-fx1/serve/openai_compat.py 3315
+fx1/serve/openai_compat.py 3317
 fx1/serve/parity_audit.py 4513
 fx1/serve/vs_audit.py 2291
 quant_fund/cli/research_cmds.py 4442

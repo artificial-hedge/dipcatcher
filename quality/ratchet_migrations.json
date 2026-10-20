@@ -47,13 +47,6 @@
       "rationale": "c8bff364d (4469\u21924495) and the user's PR #2998 (TLS for external endpoints) growing the SDK to 4532. The auth-header seam moved and 37 lines of new TLS probe code were added. Owed a split of the receipt-verification surface and the TLS-probe surface out of the SDK module."
     },
     {
-      "path": "fx1/serve/api.py",
-      "from": 10963,
-      "to": 11333,
-      "issue": 2991,
-      "rationale": "c8bff364d (10963\u219211005) and the user's PRs #2999 (source-map-js update) and #3001 (Flash hardening) growing the route table by 328 lines. Owed a split of the route table into per-domain routers."
-    },
-    {
       "path": "fx1/serve/api_audit.py",
       "from": 11037,
       "to": 11073,
@@ -66,13 +59,6 @@
       "to": 3544,
       "issue": 2991,
       "rationale": "c8bff364d (3535\u21923544) only. The polling/replay-cursor surface is now 9 lines over the pre-growth pin. Owed a split of the polling/replay-cursor surface out of the client module."
-    },
-    {
-      "path": "fx1/serve/openai_compat.py",
-      "from": 3258,
-      "to": 3315,
-      "issue": 2991,
-      "rationale": "c8bff364d (3258\u21923273) and 42 lines added by the user's PR #2999 (source-map-js security update: openai-compat surface). Owed a split of the chat-completions shim from the embeddings/tool shim."
     },
     {
       "path": "quant_fund/research/agent.py",
@@ -101,6 +87,20 @@
       "to": 7591,
       "issue": 2991,
       "rationale": "Generated file (scripts/canon_qualify.py --emit-retired-families), not human-edited. The regeneration is the appropriate size-tuning mechanism. The module is exempt from human-driven shrinking (a shrink is meaningful only when it means a non-generated file is being trimmed). Pinning the current generated size keeps the ratchet honest about what is owed if the file grows further."
+    },
+    {
+      "path": "fx1/serve/api.py",
+      "from": 10963,
+      "to": 11348,
+      "issue": 2991,
+      "rationale": "c8bff364d (10963->11005) and the user PRs #2999 (source-map-js update) and #3001 (Flash hardening) growing the route table by 328 lines. WP-4M re-applied the score_threshold range-check fix (PR #2945 had reverted 7de48f564), adding a 13-line range check + comment in openai_vectorstore_search. Owed the same route-table split as the prior 11333 ceiling (per-domain routers)."
+    },
+    {
+      "path": "fx1/serve/openai_compat.py",
+      "from": 3258,
+      "to": 3317,
+      "issue": 2991,
+      "rationale": "c8bff364d (3258\u21923273) and 42 lines added by the user's PR #2999 (source-map-js security update: openai-compat surface). Owed a split of the chat-completions shim from the embeddings/tool shim.\n\nWP-4M re-applied the score_threshold range-check fix, trimming 2 lines (removed range check) and adding 4 (comment + from-line) in OpenAIVectorStoreSearch._valid. Net +2 lines over the prior 3315 ceiling."
     }
   ],
   "arch_baselines": [

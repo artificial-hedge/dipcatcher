@@ -8170,13 +8170,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         cosine floor."""
         query = body.query if isinstance(body.query, str) else " ".join(str(q) for q in body.query)
         ro = body.ranking_options or {}
+        # Out-of-range score_threshold is checked here (not in the
+        # pydantic model) so the wire response is the 400 +
+        # ``invalid_filters`` contract the SYNTHETIC audit pins (see
+        # test_vs_audit.py ``search_score_threshold_range_400``).
+        # Pydantic's RequestValidationError lands 422 + ``validation``,
+        # which is the wrong code for a filter-range rejection.
+        st = ro.get("score_threshold")
+        if st is not None and not 0.0 <= float(st) <= 1.0:
+            raise _vs_err(
+                VectorStoreError(
+                    400, "score_threshold must be a number in [0, 1]", "invalid_filters"
+                )
+            )
         try:
             hits = vs_store.search(
                 [vector_store_id],
                 query,
                 max_results=body.max_num_results or 10,
                 filters=body.filters,
-                score_threshold=ro.get("score_threshold"),
+                score_threshold=st,
             )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
