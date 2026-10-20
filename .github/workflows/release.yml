@@ -48,7 +48,6 @@ jobs:
   build:
     needs: preflight
     name: Build, SBOM, sign, attest
-    needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
