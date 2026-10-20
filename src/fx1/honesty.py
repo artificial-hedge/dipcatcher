@@ -263,7 +263,11 @@ def honesty_categories(text: str) -> dict[str, bool]:
 
 
 _LABEL_TOKEN = re.compile(
-    r"\b(?:sharpe|sortino|calmar|nav|pnl|p\s*(?:n|&|\+|and|/)\s*l|profit\s*(?:and|&)\s*loss)\b",
+    r"\b(?:"
+    + "|".join(
+        _TOKEN_SPELLINGS.get(token, re.escape(token)) for token in sorted(FORBIDDEN_HEADLINE_TOKENS)
+    )
+    + r")\b",
     re.IGNORECASE,
 )
 MODEL_TEXT_WITHHELD = "answer withheld by the fx-1 honesty gate. Ask a follow-up to continue."
@@ -278,7 +282,11 @@ def _fails(text: str) -> bool:
 
 
 def public_label(text: str) -> str:
-    """Server-supplied identifier safe to print beside counts and latencies."""
+    """Server-supplied identifier safe to print beside counts and latencies.
+
+    A forbidden metric word is replaced. Research prose uses
+    :func:`validate_fx1_output` instead; bare discussion stays allowed there.
+    """
     if _fails(text) or _LABEL_TOKEN.search(_normalize(text)):
         return "withheld"
     return text
@@ -292,7 +300,12 @@ def scrub_model_text(text: str) -> str:
 
 
 def screen_piece(prior: Sequence[str], text: str) -> str:
-    """Accept *text* alone and joined to *prior* model/user turns."""
+    """Accept *text* alone and joined to *prior* model/user turns.
+
+    A prior turn that is already a violation does not block a clean addition.
+    A prior turn that is clean on its own but becomes a headline once *text*
+    is appended is withheld.
+    """
     if _fails(text):
         return MODEL_TEXT_WITHHELD
     if not prior:
