@@ -1,10 +1,10 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `ac4e3d3df` (2026-10-20 UTC), then this integrator stamp.  
+**Measured at:** `origin/main` `dfdc384fd` (2026-10-20 UTC), then this integrator stamp.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
-**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c` (`mkdocs build --strict` exit 0; eleven inventory files stay in `docs/` and `exclude_docs`; DIP_CONCIERGE heading restored). Arch-guards lineage import fix landed at `ac4e3d3df`.
+**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `73885abc8`/`dfdc384fd`. **gitleaks PARKED** (historical). **SonarCloud PARKED** (leak-period backlog). **fx1-required / fx1-coverage / test still REMAINING.**
 
 **Landed sibling work (on `main`):**
 
@@ -26,6 +26,8 @@
 | Recovered | `c4b8fe993` | Interrupted Ledger / tiny_lm / frontdoor / isolation stack rewritten onto `main` (needs-stamp on recovered SHAs). |
 | Docs strict | `58907c62c` | **PASS.** `exclude_docs` omits eleven inventory pages; `DIP_CONCIERGE.md` Known limitations heading restored; `mkdocs.yml` jewel mutated. Sibling report: `mkdocs build --strict` exit 0. |
 | Arch-guards | `ac4e3d3df` | Lineage imports via `quant_fund.utils`; `superpower.py` jewel mutated; `doctor.py` / `gen_arch_diagrams.py` / tests touched. |
+| fx1 mypy | `73885abc8` | **PASS (mypy `src/fx1`).** Strict types + public-serve fixture refusal. Jewels: `harness.py`, `concierge.py`, `superpower.py`. |
+| Diagrams | `dfdc384fd` | **PASS.** Atlas/manifest/module_deps bound to split modules; `gen_arch_diagrams.py` updated. |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -42,8 +44,13 @@ These are real on clean `main` at `7c6338549`; fixing them is engineering work, 
 | **Interactive ruff** | **GREEN** | `ruff check src/fx1/interactive` clean. |
 | **KX-7Q-1 line budget** | **PASS** | At `c5b40ff00`: `research_cmds.py` 4305=pin; `concierge.py` 1938<2000. |
 | **Docs strict** | **PASS** | At `58907c62c`: inventories excluded from published site; heading restored. |
-| **Crown jewels** | **re-pin this stamp** | `mkdocs.yml` at `58907c62c`; `superpower.py` at `ac4e3d3df`. Re-pinned here. |
-| **Epoch chains** | **stamp this pass** | `src`, `tests`, `scripts` (arch-guards), `docs` (strict + this file), `quality` (jewels + heads). `data/manifests` **not** chained. |
+| **Diagrams** | **PASS** | At `dfdc384fd`: atlas anchors bound to split modules. |
+| **mypy `src/fx1`** | **PASS** | Clean on `73885abc8` / `dfdc384fd`. |
+| **gitleaks** | **PARKED** | Historical findings; not a current-tree gate fail. |
+| **SonarCloud** | **PARKED** | Leak-period backlog; not a production-readiness flip. |
+| **fx1-required / fx1-coverage / test** | **REMAINING** | Not verified green on a completed CI run of this SHA. |
+| **Crown jewels** | **re-pin this stamp** | `harness.py`, `concierge.py`, `superpower.py` at `73885abc8`. Re-pinned here. |
+| **Epoch chains** | **stamp this pass** | `src` (mypy), `docs` (atlas + this file), `scripts` (diagrams), `quality` (jewels + heads). `data/manifests` **not** chained. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
 | **FX-1A coverage** | **NOT VERIFIED** | Floor 90 in ratchet; end-to-end `make fx1-coverage` not re-run this pass. |
@@ -83,3 +90,4 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `c4b8fe993` | Recovered stack landed; KX-7Q-1 still over line budget; this pass stamps jewels + drifted chains only. |
 | 2026-10-20 | `c5b40ff00` | **KX-7Q-1 PASS.** Integrator re-pins `concierge.py` jewel and stamps src/docs/quality. |
 | 2026-10-20 | `58907c62c` / `ac4e3d3df` | **Docs strict PASS.** Re-pin `mkdocs.yml` + `superpower.py`; stamp drifted chains. |
+| 2026-10-20 | `dfdc384fd` | **Diagrams PASS.** Re-pin harness/concierge/superpower; stamp src/docs/scripts/quality. mypy `src/fx1` clean. gitleaks/SonarCloud parked. fx1 jobs remaining. |
