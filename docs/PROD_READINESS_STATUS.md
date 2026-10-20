@@ -1,6 +1,6 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `348f4e850` (2026-10-20 UTC). Prior doc: `b9436894a`.  
+**Measured at:** `origin/main` `7c6338549` (2026-10-20 UTC). Prior doc: `abc5fcc28`.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
@@ -20,6 +20,7 @@
 | Leftovers | `46a3fb91e` | `popen_cancellable` restored on `fx1.harness`; `test_harness_cancel` collects/passes. Family selector summary includes **Evidence (harness-verified)**; superpower test **passed**. |
 | Leftovers | `8a59e26d8` | `quant_fund/research/` McCabe **clean** (refactor splits); `quality/mccabe_baseline.txt` entries **lowered/removed only** — not raised. |
 | Leftovers | `348f4e850` | Repo-wide **`make lint` GREEN** (ruff + format + mypy strict allowlist + McCabe ratchet ok, **1082** baselined functions). Baseline entries **lowered/removed only** (`5e2b039b6` / `348f4e850` splits). |
+| Leftovers | `7c6338549` | Test regression cleanup: sim-live **`--config`** restored (`@command` on `sim_live`); `test_cli_main_cov -k sim_live` **5 passed**. `tests/fx1/test_superpower.py` **68 passed** (`score_cmds` import, `FamilyCatalog`, `allow_web` opt-in). `test_contract_still_accepts_legacy_bodies` **passed** (legacy headline trust; skipped rows not counted equal). |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -27,23 +28,23 @@ Supporting lists: [`D1_02_EPOCH_ACK_INVENTORY.md`](D1_02_EPOCH_ACK_INVENTORY.md)
 
 ## Remaining code follow-ups (agent-owned, not H1–H7)
 
-These are real on clean `main` at `348f4e850`; fixing them is engineering work, not owner key ceremony.
+These are real on clean `main` at `7c6338549`; fixing them is engineering work, not owner key ceremony.
 
 | Area | Status | Command / note |
 |---|---|---|
-| **Lint** | **GREEN** | `make lint` at `348f4e850` exit **0** (ruff, format, mypy allowlist, McCabe ratchet **1082** functions). |
-| **Pytest** | **RED** | `tests/unit/cli/test_cli_main_cov.py` sim-live: **No such option: `--config`**. Several `tests/fx1/test_superpower.py` coordination/cancel failures. **Pre-existing:** `tests/unit/research/test_replay_binding.py::test_contract_still_accepts_legacy_bodies`. |
-| **Interactive ruff** | **GREEN** | `ruff check src/fx1/interactive` clean (since `48c79ce44`). |
+| **Lint** | **GREEN** | `make lint` at `7c6338549` exit **0** (re-checked this pass). |
+| **Targeted pytest** | **GREEN** | sim-live, superpower (68), replay_binding legacy contract — fixed at `7c6338549`. **Full** `make test` / all CI shards **not** verified green locally. |
+| **Interactive ruff** | **GREEN** | `ruff check src/fx1/interactive` clean. |
 | **Crown jewels** | **RED** | `uv run quant crown-jewels --check` → `jewel_mutated` (e.g. `AGENTS.md`, `Makefile`, `pyproject.toml`, `corpus_epoch.py`, `repo_integrity.py`, `tests/conftest.py`, …) + `jewel_unpinned` ed25519 helpers. |
 | **Epoch chains** | **RED** | `verify-repo` epoch forks/multiple heads on `src`/`tests`/`docs`; digest drift on `scripts`, `quality`, `.github/workflows`; unstamped scripts/docs members. Needs integrator stamp pass **after** H1 or coordinated re-pin — **not done here**. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
-| **FX-1A coverage** | **NOT VERIFIED** | Floor raised to 90 in ratchet; full `make fx1-coverage` blocked by collection errors above. |
+| **FX-1A coverage** | **NOT VERIFIED** | Floor 90 in ratchet; end-to-end `make fx1-coverage` not re-run this pass. |
 
 ## Exit criteria
 
-1. **RED** — No completed all-green CI on `main`. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 10`. Latest at measure: **pending** https://github.com/artificial-hedge/dipcatcher/actions/runs/39407250669 (`3cab21659`). Prior pushes mostly **cancelled** mid-queue; last old completed run still **failure** https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317.
-2. **GREEN (lint)** / **RED (tests)** — `make lint` **passes** at `348f4e850`. Test suite still **red** (sim-live CLI `--config`, superpower coordination/cancel, replay_binding legacy bodies). `test_modules_stay_under_max_lines` **passes**.
+1. **RED** — No completed all-green CI on `main`. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 10`. Latest at measure: **pending** https://github.com/artificial-hedge/dipcatcher/actions/runs/39412018652 (`7c6338549`). Prior pushes mostly **cancelled** mid-queue; no new all-green completed run. Older completed failure: https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317.
+2. **GREEN (lint + targeted tests)** — `make lint` **passes** at `7c6338549`. Documented regression tests **pass** (sim-live, superpower, replay_binding). **Not** a claim that full CI / entire catalog is green.
 3. **RED** — `uv run quant verify-repo` at `48c79ce44` (not re-run this micro-pass; prior at `3cab21659`): `crown_jewels` **FAIL**; `pin_signatures` **FAIL** `pin_drift` (expected until **H1**); `coverage_closure` **FAIL**; `timestamp_anchors` **stale age=20d** (ZR-9V-3 honest); epoch **FAIL** on multiple chains; `lattice` **ok**; `checkpoint`/`witness`/`spine` **ok**.
 4. **RED until H1** — `make evidence-audit` (seven trailing gates via `_ea`) blocked by jewel/pin/epoch redness. CI evidence-audit not green on latest runs.
 5. **PARTIAL** — Replay sweep policy (executed vs skipped headlines) landed (ZR-9V-4); tape-backed carriers skip without private bars; `mcs_vol` synthetic lane documented. No fresh all-green CI replay artifact at measure.
@@ -70,4 +71,5 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `a1e266414` | **Close-out:** all lanes recorded; HX-5D; no stamp. |
 | 2026-10-20 | `48c79ce44` | Leftover interactive lint + `test_research_banner`. |
 | 2026-10-20 | `46a3fb91e` / `8a59e26d8` | Harness cancel + superpower Evidence; research McCabe clean. |
-| 2026-10-20 | `348f4e850` | Repo-wide `make lint` green; pytest reds documented. |
+| 2026-10-20 | `348f4e850` | Repo-wide `make lint` green. |
+| 2026-10-20 | `7c6338549` | Test-regression cleanup; CI pending on `39412018652`. |
