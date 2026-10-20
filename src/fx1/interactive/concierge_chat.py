@@ -6,11 +6,13 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from fx1.harness import HARNESS_REGISTRY
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
-from fx1.interactive.chat_tools import chat_tool_schemas
+from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas
 from fx1.interactive.chat_tools import parse_tool_call as _parse_tool_call
 from fx1.interactive.chat_turn import cancel_chat_keyboard
 from fx1.interactive.concierge_console import _null
@@ -20,7 +22,29 @@ from fx1.interactive.endpoint import (
     explain_backend_error,
     format_guidance,
 )
+from fx1.interactive.model_ux import footer_lines, outbound_messages, scrub_transcript
 from fx1.interactive.orb import OrbAnimator, OrbState
+
+
+def _refuse_non_object_arguments(call: Mapping[str, Any]) -> str | None:
+    """Reject argument blobs that are not a JSON object before any tool runs.
+
+    :func:`parse_tool_call` stays lenient for hostile red-team payloads. The
+    chat loop still refuses ``{`` and ``[]`` before a flash write.
+    """
+    function = call.get("function")
+    if not isinstance(function, dict):
+        return None
+    raw = function.get("arguments")
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return "tool refused: arguments must be a JSON object"
+    if not isinstance(parsed, dict):
+        return "tool refused: arguments must be a JSON object"
+    return None
 
 
 class _ModelTurnError(Exception):
@@ -85,6 +109,25 @@ class ChatCommands:
 
     # -- plain chat ----------------------------------------------------------
 
+    def _prior_assistant_text(self) -> list[str]:
+        parts: list[str] = []
+        for message in self._messages:
+            if message.get("role") != "assistant":
+                continue
+            content = message.get("content")
+            if isinstance(content, str) and content:
+                parts.append(content)
+        return parts
+
+    def _screen_model_text(self, text: str) -> str:
+        from fx1.honesty import screen_piece
+
+        return screen_piece(self._prior_assistant_text(), text)
+
+    def _turn_cancelled(self) -> bool:
+        event = self._turn_cancel
+        return event is not None and event.is_set()
+
     def _chat_turn(self, text: str) -> None:
         backend = self._backend()
         if backend is None:
@@ -92,9 +135,14 @@ class ChatCommands:
                 f"no model endpoint configured — set one with `/keys set {self.model}`, or export "
                 "MOONSHOT_API_KEY / FX1_BASE_URL. Slash commands still work."
             )
+            self._assign_status("no_endpoint")
+            return
+        if self._turn_cancelled():
+            self._assign_status("cancelled")
+            self._say("model turn cancelled before completion")
             return
         start = len(self._messages)
-        self._messages.append({"role": "user", "content": text})
+        self._messages.append({"role": "user", "content": scrub_transcript(text)})
         try:
             self._run_chat_rounds(backend)
         except Fx1HonestyError as exc:
@@ -118,11 +166,31 @@ class ChatCommands:
         self._say("(tool loop budget exhausted — ask a follow-up to continue)")
 
     def _record_assistant(self, content: str) -> None:
-        self._messages.append({"role": "assistant", "content": content})
-        self._journal_turn("assistant", content)
-        self._say(content)
+        cleaned = scrub_transcript(content)
+        self._messages.append({"role": "assistant", "content": cleaned})
+        self._journal_turn("assistant", cleaned)
+        self._last_answer = cleaned
+        self._say(cleaned)
+        for line in footer_lines(self.model, None, None, None):
+            self._say(line)
+
+    def _reject_dirty_tool_calls(self, calls: Any) -> None:
+        from fx1.honesty import screen_piece
+
+        prior = self._prior_assistant_text()
+        for call in calls or ():
+            if not isinstance(call, dict):
+                continue
+            function = call.get("function")
+            if not isinstance(function, dict):
+                continue
+            arguments = function.get("arguments")
+            if isinstance(arguments, str) and screen_piece(prior, arguments) != arguments:
+                self._assign_status("withheld")
+                raise Fx1HonestyError("fx-1 output failed the honesty gate")
 
     def _record_tool_round(self, completion: Any) -> None:
+        self._reject_dirty_tool_calls(completion.tool_calls)
         self._messages.append(
             {
                 "role": "assistant",
@@ -175,10 +243,12 @@ class ChatCommands:
             del self._messages[start:]
 
     def _complete_with_tools(self, backend: Any, tools: list[dict[str, Any]]) -> Any:
+        cancel = self._turn_cancel
         with OrbAnimator(OrbState.COMPOSING, preset="inline") if self._animated else _null():
             return call_with_retries(
                 lambda: self._complete_once(backend, tools),
                 policy=self._retry_policy,
+                cancel_event=cancel,
                 on_retry=lambda n, g, d: self._say(
                     f"[model] retry {n}/{self._retry_policy.max_retries} in {d:.1f}s "
                     f"({g.failure}: {g.summary})"
@@ -187,11 +257,20 @@ class ChatCommands:
             )
 
     def _complete_once(self, backend: Any, tools: list[dict[str, Any]]) -> Any:
-        from fx1.interactive.model_client import ModelError
+        from fx1.interactive.model_client import ErrorKind, ModelError
+        from fx1.interactive.model_ux import backend_supports_cancel
 
+        if self._turn_cancelled():
+            raise OperationCancelled("model turn cancelled")
+        messages = outbound_messages(self._messages, self.model, tools=CHAT_TOOL_NAMES, mode="chat")
+        kwargs: dict[str, Any] = {"tools": tools, "tool_choice": "auto"}
+        if backend_supports_cancel(backend):
+            kwargs["cancel_event"] = self._turn_cancel
         try:
-            return backend.complete_with_tools(self._messages, tools=tools, tool_choice="auto")
+            return backend.complete_with_tools(messages, **kwargs)
         except ModelError as exc:
+            if exc.kind is ErrorKind.CANCELLED:
+                raise OperationCancelled("model turn cancelled") from exc
             raise _ModelTurnError(exc) from exc
 
     def _fail_model_turn(self, start: int, exc: Any) -> None:
@@ -209,10 +288,15 @@ class ChatCommands:
 
         try:
             grounded = chat_turn_mod.ground_summary(raw, verified_receipts=set())
-        except EvidenceError as exc:
+        except EvidenceError:
+            # Bare metric words are allowed in chat; only a headline, including
+            # one split across turns, is withheld. Evidence summaries stay stricter.
+            grounded = raw
+        screened = self._screen_model_text(grounded)
+        if screened != grounded:
             self._assign_status("withheld")
-            raise Fx1HonestyError("withheld") from exc
-        return validate_fx1_output(grounded)
+            raise Fx1HonestyError("fx-1 output failed the honesty gate")
+        return validate_fx1_output(screened)
 
     def _on_keyboard_interrupt(self) -> None:
         cancel_chat_keyboard(self)
@@ -229,6 +313,9 @@ class ChatCommands:
             return result
 
     def _execute_tool(self, call: dict[str, Any]) -> str:
+        refused = _refuse_non_object_arguments(call)
+        if refused is not None:
+            return refused
         try:
             name, arguments = _parse_tool_call(call)
         except ValueError as exc:
@@ -284,6 +371,9 @@ class ChatCommands:
             )
             self._say(refusal)
             return refusal
+        registered = {command.name for command in HARNESS_REGISTRY}
+        if harness_name not in registered:
+            return "unknown_command"
         try:
             return self._run_harness(harness_name, args_list)
         except (KeyError, ValueError) as exc:

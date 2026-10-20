@@ -60,6 +60,7 @@ from quant_fund.cli.capability_overlay import (
     EVIDENCE_CLASSES,
     FAIL_CLOSED_REASON,
     QUALIFICATION_STATUSES,
+    RESEARCH_ONLY_ID,
     RULESET,
     SCHEMA,
     overlay_sha256,
@@ -348,7 +349,7 @@ def _publish_phantoms(
         if ident in known:
             continue
         for entry in grouped[ident]:
-            cap, extra = _overlay_capability(entry, None, repo, root_tokens)
+            cap, extra = _overlay_capability(entry, None, repo, root_tokens, set(known))
             caps.append(cap)
             problems.extend(extra)
     return caps
@@ -359,11 +360,12 @@ def _overlay_capability(
     command: LabCommand | None,
     repo: Path | None,
     root_tokens: set[str],
+    known_ids: set[str] | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
     shape = _shape_problems(entry)
     if shape:
         return _malformed_capability(entry), shape
-    args, gates = _entry_gates(entry, command, repo, root_tokens)
+    args, gates = _entry_gates(entry, command, repo, root_tokens, known_ids)
     status = str(entry["qualification"]["status"])
     executable, reason = _decide(status, gates, in_overlay=True)
     executable, reason = _apply_force(entry, executable, reason)
@@ -380,11 +382,12 @@ def _entry_gates(
     command: LabCommand | None,
     repo: Path | None,
     root_tokens: set[str],
+    known_ids: set[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     problems = _class_problems(entry)
     problems.extend(_budget_problems(entry))
     if command is None:
-        return [], [*problems, *_phantom_gates(entry, root_tokens)]
+        return [], [*problems, *_phantom_gates(entry, root_tokens, known_ids or set())]
     args, arg_problems = _select_args(command, entry)
     problems.extend(arg_problems)
     problems.extend(_argv_mismatch(entry, command))
@@ -421,12 +424,21 @@ def _malformed_capability(entry: Mapping[str, Any]) -> dict[str, Any]:
     return cap
 
 
-def _phantom_gates(entry: Mapping[str, Any], root_tokens: set[str]) -> list[str]:
+def _phantom_gates(
+    entry: Mapping[str, Any], root_tokens: set[str], known_ids: set[str]
+) -> list[str]:
+    """A selective alias is real when its argv is an introspected lab command.
+
+    ``research-only`` is not its own Typer command. It stays executable when
+    ``research`` is, and the audit uses the same argv check.
+    """
     ident = str(entry["id"])
     argv = [str(part) for part in entry["command"]["argv"]]
-    problems = [f"{ident}: command argv is not a real lab command"]
+    problems: list[str] = []
     if not argv or argv[0] not in root_tokens:
         problems.append(f"{ident}: command.argv[0] is not a real lab command")
+    if " ".join(argv) not in known_ids:
+        problems.append(f"{ident}: command argv is not a real lab command")
     return problems
 
 
@@ -523,12 +535,36 @@ def _select_args(
     return kept, problems
 
 
+def _selective_only(ident: str, name: str) -> bool:
+    """``research-only`` publishes ``--only`` even though ``research`` does not."""
+    return ident == RESEARCH_ONLY_ID and name == "--only"
+
+
+def _selective_only_arg(ident: str, hint: object, problems: list[str]) -> dict[str, Any]:
+    base = {
+        "name": "--only",
+        "kind": "option",
+        "type": "str",
+        "required": False,
+        "repeatable": False,
+        "help": "Qualified family ids to run.",
+    }
+    applied = hint if isinstance(hint, dict) else None
+    if hint is not None and applied is None:
+        problems.append(f"{ident}: arg hint --only must be an object")
+    return _with_hint(base, applied, problems, f"{ident} --only")
+
+
 def _unknown_hint_problems(
     ident: str, hints: object, by_name: Mapping[str, Mapping[str, Any]]
 ) -> list[str]:
     if not isinstance(hints, dict):
         return []
-    return [f"{ident}: unknown arg hint: {name}" for name in hints if name not in by_name]
+    return [
+        f"{ident}: unknown arg hint: {name}"
+        for name in hints
+        if name not in by_name and not _selective_only(ident, str(name))
+    ]
 
 
 def _allowed_args(
@@ -542,6 +578,9 @@ def _allowed_args(
     for name in allowed:
         token = str(name)
         if token not in by_name:
+            if _selective_only(ident, token):
+                selected.append(_selective_only_arg(ident, hints.get(token), problems))
+                continue
             problems.append(f"{ident}: allowed_args names an unknown parameter: {token}")
             continue
         hint = hints.get(token)

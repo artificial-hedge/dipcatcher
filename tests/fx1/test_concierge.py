@@ -9,6 +9,7 @@ import io
 import json
 import os
 import threading
+from hashlib import sha256
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -61,12 +62,51 @@ class FakeHarnessResult:
         self.stderr = stderr
 
 
+_CATALOG_DOCUMENT: dict[str, Any] = {
+    "schema_version": 2,
+    "catalog_version": 2,
+    "receipt_schema_version": 2,
+    "required": ["conformal", "volatility", "tail", "ranking"],
+    "live_optional": ["candle_order_book"],
+    "live_optional_total": 1,
+    "exploratory_count": 0,
+    "retired_count": 7529,
+    "order": ["ranking", "volatility", "conformal", "tail"],
+    "forbidden_metric_keys": ["sharpe"],
+    "runner": {
+        "command": "research",
+        "selection": "config",
+        "execution_constraint": False,
+        "note": "per-family execution constraint is not supported yet",
+    },
+    "generated_at": "2026-10-12T03:00:00Z",
+}
+
+
+def _catalog_stdout(extra_args: list[str] | None) -> str:
+    payload = dict(_CATALOG_DOCUMENT)
+    if extra_args is None:
+        return json.dumps(payload)
+    request = extra_args[1]
+    omitted = ("a1_homotopy",)
+    requested = set(request.split(","))
+    payload["lookup"] = {
+        "request_sha256": sha256(request.encode("ascii")).hexdigest(),
+        "omitted_matches": [
+            name for name in omitted if sha256(name.encode("ascii")).hexdigest() in requested
+        ],
+    }
+    return json.dumps(payload)
+
+
 class FakeHarness:
     def __init__(self) -> None:
         self.calls: list[tuple[str, list[str] | None]] = []
 
     def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
         self.calls.append((name, extra_args))
+        if name == "research-families":
+            return FakeHarnessResult(0, _catalog_stdout(extra_args), "")
         if name == "families":
             goal = ""
             args = extra_args or []
@@ -1195,7 +1235,7 @@ def test_research_sync_wall_budget_bounds_stalled_transport(env: Path, tmp_path:
 
     researcher = StalledResearcher()
     concierge, out = make_concierge(tmp_path, researcher=researcher)
-    concierge._run_budget = RunBudget(max_wall_s=0.1)  # noqa: SLF001
+    concierge._wall_budget = RunBudget(max_wall_s=0.1)  # noqa: SLF001
     try:
         concierge.handle_line("/research slow search --sync")
         assert researcher.started.is_set()

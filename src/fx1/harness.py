@@ -88,6 +88,19 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         "Operational monitoring surface for the harness runtime.",
     ),
     _cmd(
+        "capabilities",
+        HarnessRole.VERIFICATION,
+        "Read-only capability contract catalog (dipcatcher.capabilities.v1). "
+        "Does not execute benches.",
+        timeout_s=120,
+    ),
+    _cmd(
+        "verify-receipt",
+        HarnessRole.VERIFICATION,
+        "Verify one sealed receipt: structure plus hash consistency.",
+        timeout_s=120,
+    ),
+    _cmd(
         "research-families",
         HarnessRole.VERIFICATION,
         "Read-only selectable family catalog with exploratory and retired counts as JSON.",
@@ -727,9 +740,43 @@ def _subprocess_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
 def _resolve_timeout(default_s: int, timeout_s: int | None) -> int:
     if timeout_s is None:
         return default_s
-    if timeout_s < 1:
-        raise ValueError(f"timeout_s must be >= 1, got {timeout_s}")
+    if isinstance(timeout_s, bool) or not isinstance(timeout_s, int) or timeout_s < 1:
+        raise ValueError(f"timeout_s must be a positive int, got {timeout_s!r}")
     return min(default_s, timeout_s)
+
+
+def _config_allowlist_root() -> Path:
+    """``configs/`` beside the nearest ancestor ``pyproject.toml``.
+
+    A symlinked ``configs`` directory is not an allowlist root: resolving it
+    would admit the link target. A checkout's nested ``configs/`` cannot
+    shadow that root. Outside a checkout, a real ``configs/`` at cwd is the
+    allowlist; otherwise the lab configs directory is.
+    """
+    current = Path.cwd().resolve()
+    saw_project = False
+    for candidate in (current, *current.parents):
+        if not (candidate / "pyproject.toml").is_file():
+            continue
+        saw_project = True
+        configs = candidate / "configs"
+        if configs.is_symlink():
+            raise ValueError("config path escapes the configs/ allowlist")
+        if configs.is_dir():
+            return configs.resolve()
+        break
+    if not saw_project:
+        local = Path.cwd() / "configs"
+        if local.is_symlink():
+            raise ValueError("config path escapes the configs/ allowlist")
+        if local.is_dir():
+            return local.resolve()
+    from quant_fund.utils.lab_paths import configs_dir as lab_configs_dir
+
+    root = lab_configs_dir()
+    if root.is_symlink():
+        raise ValueError("config path escapes the configs/ allowlist")
+    return root.resolve()
 
 
 class Harness:
@@ -742,19 +789,22 @@ class Harness:
         cancellable_runner: CancellableRunner | None = None,
     ) -> None:
         self._use_default_runner = runner is None and cancellable_runner is None
+        extended = runner if getattr(runner, "supports_extended", False) else None
         chosen: CancellableRunner
         if isinstance(runner, OwnedRunner):
             chosen = _adapt_owned_runner(runner)
-            self._use_default_runner = False
+            extended = runner
         elif runner is not None:
             chosen = _adapt_legacy_runner(runner)
         elif cancellable_runner is not None:
             chosen = cancellable_runner
-            self._use_default_runner = True
         else:
-            chosen = _adapt_owned_runner()
+            owned = OwnedRunner()
+            chosen = _adapt_owned_runner(owned)
+            extended = owned
             self._use_default_runner = False
         self._runner = chosen
+        self._extended = extended
         self._registry = {c.name: c for c in HARNESS_REGISTRY}
 
     def list_commands(self, role: HarnessRole | None = None) -> list[HarnessCommand]:
@@ -771,6 +821,33 @@ class Harness:
             )
         return self._registry[name]
 
+    def _invoke_runner(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        cancel_event: threading.Event | None,
+        *,
+        env_extra: Mapping[str, str] | None,
+        step: str | None,
+    ) -> RunnerOutcome:
+        extended = self._extended
+        if extended is None:
+            return self._runner(argv, timeout_s, cancel_event)
+        proc = extended(
+            argv,
+            timeout_s,
+            cancel_event=cancel_event,
+            env_extra=env_extra,
+            step=step,
+        )
+        return RunnerOutcome(
+            exit_code=proc.exit_code,
+            stdout=proc.stdout,
+            stderr=proc.stderr,
+            cancelled=bool(proc.cancelled),
+            timed_out=bool(proc.timed_out),
+        )
+
     def run(
         self,
         name: str,
@@ -779,20 +856,21 @@ class Harness:
         config: Path | None = None,
         cancel_event: threading.Event | None = None,
         timeout_s: int | None = None,
+        env_extra: Mapping[str, str] | None = None,
+        step: str | None = None,
     ) -> HarnessResult:
         """Execute a registered harness command, fail-closed on unknown names.
 
         Config paths are contained to the repo ``configs/`` directory, matching
         the lab API's allowlist posture. ``timeout_s`` may only tighten the
-        registry timeout. The default subprocess runner refuses to spawn when
-        ``dipcatcher`` is not on ``PATH``.
+        registry timeout captured at import. A two-argument runner still
+        receives only ``(argv, timeout_s)``. The default subprocess runner
+        refuses to spawn when ``dipcatcher`` is not on ``PATH``.
         """
         command = self.get(name)
-        effective_timeout = _resolve_timeout(command.timeout_s, timeout_s)
+        effective_timeout = _resolve_timeout(_TIMEOUT_CEILING[name], timeout_s)
         argv = list(command.argv)
-        from quant_fund.utils.lab_paths import configs_dir as lab_configs_dir
-
-        configs_dir = lab_configs_dir().resolve()
+        configs_dir = _config_allowlist_root()
 
         def check_contained(path: str) -> Path:
             resolved = Path(path).resolve()
@@ -806,7 +884,9 @@ class Harness:
             # --config passed through extra_args must obey the same
             # containment as the keyword arg — otherwise it is a bypass.
             for i, arg in enumerate(extra_args):
-                if arg == "--config" and i + 1 < len(extra_args):
+                if arg == "--config":
+                    if i + 1 >= len(extra_args):
+                        raise ValueError("config path escapes the configs/ allowlist")
                     check_contained(extra_args[i + 1])
                 elif arg.startswith("--config="):
                     check_contained(arg.split("=", 1)[1])
@@ -814,7 +894,9 @@ class Harness:
         if self._use_default_runner and not default_runner_available():
             raise RuntimeError(_MISSING_EXECUTABLE)
         started = time.monotonic()
-        outcome = self._runner(argv, effective_timeout, cancel_event)
+        outcome = self._invoke_runner(
+            argv, effective_timeout, cancel_event, env_extra=env_extra, step=step
+        )
         duration_s = time.monotonic() - started
         return HarnessResult(
             command=name,

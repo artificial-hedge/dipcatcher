@@ -211,7 +211,7 @@ def test_chat_resume_flag_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
     import sys
 
     from dipcatcher_cli.app import main
-    from fx1.interactive import concierge as concierge_module
+    from fx1.interactive import console as console_module
 
     seen: dict[str, object] = {}
 
@@ -220,7 +220,7 @@ def test_chat_resume_flag_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
         seen["resume"] = resume
         seen["explicit"] = model_explicit
 
-    monkeypatch.setattr(concierge_module, "run_console", fake)
+    monkeypatch.setattr(console_module, "run_console", fake)
     monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     main(["chat", "--model", "fx1-lite", "--resume"])

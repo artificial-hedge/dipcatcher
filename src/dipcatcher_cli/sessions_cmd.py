@@ -882,7 +882,7 @@ def _require_model(model: str) -> str:
 
 
 def _load_run_console() -> Callable[..., None]:
-    from fx1.interactive.concierge import run_console
+    from fx1.interactive.console import run_console
 
     return run_console
 

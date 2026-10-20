@@ -34,10 +34,15 @@ _FORBIDDEN_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     for p in (
         r"\blive[-\s]+(?:trading[-\s]+)?(?:p(?:&|and|n)l|profits?|returns?|gains?)\b",
         r"\b(?:p(?:&|and|n)l|profits?|returns?|gains?)\s+(?:from|of)\s+live[-\s]+(?:trading|markets?|accounts?)\b",
+        r"\blive\s+(?:account|performance|trading)\b[\w\s]{0,40}\d",
+        r"\bin\s+live\s+trading\b[\w\s]{0,40}\d",
         r"\breal[-\s]+money\s+(?:returns?|gains?|profits?)\b",
         r"\bguaranteed\s+(?:returns?|alpha|profits?)\b",
+        r"\bguaranteed\b[\w\s%$.,]{0,24}\d[\w\s%$.,]{0,16}\b(?:returns?|alpha|profits?)\b",
+        r"\b(?:returns?|alpha|profits?)\b[\w\s%$.,]{0,24}\d[\w\s%$.,]{0,16}\bguaranteed\b",
         r"\bsynthetic\s+(?:results?|data|evidence|series|benchmarks?|backtests?)\s+"
         r"(?:shows?|proves?|demonstrates?)\s+(?:live|real|market)\b",
+        r"\bsynthetic\s+market\s+backtests?\s+shows?\b",
     )
 )
 
@@ -62,7 +67,15 @@ _FUSION_BREAK = re.compile(
 # space before a number ("nav's 1.9") must survive or the token fuses with
 # the claim. Ordinary text ("the cat sat", "I said") is unaffected.
 _SPACED_LETTERS = re.compile(r"(?<=\b[A-Za-z])\s+(?=[A-Za-z]\b(?!/))")
-_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z])(?=[A-Z])")
+# Prefix is case-insensitive; the suffix must be a real capital so
+# "navigation" and "pnl" inside a lowercase word stay one token.
+_GLUED_METRIC = re.compile(r"(?P<pre>(?i:sharpe|sortino|calmar|pnl|nav))(?P<post>[A-Z][A-Za-z]*)")
+_LETTER_RUN = re.compile(r"\b(?:[A-Za-z][.\-*]){2,}[A-Za-z]\b")
+# A glued decimal is a headline ("sharpe3.2"). A glued integer ("sharpe3") is not.
+_METRIC_DIGIT = re.compile(
+    r"\b(sharpe|sortino|calmar|pnl|nav)(?=\d+\.\d)",
+    re.IGNORECASE,
+)
 
 # Cyrillic/Greek letters that NFKC does not fold to Latin but that render
 # identically. Mapped to their Latin lookalike before matching; legitimate
@@ -126,14 +139,26 @@ def _normalize(text: str) -> str:
     # Fold lookalikes before ASCII-only boundary and spaced-letter handling:
     # a Cyrillic final e must preserve the same boundary as a Latin e.
     folded = unicodedata.normalize("NFKC", text).translate(_HOMOGLYPHS)
+    folded = re.sub(r"profitAndLoss", "profit and loss", folded, flags=re.IGNORECASE)
+    folded = re.sub(r"netAssetValue", "net asset value", folded, flags=re.IGNORECASE)
     folded = _FUSION_BREAK.sub(" ", folded)
     folded = _FORMAT_CHARS.sub("", folded)
-    folded = _CAMEL_BOUNDARY.sub(" ", folded)
+    folded = _GLUED_METRIC.sub(lambda match: f"{match.group('pre')} {match.group('post')}", folded)
     # The honesty-flag identifier is not a headline. Fuse it before
     # underscore folding so ``live_pnl_claim`` cannot be read as "live pnl".
     folded = re.sub(r"live_pnl_claim", "livepnlclaim", folded, flags=re.IGNORECASE)
     folded = folded.replace("_", " ")
-    return _SPACED_LETTERS.sub("", folded)
+    folded = _LETTER_RUN.sub(_collapse_letter_run, folded)
+    folded = _SPACED_LETTERS.sub("", folded)
+    return _METRIC_DIGIT.sub(r"\1 ", folded)
+
+
+def _collapse_letter_run(match: re.Match[str]) -> str:
+    """Join ``s.h.a.r.p.e`` / ``s-h-a-r-p-e`` when the letters are a headline token."""
+    letters = re.sub(r"[.\-*]", "", match.group(0))
+    if letters.lower() in FORBIDDEN_HEADLINE_TOKENS or letters.lower() == "pl":
+        return letters
+    return match.group(0)
 
 
 # Token spellings beyond the literal token. "pnl" admits the spelled forms
@@ -142,7 +167,7 @@ def _normalize(text: str) -> str:
 _TOKEN_SPELLINGS: dict[str, str] = {
     "pnl": (
         r"(?:p\s*(?:n|&|\+|and|/)\s*l|p/l|"
-        r"profits?[\s._-]+and[\s._-]+loss(?:es)?)"
+        r"profits?(?:[\s._-]+(?:and|&)[\s._-]+|[\s._-]*&[\s._-]*)loss(?:es)?)"
     ),
     "nav": r"(?:n\.?\s*a\.?\s*v\.?|net[\s._-]+asset[\s._-]+values?)",
 }
@@ -153,7 +178,7 @@ _TOKEN_SPELLINGS: dict[str, str] = {
 _CONNECTOR = (
     r"(?:of|=|:|is|was|were|are|at|to|reads?|hits?|reached?|posts?|posted|"
     r"lands?|landed|clocks?|clocked|prints?|printed|records?|recorded|"
-    r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+(?:in|out)\s+at|"
+    r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+out(?:\s+at)?|came\s+in\s+at|equals?|"
     r"the|a|an|this|that|its|our|your|their|my|about|roughly|approximately|"
     r"around|over|under|above|below|current(?:ly)?|latest|reported|expected|"
     r"projected|implied|delivered|generated|produced|whole|all|entire|same|"
@@ -191,12 +216,16 @@ def _contains_forbidden_headline(text: str) -> str | None:
     """
     for token in FORBIDDEN_HEADLINE_TOKENS:
         spelling = _TOKEN_SPELLINGS.get(token, re.escape(token))
-        pattern = re.compile(
+        ahead = re.compile(
             rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{_BRIDGE}|{_CONNECTOR})\s*){{0,6}}"
             rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )
-        if pattern.search(text):
+        behind = re.compile(
+            rf"(?<![\w.])[-+$]?\d[\d,]*(?:\.\d+)?%?\s+{spelling}\b",
+            re.IGNORECASE,
+        )
+        if ahead.search(text) or behind.search(text):
             return token
     return None
 

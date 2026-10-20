@@ -264,7 +264,11 @@ class LocalWeightsEngine:
         placeholder = card.eval_delta.is_placeholder
         if synthetic_fixture and not placeholder:
             raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
-        if enforce_ship_gate and not card.ship_eligible and not synthetic_fixture:
+        if not synthetic_fixture and card.fixture_only:
+            from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
+
+            require_nonfixture_or_test_opt_in(card)
+        if enforce_ship_gate and not card.ship_eligible and not synthetic_fixture and not card.fixture_only:
             detail = " (placeholder eval_delta is not measured evidence)" if placeholder else ""
             raise RuntimeError(
                 f"{card.version} failed the ship gate{detail}; refusing to serve its weights"
@@ -585,6 +589,10 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
+    if not (args.synthetic_fixture or synthetic_fixture_from_env()):
+        from fx1.serve.release_gate import require_loopback_engine_bind
+
+        require_loopback_engine_bind(args.host)
     env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "")
     root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
     if args.checkpoint_dir is None and not env_dir:

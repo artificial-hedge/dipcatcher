@@ -119,7 +119,7 @@ def test_n_tasks_validated():
 
 
 def test_registry_reused_live_from_fx1_harness():
-    assert len(REGISTERED_TOOLS) == 24  # includes the read-only research-families catalog
+    assert len(REGISTERED_TOOLS) == 33  # research-families, capabilities, verify-receipt
     assert tuple(c.name for c in HARNESS_REGISTRY) == REGISTERED_TOOLS
 
 

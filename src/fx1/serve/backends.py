@@ -27,7 +27,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
@@ -203,7 +203,9 @@ def _apply_byok_destination_policy(request: _ByokRequest) -> None:
 
 
 def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
-    address = ipaddress.ip_address(raw.split("%", 1)[0])
+    if "%" in raw:
+        raise ValueError("zone identifiers are not accepted on literal addresses")
+    address = ipaddress.ip_address(raw)
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
         return address.ipv4_mapped
     return address
@@ -473,6 +475,8 @@ def _openai_chat_complete(
         raise RuntimeError(
             f"malformed {label} completion payload: content is {type(content).__name__}, not str"
         )
+    if label in {"hosted_k3", "local_fx1"}:
+        _require_served_model(payload, model)
     return content, _extract_usage(payload)
 
 
@@ -676,6 +680,8 @@ def _openai_chat_complete_tools(
             f"malformed {label} completion payload: logprobs is "
             f"{type(raw_lp).__name__}, not object|null"
         )
+    if label in {"hosted_k3", "local_fx1"}:
+        _require_served_model(payload, model)
     return (
         ToolCompletion(
             content=content,
@@ -759,6 +765,12 @@ def _openai_chat_stream(
                 delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
                 if not isinstance(delta, dict):
                     raise RuntimeError(f"malformed {label} stream chunk: missing delta")
+                if (
+                    label in {"hosted_k3", "local_fx1"}
+                    and isinstance(chunk, dict)
+                    and "model" in chunk
+                ):
+                    _require_served_model(chunk, model)
                 content = delta.get("content")
                 if content is None:
                     continue
@@ -1051,10 +1063,14 @@ class HostedK3Backend(_UsageTracker):
         messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
+        timeout_s: float | None = None,
     ) -> str:
         # temperature defaults to 0 — eval/teacher runs must be
         # deterministic; unpinned sampling makes eval results
         # unreproducible across replays.
+        if timeout_s is not None and timeout_s <= 0:
+            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        limit = self._timeout_s if timeout_s is None else timeout_s
         body = json.dumps(
             {
                 "model": self._model,
@@ -1072,7 +1088,7 @@ class HostedK3Backend(_UsageTracker):
             method="POST",
         )
         try:
-            with _openai_urlopen(request, timeout_s=self._timeout_s) as response:
+            with _openai_urlopen(request, timeout_s=limit) as response:
                 payload = json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
             raise RuntimeError(f"hosted_k3 endpoint returned HTTP {exc.code}") from exc
@@ -1089,6 +1105,7 @@ class HostedK3Backend(_UsageTracker):
             raise RuntimeError(
                 f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
             ) from exc
+        _require_served_model(payload, self._model)
         content = payload["choices"][0]["message"]["content"]
         if not isinstance(content, str):
             raise RuntimeError(
@@ -1241,6 +1258,15 @@ class HostedK3Backend(_UsageTracker):
         )
 
 
+def _require_served_model(payload: Mapping[str, Any], requested: str) -> None:
+    """Refuse a completion whose served model is not the one we asked for."""
+    served = payload.get("model")
+    if served != requested:
+        raise RuntimeError(
+            f"response model {served!r} does not match requested model {requested!r}"
+        )
+
+
 def hosted_api_url_problem(url: str) -> str | None:
     """Why a credentialed hosted-model URL is unsafe — ``None`` when safe.
 
@@ -1264,6 +1290,8 @@ def hosted_api_url_problem(url: str) -> str | None:
         return "port must be 1-65535"
     if port is not None and not 0 < port < 65536:
         return "port must be 1-65535"
+    if "%" in url or "\\" in url:
+        return "must use HTTPS unless the host is a literal loopback address"
     host = parsed.hostname
     if not host:
         return "must name a host"
@@ -1496,8 +1524,8 @@ def _expected_weights_sha_from_manifest(root: Path) -> str | None:
         return None
     try:
         manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
+    except (OSError, ValueError) as exc:
+        raise RuntimeError(f"cannot read weights manifest: {type(exc).__name__}") from exc
     sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
     return sha if isinstance(sha, str) else None
 
@@ -1527,8 +1555,12 @@ def _load_local_fx1_card(
     placeholder = card.eval_delta.is_placeholder
     if synthetic_fixture and not placeholder:
         raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
+    if not synthetic_fixture and card.fixture_only:
+        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
+
+        require_nonfixture_or_test_opt_in(card)
     gate = enforce_ship_gate if enforce_ship_gate is not None else enforce_ship_gate_from_env()
-    if gate and not card.ship_eligible and not synthetic_fixture:
+    if gate and not card.ship_eligible and not synthetic_fixture and not card.fixture_only:
         detail = (
             " (placeholder eval_delta is not measured evidence)"
             if placeholder
@@ -1668,43 +1700,49 @@ class LocalFx1Backend(_UsageTracker):
             return False
 
     def _verify_served_weights(self) -> None:
-        """Refuse to attach when the live engine serves different weights.
+        """Refuse to attach when the live engine is not this checkpoint.
 
-        A port answering ``/v1/models`` could be *any* engine — including
-        one holding another checkpoint. When the engine advertises the
-        fx-1 weights pin (as ``LocalWeightsEngine.describe`` does), it
-        must equal the sha256 this backend's checkpoint manifest pins;
-        otherwise the attach would silently serve the wrong model.
-        Engines that don't advertise the key can't be verified — attach
-        proceeds, same contract as before.
+        Every ensure re-probes ``/v1/models``. The served id must be the
+        requested model and, when a manifest pin exists, its weights SHA-256
+        must match. The probe uses the same opener as chat completions.
         """
-        if self._expected_weights_sha is None or not self._url:
+        if not self._url:
             self._verified_attach = True
             return
         parsed = urllib.parse.urlparse(self._url)
         probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
+        headers: dict[str, str] = {}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        request = urllib.request.Request(probe, headers=headers, method="GET")
         try:
-            with urllib.request.urlopen(probe, timeout=2) as resp:  # noqa: S310 — declared local engine  # nosec B310
-                payload = json.loads(resp.read())
-        except (urllib.error.URLError, OSError, ValueError):
-            return  # not up / not parseable — liveness is _engine_up's job
+            with _openai_urlopen(request, timeout_s=2) as response:
+                payload = json.loads(response.read().decode())
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"identity probe failed (HTTP {exc.code})") from exc
+        except (urllib.error.URLError, OSError, ValueError, UnicodeError) as exc:
+            raise RuntimeError(f"identity probe failed ({type(exc).__name__})") from exc
         data = payload.get("data") if isinstance(payload, dict) else None
-        for item in data or []:
-            fx1_meta = item.get("fx1") if isinstance(item, dict) else None
+        rows = data if isinstance(data, list) else []
+        matched: dict[str, Any] | None = None
+        for item in rows:
+            if isinstance(item, dict) and item.get("id") == self._model:
+                matched = item
+                break
+        if matched is None:
+            raise RuntimeError("identity probe did not report the requested model")
+        if self._expected_weights_sha is not None:
+            fx1_meta = matched.get("fx1")
             served_sha = fx1_meta.get("weights_sha256") if isinstance(fx1_meta, dict) else None
-            if served_sha is not None and served_sha != self._expected_weights_sha:
+            if served_sha != self._expected_weights_sha:
                 raise RuntimeError(
-                    f"local fx-1 engine at {probe} advertises weights_sha256 "
-                    f"{str(served_sha)[:16]}… but this backend's checkpoint "
-                    f"manifest pins {self._expected_weights_sha[:16]}… — "
-                    "refusing to attach to weights it did not verify"
+                    "weights SHA-256 advertised by the local engine does not match "
+                    "this checkpoint manifest"
                 )
         self._verified_attach = True
 
     def _ensure_engine(self) -> None:
-        """Spawn the engine from the serve template, once, and wait for it."""
-        if self._proc is not None or self._verified_attach:
-            return
+        """Spawn the engine from the serve template and re-check its identity."""
         if not self._serve_cmd:
             if self._engine_up():
                 self._verify_served_weights()

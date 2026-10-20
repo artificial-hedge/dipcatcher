@@ -207,6 +207,35 @@ fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty 
 fx1-coverage: ## fx-1 coverage ratchet ([tool.fx1.coverage] in pyproject.toml)
 	uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing -ra
 
+# Chat harness gate. Exit 0 does not close release gates P1-P7.
+EVIDENCE_DIR ?= data/dipcatcher-evidence
+
+dipcatcher-test: ## pytest tests/fx1 and the lab CLI contract
+	PYTHONPATH=src uv run pytest tests/fx1 tests/unit/cli -q -n auto --dist loadfile
+
+dipcatcher-journeys: ## YAML journeys under tests/fx1/journeys
+	PYTHONPATH=src uv run pytest tests/fx1/journeys -q
+
+dipcatcher-journeys-pty: ## PTY journey report (dipcatcher.journeys.v1)
+	PYTHONPATH=src uv run python scripts/dipcatcher_journeys_pty.py --out $(EVIDENCE_DIR)/journeys_pty.json
+
+dipcatcher-relevance: ## Relevance planner report (dipcatcher.relevance.v1)
+	PYTHONPATH=src uv run python scripts/dipcatcher_relevance.py --out $(EVIDENCE_DIR)/relevance.json
+
+dipcatcher-evidence: ## Latency, 60s soak, and wheel smoke; does not close P5 or P7
+	PYTHONPATH=src uv run python scripts/dipcatcher_latency.py --runs 30 --events 200 --out $(EVIDENCE_DIR)/latency.json
+	PYTHONPATH=src uv run python scripts/dipcatcher_soak.py --duration-s 60 --out $(EVIDENCE_DIR)/soak.json
+	PYTHONPATH=src uv run python scripts/dipcatcher_release_smoke.py --out $(EVIDENCE_DIR)/release_smoke.json --checksums $(EVIDENCE_DIR)/SHA256SUMS
+
+dipcatcher-gate: ## ruff, strict mypy, dipcatcher-test, journeys, relevance
+	uv run ruff check src/fx1 src/dipcatcher_cli tests/fx1
+	uv run ruff format --check src/fx1 src/dipcatcher_cli tests/fx1
+	uv run mypy --strict src/fx1 src/dipcatcher_cli
+	$(MAKE) dipcatcher-test
+	$(MAKE) dipcatcher-journeys
+	$(MAKE) dipcatcher-journeys-pty
+	$(MAKE) dipcatcher-relevance
+
 # --- PROOFCORE gates (DESIGN.md §9.3; additive — no existing target changed) -
 # Merge order: W5 lands last; the W1-W4 CLIs below exist once those waves merge.
 

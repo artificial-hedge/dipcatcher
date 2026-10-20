@@ -84,8 +84,17 @@ class ModelCard(BaseModel):
         return self
 
     @property
+    def is_synthetic_placeholder(self) -> bool:
+        """True for the labelled SYNTHETIC fixture card, not a measured release."""
+        if self.fixture_only or self.eval_delta.is_placeholder:
+            return True
+        return any(
+            "synthetic ship-gate placeholders" in limit.lower() for limit in self.known_limits
+        )
+
+    @property
     def ship_eligible(self) -> bool:
-        if any("synthetic ship-gate placeholders" in lim.lower() for lim in self.known_limits):
+        if self.is_synthetic_placeholder:
             return False
         return self.eval_delta.ship_eligible
 

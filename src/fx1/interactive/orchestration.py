@@ -1395,13 +1395,13 @@ def _config_dir() -> Path:
 
 
 def _resolve_run_id(ctx: SuperpowerContext) -> str:
-    if ctx.run_id is None:
+    if not ctx.run_id:
         return new_run_id()
     return require_id(ctx.run_id, "r")
 
 
 def _resolve_session(ctx: SuperpowerContext) -> str | None:
-    if ctx.session_id is None:
+    if not ctx.session_id:
         return None
     return require_id(ctx.session_id, "s")
 

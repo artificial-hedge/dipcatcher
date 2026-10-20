@@ -88,9 +88,11 @@ def _chat(args: Sequence[str]) -> None:
     )
     parser.add_argument(
         "--resume",
-        metavar="SESSION",
+        nargs="?",
+        const=True,
         default=None,
-        help="show a prior session's transcript (id or unique prefix) before chatting",
+        metavar="SESSION",
+        help="resume the latest session, or a prior transcript by id or unique prefix",
     )
     options = parser.parse_args(args)
     if not _interactive():
@@ -100,9 +102,10 @@ def _chat(args: Sequence[str]) -> None:
             "(dipcatcher superpower, dipcatcher sessions) for scripts"
         )
 
-    from fx1.interactive.concierge import run_console
+    from fx1.interactive.console import run_console
 
-    run_console(model=options.model, resume=options.resume)
+    model_explicit = any(token in {"--model", "--profile", "-p"} for token in args)
+    run_console(model=options.model, resume=options.resume, model_explicit=model_explicit)
 
 
 def _print_launcher_help() -> None:

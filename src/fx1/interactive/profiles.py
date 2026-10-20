@@ -284,6 +284,8 @@ def _normalize(entry: Mapping[str, str]) -> dict[str, str]:
 def _prepare_store_directory(path: Path) -> None:
     if os.name != "nt":
         path.parent.mkdir(parents=True, exist_ok=True)
+        if _owned_by_us(path.parent) and not path.parent.is_symlink():
+            _chmod_owned_dir(path.parent)
         return
     parent = _windows_config_parent(path)
     try:
@@ -578,14 +580,20 @@ def _prepare_config_dir(store: Path) -> None:
     if problem is not None:
         raise ValueError(problem)
     parent = store.parent
-    if os.name != "posix" or not parent.is_dir():
+    if os.name != "posix":
+        parent.mkdir(parents=True, exist_ok=True)
         return
+    created = False
+    if not parent.is_dir():
+        parent.mkdir(parents=True, exist_ok=True)
+        created = True
     mode = _posix_mode(parent)
-    if mode is None or mode & 0o077 == 0:
+    if not created and (mode is None or mode & 0o077 == 0):
         return
     if not _chmod_owned_dir(parent):
         raise ValueError("credentials directory is group or world accessible")
-    _note(store, "credentials directory permissions were tightened to 0700")
+    if not created:
+        _note(store, "credentials directory permissions were tightened to 0700")
 
 
 def _load(path: Path | None = None) -> dict[str, Any]:
@@ -694,23 +702,9 @@ def set_endpoint(
     *,
     path: Path | None = None,
 ) -> Path:
-    check_model(model)
-    api_key = api_key.strip()
-    if not api_key:
-        raise ValueError(f"empty API key for model {model!r}")
-    from fx1.serve.backends import hosted_api_url_problem
-
-    base = (base_url or "").strip() or default_base_url()
-    problem = hosted_api_url_problem(base)
-    if problem is not None:
-        raise ValueError(f"invalid base URL: {problem}")
-    payload = _load(path)
-    payload[model] = {
-        "api_key": api_key,
-        "base_url": base,
-        "set_at": datetime.now(UTC).isoformat(timespec="seconds"),
-    }
-    return _save(payload, path)
+    """Store *model*'s key and completion URL in the schema-v2 credentials file."""
+    saved, _spec = set_endpoint_spec(model, api_key, base_url, path=path)
+    return saved
 
 
 def remove_endpoint(model: str, *, path: Path | None = None) -> bool:
@@ -867,29 +861,15 @@ def resolve_endpoint_info(
 def resolve_endpoint(
     model: str, *, path: Path | None = None, environ: Mapping[str, str] | None = None
 ) -> tuple[str, str] | None:
-    """``(api_key, base_url)`` for *model* — stored wins, else the env."""
-    check_model(model)
-    env = os.environ if environ is None else environ
-    entry = _load(path).get(model)
-    if entry:
-        normalized = _normalize(entry)
-        if normalized["api_key"]:
-            from fx1.serve.backends import hosted_api_url_problem
+    """``(api_key, completion_url)`` for *model* — stored wins, else the env.
 
-            problem = hosted_api_url_problem(normalized["base_url"])
-            if problem is not None:
-                raise ValueError(f"invalid stored base URL: {problem}")
-            return normalized["api_key"], normalized["base_url"]
-    api_key = env.get(ENV_API_KEY)
-    if api_key:
-        from fx1.serve.backends import MOONSHOT_API_URL, hosted_api_url_problem
-
-        base_url = env.get(ENV_BASE_URL, MOONSHOT_API_URL)
-        problem = hosted_api_url_problem(base_url)
-        if problem is not None:
-            raise ValueError(f"invalid {ENV_BASE_URL}: {problem}")
-        return api_key, base_url
-    return None
+    The URL is the chat-completions route from :func:`resolve_endpoint_info`,
+    including v1 profiles that stored only a host or an API prefix.
+    """
+    resolved = resolve_endpoint_info(model, path=path, environ=environ)
+    if resolved is None:
+        return None
+    return resolved.api_key, resolved.completion_url
 
 
 def scrub_credentials(environ: Mapping[str, str] | None = None) -> dict[str, str]:

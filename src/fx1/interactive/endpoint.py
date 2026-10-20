@@ -53,6 +53,7 @@ class EndpointSpec:
 def normalize_endpoint(raw: str) -> EndpointSpec:
     """Return the canonical completion endpoint for *raw*."""
     cleaned = _clean_input(raw)
+    _reject_smuggled(cleaned)
     parsed = _parse_http_url(cleaned)
     _reject_decorations(cleaned, parsed)
     host = _host_name(parsed)
@@ -68,6 +69,18 @@ def normalize_endpoint(raw: str) -> EndpointSpec:
         host=host,
         route_added=route_added,
     )
+
+
+def _reject_smuggled(cleaned: str) -> None:
+    """Refuse escapes that urlparse would decode into a different host or path.
+
+    Percent-encoding, backslashes, dot segments, and a trailing DNS dot are
+    not part of a completion base. The reason never echoes the supplied text.
+    """
+    if "\\" in cleaned or "%" in cleaned:
+        raise EndpointError("endpoint must not contain escapes")
+    if "/../" in cleaned or cleaned.endswith("/..") or "/./" in cleaned or "./" in cleaned:
+        raise EndpointError("endpoint path must not contain dot segments")
 
 
 def _clean_input(raw: str) -> str:
@@ -572,7 +585,7 @@ def _attempt_loop[T](
             raise OperationCancelled(f"cancelled before attempt {attempt + 1}")
         try:
             return fn()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, OperationCancelled):
             raise
         except Exception as exc:
             guidance = explain_backend_error(exc, model=model)

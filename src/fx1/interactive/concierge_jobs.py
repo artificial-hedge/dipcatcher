@@ -35,6 +35,8 @@ class BackgroundJob:
         from fx1.interactive.redact import redact_text
 
         def on_event(event: str, detail: str) -> None:
+            if self.done_event.is_set():
+                return
             self.events.append((redact_text(event), redact_text(detail)))
 
         def target() -> None:
@@ -108,4 +110,13 @@ class JournaledApprovalGate(ApprovalGate):
         if isinstance(gate, cls):
             gate.journal = journal
             return gate
-        return cls(ask_fn=gate.ask_fn, records=gate.records, journal=journal)
+        return cls(
+            ask_fn=gate.ask_fn,
+            records=gate.records,
+            decide_fn=gate.decide_fn,
+            policy=gate.policy,
+            interactive=gate.interactive,
+            clock=gate.clock,
+            prompt_timeout_s=gate.prompt_timeout_s,
+            journal=journal,
+        )

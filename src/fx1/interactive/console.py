@@ -126,7 +126,7 @@ def run_console(
     input_fn: Callable[[str], str] = input,
     output_fn: Callable[..., None] = typer.echo,
     poll_timeout_s: float = 0.15,
-    resume: bool = False,
+    resume: bool | str | None = False,
     model_explicit: bool = False,
     engine: bool | None = None,
     caps_fn: Callable[[], TermCaps] | None = None,
@@ -150,6 +150,8 @@ def run_console(
     if not caps.unicode:
         _soften_stdio()
     safe_output = _guard_output(output_fn, caps)
+    resume_latest = resume is True
+    resume_id = resume.strip() if isinstance(resume, str) and resume.strip() else None
     from fx1.interactive.procs import terminal_stop_scope
 
     with terminal_stop_scope():
@@ -162,7 +164,8 @@ def run_console(
                 input_fn=input_fn,
                 output_fn=safe_output,
                 poll_timeout_s=poll_timeout_s,
-                resume=resume,
+                resume=resume_latest,
+                resume_id=resume_id,
                 model_explicit=model_explicit,
                 clock=_clock(clock),
                 interrupt_clock=_clock(interrupt_clock),
@@ -178,7 +181,8 @@ def run_console(
             input_fn=input_fn,
             output_fn=safe_output,
             poll_timeout_s=poll_timeout_s,
-            resume=resume,
+            resume=resume_latest,
+            resume_id=resume_id,
             model_explicit=model_explicit,
             telemetry_factory=telemetry_factory,
         )
@@ -194,6 +198,7 @@ def _run_engine(
     output_fn: Callable[..., None],
     poll_timeout_s: float,
     resume: bool,
+    resume_id: str | None,
     model_explicit: bool,
     clock: Callable[[], float],
     interrupt_clock: Callable[[], float],
@@ -219,6 +224,8 @@ def _run_engine(
         )
         _emit(tel, "console.start", _model_of(concierge, model))
         _emit_engine_banner(concierge, caps, output_fn)
+        if resume_id:
+            concierge.handle_line(f"/resume {resume_id}")
         reader, writer = _open_reader(
             caps, caps_fn, clock, input_fn, secret_fn, history_path, stream
         )
@@ -247,6 +254,7 @@ def _run_legacy(
     output_fn: Callable[..., None],
     poll_timeout_s: float,
     resume: bool,
+    resume_id: str | None,
     model_explicit: bool,
     telemetry_factory: Callable[[str], Telemetry] | None,
 ) -> None:
@@ -265,6 +273,8 @@ def _run_legacy(
         )
         _emit(tel, "console.start", _model_of(concierge, model))
         _legacy_banner(concierge, output_fn)
+        if resume_id:
+            concierge.handle_line(f"/resume {resume_id}")
         _legacy_loop(concierge, input_fn, output_fn, poll_timeout_s)
     except (EOFError, KeyboardInterrupt):
         _blank(output_fn)

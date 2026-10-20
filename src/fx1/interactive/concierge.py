@@ -35,6 +35,7 @@ import contextlib
 import dataclasses
 import inspect
 import json
+import select  # noqa: F401 — tests patch this module's select; the console shares it
 import shlex
 import sys  # noqa: F401 — tests patch this module's sys; console shares the object
 import threading
@@ -58,7 +59,7 @@ from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import BudgetExceeded, BudgetLedger, RunBudget
 from fx1.interactive.concierge_chat import ChatCommands
 from fx1.interactive.concierge_console import _null
-from fx1.interactive.concierge_console import run_console as run_console
+from fx1.interactive.concierge_console import _tty_polling_read as _tty_polling_read
 from fx1.interactive.concierge_data import DataCommands
 from fx1.interactive.concierge_display import (
     ApprovalTap as _ApprovalTap,  # noqa: F401 — historical name for red-team tests
@@ -95,6 +96,7 @@ from fx1.interactive.concierge_slash import (
 from fx1.interactive.concierge_slash import (
     suggest_slash as _suggest_slash,
 )
+from fx1.interactive.console import run_console as run_console
 from fx1.interactive.context_window import ContextBudget
 from fx1.interactive.data_ux import attachment_payload
 from fx1.interactive.diagnostics_ux import render_diagnostics, write_diagnostics_bundle
@@ -277,6 +279,13 @@ def _prompt_mark() -> str:
     return ">"
 
 
+def _stdout_color() -> bool:
+    """True when display may keep SGR. Tests patch this function."""
+    from fx1.interactive.concierge_display import stdout_color
+
+    return stdout_color()
+
+
 class Concierge(ChatCommands, DataCommands):
     """Conversational orchestrator; one instance per session."""
 
@@ -299,6 +308,8 @@ class Concierge(ChatCommands, DataCommands):
         retry_policy: RetryPolicy | None = None,
         catalog: FamilyCatalog | None = None,
         session_store: Any | None = None,
+        telemetry_emit: Callable[[str, Mapping[str, Any]], None] | None = None,
+        telemetry: Any = None,
         harness_validator: Any | None = None,
         usage_preset: UsageLimits | None = None,
     ) -> None:
@@ -348,7 +359,7 @@ class Concierge(ChatCommands, DataCommands):
         self._cancel_requested = False
         self._turn_cancel: threading.Event | None = None
         self._status_explicit = False
-        self._last_status = "ok"
+        self._last_status = "none"
         self._session_store = session_store
         self._harness_validator = harness_validator
         self._last_backend: Any = None
@@ -358,8 +369,12 @@ class Concierge(ChatCommands, DataCommands):
         self._budget_overrides: dict[str, Any] = {}
         self.resume_notice = ""
         self._corr_session = new_session_id()
-        self._telemetry_box: Any = None
-        self._telemetry: Callable[..., Any] | None = None
+        self._last_answer = ""
+        self._last_result: Any | None = None
+        self._telemetry_box = telemetry
+        if telemetry_emit is None and hasattr(telemetry, "as_emit"):
+            telemetry_emit = telemetry.as_emit()
+        self._telemetry = telemetry_emit
         self._usage_preset = usage_preset if usage_preset is not None else UsageLimits()
 
         def _forward_emit(event: str, fields: Mapping[str, Any]) -> None:
@@ -370,12 +385,37 @@ class Concierge(ChatCommands, DataCommands):
         self._emit = _forward_emit
 
     @property
+    def active_model(self) -> str:
+        """Selected model id, ``fx1`` or ``fx1-lite``."""
+        return self.model
+
+    @property
+    def last_answer(self) -> str:
+        """Validated text of the last chat turn, or the last superpower summary."""
+        return self._last_answer
+
+    @property
     def last_status(self) -> str:
         return self._last_status
 
     @property
+    def last_result(self) -> Any | None:
+        """Last superpower result, or None when superpower has not finished."""
+        return getattr(self, "_last_result", None)
+
+    @property
     def last_usage(self) -> dict[str, Any]:
         return {}
+
+    def cancel_turn(self) -> None:
+        """Cancel the in-flight model turn. Safe to call from another thread."""
+        with self._state_lock:
+            self._cancel_requested = True
+            event = self._turn_cancel
+            if event is None:
+                event = threading.Event()
+                self._turn_cancel = event
+            event.set()
 
     @property
     def last_latency_s(self) -> float:
@@ -410,6 +450,7 @@ class Concierge(ChatCommands, DataCommands):
         with self._state_lock:
             self._cancel_scope = True
             self._cancel_requested = False
+            self._turn_cancel = threading.Event()
 
     def _close_cancel_scope(self) -> None:
         with self._state_lock:
@@ -473,7 +514,7 @@ class Concierge(ChatCommands, DataCommands):
     # -- output helpers ------------------------------------------------------
 
     def _say(self, text: str = "") -> None:
-        self._output(_for_display(text))
+        self._output(_for_display(text, keep_color=_stdout_color()))
 
     def _say_error(self, exc: Exception) -> None:
         message = _for_display(f"error: {public_error(exc)}", keep_color=False)
@@ -792,7 +833,7 @@ class Concierge(ChatCommands, DataCommands):
         self._journal_call("model_switch", previous, model, host)
         if configured:
             self._say(
-                f"active model {model!r} @ {host}; conversation continues "
+                f"active model {model!r} @ {host}; conversation kept "
                 f"({len(self._messages)} messages kept); credentials stay in the store "
                 f"(chat client only — lab subprocesses do not inherit {profiles.ENV_API_KEY})"
             )
@@ -1350,12 +1391,18 @@ class Concierge(ChatCommands, DataCommands):
             "paper",
         }
         if consequential and not self._approvals.ask(
-            f"run harness command {name!r} (consequential)?", kind="consequential"
+            f"run harness command {name!r} (consequential)?",
+            kind="consequential",
+            key=f"harness:{name}",
         ):
             self._say(f"[harness] {name}: not approved — skipped")
             return f"harness {name!r}: approval denied; command was not run"
         harness = self._harness if self._harness is not None else Harness()
         result = self._invoke_harness(harness, name, extra_args)
+        leaked = self._screen_model_text(str(result.stdout or ""))
+        if result.stdout and leaked != result.stdout:
+            self._say(leaked)
+            return leaked
         exit_code = int(result.exit_code)
         cancelled = bool(getattr(result, "cancelled", False))
         timed_out = bool(getattr(result, "timed_out", False))
@@ -1677,7 +1724,7 @@ class Concierge(ChatCommands, DataCommands):
         return budget
 
     def _family_selector(self) -> Callable[[str], dict[str, Any]]:
-        def select(goal: str) -> dict[str, Any]:
+        def select_families(goal: str) -> dict[str, Any]:
             from fx1.harness import Harness
 
             harness = self._harness if self._harness is not None else Harness()
@@ -1689,7 +1736,7 @@ class Concierge(ChatCommands, DataCommands):
                 goal, max_families=self._max_families()
             )
 
-        return select
+        return select_families
 
     # -- /research -----------------------------------------------------------
 

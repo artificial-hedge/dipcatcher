@@ -651,8 +651,20 @@ def test_signed_public_alias_completes_through_local_engine(
     base = Path(__file__).resolve().parents[2] / "artifacts" / "fx1_tiny_lm"
     for name in ("weights.safetensors", "weights.manifest.json"):
         shutil.copy2(base / name, tmp_path / name)
-    ModelCard.load(base / "modelcard.json").model_copy(
-        update={"fixture_only": False, "public_model_id": alias, "license_tier": "maas"}
+    loaded = ModelCard.load(base / "modelcard.json")
+    # The tiny artifact's eval_delta is the labelled placeholder. This mechanics
+    # test needs a card the ship gate accepts; the gate itself stays closed
+    # for that placeholder.
+    measured = loaded.eval_delta.model_copy(update={"domain_pass_rate_candidate": 0.62})
+    limits = [item for item in loaded.known_limits if "ship-gate placeholders" not in item.lower()]
+    loaded.model_copy(
+        update={
+            "fixture_only": False,
+            "public_model_id": alias,
+            "license_tier": "maas",
+            "eval_delta": measured,
+            "known_limits": limits,
+        }
     ).save(tmp_path / "modelcard.json")
     seed = b"\x33" * 32
     monkeypatch.setenv("FX1_RELEASE_SIGNING_KEY", seed.hex())
