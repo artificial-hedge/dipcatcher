@@ -29,7 +29,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import IO
+from typing import IO, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 

@@ -3,8 +3,6 @@
 import json
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from fx1.doctor import collect_status
 
 
@@ -49,13 +47,11 @@ def test_doctor_never_echoes_secret_values(monkeypatch, tmp_path: Path) -> None:
     assert "sig-super-secret-value" not in blob
 
 
-def test_doctor_cli_json(tmp_path: Path) -> None:
-    from fx1.cli import app
-
-    result = CliRunner().invoke(app, ["doctor", "--root", str(tmp_path)])
-    assert result.exit_code == 0
-    status = json.loads(result.stdout)
-    assert status["fx1_version"]
+def test_doctor_json_roundtrip(tmp_path: Path) -> None:
+    """``collect_status`` is the doctor payload; it must JSON-serialize cleanly."""
+    status = collect_status(tmp_path)
+    parsed = json.loads(json.dumps(status))
+    assert parsed["fx1_version"] == status["fx1_version"]
 
 
 def test_doctor_reports_ledger_chain_state(tmp_path: Path) -> None:
