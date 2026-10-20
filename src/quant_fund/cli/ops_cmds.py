@@ -348,7 +348,6 @@ def monitor(
         raise typer.Exit(3)
 
 
-@app.command("sim-live")
 def _challenger_slot(
     raw: str,
     *,
@@ -425,6 +424,7 @@ def _challenger_overrides(extras: list[str]) -> tuple[dict[str, float], dict[str
     return kv, kv_str
 
 
+@app.command("sim-live")
 def sim_live(
     config: Path = typer.Option(Path("configs/sim_live.yaml")),
     interval: str = typer.Option("4h", help="Bar interval suffix: 4h | 1d"),

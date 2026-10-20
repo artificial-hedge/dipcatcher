@@ -105,6 +105,7 @@ from quant_fund.cli.ops_cmds import (
     monitor,
     sim_live,
 )
+import quant_fund.cli.score_cmds as score_cmds  # noqa: F401 — registers score-forecasts
 from quant_fund.cli.train_cmds import (
     _train as _train,
     train_callback,

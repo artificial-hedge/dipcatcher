@@ -555,24 +555,48 @@ def _claims_byte_equal_frac_error(payload: Mapping[str, Any], equal: int, total:
     return None
 
 
+def _legacy_claim_headline_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Headline claim fields without per-row ``reproduces`` (pre-binding bodies)."""
+    frac_error = _claims_byte_equal_frac_error(
+        payload,
+        int(payload["n_claims_byte_equal"]),
+        int(payload["n_claims_total"]),
+    )
+    return [frac_error] if frac_error is not None else []
+
+
+def _rows_carry_reproduces(rows: list[Any]) -> bool:
+    return any(isinstance(row, Mapping) and isinstance(row.get("reproduces"), list) for row in rows)
+
+
 def _replay_coverage_claims_errors(
     payload: Mapping[str, Any],
     row_verdicts: list[str],
     rows: list[Any],
 ) -> list[str]:
-    errors: list[str] = []
-    for field in ("n_claims_total", "n_claims_byte_equal"):
-        value = payload.get(field)
-        if not _is_count(value):
-            errors.append(field)
-    if "n_claims_skipped" not in payload:
-        return errors
-    if not _is_count(payload.get("n_claims_skipped")):
-        errors.append("n_claims_skipped")
+    errors = _replay_coverage_claim_field_errors(payload)
+    if errors or "n_claims_skipped" not in payload:
         return errors
     if not row_verdicts:
         return errors
+    if not _rows_carry_reproduces(rows):
+        return errors + _legacy_claim_headline_errors(payload)
+    return errors + _derived_claim_headline_errors(payload, rows)
+
+
+def _replay_coverage_claim_field_errors(payload: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    for field in ("n_claims_total", "n_claims_byte_equal"):
+        if not _is_count(payload.get(field)):
+            errors.append(field)
+    if "n_claims_skipped" in payload and not _is_count(payload.get("n_claims_skipped")):
+        errors.append("n_claims_skipped")
+    return errors
+
+
+def _derived_claim_headline_errors(payload: Mapping[str, Any], rows: list[Any]) -> list[str]:
     total, equal, skipped_claims = _headline_claim_counts(rows)
+    errors: list[str] = []
     for field, expected in (
         ("n_claims_total", total),
         ("n_claims_byte_equal", equal),

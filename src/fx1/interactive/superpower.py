@@ -77,10 +77,15 @@ KIND_REASON = "reason"
 # /superpower invokes registered harness commands without CLI arguments. Keep
 # commands with required inputs available through explicit /harness run only.
 # The Click signature drift test keeps this map in sync with the lab CLI.
-_REQUIRED_HARNESS_INPUTS: dict[str, tuple[str, str]] = {
-    "validate": ("model_id", "/harness run validate MODEL_ID"),
-    "collect": ("source", "/harness run collect --source SOURCE"),
-    "tearsheet": ("equity", "/harness run tearsheet --equity PATH"),
+_REQUIRED_HARNESS_INPUTS: dict[str, tuple[tuple[str, ...], str]] = {
+    "validate": (("model_id",), "/harness run validate MODEL_ID"),
+    "collect": (("source",), "/harness run collect --source SOURCE"),
+    "tearsheet": (("equity",), "/harness run tearsheet --equity PATH"),
+    "serial-watch": (("pits",), "/harness run serial-watch PITS"),
+    "score-forecasts": (
+        ("task", "data"),
+        "/harness run score-forecasts --task TASK --data PATH",
+    ),
 }
 
 
@@ -423,7 +428,7 @@ def _plan_keyword(
         exclusions=[
             *gate.exclusions,
             *(
-                f"{cap_id}: requires {_REQUIRED_HARNESS_INPUTS[cap_id][0]}; "
+                f"{cap_id}: requires {', '.join(_REQUIRED_HARNESS_INPUTS[cap_id][0])}; "
                 f"run {_REQUIRED_HARNESS_INPUTS[cap_id][1]} with an explicit value"
                 for cap_id in manual_requests
             ),
@@ -1476,7 +1481,7 @@ def _stage_harness(
                 cap_id,
                 cap_id,
                 "skipped",
-                f"requires {required}; run {usage} with an explicit value",
+                f"requires {', '.join(required)}; run {usage} with an explicit value",
             ),
             runs_lock,
         )

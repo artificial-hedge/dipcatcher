@@ -111,7 +111,7 @@ def test_manual_only_map_matches_required_click_inputs() -> None:
     }
     required = {name: names for name, names in required.items() if names}
     assert required == {
-        name: (input_name,) for name, (input_name, _) in _REQUIRED_HARNESS_INPUTS.items()
+        name: input_names for name, (input_names, _) in _REQUIRED_HARNESS_INPUTS.items()
     }
 
 
@@ -511,6 +511,7 @@ def test_fully_served_plan_remains_complete() -> None:
 
 
 def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) -> None:
+    goal = "run the research benchmark"
     store.add(
         text="prior finding: conformal coverage held at 90% on synthetic panels",
         task="research benchmark",
@@ -519,13 +520,25 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
     harness = FakeHarness()
     researcher = FakeResearcher()
     prompts: list[str] = []
+    catalog = FamilyCatalog(
+        schema_version=2,
+        catalog_version=2,
+        receipt_schema_version=2,
+        required=frozenset({"conformal"}),
+        live_optional=frozenset(),
+        retired_count=0,
+        retired_sample=frozenset(),
+        order=("conformal",),
+        generated_at="2026-10-17T00:00:00Z",
+        lookup_goal_sha256=goal_sha256(goal),
+    )
 
     def model_fn(prompt: str) -> str:
         prompts.append(prompt)
         return "Coverage held at the nominal 90% level (SYNTHETIC panel). Sources listed above."
 
     plan = _plan(
-        "run the research benchmark",
+        goal,
         ["flash_retrieve", "research", "web_research", "flash_save", "synthesize"],
     )
     ctx = SuperpowerContext(
@@ -535,6 +548,7 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
         researcher=researcher,
         flash_store=store,
         allow_web=True,
+        catalog=catalog,
     )
     result = run_plan(plan, ctx)
 
@@ -618,7 +632,7 @@ def test_web_research_errors_make_superpower_partial() -> None:
     )
     result = run_plan(
         _plan("check public sources", ["web_research", "synthesize"]),
-        SuperpowerContext(researcher=FakeResearcher(report)),
+        SuperpowerContext(researcher=FakeResearcher(report), allow_web=True),
     )
     web = next(run for run in result.runs if run.id == "web_research")
     assert web.status == "failed"
@@ -830,7 +844,9 @@ def test_direct_web_research_returns_on_cancel() -> None:
         outcome.append(
             run_plan(
                 _plan("question", ["web_research", "synthesize"]),
-                SuperpowerContext(researcher=StalledResearcher(), cancel_event=cancel),
+                SuperpowerContext(
+                    researcher=StalledResearcher(), cancel_event=cancel, allow_web=True
+                ),
             )
         )
 
@@ -873,7 +889,7 @@ def test_direct_web_research_returns_at_wall_deadline() -> None:
         before = time.monotonic()
         result = run_plan(
             _plan("question", ["web_research", "synthesize"]),
-            SuperpowerContext(researcher=StalledResearcher(), budget_ledger=ledger),
+            SuperpowerContext(researcher=StalledResearcher(), budget_ledger=ledger, allow_web=True),
         )
         assert started.is_set()
         assert time.monotonic() - before < 2
