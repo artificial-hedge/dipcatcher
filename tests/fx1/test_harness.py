@@ -351,7 +351,7 @@ def test_missing_executable_fails_before_spawn(monkeypatch: pytest.MonkeyPatch) 
         raise AssertionError("subprocess spawned")
 
     monkeypatch.setattr("fx1.harness.subprocess.Popen", boom)
-    harness = Harness()
+    harness = Harness(cancellable_runner=make_subprocess_runner())
     assert harness.list_commands()
     with pytest.raises(RuntimeError, match="dipcatcher executable not found on PATH") as caught:
         harness.run("doctor")

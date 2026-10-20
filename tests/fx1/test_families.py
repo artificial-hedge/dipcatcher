@@ -507,7 +507,7 @@ def test_families_prompt_block_empty_and_populated() -> None:
 
 
 def test_missing_retired_list_keeps_sample_only_classification() -> None:
-    catalog = FamilyCatalog.from_json(json.dumps(_document()))
+    catalog = _resolver_catalog()
     assert catalog.retired == frozenset()
     assert catalog.state_of("old_family") is FamilyState.RETIRED
     assert catalog.state_of("not_in_sample_family") is FamilyState.UNKNOWN

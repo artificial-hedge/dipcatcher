@@ -1070,7 +1070,6 @@ def test_cli_superpower_one_shot_denies_consequential_by_default(
     isolated_store: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from fx1.interactive import concierge as concierge_module
-    from fx1.interactive.superpower import SuperpowerPlan, SuperpowerResult
 
     seen: list[object] = []
 

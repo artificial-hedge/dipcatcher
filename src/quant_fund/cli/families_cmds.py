@@ -64,7 +64,8 @@ def research_families(
     # Full accepted history remains in the registry for archived receipt checks.
     live_optional = sorted(justified_families())
     exploratory_count = len(LIVE_OPTIONAL_BENCHMARK_FAMILIES) - len(live_optional)
-    retired_count = len(RETIRED_BENCHMARK_FAMILIES)
+    retired = sorted(RETIRED_BENCHMARK_FAMILIES)
+    retired_count = len(retired)
     lookup: dict[str, object] | None = None
     if lookup_hashes is not None:
         if not json_out:

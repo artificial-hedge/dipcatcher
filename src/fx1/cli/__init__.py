@@ -10,6 +10,7 @@ import fx1.cli.forecast_cmds as _forecast_cmds  # noqa: F401
 from fx1.cli._app import app
 from fx1.cli.eval_cmds import _resolve_judge
 
+
 def main() -> None:
     app()
 

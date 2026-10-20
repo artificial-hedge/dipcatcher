@@ -23,13 +23,14 @@ import os
 import shutil
 import signal
 import subprocess  # noqa: S404 - runner is injectable; see Harness.run
+import sys
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Mapping
+from typing import IO, TYPE_CHECKING, Any, Protocol
 
 from pydantic import BaseModel, Field
 
@@ -249,10 +250,64 @@ class HarnessResult(BaseModel):
 
 
 # Runner signature: (argv, timeout_s) -> (exit_code, stdout, stderr).
-# Extended runners set supports_extended and accept the keyword arguments
-# passed by Harness.run; they return ProcResult.
 Runner = Callable[[list[str], int], tuple[int, str, str]]
 _Emit = Callable[[str, Mapping[str, Any]], None]
+
+
+class ExtendedRunner(Protocol):
+    """Runner that accepts cancel, env, and step and returns a ProcResult."""
+
+    supports_extended: bool
+
+    def __call__(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        *,
+        cancel_event: threading.Event | None = None,
+        env_extra: Mapping[str, str] | None = None,
+        step: str | None = None,
+    ) -> ProcResult: ...
+
+
+class OwnedRunner:
+    """Default runner: ``python -m dipcatcher_cli`` with a scrubbed environment."""
+
+    supports_extended: bool = True
+
+    def __init__(
+        self,
+        *,
+        registry: ProcessRegistry | None = None,
+        emit: _Emit | None = None,
+    ) -> None:
+        self._registry = registry
+        self._emit = emit
+
+    def __call__(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        *,
+        cancel_event: threading.Event | None = None,
+        env_extra: Mapping[str, str] | None = None,
+        step: str | None = None,
+    ) -> ProcResult:
+        from fx1.interactive.procs import REGISTRY, ProcLimits, run_owned, scrub_env
+
+        registry = REGISTRY if self._registry is None else self._registry
+        registry.install_atexit()
+        full = [sys.executable, "-m", "dipcatcher_cli", *argv]
+        return run_owned(
+            full,
+            ProcLimits(timeout_s=float(timeout_s)),
+            env=scrub_env(os.environ, extra=env_extra),
+            cancel_event=cancel_event,
+            registry=registry,
+            emit=self._emit,
+            step=step,
+        )
+
 
 _MISSING_EXECUTABLE = (
     "dipcatcher executable not found on PATH; install the fx-1 distribution "
@@ -271,6 +326,26 @@ class RunnerOutcome:
 
 
 CancellableRunner = Callable[[list[str], int, threading.Event | None], RunnerOutcome]
+
+
+def _adapt_owned_runner(owned: OwnedRunner | None = None) -> CancellableRunner:
+    runner = owned if owned is not None else OwnedRunner()
+
+    def _run(
+        argv: list[str],
+        timeout_s: int,
+        cancel_event: threading.Event | None,
+    ) -> RunnerOutcome:
+        outcome = runner(argv, timeout_s, cancel_event=cancel_event)
+        return RunnerOutcome(
+            exit_code=outcome.exit_code,
+            stdout=outcome.stdout,
+            stderr=outcome.stderr,
+            cancelled=outcome.cancelled,
+            timed_out=outcome.timed_out,
+        )
+
+    return _run
 
 
 class _OutputBuffer:
@@ -633,8 +708,10 @@ class Harness:
             chosen = _adapt_legacy_runner(runner)
         elif cancellable_runner is not None:
             chosen = cancellable_runner
+            self._use_default_runner = True
         else:
-            chosen = make_subprocess_runner()
+            chosen = _adapt_owned_runner()
+            self._use_default_runner = False
         self._runner = chosen
         self._registry = {c.name: c for c in HARNESS_REGISTRY}
 
@@ -675,18 +752,11 @@ class Harness:
 
         configs_dir = (default_repo_root() / "configs").resolve()
 
-    def _dispatch(
-        self,
-        argv: list[str],
-        timeout_s: int,
-        cancel_event: threading.Event | None,
-        env_extra: Mapping[str, str] | None,
-        step: str | None,
-    ) -> ProcResult | tuple[int, str, str]:
-        try:
-            return self._call_runner(argv, timeout_s, cancel_event, env_extra, step)
-        except subprocess.TimeoutExpired as exc:
-            return _timeout_result(exc)
+        def check_contained(path: str) -> Path:
+            resolved = Path(path).resolve()
+            if configs_dir not in resolved.parents and resolved != configs_dir:
+                raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
+            return resolved
 
         if config is not None:
             argv += ["--config", str(check_contained(str(config)))]

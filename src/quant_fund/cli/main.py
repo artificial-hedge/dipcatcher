@@ -48,6 +48,7 @@ from quant_fund.cli.micro_cmds import (
     kyle_ofi,
 )
 from quant_fund.cli.families_cmds import research_families
+from quant_fund.cli.family_cmds import families_cmd
 from quant_fund.cli.research_cmds import (
     research,
     execution_sensitivity_cmd,

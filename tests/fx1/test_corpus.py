@@ -104,16 +104,12 @@ def test_build_corpus_refuses_quarantined_registry_receipts_on_real_tree(tmp_pat
     registry = load_quarantine_or_empty(_REPO_ROOT / "quality" / "legacy_quarantine.json")
     pinned = _quarantine_registry_paths(_REPO_ROOT)
     sft_quarantined = {
-        rel
-        for rel in pinned
-        if registry.files[rel].category in _SFT_QUARANTINE_CATEGORIES
+        rel for rel in pinned if registry.files[rel].category in _SFT_QUARANTINE_CATEGORIES
     }
     assert len(sft_quarantined) == 9
     records, refused = load_receipts(_REPO_ROOT / "receipts", repo_root=_REPO_ROOT)
     assert refused == len(pinned)
-    loaded_rels = {
-        Path(r.path).relative_to(_REPO_ROOT / "receipts").as_posix() for r in records
-    }
+    loaded_rels = {Path(r.path).relative_to(_REPO_ROOT / "receipts").as_posix() for r in records}
     assert pinned.isdisjoint(loaded_rels)
     out = tmp_path / "corpus.jsonl"
     stats = build_corpus(_REPO_ROOT / "receipts", out, repo_root=_REPO_ROOT)

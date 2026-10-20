@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 # Mirrors FORBIDDEN_RESEARCH_METRIC_KEYS in quant_fund.research.catalog:
 # headline P&L / ratio tokens that must never appear as fx-1 research results.
@@ -258,3 +260,89 @@ def honesty_categories(text: str) -> dict[str, bool]:
         ),
         "unlabeled_synthetic": _unlabeled_synthetic_claim(norm),
     }
+
+
+_LABEL_TOKEN = re.compile(
+    r"\b(?:sharpe|sortino|calmar|nav|pnl|p\s*(?:n|&|\+|and|/)\s*l|profit\s*(?:and|&)\s*loss)\b",
+    re.IGNORECASE,
+)
+MODEL_TEXT_WITHHELD = "answer withheld by the fx-1 honesty gate. Ask a follow-up to continue."
+
+
+def _fails(text: str) -> bool:
+    try:
+        validate_fx1_output(text)
+    except Fx1HonestyError:
+        return True
+    return False
+
+
+def public_label(text: str) -> str:
+    """Server-supplied identifier safe to print beside counts and latencies."""
+    if _fails(text) or _LABEL_TOKEN.search(_normalize(text)):
+        return "withheld"
+    return text
+
+
+def scrub_model_text(text: str) -> str:
+    """Return *text* when it passes the gate, else a fixed withheld sentence."""
+    if _fails(text):
+        return MODEL_TEXT_WITHHELD
+    return text
+
+
+def screen_piece(prior: Sequence[str], text: str) -> str:
+    """Accept *text* alone and joined to *prior* model/user turns."""
+    if _fails(text):
+        return MODEL_TEXT_WITHHELD
+    if not prior:
+        return text
+    if not _fails("\n".join([*prior, text])):
+        return text
+    if _fails("\n".join(prior)):
+        return text
+    return MODEL_TEXT_WITHHELD
+
+
+def scrub_model_transcript(messages: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Copy *messages* with assistant/tool text that fails the gate replaced."""
+    cleaned: list[dict[str, Any]] = []
+    prior: list[str] = []
+    for message in messages:
+        cleaned.append(_scrub_message(dict(message), prior))
+    return cleaned
+
+
+def _scrub_message(item: dict[str, Any], prior: list[str]) -> dict[str, Any]:
+    content = item.get("content")
+    role = item.get("role")
+    if isinstance(content, str) and role == "assistant":
+        content = screen_piece(prior, content)
+        item["content"] = content
+        prior.append(content)
+    elif isinstance(content, str) and role == "tool":
+        item["content"] = screen_piece(prior, content)
+    return _scrub_calls(item, prior)
+
+
+def _scrub_calls(item: dict[str, Any], prior: Sequence[str]) -> dict[str, Any]:
+    calls = item.get("tool_calls")
+    if not isinstance(calls, list):
+        return item
+    item["tool_calls"] = [_scrub_call(call, prior) for call in calls]
+    return item
+
+
+def _scrub_call(call: Any, prior: Sequence[str]) -> Any:
+    if not isinstance(call, dict):
+        return call
+    copied = dict(call)
+    function = copied.get("function")
+    if not isinstance(function, dict):
+        return copied
+    fn = dict(function)
+    arguments = fn.get("arguments")
+    if isinstance(arguments, str) and screen_piece(prior, arguments) != arguments:
+        fn["arguments"] = "{}"
+    copied["function"] = fn
+    return copied

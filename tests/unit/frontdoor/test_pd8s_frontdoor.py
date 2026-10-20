@@ -38,7 +38,7 @@ def test_use_does_not_leak_api_key_to_lab_subprocess(
     isolated_store: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     profiles.set_endpoint("fx1", SECRET, "https://api.example.test/v1")
-    concierge = Concierge(model="fx1", journal=None)
+    concierge = Concierge(model="fx1")
     concierge.handle_line("/use fx1")
     assert os.environ.get(ENV_API_KEY) != SECRET
 

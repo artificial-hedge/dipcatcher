@@ -2590,6 +2590,40 @@ def _receipt_body_matches_digest(body: bytes, sha256: str) -> bool:
     return isinstance(stored_sha, str) and hmac.compare_digest(stored_sha, sha256)
 
 
+def _reject_bad_receipt_sha(sha256: str) -> None:
+    if not _SHA256_HEX.fullmatch(sha256):
+        raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
+
+
+def _receipt_verify_fields(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """Shared verify-route fields for one receipt."""
+    try:
+        result = verify_receipt_payload(receipt, path=Path("<api>"))
+    except Exception as exc:  # verifier must fail closed, never 500
+        return {
+            "valid": False,
+            "path": "<api>",
+            "schema_tag": "",
+            "kind": None,
+            "verdict": None,
+            "digest_convention": None,
+            "errors": [str(exc)],
+            "warnings": [],
+        }
+    kind = result["kind"]
+    verdict = result["verdict"]
+    return {
+        "valid": result["valid"],
+        "path": result["path"],
+        "schema_tag": result["schema"],
+        "kind": kind if isinstance(kind, str) else None,
+        "verdict": verdict if isinstance(verdict, str) else None,
+        "digest_convention": result["digest_convention"],
+        "errors": list(result["errors"]),
+        "warnings": list(result["warnings"]),
+    }
+
+
 def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
     """Receipt-verify + content-addressed fetch routes, kept out of
     ``create_app`` to keep its branch complexity under the repo's ruff cap."""

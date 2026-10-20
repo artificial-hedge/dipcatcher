@@ -15,6 +15,7 @@ from .support import _cfg, _collect_param_value
 
 _LAKE_PARTS = ("raw", "bronze", "silver", "gold", "metadata")
 
+
 @app.command()
 def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     from quant_fund.cli._app import _resolve_config_path

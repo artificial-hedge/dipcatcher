@@ -8,7 +8,6 @@ row must still be scored with the unchanged filter.
 from __future__ import annotations
 
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest

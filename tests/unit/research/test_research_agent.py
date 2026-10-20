@@ -11,7 +11,6 @@ from quant_fund.research.agent import (
     _benchmark_scorecard,
     _git_worktree_sha256,
     _provenance,
-    _publish_research_run_once,
     run_research,
 )
 from quant_fund.research.catalog import (

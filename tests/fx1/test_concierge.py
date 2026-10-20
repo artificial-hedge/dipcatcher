@@ -7,8 +7,8 @@ approval gating, and message bookkeeping are all observable.
 
 import io
 import json
+import os
 import threading
-from hashlib import sha256
 from pathlib import Path
 from types import ModuleType
 from typing import Any

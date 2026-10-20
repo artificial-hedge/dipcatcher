@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -644,7 +643,7 @@ def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     _stamp(corpus)
     (corpus / bad).write_text("{}")
     hits = [e for e in check_epoch_chain(corpus)["errors"] if "not_portable" in e]
-    assert hits and all(control not in e for e in hits)
+    assert hits and all("\n" not in e for e in hits)
 
 
 def test_epoch_prefix_squat_flagged_and_refused(tmp_path: Path) -> None:

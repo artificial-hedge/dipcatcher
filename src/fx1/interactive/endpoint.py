@@ -162,6 +162,7 @@ def _require_safe(url: str) -> None:
         raise EndpointError("endpoint was rejected")
     raise EndpointError(problem)
 
+
 _HTTP_STATUS_RE = re.compile(r"HTTP (\d{3})\b")
 _URL_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9+.\-]*://[^\s]+")
 _BEARER_RE = re.compile(r"Bearer\s+\S+", re.IGNORECASE)

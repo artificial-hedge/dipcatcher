@@ -89,21 +89,44 @@ class FamilyCatalog:
         payload = _as_object(text)
         schema_version = _require_schema(payload)
         constrained, note = _runner_fields(payload)
-        sample = _require_str_list(payload.get("retired_sample"), "retired_sample")
+        required_list = _require_str_list(payload.get("required"), "required")
+        optional_list = _require_str_list(payload.get("live_optional"), "live_optional")
+        order_list = _require_str_list(payload.get("order"), "order")
+        required = frozenset(required_list)
+        live_optional = frozenset(optional_list)
+        if any(_FAMILY_NAME.fullmatch(name) is None for name in required | live_optional):
+            raise ValueError("family catalog selectable names are malformed")
+        if len(required) != len(required_list) or len(live_optional) != len(optional_list):
+            raise ValueError("family catalog contains duplicate selectable names")
+        if required & live_optional:
+            raise ValueError("family catalog required and optional names overlap")
+        if len(order_list) != len(set(order_list)) or set(order_list) != required:
+            raise ValueError("family catalog order must enumerate required names only")
         count = _require_int(payload.get("retired_count"), "retired_count")
+        raw_sample = payload.get("retired_sample")
+        sample = [] if raw_sample is None else _require_str_list(raw_sample, "retired_sample")
+        if "retired" not in payload and sample and len(sample) < min(20, count):
+            raise ValueError("family catalog v2 must not enumerate retired names")
+        live_optional_total = _require_int(
+            payload.get("live_optional_total"), "live_optional_total"
+        )
+        exploratory_count = _require_int(payload.get("exploratory_count"), "exploratory_count")
+        if live_optional_total < len(live_optional) or count < 0:
+            raise ValueError("family catalog counts are inconsistent")
+        if exploratory_count != live_optional_total - len(live_optional):
+            raise ValueError("family catalog exploratory count is inconsistent")
+        omitted_matches = _lookup_matches(payload, goal, required | live_optional)
         return cls(
             schema_version=schema_version,
             catalog_version=_require_int(payload.get("catalog_version"), "catalog_version"),
             receipt_schema_version=_require_int(
                 payload.get("receipt_schema_version"), "receipt_schema_version"
             ),
-            required=frozenset(_require_str_list(payload.get("required"), "required")),
-            live_optional=frozenset(
-                _require_str_list(payload.get("live_optional"), "live_optional")
-            ),
+            required=required,
+            live_optional=live_optional,
             retired_count=count,
             retired_sample=frozenset(sample),
-            order=tuple(_require_str_list(payload.get("order"), "order")),
+            order=tuple(order_list),
             generated_at=_require_str(payload.get("generated_at"), "generated_at"),
             live_optional_total=live_optional_total,
             exploratory_count=exploratory_count,
@@ -965,6 +988,7 @@ def harness_family_runner(harness: Any) -> Runner:
         return code, stdout, stderr
 
     return runner
+
 
 __all__ = [
     "CATALOG_SCHEMA_VERSION",

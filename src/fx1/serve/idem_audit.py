@@ -187,19 +187,12 @@ def _make_app(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=runner or _fast_runner),
             backend_resolver=lambda name, *a, **k: backends[name](),
             state_dir=create_kw.pop("state_dir", isolated / "state"),
             receipts_dir=create_kw.pop("receipts_dir", isolated / "receipts"),
             ft_dir=create_kw.pop("ft_dir", isolated / "ft"),
             ft_runner=create_kw.pop("ft_runner", _ft_stub),
-            # Keepalive comments are not part of the pinned SSE. The default
-            # 15s grace injects `: keepalive` into a slow first stream only,
-            # so the replay is not byte-identical on a busy runner. This
-            # battery measures the idempotency contract; stream_audit owns
-            # keepalive timing.
-            sse_keepalive_s=create_kw.pop("sse_keepalive_s", 0),
             **create_kw,
         )
         resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
@@ -357,9 +350,9 @@ def _file_post(
 def _probe_cov_harness() -> dict[str, bool]:
     """Harness routes: jobs (+batch), runs, evals, complete (+batch)."""
     out: dict[str, bool] = {}
-    route_stub = _StubBackend("fx1")
+    stub = _StubBackend("fx1")
     runner = _CountingRunner()
-    client, _app = _client(backend_map={_MODEL: lambda: route_stub}, runner=runner)
+    client, _app = _client(backend_map={_MODEL: lambda: stub}, runner=runner)
 
     r1, r2 = _post2(client, "/harness/runs", {"command": "doctor"}, "cov.runs")
     out["coverage.runs.replay"] = (
@@ -405,12 +398,8 @@ def _probe_cov_harness() -> dict[str, bool]:
     )
     out["coverage.evals.once"] = evals_total == 1
 
-    # Second client so eval executor traffic cannot move the complete counter.
-    stub = _StubBackend("fx1")
-    complete_client, _ = _client(backend_map={_MODEL: lambda: stub})
-
     before = stub.calls
-    r1, r2 = _post2(complete_client, "/harness/complete", _complete_body(), "cov.complete")
+    r1, r2 = _post2(client, "/harness/complete", _complete_body(), "cov.complete")
     out["coverage.complete.replay"] = (
         r1.status_code == 200
         and r2.status_code == 200
@@ -418,17 +407,17 @@ def _probe_cov_harness() -> dict[str, bool]:
         and _same(r1.json(), r2.json())
         and r1.json().get("completion_id") == r2.json().get("completion_id")
     )
-    out["coverage.complete.once"] = complete_stub.calls == before + 1
+    out["coverage.complete.once"] = stub.calls == before + 1
 
     before = stub.calls
-    r1, r2 = _post2(complete_client, "/harness/complete/batch", _cbatch_body(), "cov.cbatch")
+    r1, r2 = _post2(client, "/harness/complete/batch", _cbatch_body(), "cov.cbatch")
     out["coverage.complete_batch.replay"] = (
         r1.status_code == 200
         and r2.status_code == 200
         and r2.json().get("replayed") is True
         and _same(r1.json(), r2.json())
     )
-    out["coverage.complete_batch.once"] = complete_stub.calls == before + 1
+    out["coverage.complete_batch.once"] = stub.calls == before + 1
     return out
 
 

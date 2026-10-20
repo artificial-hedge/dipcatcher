@@ -33,6 +33,16 @@ LAUNCHER_COMMANDS: frozenset[str] = frozenset({CHAT_COMMAND}) | ONESHOT_COMMANDS
 _CHAT_MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
 _DEFAULT_CHAT_MODEL = "fx1"
 
+_CHILD_OFF = frozenset({"", "0", "false", "no", "off"})
+
+
+def _harness_child() -> bool:
+    """True when spawned by the concierge harness runner (must not open chat)."""
+    raw = os.environ.get("DIPCATCHER_CHILD")
+    if raw is None:
+        return False
+    return raw.strip().lower() not in _CHILD_OFF
+
 
 def _interactive() -> bool:
     if _harness_child():
@@ -124,12 +134,17 @@ def _slash_argv_message(command: str) -> str:
     )
 
 
-def main(argv: Sequence[str] | None = None) -> None:
-    """Open chat in a terminal; retain the existing lab command/exit contracts.
+def _forward_lab(args: Sequence[str]) -> None:
+    from quant_fund.cli.main import app
 
-    Lab/help paths propagate Typer's ``SystemExit`` so scripts and tests see
-    the same exit codes as calling ``quant_fund.cli.main.app`` directly.
-    """
+    if not args or args in (["--help"], ["-h"]):
+        _print_launcher_help()
+    lab_args = ["--help"] if not args or list(args) == ["-h"] else list(args)
+    app(args=lab_args, prog_name="dipcatcher")
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    """Open chat in a terminal; retain the existing lab command/exit contracts."""
     args = list(sys.argv[1:] if argv is None else argv)
     if len(args) == 1 and args[0] in VERSION_FLAGS:
         print(_version_line())
@@ -151,21 +166,4 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args and args[0].startswith("/") and not args[0].startswith("//"):
         print(_slash_argv_message(args[0]), file=sys.stderr)
         raise SystemExit(2)
-
-
-def _version_args(args: Sequence[str]) -> None:
-    if args == [VERSION_COMMAND]:
-        _version()
-        return
-    print("usage: dipcatcher version", file=sys.stderr)
-    raise SystemExit(2)
-
-
-def _forward_lab(args: Sequence[str]) -> None:
-    # Import the lab only on the automation/help path. No library imports this
-    # outer launcher; quant_fund continues to have no dependency on the UI.
-    from quant_fund.cli.main import app
-
-    if not args or args in (["--help"], ["-h"]):
-        _print_launcher_help()
-    app(args=args or ["--help"], prog_name="dipcatcher")
+    _forward_lab(args)

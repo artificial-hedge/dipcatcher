@@ -118,6 +118,7 @@ class _EnvChoice:
         url = redact_text(self.raw_url)
         return f"_EnvChoice(source={self.source!r}, url_var={self.url_var!r}, raw_url={url!r})"
 
+
 # The target path is passed through an environment variable, not inserted into
 # PowerShell source or command arguments. The API key never enters this child.
 _WINDOWS_PRIVATE_ACL = r"""
