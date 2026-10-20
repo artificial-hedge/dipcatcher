@@ -436,6 +436,93 @@ class Researcher:
         if on_progress is not None:
             on_progress(ResearchProgress(event=event, detail=detail))
 
+    def _search_disabled(self) -> bool:
+        return self._searcher is None and not web_research_opted_in()
+
+    def _skip_without_opt_in(
+        self, report: ResearchReport, on_progress: ProgressFn | None
+    ) -> ResearchReport:
+        report.finished_at = _now_iso()
+        report.errors.append(f"skipped: set {WEB_RESEARCH_ENV}=1 to enable DuckDuckGo web research")
+        self._emit(on_progress, "skipped", f"{WEB_RESEARCH_ENV} unset — no public web search")
+        return report
+
+    def _apply_redirect(
+        self,
+        report: ResearchReport,
+        active_goal: str,
+        redirect: str,
+        on_progress: ProgressFn | None,
+    ) -> tuple[str, list[str]]:
+        report.redirected_from.append(active_goal)
+        report.goal = redirect
+        self._emit(on_progress, "redirect", f"now researching: {redirect}")
+        return redirect, default_queries(redirect)
+
+    def _search_round(
+        self,
+        searcher: Searcher,
+        report: ResearchReport,
+        queries_used: list[str],
+        query_index: int,
+        searches_run: int,
+        active_goal: str,
+        seen_urls: set[str],
+        budget: ResearchBudget,
+        deadline: float,
+        cancel_event: threading.Event,
+        on_progress: ProgressFn | None,
+        blocker: Callable[[], str | None],
+    ) -> tuple[int, int, str, list[str]]:
+        redirect = self._take_redirect()
+        if redirect and redirect != active_goal:
+            active_goal, queries_used = self._apply_redirect(
+                report, active_goal, redirect, on_progress
+            )
+            return 0, searches_run, active_goal, queries_used
+
+        remaining_s = max(0.0, deadline - self._now())
+        query = queries_used[query_index]
+        query_index += 1
+        searches_run += 1
+        report.queries_used.append(query)
+        self._emit(on_progress, "searching", f"search: {query}")
+        result = searcher.search(
+            query,
+            max_results=budget.max_results_per_search,
+            timeout_s=min(DEFAULT_TIMEOUT_S, remaining_s),
+        )
+        if result.error:
+            report.errors.append(f"search {query!r}: {result.error}")
+            return query_index, searches_run, active_goal, queries_used
+        hits = _rank_hits(
+            [hit for hit in result.hits if _canonical_url(hit.url) not in seen_urls],
+            active_goal,
+        )
+        for hit in hits:
+            reason = blocker()
+            if reason:
+                self._emit(on_progress, "budget", reason)
+                break
+            redirect = self._take_redirect()
+            if redirect and redirect != active_goal:
+                active_goal, queries_used = self._apply_redirect(
+                    report, active_goal, redirect, on_progress
+                )
+                return 0, searches_run, active_goal, queries_used
+            self._fetch_doc(
+                hit.url,
+                report,
+                seen_urls,
+                active_goal,
+                budget,
+                deadline,
+                cancel_event,
+                on_progress,
+                depth=0,
+            )
+        return query_index, searches_run, active_goal, queries_used
+
     def run(
         self,
         goal: str,
@@ -448,17 +535,8 @@ class Researcher:
         budget = budget or ResearchBudget()
         cancel_event = cancel_event or threading.Event()
         report = ResearchReport(goal=goal, started_at=_now_iso(), budget=budget)
-        if self._searcher is None and not web_research_opted_in():
-            report.finished_at = _now_iso()
-            report.errors.append(
-                f"skipped: set {WEB_RESEARCH_ENV}=1 to enable DuckDuckGo web research"
-            )
-            self._emit(
-                on_progress,
-                "skipped",
-                f"{WEB_RESEARCH_ENV} unset — no public web search",
-            )
-            return report
+        if self._search_disabled():
+            return self._skip_without_opt_in(report, on_progress)
         queries_used = list(queries) if queries else default_queries(goal)
         deadline = self._now() + budget.max_duration_s
         seen_urls: set[str] = set()
@@ -485,59 +563,20 @@ class Researcher:
             return None
 
         while query_index < len(queries_used) and blocker() is None:
-            redirect = self._take_redirect()
-            if redirect and redirect != active_goal:
-                report.redirected_from.append(active_goal)
-                active_goal = redirect
-                report.goal = redirect
-                queries_used = default_queries(redirect)
-                self._emit(on_progress, "redirect", f"now researching: {redirect}")
-                query_index = 0
-                continue
-
-            remaining_s = max(0.0, deadline - self._now())
-            query = queries_used[query_index]
-            query_index += 1
-            searches_run += 1
-            report.queries_used.append(query)
-            self._emit(on_progress, "searching", f"search: {query}")
-            result = searcher.search(
-                query,
-                max_results=budget.max_results_per_search,
-                timeout_s=min(DEFAULT_TIMEOUT_S, remaining_s),
-            )
-            if result.error:
-                report.errors.append(f"search {query!r}: {result.error}")
-                continue
-            hits = _rank_hits(
-                [hit for hit in result.hits if _canonical_url(hit.url) not in seen_urls],
+            query_index, searches_run, active_goal, queries_used = self._search_round(
+                searcher,
+                report,
+                queries_used,
+                query_index,
+                searches_run,
                 active_goal,
+                seen_urls,
+                budget,
+                deadline,
+                cancel_event,
+                on_progress,
+                blocker,
             )
-            for hit in hits:
-                reason = blocker()
-                if reason:
-                    self._emit(on_progress, "budget", reason)
-                    break
-                redirect = self._take_redirect()
-                if redirect and redirect != active_goal:
-                    report.redirected_from.append(active_goal)
-                    active_goal = redirect
-                    report.goal = redirect
-                    queries_used = default_queries(redirect)
-                    self._emit(on_progress, "redirect", f"now researching: {redirect}")
-                    query_index = 0
-                    break
-                self._fetch_doc(
-                    hit.url,
-                    report,
-                    seen_urls,
-                    active_goal,
-                    budget,
-                    deadline,
-                    cancel_event,
-                    on_progress,
-                    depth=0,
-                )
 
         report.cancelled = cancel_event.is_set()
         if report.cancelled:

@@ -6,6 +6,7 @@ Split out of the original module. Import the parent path; it re-exports these na
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -348,6 +349,82 @@ def monitor(
 
 
 @app.command("sim-live")
+def _challenger_slot(
+    raw: str,
+    *,
+    entry_bps: float,
+    kappa: float,
+    gate_on: str,
+    sizing: str,
+    gross: float,
+    name_cap: float,
+    deadband: float,
+    persist: int,
+    exit_persist: int,
+    top_k: int | None,
+    gate_out: float | None,
+    meta_min: float | None,
+    rebal_every: int,
+) -> Any:
+    from quant_fund.paper.quantile_signals import QuantilePolicy
+    from quant_fund.paper.sim_live import StrategySlot
+
+    parts = raw.split(":")
+    if len(parts) < 3:
+        raise typer.BadParameter("--challenger must be name:spec:mode[:entry_bps[:kappa]]")
+    cname, cspec, cmode = parts[0], parts[1], parts[2]
+    c_bps = float(parts[3]) if len(parts) > 3 else entry_bps
+    c_kappa = float(parts[4]) if len(parts) > 4 else kappa
+    c_gate_on = parts[5] if len(parts) > 5 else gate_on
+    c_sizing = parts[6] if len(parts) > 6 else sizing
+    kv, kv_str = _challenger_overrides(parts[7:])
+    return StrategySlot(
+        name=cname,
+        spec=cspec,
+        policy=QuantilePolicy(
+            mode=cmode,
+            kappa=c_kappa,
+            gross_target=kv.get("gross", gross),
+            name_cap=kv.get("nc", name_cap),
+            cost_gate=c_bps / 1e4 if c_gate_on == "mu" else c_bps,
+            deadband=kv.get("db", deadband),
+            gate_on=c_gate_on,
+            sizing=c_sizing,
+            book_vol_target=kv.get("bvt"),
+            tail_gate=kv.get("tg"),
+            persist_bars=int(kv.get("pb", persist)),
+            exit_persist=int(kv.get("xp", exit_persist)),
+            mkt_disp_cut=kv.get("cut"),
+            top_k=int(kv["tk"]) if "tk" in kv else top_k,
+            gate_out=kv.get("go", gate_out),
+            meta_min=kv.get("meta", meta_min),
+            rebal_every=int(kv.get("rb", rebal_every)),
+            accel_min=kv.get("ac"),
+            leader_sid=kv_str.get("lead"),
+            leader_edge_min=kv.get("le", 0.0),
+            w_alpha=kv.get("wa", 1.0),
+            breadth_gross=bool(kv.get("bg", 0.0)),
+            edge_pow=kv.get("epow", 1.0),
+            rvol_target=kv.get("rvol"),
+            rvol_lookback=int(kv.get("rvlb", 20)),
+        ),
+    )
+
+
+def _challenger_overrides(extras: list[str]) -> tuple[dict[str, float], dict[str, str]]:
+    kv: dict[str, float] = {}
+    kv_str: dict[str, str] = {}
+    for extra in extras:
+        if "=" not in extra:
+            continue
+        k, v = extra.split("=", 1)
+        if k.strip() == "lead":
+            kv_str["lead"] = v.strip().upper()
+        else:
+            kv[k.strip()] = float(v)
+    return kv, kv_str
+
+
 def sim_live(
     config: Path = typer.Option(Path("configs/sim_live.yaml")),
     interval: str = typer.Option("4h", help="Bar interval suffix: 4h | 1d"),
@@ -479,61 +556,25 @@ def sim_live(
         leader_edge_min=leader_edge_min,
     )
     slots = [StrategySlot(name=f"{spec}_{mode}", spec=spec, policy=champion_policy)]
-    challengers: list[StrategySlot] = []
-    for raw in challenger:
-        parts = raw.split(":")
-        if len(parts) < 3:
-            raise typer.BadParameter("--challenger must be name:spec:mode[:entry_bps[:kappa]]")
-        cname, cspec, cmode = parts[0], parts[1], parts[2]
-        c_bps = float(parts[3]) if len(parts) > 3 else entry_bps
-        c_kappa = float(parts[4]) if len(parts) > 4 else kappa
-        c_gate_on = parts[5] if len(parts) > 5 else gate_on
-        c_sizing = parts[6] if len(parts) > 6 else sizing
-        # Trailing key=value overrides: bvt=<book_vol_target> tg=<tail_gate>
-        # pb= xp= tk= rb= rvlb= (ints) · gross= nc= db= go= meta= ac= cut= le=
-        # rvol= epow= (floats) · lead=<SID> (string)
-        kv: dict[str, float] = {}
-        kv_str: dict[str, str] = {}
-        for extra in parts[7:]:
-            if "=" in extra:
-                k, v = extra.split("=", 1)
-                if k.strip() == "lead":
-                    kv_str["lead"] = v.strip().upper()
-                else:
-                    kv[k.strip()] = float(v)
-        challengers.append(
-            StrategySlot(
-                name=cname,
-                spec=cspec,
-                policy=QuantilePolicy(
-                    mode=cmode,
-                    kappa=c_kappa,
-                    gross_target=kv.get("gross", gross),
-                    name_cap=kv.get("nc", name_cap),
-                    cost_gate=c_bps / 1e4 if c_gate_on == "mu" else c_bps,
-                    deadband=kv.get("db", deadband),
-                    gate_on=c_gate_on,
-                    sizing=c_sizing,
-                    book_vol_target=kv.get("bvt"),
-                    tail_gate=kv.get("tg"),
-                    persist_bars=int(kv.get("pb", persist)),
-                    exit_persist=int(kv.get("xp", exit_persist)),
-                    mkt_disp_cut=kv.get("cut"),
-                    top_k=int(kv["tk"]) if "tk" in kv else top_k,
-                    gate_out=kv.get("go", gate_out),
-                    meta_min=kv.get("meta", meta_min),
-                    rebal_every=int(kv.get("rb", rebal_every)),
-                    accel_min=kv.get("ac"),
-                    leader_sid=kv_str.get("lead"),
-                    leader_edge_min=kv.get("le", 0.0),
-                    w_alpha=kv.get("wa", 1.0),
-                    breadth_gross=bool(kv.get("bg", 0.0)),
-                    edge_pow=kv.get("epow", 1.0),
-                    rvol_target=kv.get("rvol"),
-                    rvol_lookback=int(kv.get("rvlb", 20)),
-                ),
-            )
+    challengers = [
+        _challenger_slot(
+            raw,
+            entry_bps=entry_bps,
+            kappa=kappa,
+            gate_on=gate_on,
+            sizing=sizing,
+            gross=gross,
+            name_cap=name_cap,
+            deadband=deadband,
+            persist=persist,
+            exit_persist=exit_persist,
+            top_k=top_k,
+            gate_out=gate_out,
+            meta_min=meta_min,
+            rebal_every=rebal_every,
         )
+        for raw in challenger
+    ]
     bars_root = (repo / "data/raw/sources").resolve()
     out_dir = out if out.is_absolute() else (repo / out).resolve()
     result = run_sim_live(

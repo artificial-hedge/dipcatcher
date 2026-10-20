@@ -41,6 +41,32 @@ def _core_import_status() -> str:
     return "ok"
 
 
+def _dir_flags(root: Path) -> dict[str, str]:
+    status: dict[str, str] = {}
+    for part in ("raw", "bronze", "silver", "gold", "metadata"):
+        path = root / part
+        if path.is_dir():
+            status[f"dir_{part}"] = "ok"
+            status[f"dir_{part}_created"] = "no"
+            continue
+        path.mkdir(parents=True, exist_ok=True)
+        status[f"dir_{part}_created"] = "yes"
+        status[f"dir_{part}"] = "created" if path.is_dir() else "missing"
+    return status
+
+
+def _record_runtime_flags(status: dict[str, object], cfg: AppConfig) -> None:
+    status["core_kline_engine"] = "robinhood_plus" if cfg.robinhood_plus.enabled else "disabled"
+    status["robinhood_plus_backend"] = cfg.robinhood_plus.backend.value
+    status["robinhood_plus_blend_weight"] = float(cfg.robinhood_plus.blend_weight)
+    status["robinhood_plus_sizes_book"] = bool(
+        cfg.robinhood_plus.enabled and cfg.robinhood_plus.blend_weight > 0.0
+    )
+    status["fx1_package"] = "ok" if importlib.util.find_spec("fx1") else "missing"
+    status["fx1_moonshot_key"] = "set" if os.environ.get("MOONSHOT_API_KEY") else "unset"
+    status["fx1_signing_key"] = "set" if os.environ.get("FX1_SIGNING_KEY") else "unset"
+
+
 def doctor(config_path: str | None = None) -> dict[str, object]:
     status: dict[str, object] = {
         "firm": __firm__,
@@ -61,15 +87,7 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
     if cfg.runtime.mode is RuntimeMode.LIVE and not cfg.runtime.allow_live:
         status["live"] = "REJECTED"
     root = Path(cfg.data.root)
-    for part in ("raw", "bronze", "silver", "gold", "metadata"):
-        p = root / part
-        if p.is_dir():
-            status[f"dir_{part}"] = "ok"
-            status[f"dir_{part}_created"] = "no"
-        else:
-            p.mkdir(parents=True, exist_ok=True)
-            status[f"dir_{part}_created"] = "yes"
-            status[f"dir_{part}"] = "created" if p.is_dir() else "missing"
+    status.update(_dir_flags(root))
     manifest = root / "metadata" / "data_manifest.json"
     if not manifest.is_file():
         status["data_manifest"] = "missing"
@@ -139,14 +157,5 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
         status["research_receipt"] = "ok" if verification["valid"] else "invalid"
     status["core_imports"] = _core_import_status()
     status["default_fill"] = cfg.execution.fill.value
-    status["core_kline_engine"] = "robinhood_plus" if cfg.robinhood_plus.enabled else "disabled"
-    status["robinhood_plus_backend"] = cfg.robinhood_plus.backend.value
-    status["robinhood_plus_blend_weight"] = float(cfg.robinhood_plus.blend_weight)
-    status["robinhood_plus_sizes_book"] = bool(
-        cfg.robinhood_plus.enabled and cfg.robinhood_plus.blend_weight > 0.0
-    )
-    # fx-1 harness status — presence flags only, never secret values.
-    status["fx1_package"] = "ok" if importlib.util.find_spec("fx1") else "missing"
-    status["fx1_moonshot_key"] = "set" if os.environ.get("MOONSHOT_API_KEY") else "unset"
-    status["fx1_signing_key"] = "set" if os.environ.get("FX1_SIGNING_KEY") else "unset"
+    _record_runtime_flags(status, cfg)
     return status

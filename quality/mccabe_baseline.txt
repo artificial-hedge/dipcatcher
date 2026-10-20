@@ -2,9 +2,9 @@
 # Format: <path>:<qualified_name> <max_complexity>
 # Soft threshold for unlisted functions: 10
 # Regenerate after reductions: uv run python scripts/check_mccabe_ratchet.py --write
+src/fx1/cli_audit.py:cli_audit 182
 src/fx1/cli_harness_chat.py:harness_message 14
 src/fx1/cli_harness_chat.py:harness_respond 17
-src/fx1/cli_audit.py:cli_audit 182
 src/fx1/data/sources/adapters.py:FinanceFetchAdapter.fetch 10
 src/fx1/data/sources/ds_audit.py:ds_audit 13
 src/fx1/eval/ext_bench.py:_run_fintoolbench_task 11
@@ -17,9 +17,7 @@ src/fx1/eval/rubric_eval.py:_review_proposal 11
 src/fx1/eval/rubric_eval.py:generate_rubric 11
 src/fx1/eval/tooluse_eval.py:_run_task 10
 src/fx1/eval/ts_reasoning.py:grade_reasoning_task 11
-src/fx1/flash/refresh.py:refresh_entry 10
 src/fx1/flash/retrieve.py:score_entry 10
-src/fx1/flash/store.py:FlashStore._open_file 11
 src/fx1/forecast/core_audit.py:_eval_probes 20
 src/fx1/forecast/core_audit.py:_runner_probes 23
 src/fx1/forecast/evaluate.py:evaluate_forecasts 10
@@ -27,6 +25,7 @@ src/fx1/forecast/features.py:resample_ohlcv 15
 src/fx1/forecast/runner.py:_predict_walk_forward 10
 src/fx1/forecast/schema.py:validate_forecast_schema 17
 src/fx1/harness_bench.py:run_bench 14
+src/fx1/interactive/superpower.py:_stage_web_research 10
 src/fx1/interactive/wizard.py:enter 10
 src/fx1/operations/audit_bar_integrity.py:execute 16
 src/fx1/operations/audit_cross_field_contracts.py:execute 15
@@ -79,7 +78,7 @@ src/fx1/serve/api.py:_mount_complete_routes.openai_completions 16
 src/fx1/serve/api.py:_mount_complete_routes.openai_responses 39
 src/fx1/serve/api.py:_mount_job_routes 22
 src/fx1/serve/api.py:_mount_key_lifecycle 23
-src/fx1/serve/api.py:_mount_receipt_routes 13
+src/fx1/serve/api.py:_mount_receipt_routes 12
 src/fx1/serve/api.py:_resolve_auth 12
 src/fx1/serve/api.py:_submit_job 14
 src/fx1/serve/api.py:create_app 70
@@ -87,6 +86,7 @@ src/fx1/serve/api.py:create_app._resolve_request_backend 10
 src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
 src/fx1/serve/api_audit_finetune.py:probe_finetune 46
+src/fx1/serve/backends.py:LocalFx1Backend.__init__ 14
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
 src/fx1/serve/backends.py:_openai_chat_complete 10
 src/fx1/serve/backends.py:_openai_chat_complete_tools 19
@@ -134,7 +134,7 @@ src/fx1/serve/vectorstores.py:validate_filters 14
 src/fx1/serve/webhooks.py:deliver_signed 13
 src/fx1/train/pipeline.py:Pipeline.run_eval_candidate 10
 src/fx1/webresearch/engine.py:Researcher._fetch_doc 11
-src/fx1/webresearch/engine.py:Researcher.run 14
+src/fx1/webresearch/engine.py:Researcher.run 10
 src/fx1/webresearch/engine.py:group_claims 10
 src/fx1/webresearch/fetch.py:_robots_disallowed 11
 src/fx1/webresearch/fetch.py:fetch_page 15
@@ -178,7 +178,6 @@ src/quant_fund/cli/micro_cmds.py:candle_book 11
 src/quant_fund/cli/micro_cmds.py:kyle_ofi 11
 src/quant_fund/cli/ops_cmds.py:monitor 10
 src/quant_fund/cli/ops_cmds.py:paper 23
-src/quant_fund/cli/ops_cmds.py:sim_live 10
 src/quant_fund/cli/research_cmds.py:basis_carry_cmd 26
 src/quant_fund/cli/research_cmds.py:corpus_absence_cmd 19
 src/quant_fund/cli/research_cmds.py:corpus_epoch 24
@@ -733,7 +732,7 @@ src/quant_fund/parity/replay.py:_execute_pending 14
 src/quant_fund/parity/replay.py:replay_session 25
 src/quant_fund/parity_leak_audit.py:parity_leak_audit 24
 src/quant_fund/pipeline/dataset.py:panel 13
-src/quant_fund/pipeline/doctor.py:doctor 15
+src/quant_fund/pipeline/doctor.py:doctor 14
 src/quant_fund/pipeline/flat_audit.py:pipeline_flat_audit 14
 src/quant_fund/pipeline/forecast/artifacts.py:_load_probability_calibrator 12
 src/quant_fund/pipeline/forecast/conformal.py:conformal_sets_asof 12
