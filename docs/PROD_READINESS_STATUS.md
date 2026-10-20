@@ -1,40 +1,48 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `fb801e6c4` (2026-10-20 UTC). Prior integrator pass: `b5f1f6d11`.  
+**Measured at:** `origin/main` `6f2bbfedb` (2026-10-20 UTC). Prior integrator measure: `ba9537459`.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. Do not call the repo production-ready until every exit line is **green** on a completed CI run of `main`, or **parked** below with an owner action.
 
-Supporting lists: [`D1_02_EPOCH_ACK_INVENTORY.md`](D1_02_EPOCH_ACK_INVENTORY.md), [`UNGATED_EPOCH_ACKS_84d3d31b7.md`](UNGATED_EPOCH_ACKS_84d3d31b7.md), [`D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md`](D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md). Manifests/packaging chain proposal: [`EVIDENCE_MANIFESTS_PACKAGING_CHAIN.md`](EVIDENCE_MANIFESTS_PACKAGING_CHAIN.md).
+**Landed sibling work (on `main`):**
+
+| Lane | Tip SHA | Note |
+|---|---|---|
+| RL-4C | `de448576d` | `release.yml` preflight requires green CI + evidence-audit; `persist-credentials: false`; `AGENTS.md` / `Makefile` ci targets aligned with `ci.yml`. |
+| VT-2M | `b5f1f6d11`, `0febe4d69`, `ead2bd4f9` | Replay lane `HOME`/`TMP`/`GIT_CEILING_DIRECTORIES` isolation; `mcs_vol` producer shrink + carrier re-pin (`claims_equal: false`, `lane_evolution`; `receipts/mcs_vol_drill.json` unchanged); CI uploads replay / verify-repo / tamper / fuzz artifacts. Migration: `quality/evidence_migrations/evidence_migration_20261019.json` (`mcs_vol_smaller_inputs`). |
+
+**mcs_vol epoch stamp:** `needs-stamp: mcs_vol` on `b5f1f6d11` was satisfied by integrator commit `d0b9d45cd` (`scripts/*` corpus-epoch through `b5f1f6d11`, including `scripts/mcs_vol_drill.py`). This pass re-checked at `6f2bbfedb`: `mcs_vol_drill.py` is not in `head_member_digest_drift` for `scripts/*`. The replay carrier `data/manifests/replay/mcs_vol.json` is not yet in `quality/epoch_heads.json` (see `docs/PROPOSED_EVIDENCE_CHAINS.md` / [`EVIDENCE_MANIFESTS_PACKAGING_CHAIN.md`](EVIDENCE_MANIFESTS_PACKAGING_CHAIN.md)). **No restamp.**
+
+Supporting lists: [`D1_02_EPOCH_ACK_INVENTORY.md`](D1_02_EPOCH_ACK_INVENTORY.md), [`UNGATED_EPOCH_ACKS_84d3d31b7.md`](UNGATED_EPOCH_ACKS_84d3d31b7.md), [`D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md`](D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md).
 
 ## Exit criteria
 
-1. **RED** — complete CI on `main` with no cancelled/failed jobs. Command: `gh run list --branch main --workflow CI --limit 5`. Last **completed** CI at measure time: https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317 (`fb801e6c4` ancestry, **failure**; lint, evidence-audit, and test shards failed).
-2. **PARTIAL** — `uv run python scripts/check_mypy_strict_allowlist.py` **passes** on `cursor/prod-ready-0343` (extended `typings/torch` stubs). `make lint` still fails `check_mccabe_ratchet.py` on `main` (pre-existing ceiling debt in `replay_sweep`, `sim_live`, `doctor`, etc.). Command: `make lint && make typecheck && uv run mypy src/fx1`.
-3. **RED until H1** — `uv run dipcatcher crown-jewels --check` at `b5f1f6d11` exited 1 (`jewel_mutated:AGENTS.md`, `jewel_mutated:Makefile`); this stamp re-pins those jewels. `uv run dipcatcher verify-repo` is allowed to keep `pin_signatures: FAIL pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json` until H1. Other verify-repo gates must print. Last evidence-audit: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510.
-4. **RED until H1** — `make evidence-audit` must show all 7 trailing gates (`crown-jewels`, `verify-witness`, `verify-repo`, `checkpoint-chain`, `verify-rotations`, `tamper-drill`, `fuzz-drill`). Last completed evidence-audit **failed** on pin_drift in https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510. Tamper/fuzz 0-escape calibration is not a green signal until pins are re-signed.
-5. **INVENTORY, sweep not re-run this pass** — `make replay-sweep` (`dipcatcher replay-all --strict --timeout 300`). 16 carriers under `data/manifests/replay/`. `data/file_us_wide/bronze/bars.parquet` is missing (gitignored). 14 carriers bind that tape (`calib`, `conformal`, `coverage`, `coverage_cs`, `cp`, `drift`, `loss_cs`, `mcs`, `monitor`, `panel_audit`, `race`, `serial`, `tail`, `verdict`). `corpus.json` pins in-repo receipts. `mcs_vol.json` has no `input_tapes`. Skips allowed only for private tapes; executed vs skipped must be reported separately on the next completed evidence-audit replay artifact. CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510.
-6. **NO LAST GREEN BASE** — `make admission-gate ADMISSION_BASE=<pre-push tip>` and `make epoch-consistency EPOCH_BASE=<pre-push tip>` run against this stamp's parent (`b5f1f6d11`), not against a green CI SHA. There is no completed all-jobs-green CI SHA. Last completed CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510.
-7. **GREEN vs `cb4f2c52f`** — `git grep -E 'pytest.mark.(skip|xfail)|pytest\.skip\(|pytest\.xfail\(' cb4f2c52f -- tests | wc -l` → 173; same grep at `b5f1f6d11` → 173. `git diff cb4f2c52f..b5f1f6d11 -- tests pyproject.toml Makefile | rg 'pytest.mark.(skip|xfail)|fail_under|deselect'` → empty. `pyproject.toml` adds `pytest-timeout` / `timeout = 900` (not a skip). No integrator-driven baseline loosening.
-8. **THIS FILE** — lines 1–6 are red, not-run, or parked; line 7 is green vs `cb4f2c52f`; human items H1–H7 are parked with owner actions. Not production-ready.
+1. **RED (in progress / cancelled)** — Full CI on `main` with no cancelled/failed jobs. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 20`. Last **partial** run for RL-4C tip: https://github.com/artificial-hedge/dipcatcher/actions/runs/39398901964 (`de448576d`; **lint** and **audit** failed; **evidence-audit** failed; replay upload path exercised — not all-green). Newer pushes cancel mid-queue (`39400490233`, `39401015545`). Last **completed** CI at earlier measure: https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317 (**failure**).
+2. **NOT RUN this pass** — Local full gate (sibling dirty trees). Command: `make lint && make typecheck && uv run mypy src/fx1`. `uv run python scripts/check_mypy_strict_allowlist.py` reported passing on parallel `cursor/prod-ready-0343` work; `main` lint still carries McCabe ratchet debt. Last CI **lint** failure: https://github.com/artificial-hedge/dipcatcher/actions/runs/39398901964.
+3. **RED** — `verify_repo` at `6f2bbfedb` (Python API; lab CLI: `uv run quant verify-repo` when importable): `crown_jewels` **FAIL** (26 `jewel_mutated` / `jewel_unpinned`); `pin_signatures` **FAIL** `pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json` (expected until H1). Multiple `epoch:*` chains **FAIL** (forks/multiple heads on `src`/`tests`/`docs`; digest drift on `scripts`, `quality`, workflows). `epoch:scripts` drift does **not** include `mcs_vol_drill.py`. CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39398901964.
+4. **RED until H1** — `make evidence-audit` (seven trailing gates). Last observed **evidence-audit** failure: https://github.com/artificial-hedge/dipcatcher/actions/runs/39398901964.
+5. **PARTIAL / inventory** — `make replay-sweep`. 16 carriers under `data/manifests/replay/`; 14 need gitignored tape. `mcs_vol` executes on CI (synthetic). CI replay sweep + uploads: https://github.com/artificial-hedge/dipcatcher/actions/runs/39398901964 (not paired with full green CI).
+6. **GREEN vs `b5f1f6d11` base (limited)** — `EPOCH_BASE=b5f1f6d11 make epoch-consistency` → exit 0. `ADMISSION_BASE=b5f1f6d11 make admission-gate` → exit 0 (`no corpus receipt changes vs b5f1f6d11`). **No all-jobs-green CI SHA** for production admission. Last completed full CI failure-heavy: https://github.com/artificial-hedge/dipcatcher/actions/runs/39247868051.
+7. **GREEN vs `cb4f2c52f`** — No integrator-driven pytest skip / coverage floor loosening since work-order base.
+8. **THIS FILE** — Exit lines 1–5 red or partial; line 6 narrowly green; line 7 green; H1–H7 parked. **Not production-ready.**
 
 ## Human-only parked items
 
 Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not grandfather receipts, and do not point another vendor at the fx1 chat id.
 
-1. **H1 Re-sign pins (D1-03/D2-02/D3-04).** `gate_pins.sig` last changed in `93c257586` on 2026-09-30. Ed25519 `key_id` `bc3bcff676056adf`. Only the holder of `GATE_SIGNING_KEY` runs `make sign-pins`, then `make checkpoint`, `make witness-checkpoint`, then anchor steps. Until then `verify-repo` / `evidence-audit` / tamper-drill / fuzz-drill and the pin-drift unit tests stay red. Never mint a new key.
-2. **H2 Branch protection and required checks (D1-01/D2-10).** `gh api repos/artificial-hedge/dipcatcher/branches/main/protection` → HTTP 403. Rulesets: `24646693` creation (excludes `main`/`isolated`/`others`), `24648163` deletion (includes those refs). Neither requires status checks or a merge queue. Repo admin must set required checks / merge queue / revert bot. Until then CI is advisory.
-3. **H3 Epoch acks (D1-02).** Live ledger 46 acks (13 mutated, 33 removed). Genesis 5 at `02fbf8612`. `84d3d31b7` added 13 (12 in-place lane mutations + 1 quality-fork removal). 39 entries after the genesis 5 (44−5 at that inventory; two later `tests/*` removals in `43602dd9d` make 41 post-genesis). Owner decides remediate vs grandfather. Lists: `docs/D1_02_EPOCH_ACK_INVENTORY.md`, `docs/UNGATED_EPOCH_ACKS_84d3d31b7.md`. Agents only list.
-4. **H4 Private tapes and Windows fleet (D1-06, D5-11).** 14/16 replay carriers need `data/file_us_wide/bronze/bars.parquet`. NTFS/ACL needs `D:\dipcatcher`. Not verified here.
-5. **H5 fx1 model endpoint (D5-01/D5-02).** `fx1.__version__` is `0.4.0`. Default hosted URL is `FX1_BASE_URL` or Moonshot. Do not point another vendor at chat ids `fx1` / `fx1-lite` and call it fx1. No production weights endpoint.
-6. **H6 Release tag and versioning (D4-06/D5-06).** `fx1.__version__` `0.4.0`. `install.sh` and `packaging/homebrew/fxi.rb` use `https://github.com/artificial-hedge/dipcatcher/releases/download/v0.4.0/fx_1-0.4.0-py3-none-any.whl`. `gh api repos/artificial-hedge/dipcatcher/releases/tags/v0.4.0` → HTTP 404. Homebrew `sha256` is `FILL_AT_RELEASE`. Owner tags and publishes the asset.
-7. **H7 Admission honesty for stamped history (D1-08).** Work-order 176/346/6 is stale. Live: **170 of 338** stamped non-legacy claim receipts fail `honesty_stamp_errors`; 0 reject-class; 1 registry `admission_honesty_gap` (`p0_evidence_inventory_v1.json`). Owner decides register / re-admit / grandfather. This pass does not grandfather. List: `docs/D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md`.
+1. **H1 Re-sign pins (D1-03/D2-02/D3-04).** Ed25519 `key_id` `bc3bcff676056adf`. Only the holder of `GATE_SIGNING_KEY` runs `make sign-pins`, then checkpoint / witness / anchor steps. Until then `pin_signatures` and dependent gates stay red.
+2. **H2 Branch protection and required checks (D1-01/D2-10).** Repo admin must require CI status checks / merge queue. `gh api` branch protection may return 403 for agents.
+3. **H3 Epoch acks (D1-02).** **13** self-excused acks at `84d3d31b7` plus **39** ungated entries in [`UNGATED_EPOCH_ACKS_84d3d31b7.md`](UNGATED_EPOCH_ACKS_84d3d31b7.md). Owner decides remediate vs grandfather. Agents only list.
+4. **H4 Private tapes and Windows fleet (D1-06, D5-11).** Tape-backed replay carriers and `D:\dipcatcher` fleet host not verified in cloud integrator passes.
+5. **H5 fx1 model endpoint (D5-01/D5-02).** `fx1.__version__` `0.4.0`; no production weights endpoint; do not mislabel third-party chat as fx1.
+6. **H6 Release tag and versioning (D4-06/D5-06).** Release asset `v0.4.0` / Homebrew `sha256` `FILL_AT_RELEASE` — owner tags and publishes (`gh api …/releases/tags/v0.4.0` → 404).
+7. **H7 Admission honesty for stamped history (D1-08).** Work-order bar **176 / 346** stamped receipts failing honesty admission (owner triage). Detail: [`D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md`](D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md). Agents do not grandfather.
 
 ## Integrator log
 
 | When (UTC) | SHA | Note |
 |---|---|---|
-| 2026-10-19 | `219f6c4bb` | Integrator stamp through `6d15a409c` (workflows/configs/docs/scripts/src/tests/typings/quality). |
-| 2026-10-19 | `65080a71e` | ZR-9V stamp left some pin receipts uncommitted; repaired later. |
-| 2026-10-19 | `43602dd9d` / `8249426e0` | Epoch-head repair + omitted workflows/configs receipts committed. |
-| 2026-10-19 | `b5f1f6d11` | Pre-stamp tip for this pass (replay isolation). Jewels `AGENTS.md`+`Makefile` mutated; src/tests/scripts/docs/workflows/quality live-drifted. |
-| 2026-10-20 | `cursor/prod-ready-0343` | Cloud agent: torch stubs for strict mypy allowlist, ruff UP017, audit_coverage cli/utils counts, manifests chain proposal doc. |
+| 2026-10-19 | `d0b9d45cd` | Stamp `scripts`/`src`/`tests`/`docs`/`workflows`/`quality` through `b5f1f6d11` (includes **mcs_vol** producer). |
+| 2026-10-19 | `fb801e6c4` | Concurrent stamp: `src`/`tests`/`docs`/`quality` (epoch fork pressure). |
+| 2026-10-20 | `cursor/prod-ready-0343` | Parallel agent: torch stubs, ruff UP017, manifests chain proposal doc. |
+| 2026-10-20 | `6f2bbfedb` | QA-0K integrator: **mcs_vol already stamped**; readiness refresh; RL-4C + VT-2M recorded. Open `needs-stamp:` on `b34527e55` for ungated/proposed docs — **not stamped** per do-not-stamp guidance. |
