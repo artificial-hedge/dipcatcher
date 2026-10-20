@@ -21,12 +21,22 @@ def expand_mapping_key_segments(key: str) -> list[str]:
     return [part for part in folded.split("_") if part]
 
 
+def _substring_token_in_segment(segment: str, token: str) -> bool:
+    """Match ``pnl`` / ``nav`` in a segment without ``unavailable``-style false positives."""
+    if segment == token:
+        return True
+    if segment.endswith(token):
+        return True
+    needle = f"_{token}"
+    return needle in f"_{segment}_"
+
+
 def mapping_key_forbidden(key: str, forbidden: frozenset[str]) -> bool:
     """True when *key* carries a forbidden headline metric token."""
     for segment in expand_mapping_key_segments(key):
         if segment in forbidden:
             return True
         for token in _SUBSTRING_TOKENS:
-            if token in forbidden and token in segment:
+            if token in forbidden and _substring_token_in_segment(segment, token):
                 return True
     return False

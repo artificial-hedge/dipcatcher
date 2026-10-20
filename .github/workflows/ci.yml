@@ -989,3 +989,47 @@ jobs:
           path: .test_durations
           if-no-files-found: error
 
+  required-gate:
+    name: ci-required
+    needs:
+      [
+        lint,
+        audit,
+        package,
+        container,
+        test,
+        coverage,
+        perf,
+        smoke,
+        mc-engine-smoke,
+        rust-accel,
+        market-sim,
+        parity-smoke,
+        examples,
+        audit-observability,
+        diffbacktest,
+        robustness-smoke,
+        formal,
+        evidence-audit,
+        pretrade-risk,
+        stress-smoke,
+      ]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          jobs = json.loads(os.environ["NEEDS_JSON"])
+          failures = {name: row.get("result") for name, row in jobs.items() if row.get("result") != "success"}
+          if not jobs or failures:
+              raise SystemExit(f"required CI jobs did not all pass: {failures or 'no dependencies'}")
+          print(f"all {len(jobs)} required CI job groups passed")
+          PY
+

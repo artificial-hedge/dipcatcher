@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -79,7 +83,8 @@ def test_required_status_checks_cover_every_job() -> None:
         gate = jobs["required-gate"]
         assert gate["name"] == context
         assert gate["if"] == "${{ always() }}"
-        assert set(gate["needs"]) == set(jobs) - {"required-gate"}
+        optional_jobs = {"required-gate", "refresh-test-durations"}
+        assert set(gate["needs"]) == set(jobs) - optional_jobs
         step = gate["steps"][0]
         assert step["env"]["NEEDS_JSON"] == "${{ toJSON(needs) }}"
         assert 'row.get("result") != "success"' in step["run"]
@@ -188,6 +193,7 @@ CI_JOB_MAKE_TARGETS: dict[str, tuple[str, ...]] = {
     "pretrade-risk": ("pretrade-bench",),
     "stress-smoke": ("stress-smoke",),
     "refresh-test-durations": ("test-durations",),
+    "required-gate": (),
 }
 
 MAKE_CI_DEPS = ("lint", "typecheck", "security", "coverage")
