@@ -372,6 +372,8 @@ warn_unused_ignores = true
 testpaths = ["tests/unit", "tests/property", "tests/regression", "tests/end_to_end", "tests/formal"]
 addopts = "-q --strict-markers --timeout=900 --import-mode=importlib"
 # WP-3J-2: per-test ceiling so CI shards fail fast instead of hanging to job timeout.
+# WP-3J-3: refresh .test_durations via CI workflow_dispatch (suite=full) → job
+# refresh-test-durations → artifact dipcatcher-test-durations; commit at repo root.
 timeout = 900
 timeout_method = "thread"
 markers = [

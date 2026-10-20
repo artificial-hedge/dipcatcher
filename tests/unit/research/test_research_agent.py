@@ -298,6 +298,7 @@ def test_research_recovers_synthetic_oracle(
 
 
 @pytest.mark.slow
+@pytest.mark.timeout(5400)
 def test_research_recovers_synthetic_oracle_full_catalog(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

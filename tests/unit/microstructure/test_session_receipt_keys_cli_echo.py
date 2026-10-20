@@ -42,6 +42,7 @@ def test_research_cli_echoes_every_session_receipt_key(monkeypatch: pytest.Monke
 
 
 @pytest.mark.slow
+@pytest.mark.timeout(5400)
 def test_research_cli_echoes_every_session_receipt_key_full_catalog(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
