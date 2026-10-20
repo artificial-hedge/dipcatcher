@@ -1490,6 +1490,64 @@ def _free_tcp_port() -> int:
         sock.close()
 
 
+def _expected_weights_sha_from_manifest(root: Path) -> str | None:
+    manifest_path = root / "weights.manifest.json"
+    if not manifest_path.is_file():
+        return None
+    try:
+        manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
+    return sha if isinstance(sha, str) else None
+
+
+def _parse_local_serve_url(url: str) -> None:
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
+
+
+def _load_local_fx1_card(
+    root: Path,
+    *,
+    enforce_ship_gate: bool | None,
+    synthetic_fixture: bool | None,
+) -> tuple[ModelCard, bool]:
+    from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
+
+    card_path = root / "modelcard.json"
+    if not card_path.exists():
+        raise FileNotFoundError(
+            f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
+        )
+    card = ModelCard.load(card_path)
+    if synthetic_fixture is None:
+        synthetic_fixture = synthetic_fixture_from_env()
+    placeholder = card.eval_delta.is_placeholder
+    if synthetic_fixture and not placeholder:
+        raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
+    gate = enforce_ship_gate if enforce_ship_gate is not None else enforce_ship_gate_from_env()
+    if gate and not card.ship_eligible and not synthetic_fixture:
+        detail = (
+            " (placeholder eval_delta is not measured evidence)"
+            if placeholder
+            else " (honesty/domain/general deltas)"
+        )
+        raise RuntimeError(f"{card.version} failed the ship gate{detail}; refusing to serve")
+    return card, synthetic_fixture
+
+
+def _dedicated_local_engine_cmd(root: Path, synthetic_fixture: bool) -> tuple[str, str]:
+    port = _free_tcp_port()
+    url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
+    cmd = (
+        "$python -m fx1.serve.local_engine --checkpoint-dir $checkpoint_dir "
+        f"--port {port}{' --synthetic-fixture' if synthetic_fixture else ''}"
+    )
+    return url, cmd
+
+
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1531,30 +1589,12 @@ class LocalFx1Backend(_UsageTracker):
         start_timeout_s: float | None = None,
         synthetic_fixture: bool | None = None,
     ) -> None:
-        from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
-
         root = Path(checkpoint_dir)
-        card_path = root / "modelcard.json"
-        if not card_path.exists():
-            raise FileNotFoundError(
-                f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
-            )
-        self.card = ModelCard.load(card_path)
-        if synthetic_fixture is None:
-            synthetic_fixture = synthetic_fixture_from_env()
-        placeholder = self.card.eval_delta.is_placeholder
-        if synthetic_fixture and not placeholder:
-            raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
-        gate = enforce_ship_gate if enforce_ship_gate is not None else enforce_ship_gate_from_env()
-        if gate and not self.card.ship_eligible and not synthetic_fixture:
-            detail = (
-                " (placeholder eval_delta is not measured evidence)"
-                if placeholder
-                else " (honesty/domain/general deltas)"
-            )
-            raise RuntimeError(
-                f"{self.card.version} failed the ship gate{detail}; refusing to serve"
-            )
+        self.card, synthetic_fixture = _load_local_fx1_card(
+            root,
+            enforce_ship_gate=enforce_ship_gate,
+            synthetic_fixture=synthetic_fixture,
+        )
         self._synthetic_fixture = synthetic_fixture
         if require_signature is None:
             require_signature = bool(os.environ.get("FX1_SIGNING_KEY"))
@@ -1568,27 +1608,11 @@ class LocalFx1Backend(_UsageTracker):
                     "is configured"
                 )
         self._root = root
-        # The weights sha this checkpoint's manifest pins — compared against
-        # the sha a live engine advertises before we attach (see
-        # ``_verify_served_weights``). None when the dir has no readable
-        # manifest (e.g. a raw vLLM checkpoint layout) — then there is
-        # nothing to verify against and attach stays a liveness probe.
-        self._expected_weights_sha: str | None = None
-        manifest_path = root / "weights.manifest.json"
-        if manifest_path.is_file():
-            try:
-                manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                manifest_obj = {}
-            sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
-            if isinstance(sha, str):
-                self._expected_weights_sha = sha
+        self._expected_weights_sha = _expected_weights_sha_from_manifest(root)
         self._verified_attach = False
         url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
         if url:
-            parsed = urllib.parse.urlparse(url)
-            if parsed.scheme not in ("http", "https") or not parsed.netloc:
-                raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
+            _parse_local_serve_url(url)
         self._url = _chat_completions_url(url) if url else ""
         cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
         self._serve_cmd = cmd
@@ -1598,18 +1622,7 @@ class LocalFx1Backend(_UsageTracker):
             and (root / "weights.safetensors").is_file()
             and not self._shares_env_checkpoint(root)
         ):
-            # A checkpoint dir that is not the environment's pinned
-            # FX1_CHECKPOINT_DIR can never be served by the shared
-            # FX1_LOCAL_SERVE_URL engine — that engine holds different
-            # weights, so attaching would silently serve the wrong model
-            # (``_verify_served_weights`` refuses it). Give this backend a
-            # dedicated in-repo engine instead: a free port per instance.
-            port = _free_tcp_port()
-            self._url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
-            self._serve_cmd = (
-                "$python -m fx1.serve.local_engine --checkpoint-dir $checkpoint_dir "
-                f"--port {port}{' --synthetic-fixture' if self._synthetic_fixture else ''}"
-            )
+            self._url, self._serve_cmd = _dedicated_local_engine_cmd(root, self._synthetic_fixture)
         self._model = (
             model if model is not None else (os.environ.get(LOCAL_MODEL_ENV) or self.card.version)
         )
