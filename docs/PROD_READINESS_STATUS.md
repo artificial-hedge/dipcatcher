@@ -1,10 +1,10 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `3297b2c80` (2026-10-20 UTC), then this integrator stamp.  
+**Measured at:** `origin/main` `ff6799e0d` (2026-10-20 UTC), then this integrator stamp.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
-**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `73885abc8`/`dfdc384fd`. **McCabe PASS** at `3297b2c80` (`source_environ_names` 10→1; `mccabe_baseline.txt` unchanged). **gitleaks PARKED** (historical). **SonarCloud PARKED** (leak-period backlog). **fx1-required / fx1-coverage / test still REMAINING** (fx1-tests sibling not on origin).
+**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `73885abc8`/`dfdc384fd`. **McCabe PASS** at `3297b2c80`. **`test_public_serve_refuses_fixture_test_opt_in` PASS** at `ff6799e0d`. Journeys-excluded shard **358→119** then 5 more greens; **114 remaining** (superpower catalog-unavailable cluster). **gitleaks PARKED**. **SonarCloud PARKED**. **fx1-required / fx1-coverage still REMAINING.**
 
 **Landed sibling work (on `main`):**
 
@@ -29,6 +29,7 @@
 | fx1 mypy | `73885abc8` | **PASS (mypy `src/fx1`).** Strict types + public-serve fixture refusal. Jewels: `harness.py`, `concierge.py`, `superpower.py`. |
 | Diagrams | `dfdc384fd` | **PASS.** Atlas/manifest/module_deps bound to split modules; `gen_arch_diagrams.py` updated. |
 | McCabe | `3297b2c80` | **PASS.** `source_environ_names` complexity 10→1 in `truthfulness.py`; `mccabe_baseline.txt` unchanged. |
+| fx1 follow-up | `ff6799e0d` | **`test_public_serve_refuses_fixture_test_opt_in` PASS.** Chat cancel/approvals/loopback serve. Jewels: `Makefile`, `harness.py`, `concierge.py`. Journeys-excluded 358→119 + 5 greens; **114 remaining** (superpower catalog-unavailable). |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -49,10 +50,11 @@ These are real on clean `main` at `7c6338549`; fixing them is engineering work, 
 | **mypy `src/fx1`** | **PASS** | Clean on `73885abc8` / `dfdc384fd`. |
 | **gitleaks** | **PARKED** | Historical findings; not a current-tree gate fail. |
 | **SonarCloud** | **PARKED** | Leak-period backlog; not a production-readiness flip. |
-| **fx1-required / fx1-coverage / test** | **REMAINING** | fx1-tests sibling not on origin at this SHA. |
+| **fx1-required / fx1-coverage** | **REMAINING** | Not a completed green fx1 CI job on this SHA. |
+| **fx1 journeys-excluded** | **PARTIAL** | Shard 358→119 then 5 more greens; **114 remaining** (superpower catalog-unavailable). Fixture refusal test **PASS**. |
 | **McCabe** | **PASS** | At `3297b2c80`: `source_environ_names` 10→1; baseline unchanged. |
-| **Crown jewels** | **intact** | No jewel mutated. Did not `--write`. |
-| **Epoch chains** | **stamp this pass** | `src` (`truthfulness.py`), `tests` (frontdoor helper), `docs` (this file), `quality` (heads). `data/manifests` **not** chained. |
+| **Crown jewels** | **re-pin this stamp** | `Makefile`, `harness.py`, `concierge.py` at `ff6799e0d`. |
+| **Epoch chains** | **stamp this pass** | `src`, `tests`, `docs` (this file), `quality` (jewels + heads). `data/manifests` **not** chained. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
 | **FX-1A coverage** | **NOT VERIFIED** | Floor 90 in ratchet; end-to-end `make fx1-coverage` not re-run this pass. |
@@ -94,3 +96,4 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `58907c62c` / `ac4e3d3df` | **Docs strict PASS.** Re-pin `mkdocs.yml` + `superpower.py`; stamp drifted chains. |
 | 2026-10-20 | `dfdc384fd` | **Diagrams PASS.** Re-pin harness/concierge/superpower; stamp src/docs/scripts/quality. mypy `src/fx1` clean. gitleaks/SonarCloud parked. fx1 jobs remaining. |
 | 2026-10-20 | `3297b2c80` | **McCabe PASS.** Stamp src/tests/docs/quality. Jewels intact. fx1 jobs remaining. |
+| 2026-10-20 | `ff6799e0d` | **Fixture refusal PASS.** Re-pin Makefile/harness/concierge; stamp src/tests/docs/quality. 114 journeys-excluded remaining. |
