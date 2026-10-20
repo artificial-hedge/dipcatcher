@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import typer
+
 from fx1.cli._app import corpus_app, sources_app, train_app
 
 
@@ -20,7 +21,7 @@ def corpus_build(
     """Build the fx-1 SFT corpus from gate-passed dipcatcher receipts."""
     from fx1.data import build_corpus
 
-    stats = build_corpus(list(receipts_dir), out, repo_root=Path.cwd())
+    stats = build_corpus(list(receipts_dir), out)
     typer.echo(json.dumps(stats, indent=2))
 
 
@@ -35,11 +36,7 @@ def corpus_build_full(
     from fx1.data import build_full_corpus
 
     stats = build_full_corpus(
-        list(receipts_dir),
-        out,
-        repo_root=Path.cwd(),
-        notebooks=list(notebooks),
-        artifacts_dir=artifacts_dir,
+        list(receipts_dir), out, notebooks=list(notebooks), artifacts_dir=artifacts_dir
     )
     typer.echo(json.dumps(stats, indent=2))
 

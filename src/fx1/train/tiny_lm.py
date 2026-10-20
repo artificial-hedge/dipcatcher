@@ -20,17 +20,16 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
+from fx1.models.tiny_lm import DEFAULT_MLP_RATIO, build_tiny_lm
 from fx1.train.config import TrainConfig
 from quant_fund.utils.atomicio import atomic_write_text
 
 if TYPE_CHECKING:
-    from torch import Tensor as TorchTensor
     from torch.nn import Module as TorchModule
 
     from fx1.modelcard import EvalDelta
@@ -42,7 +41,6 @@ EOS_ID = 257
 DEFAULT_DIM = 32
 DEFAULT_CTX = 64
 DEFAULT_N_HEADS = 4
-DEFAULT_MLP_RATIO = 4
 
 MIN_CORPUS_BYTES = 512
 # Step bounds for the ft surface: every job performs real gradient updates
@@ -100,60 +98,6 @@ def plan_steps(n_positions: int, n_epochs: int) -> int:
     """
     per_epoch = max(1, n_positions // DEFAULT_CTX)
     return min(MAX_FT_STEPS, max(MIN_FT_STEPS, n_epochs * per_epoch))
-
-
-def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> TorchModule:
-    """The torch twin of ``fx1.serve.local_engine._TinyLM`` — identical math."""
-    import torch
-    from torch import nn
-
-    class _Block(nn.Module):  # type: ignore[misc, unused-ignore]
-        def __init__(self) -> None:
-            super().__init__()
-            self.ln1 = nn.LayerNorm(dim)
-            self.attn = nn.ModuleDict({"qkv": nn.Linear(dim, 3 * dim), "proj": nn.Linear(dim, dim)})
-            self.ln2 = nn.LayerNorm(dim)
-            self.mlp = nn.ModuleDict(
-                {
-                    "fc1": nn.Linear(dim, DEFAULT_MLP_RATIO * dim),
-                    "fc2": nn.Linear(DEFAULT_MLP_RATIO * dim, dim),
-                }
-            )
-
-        def forward(self, x: TorchTensor) -> TorchTensor:
-            n = x.shape[1]
-            dh = dim // n_heads
-            a = self.ln1(x)
-            qkv = self.attn["qkv"](a)
-            q, k, v = qkv.split(dim, dim=-1)
-            qh = q.reshape(1, n, n_heads, dh).transpose(1, 2)
-            kh = k.reshape(1, n, n_heads, dh).transpose(1, 2)
-            vh = v.reshape(1, n, n_heads, dh).transpose(1, 2)
-            scores = qh @ kh.transpose(-2, -1) / math.sqrt(dh)
-            mask = torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)
-            scores = scores.masked_fill(mask, float("-inf"))
-            attended = (torch.softmax(scores, dim=-1) @ vh).transpose(1, 2).reshape(1, n, dim)
-            x = x + self.attn["proj"](attended)
-            m = self.ln2(x)
-            x = x + self.mlp["fc2"](nn.functional.gelu(self.mlp["fc1"](m), approximate="tanh"))
-            return x
-
-    class _TinyLM(nn.Module):  # type: ignore[misc, unused-ignore]
-        def __init__(self) -> None:
-            super().__init__()
-            self.tok_emb = nn.Embedding(vocab, dim)
-            self.pos_emb = nn.Embedding(ctx, dim)
-            self.blocks = nn.ModuleList([_Block()])
-            self.ln_f = nn.LayerNorm(dim)
-            self.lm_head = nn.Linear(dim, vocab, bias=False)
-
-        def forward(self, ids: TorchTensor) -> TorchTensor:
-            x = self.tok_emb(ids) + self.pos_emb.weight[: ids.shape[1]]
-            for blk in self.blocks:
-                x = blk(x)
-            return cast(TorchTensor, self.lm_head(self.ln_f(x)))
-
-    return _TinyLM()
 
 
 def load_base_tensors(model: TorchModule, checkpoint_dir: Path) -> str:

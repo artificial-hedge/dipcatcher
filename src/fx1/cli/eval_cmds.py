@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import typer
+
 from fx1.cli._app import app
 from fx1.cli.support import _BACKEND_HELP, _JUDGE_BACKEND_HELP
+from fx1.cli_sign import attestation_status, sign_checkpoint
 
 if TYPE_CHECKING:
     from fx1.eval.suite import ModelFn
@@ -372,27 +374,6 @@ def contamination_audit(
     raise typer.Exit(code=1 if report.overall_flagged else 0)
 
 
-@app.command("sign")
-def sign_checkpoint(
-    checkpoint_dir: Path = typer.Argument(...),
-) -> None:
-    """Sign an fx-1 release (attestation ladder tier 1)."""
-    from fx1.serve import sign_release
-
-    sig = sign_release(checkpoint_dir)
-    typer.echo(f"signed: {sig}")
-
-
-@app.command("attestation")
-def attestation_status(
-    checkpoint_dir: Path = typer.Argument(...),
-) -> None:
-    """Report which attestation tiers a checkpoint satisfies."""
-    from fx1.serve import attestation_ladder_status
-
-    typer.echo(json.dumps(attestation_ladder_status(checkpoint_dir), indent=2))
-
-
 @app.command("sbom")
 def sbom_generate(
     lockfile: Path = typer.Option(Path("uv.lock")),
@@ -450,3 +431,7 @@ def mrm_dossier(
             indent=2,
         )
     )
+
+
+app.command("sign")(sign_checkpoint)
+app.command("attestation")(attestation_status)
