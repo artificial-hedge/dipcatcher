@@ -99,7 +99,6 @@ packages = [
     "hedge_lab",   # hedge-lab books racing lightspeed/pipeline/research
     "market_sim",  # market simulator over backtest
     "paper",       # paper-trading loop (order-path; deny rule below)
-    "live",        # armed order gateway; same order-path rank as paper
 ]
 
 [[layers]]
