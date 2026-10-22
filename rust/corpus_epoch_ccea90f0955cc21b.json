@@ -1,0 +1,74 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "74f9e1b6ebc95c44bbc1d38335dcd7cff60bb7f5f98a5922e42fcfc74458cd4f",
+  "inputs_sha256": "47adb9dc626346e49ee4d3404a129d3947f0b0397ad27c9e383389bb2821bab6",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "56f1fe531564bbd0fec787aee17fe90311b4cceff0ae0b3c77ca2efee58d8c56",
+  "members": [
+    {
+      "name": "corpus_epoch_b52c1e2f6ba28091.json",
+      "sha256": "0d3ef925a6b404757dd275da8c47795fbad61edcf34320b1025bbfea338259be"
+    },
+    {
+      "name": "corpus_epoch_d730d2181a933d63.json",
+      "sha256": "1c87e64c12ae2d78efbebf89419979d9901731e3dba7aca3199c7fb1881bead3"
+    },
+    {
+      "name": "quant_core/Cargo.lock",
+      "sha256": "95b6bd9432ae16423f1e83d49108446d4fbca8dded69c7d47b93d6ebdf0f57f3"
+    },
+    {
+      "name": "quant_core/Cargo.toml",
+      "sha256": "cfae7eb8c3bc01d0bd58d8964373f554178df7c0f9ab49b272ccf8c245a83f68"
+    },
+    {
+      "name": "quant_core/README.md",
+      "sha256": "12cb007ac45f0e1ce508c0ca32102d8b01e2f547a34cd109e196c3033aaee463"
+    },
+    {
+      "name": "quant_core/pyproject.toml",
+      "sha256": "f53e1659c6fa76a3d6fbc07a03aab398f1966b106cd156d48c811857d66f27ea"
+    },
+    {
+      "name": "quant_core/rust-toolchain.toml",
+      "sha256": "a458040d8678a00adf76f8041cc4ecca3d42b392683db7896a7e2d637006a4f2"
+    },
+    {
+      "name": "quant_core/src/book.rs",
+      "sha256": "c5950a0a7f55adb8acc4948da6e3d961ed67b495fee8a759976ff3d6aef1d094"
+    },
+    {
+      "name": "quant_core/src/hashing.rs",
+      "sha256": "82c393f8e8d28c961a8d2f57058cd1720e4e7c9c2c15c77b5bb422c09f5d4558"
+    },
+    {
+      "name": "quant_core/src/lib.rs",
+      "sha256": "102506691857ac2134815ad48785b0e8eb1e3efe2e03bc983b4d87d93aead6ac"
+    },
+    {
+      "name": "quant_core/src/returns.rs",
+      "sha256": "91fb7e7bd502b2aee77111baa09d908c9bc383e3ca9b5c82b234190435e7bbcb"
+    },
+    {
+      "name": "quant_core/src/rolling.rs",
+      "sha256": "77f2f688b4b88b8c76acf1f75a5d1466d16a231203082b775004757bfc88fd08"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_d730d2181a933d63.json"
+  ],
+  "members_removed": [],
+  "n_members": 12,
+  "params": {
+    "head_sha": "6418f4f8d7e6bf8903e7fb9558120624c6327f68",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_d730d2181a933d63.json",
+  "prev_epoch_sha256": "7641114e846cb687b5671f8d38837c4996d65cca39d54842bd0216fb61c668b8",
+  "receipt_sha256": "ccea90f0955cc21b13a68ff6ca0784ef59efb2d289dc7c7a07d69d5d7ff29e53",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

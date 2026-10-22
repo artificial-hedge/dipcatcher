@@ -1,0 +1,1388 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "1b78b5ac794f96c0e3c5301459ab4fe9d6656a7285b0fa512633523f47e8cff6",
+  "inputs_sha256": "47adb9dc626346e49ee4d3404a129d3947f0b0397ad27c9e383389bb2821bab6",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "e5e6eabb53a3e4ed64446aa36a36454b3c522f4fb811e7b32cdd51102958b533",
+  "members": [
+    {
+      "name": "corpus_epoch_b52c1e2f6ba28091.json",
+      "sha256": "0d3ef925a6b404757dd275da8c47795fbad61edcf34320b1025bbfea338259be"
+    },
+    {
+      "name": "corpus_epoch_ccea90f0955cc21b.json",
+      "sha256": "f04ced4809f2d0e33e1fdcb327972f5b65347c5b41bd6ae91df24be34a46bfcd"
+    },
+    {
+      "name": "corpus_epoch_d730d2181a933d63.json",
+      "sha256": "1c87e64c12ae2d78efbebf89419979d9901731e3dba7aca3199c7fb1881bead3"
+    },
+    {
+      "name": "quant_core/Cargo.lock",
+      "sha256": "95b6bd9432ae16423f1e83d49108446d4fbca8dded69c7d47b93d6ebdf0f57f3"
+    },
+    {
+      "name": "quant_core/Cargo.toml",
+      "sha256": "cfae7eb8c3bc01d0bd58d8964373f554178df7c0f9ab49b272ccf8c245a83f68"
+    },
+    {
+      "name": "quant_core/README.md",
+      "sha256": "12cb007ac45f0e1ce508c0ca32102d8b01e2f547a34cd109e196c3033aaee463"
+    },
+    {
+      "name": "quant_core/pyproject.toml",
+      "sha256": "f53e1659c6fa76a3d6fbc07a03aab398f1966b106cd156d48c811857d66f27ea"
+    },
+    {
+      "name": "quant_core/rust-toolchain.toml",
+      "sha256": "a458040d8678a00adf76f8041cc4ecca3d42b392683db7896a7e2d637006a4f2"
+    },
+    {
+      "name": "quant_core/src/book.rs",
+      "sha256": "c5950a0a7f55adb8acc4948da6e3d961ed67b495fee8a759976ff3d6aef1d094"
+    },
+    {
+      "name": "quant_core/src/hashing.rs",
+      "sha256": "82c393f8e8d28c961a8d2f57058cd1720e4e7c9c2c15c77b5bb422c09f5d4558"
+    },
+    {
+      "name": "quant_core/src/lib.rs",
+      "sha256": "ab0eea5628d5a76f26716f584089fa9309a0f059ec946254862f5ab51c3ac4f3"
+    },
+    {
+      "name": "quant_core/src/returns.rs",
+      "sha256": "91fb7e7bd502b2aee77111baa09d908c9bc383e3ca9b5c82b234190435e7bbcb"
+    },
+    {
+      "name": "quant_core/src/rolling.rs",
+      "sha256": "77f2f688b4b88b8c76acf1f75a5d1466d16a231203082b775004757bfc88fd08"
+    },
+    {
+      "name": "quant_core/target/.rustc_info.json",
+      "sha256": "1524e283f1ce483c38e878a6a7c89647dc9d944b3bc7c151c4603f9081503974"
+    },
+    {
+      "name": "quant_core/target/CACHEDIR.TAG",
+      "sha256": "6d9d1d216e0f83abc5e5662ca62c92b4f23009466b54fa27321a69acdb778bb2"
+    },
+    {
+      "name": "quant_core/target/debug/.cargo-lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/dep-lib-autocfg",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/lib-autocfg",
+      "sha256": "6cf613beafc5771140251209706a68985fa901679b5a02bf1904e3f720d987a0"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/lib-autocfg.json",
+      "sha256": "b45ce0d988e742c88113b22cd78da6fce2a1c00d9462c941728c22d133f6df6a"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/dep-lib-block_buffer",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/lib-block_buffer",
+      "sha256": "b57c9f05c4f20e941df23ccd814f29aa09e1858af31b1827586b68ffcd8bd414"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/lib-block_buffer.json",
+      "sha256": "7d89e050867a3462b90115058bba14ddc7a17b5f85df1b16df9544d152247083"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/dep-lib-cfg_if",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/lib-cfg_if",
+      "sha256": "aeb5fbe5d58d820924f1361defb848861c29852f9dd654d9c1f4fc0203549180"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/lib-cfg_if.json",
+      "sha256": "6e0084b67ea9782d17efc1e4712d853386a97f8d3c2d7e45a7650a3702357ebf"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/dep-lib-const_oid",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/lib-const_oid",
+      "sha256": "14c0296ecb9096739de19d840cc9e0208ec821094a3361318cbe5505b105307b"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/lib-const_oid.json",
+      "sha256": "83ebfbf9e4eb3dd43e907bf4e18eb1e40a49d8b9328db5b39c26207791c98788"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/dep-lib-cpufeatures",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/lib-cpufeatures",
+      "sha256": "0466d69fd4cc40104b2c45e1cfa86d54d3a7b45b1afcea06c98478a534801cd2"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/lib-cpufeatures.json",
+      "sha256": "547e575efeff003f96126c152e840171ada67fd3c046684eebdb11eae0fbdef6"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/dep-lib-crypto_common",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/lib-crypto_common",
+      "sha256": "7fe967190175bb3035c67b8d66737e86b20c13849431016d130a6b77651e385f"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/lib-crypto_common.json",
+      "sha256": "0e43a6d12a5500ce50ff74bfced10e0a0f4a26fabc0ca8e52630ea2f742601be"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/dep-lib-digest",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/lib-digest",
+      "sha256": "94593d8628acf49bc3548dffb67c9937cd26912c714638eae88e0d3ff41770be"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/lib-digest.json",
+      "sha256": "d0ab2067b273fe8e5db2c18c9eb3448375e2d7fc7e1ef6cf200ec757254f15c5"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/dep-lib-heck",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/lib-heck",
+      "sha256": "9d1979a9b3f4585623a12baa2e2a8dd17aa341ca7e347dbd2f6dbd0186ba65d6"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/lib-heck.json",
+      "sha256": "28a29e44807e2242535348a1478b78464bef50dbf46542954a2d7d0801fd4b0e"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/dep-lib-hybrid_array",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/lib-hybrid_array",
+      "sha256": "2c371693049c3b3e5c5630a9698b0ade6f9ecccf8035b80c12afce174e89fd21"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/lib-hybrid_array.json",
+      "sha256": "82c54f1ee2ed30c08203bef68b6f545d6174abc7a158721eaf6f6641330ca863"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/build-script-build-script-build",
+      "sha256": "7b5fff2262a06c44eb3ae2e41e12d4538821624a9497c645a6ea890b8cb13b79"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/build-script-build-script-build.json",
+      "sha256": "18329851f4203f02c62fc88ed2863af85eb4e0e12f931a9a1d9fb458f9428304"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/dep-lib-libc",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/lib-libc",
+      "sha256": "24576b5ee8333c9a3583ec3b2b4fee1ef12af6c62b278945039ca1044861d6ae"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/lib-libc.json",
+      "sha256": "bd629ec7ef756f59c36f208f2e550e70d94bc723eb98df759c1ace72e8c7203f"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-84f66ec8db3d937d/run-build-script-build-script-build",
+      "sha256": "f3eae0219c05d52f1216076a78578f783f9c39e8f6991ba529ef9b0e972bd445"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/libc-84f66ec8db3d937d/run-build-script-build-script-build.json",
+      "sha256": "da2c515dfea8ada43a45178314d88224fa6df286a178049d7a37686590977a68"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-1bdae97a5378c499/run-build-script-build-script-build",
+      "sha256": "7133013a015c46378edb1a4b9afd1ddfc65d30cc57eb820019a9b4463b5d4e73"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-1bdae97a5378c499/run-build-script-build-script-build.json",
+      "sha256": "7f88c7bb0af6e93783b1b30e17566fea43cde2062f1f7fec3bf4ad2eefe7939b"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/dep-lib-matrixmultiply",
+      "sha256": "ff9c8bd823b5f6d1948611389311040114ccfc899cc8ebc1e43d9dcc2d5b1344"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/lib-matrixmultiply",
+      "sha256": "3491acf849e56ce70776e29286b5163d6f415ac670b79a05dc230a294be33208"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/lib-matrixmultiply.json",
+      "sha256": "d496a3393aeb3fa9e8ae396abec7d0c018b4be1d44b01d75e408d003fcaed27c"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/build-script-build-script-build",
+      "sha256": "161572aa93600342a2fadb8479f2af19550c27478a45af2618cc6ef859f1169e"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/build-script-build-script-build.json",
+      "sha256": "02da1d0ef9b58c96561c8e13b0bbd3b9b41adca34d42c3ea9950d309a88e8f34"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/dep-lib-ndarray",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/lib-ndarray",
+      "sha256": "db51dcbcff240bbe060f8013aa51019ce6ee6d02fc8809ae86b37080fbc7457d"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/lib-ndarray.json",
+      "sha256": "1646ee6af22a4513aac1f0dc4526b806f78aa549883744d217a455ee156926c6"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/dep-lib-num_complex",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/lib-num_complex",
+      "sha256": "e286b92185a1c2643a8c1ac25273ba924ef70585279cc605c410eef2c2c861bd"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/lib-num_complex.json",
+      "sha256": "ebb97b1db9ac9ed60089334b30bd6cf545163ac906765b158517ced8e237e74e"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/dep-lib-num_integer",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/lib-num_integer",
+      "sha256": "710afd349d7dd129dff2d12687dbe3945c9186e76946649bcd26abf5933ed5b6"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/lib-num_integer.json",
+      "sha256": "c6d0027a4536b6b6f27ce03b04dfc6027c3bee6dd96d0760ef5d4c21432a50ed"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/build-script-build-script-build",
+      "sha256": "d43e34da46c61aa71f1c5f655837f03064add12315f540a7c6518dac6f05e52b"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/build-script-build-script-build.json",
+      "sha256": "d8a6b9d5590f50ab796874aff1a9ef2fded37d236bb2687c6b6f46b7bd31bc5a"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-65d30601380f6645/run-build-script-build-script-build",
+      "sha256": "9a4cb4dc988cd82b40c96bddf8385631e7ee6715b0ab9d90e81f4d323cdccee3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-65d30601380f6645/run-build-script-build-script-build.json",
+      "sha256": "4ad88b2a6b705abbbd34ce15b176e20ed20317446e1e6e0cb17f20d73975647e"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/dep-lib-num_traits",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/lib-num_traits",
+      "sha256": "7b1f411c771a07db0d1088cbe58186f76cef1828c7cb91c6dbd314793c58acd7"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/lib-num_traits.json",
+      "sha256": "b3f080ab8d82bde266162b3916876d1bd9a890d18ee92ceb2fb2322cc2cf3543"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-40e13528e6a2bf36/run-build-script-build-script-build",
+      "sha256": "b1955f5a4f075d044247ae62e86b2599419c4fc6ac4d7cc974e7cb3b8a8fe5c2"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-40e13528e6a2bf36/run-build-script-build-script-build.json",
+      "sha256": "a6f26ad9aafd10ae67724418d96daefc684fd35eb7682a1a05cebd2a942aee94"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/dep-lib-numpy",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/lib-numpy",
+      "sha256": "5862e28aac3d56d1e39e5de245569278adaab94e142dcf06d10baa64459cb483"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/lib-numpy.json",
+      "sha256": "f9330de3b926b71fa6be3214d3d939e5f389e51fe12ebae71bd49d76a3223b4b"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/build-script-build-script-build",
+      "sha256": "a2cf62b6c934ca9d50e300bc8f949f9c7417d33863648d108ad079a3db485768"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/build-script-build-script-build.json",
+      "sha256": "4847b1561ece104ccb3cfd8615e31ae9eed254f1bdad0763459075ece5b7ac15"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/dep-lib-once_cell",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/lib-once_cell",
+      "sha256": "25da2bdb48046b9f2fec63a67cd0b67a2074ba96523cea804c99b6b625fe617f"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/lib-once_cell.json",
+      "sha256": "303239582884b9b038c0196752a51ac6adf05cc43e74989de6d9c8bb8e426656"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-27b5b5afc5a1a444/run-build-script-build-script-build",
+      "sha256": "5c07ebcddd843d5646b39c877bd5e5c474e8a1ee7faa2379dceb24d4f009634e"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-27b5b5afc5a1a444/run-build-script-build-script-build.json",
+      "sha256": "8d98f53a292622d561462cfbf8489d5ef1c460a3a16030981b75c19070034105"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/build-script-build-script-build",
+      "sha256": "3c6012dda716c7116dcf70993888cb6384e5711c37a139f458f961917ed7818c"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/build-script-build-script-build.json",
+      "sha256": "bf3b120d8396b62cab748aedf2b97fd12b7740b6da66791bf628cb5dc30cc51c"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/dep-lib-proc_macro2",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/lib-proc_macro2",
+      "sha256": "0e140e9d0a973396af58d1ed423b9ca32143b7fc89d974173bdef2ffbb5cdf30"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/lib-proc_macro2.json",
+      "sha256": "7b372bd08e8b1405020cbb40d29fd784d1a40b967e7b3bba4183df33d1a93ecc"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-677b64d213e4fc87/run-build-script-build-script-build",
+      "sha256": "c3cdd8ed003016f014540d6ff9277169d40fbcb73ff404c3757dd250cf86ed81"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-677b64d213e4fc87/run-build-script-build-script-build.json",
+      "sha256": "1e765403369ad695094ffa4b6404f3ac82566fa60d62aafb2dba8d31b7deb683"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/build-script-build-script-build",
+      "sha256": "e85307d354af183d6f440cca049e71112b17edb74ebbe8cef4cf183834dc77e9"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/build-script-build-script-build.json",
+      "sha256": "b2d4903e2e745d477553e514482275df4d41ad4d05c4ae042359223a327d166a"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/dep-lib-pyo3",
+      "sha256": "61405fd4233a13d998bb3fd58dc7553fabc2583e88b9d34b804af5083a8d690d"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/lib-pyo3",
+      "sha256": "f5b520b27a98b335f8f73b8f1f31740e1a6acd66a0124481eebcad25a94e5270"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/lib-pyo3.json",
+      "sha256": "dd0de927fd31c0324a044630899c799c5e5db9956ea9d7c2d94bf946b70976e6"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/dep-lib-pyo3_build_config",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/lib-pyo3_build_config",
+      "sha256": "9cfdfc53e2a0540ac0db43f25472497bfb7fd2ca5feee3e97b407e223429e8f5"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/lib-pyo3_build_config.json",
+      "sha256": "07d7d08bd80849abe0da1358dcfc280d0baa293a1499cfaf0f159c6d72e37442"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/build-script-build-script-build",
+      "sha256": "6be989965d600b4699e919c8c57d8700a89947a4bd92b3f333d8dc6f05deb997"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/build-script-build-script-build.json",
+      "sha256": "2c681437184138b8b68902f83c9b456206a18c82f47f0fd69fc2fb2f3c62d120"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-72cf0be100bc17cc/run-build-script-build-script-build",
+      "sha256": "ac58262feeb5209f84fadb87961248d725348984764e95d56e39a371340d3b48"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-72cf0be100bc17cc/run-build-script-build-script-build.json",
+      "sha256": "aa79ebb3213fd464f267719711d82f7992f3109494ca43d4f67f69f6bcc39eb5"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/dep-lib-pyo3_ffi",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/lib-pyo3_ffi",
+      "sha256": "a1ffa8e55c55d7a5b59fbf357746d19fab20510d92734f6ed680353c990df7c4"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/lib-pyo3_ffi.json",
+      "sha256": "b7b0527c85da801a8430dc9d52e1e391d9db343d00de62df75f56ab9297bd3cd"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/dep-lib-pyo3_macros_backend",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/lib-pyo3_macros_backend",
+      "sha256": "fa8fcf90f4e88f90db8825718ed2c500bfcc9395d897b54c4b6d2d730afd9249"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/lib-pyo3_macros_backend.json",
+      "sha256": "d04fe0b3f3cc14fa991bc35d800d5d021369fcea53dd8437cf409e188ac01bbe"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/dep-lib-pyo3_macros",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/lib-pyo3_macros",
+      "sha256": "45b40e90d319b551d09f44dbaa19cadc84697c7b1825e03cf2bab6594f02cab5"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/lib-pyo3_macros.json",
+      "sha256": "626eb8255ab8c70afdbc71a494cdcc077511bfc00c7cd19b2ba5c5324d26798a"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/dep-lib-quant_core",
+      "sha256": "36c575173cd884b4c65ddc761c1d8a17acba313829b2373405b5081cc87e4965"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/lib-quant_core",
+      "sha256": "123cfd33ffe3e8b1eb811d5bcee77f61f457e30d8e55b3a8ecbda4a4ce51d731"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/lib-quant_core.json",
+      "sha256": "18aa33120244357456e333a5ed9207e680a316d2bd592b311e57092599cb3d35"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/dep-lib-quote",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/lib-quote",
+      "sha256": "8c453cbb80f006e297f851e8b1aeec4385c96a99aa4eae72f296e6b0b4e92e1c"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/lib-quote.json",
+      "sha256": "2914987b365117817c3cc04e8df23b45992dea770a9c468a12e5bbf2a1eea35c"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-adde8cb34909995d/run-build-script-build-script-build",
+      "sha256": "5b19ca75afdd43b4d26c25f985a724a8de4ed2a937daa1cbc79acc56500e73b9"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-adde8cb34909995d/run-build-script-build-script-build.json",
+      "sha256": "a93e131293e33a4a03bf32d890dc6c9083ac73f90aed51dba629f5c362176cf4"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/build-script-build-script-build",
+      "sha256": "95f94694357d70ce8a9866b76a032c4c80e5f749251bd368f7024462466730e4"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/build-script-build-script-build.json",
+      "sha256": "8fd3d2d5fa34be17432c755ebabcfce2da11d5e8e947f86d00bb735d82c8d088"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/dep-lib-rawpointer",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/lib-rawpointer",
+      "sha256": "98a86a9f170038bccba37e080fbfe84e66b0f05c64be84eb4d59b4ec981230f1"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/lib-rawpointer.json",
+      "sha256": "b02df5410b5583ab759b2de6e1aa9b2cb84905e1c9f09a6168cbd16e49250bd6"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/dep-lib-rustc_hash",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/lib-rustc_hash",
+      "sha256": "09eded3a75ee80fa3fb066329aec53c5fc12cc551c0bb7aa650834965eea1b95"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/lib-rustc_hash.json",
+      "sha256": "84540089083e6b536f785033ef93b994b66756c4f345fabd6f2396a66583e7fa"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/dep-lib-sha2",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/lib-sha2",
+      "sha256": "0077100012f10a7568c49f9f28c206ba0d4a2f1bd5bef5a72eebcaf11668459d"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/lib-sha2.json",
+      "sha256": "6da4eb461f81704726fd8219cc54cd0b960045d28335c8a46a78fd92b72b3208"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/dep-lib-syn",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/lib-syn",
+      "sha256": "641745a676c8f619c9ea085c3040002052c0bc5a769631935c3d672ff1e29ac4"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/lib-syn.json",
+      "sha256": "831219ac7db69984bc5bd94d120142681fa09ee1ce523f2740d63f9d779bf59f"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-2b2b6647f490c52a/run-build-script-build-script-build",
+      "sha256": "b97fded8dc3c15782fa8bbd3cd5d5e0bcc76227211892a5a66b3548485725752"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-2b2b6647f490c52a/run-build-script-build-script-build.json",
+      "sha256": "fa0887b706b90e3c3f5bf63fef41fd3c7990cce13064667b7e5494012f1a7b40"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/dep-lib-target_lexicon",
+      "sha256": "225a9e15ae14895bf310f3a41f37d77ce2acf322ab8193a25e4461faf76f2a44"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/lib-target_lexicon",
+      "sha256": "64dc875ff953ebc804fe876fc18505fea8c75b4dab103419ed5df93aa7aa6971"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/lib-target_lexicon.json",
+      "sha256": "11a3308092b73243c829bb26b3ac91cfbae3f6263e06dc841eb9a099d9b813e2"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/build-script-build-script-build",
+      "sha256": "89bd734502a93b617c120e78783de58231506fdb2f6cb3a1bbe3ba220d642171"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/build-script-build-script-build.json",
+      "sha256": "f9c9d4b06a7dc6fb165fbc6fdab98d8a27823f6d932c5e9dbc059d208a576e18"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/dep-build-script-build-script-build",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/dep-lib-typenum",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/lib-typenum",
+      "sha256": "1bd8006da16026af4cfddc42ffb452d67db6ad8af088481206eb9979b77a964e"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/lib-typenum.json",
+      "sha256": "4a9790dc4b62e0365c655bd7d4633c1b614116fdb7a45e040bc95abde345342b"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/dep-lib-unicode_ident",
+      "sha256": "93a4afc37518a1bf7830744017176e1d1946e5df993e47159069839f61fe49ab"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/invoked.timestamp",
+      "sha256": "5a109e6643e8d3e88642e3f35e85d2a83e639d07523aa6e99166c48178e965c3"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/lib-unicode_ident",
+      "sha256": "49976b36f7f307582c196ef1fa9e2802cdd5a8d063c1fa09cb97bd6f51e21966"
+    },
+    {
+      "name": "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/lib-unicode_ident.json",
+      "sha256": "ca0b0549505471685fa1346a9982bb57dd527805ea198bb57919c26b2811c1f5"
+    },
+    {
+      "name": "quant_core/target/debug/deps/autocfg-9c44f67432914e3b.d",
+      "sha256": "61d47a657746d4046f92497927edbd288163468e83af369cdb90d9f4fffefe13"
+    },
+    {
+      "name": "quant_core/target/debug/deps/block_buffer-3b60558e0d891e3d.d",
+      "sha256": "d53428243e448f6955c161d0363fb574a6d0fbc7037159a3e6dd0e014f9b306d"
+    },
+    {
+      "name": "quant_core/target/debug/deps/cfg_if-0ef9ec2e0c621f41.d",
+      "sha256": "2131907f4e7df6fcccecaace03c39674e7a5f6611cd54994d3b0eaccaafcff71"
+    },
+    {
+      "name": "quant_core/target/debug/deps/const_oid-b875082817ba8833.d",
+      "sha256": "f508cce986a41708c540c64ab63a95c1f92a5e3bb1b9599a9d34099fa5ce8f4c"
+    },
+    {
+      "name": "quant_core/target/debug/deps/cpufeatures-ad6ef05eec2d6a89.d",
+      "sha256": "c097310e3880c08dc26be40982966d116f2e557008a494cdbc4a5572855c5bce"
+    },
+    {
+      "name": "quant_core/target/debug/deps/crypto_common-dbf15b747c9958ca.d",
+      "sha256": "39955025f6057f8744cf37dd976d49948bbe38c39774b89c5b110d9229889e86"
+    },
+    {
+      "name": "quant_core/target/debug/deps/digest-e93dcf653101f97a.d",
+      "sha256": "ad0eebf0fc0639f10c5e454c40bea2cf10dcfec36253bec3174cc42ea6a7f67a"
+    },
+    {
+      "name": "quant_core/target/debug/deps/heck-afee580cd6fd8827.d",
+      "sha256": "a23d1102e9a6566db7d139c688f77a3e9f38a238b903d600900363b66119bda0"
+    },
+    {
+      "name": "quant_core/target/debug/deps/hybrid_array-4d17ac7dbdf620ee.d",
+      "sha256": "1473a6785117f3e94ef462f635c0e0cef869ee105cd202a7a78b991c780e74a1"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libautocfg-9c44f67432914e3b.rlib",
+      "sha256": "3cf209a9e065749842a15e3cd358d7dac0a0a93fefb1ce552d4ea29bf38775d8"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libautocfg-9c44f67432914e3b.rmeta",
+      "sha256": "24766dc406274e53716da9e0e04566d67bbef17e0e403f98209a357fe5d0f257"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libblock_buffer-3b60558e0d891e3d.rmeta",
+      "sha256": "e8e8bfe4cb060e409cda07ecb773797f9444f1bc0bd7adf7c6656b2549120672"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libc-0c9e37df63255255.d",
+      "sha256": "7e53125088fc410aee2e1c2048ade0e0392d7b00f750ce2c72e7ed31efe977ed"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libcfg_if-0ef9ec2e0c621f41.rmeta",
+      "sha256": "de77ec68bddd99268d1653e0132e6949718241978240b610e67ce2cca41fa85c"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libconst_oid-b875082817ba8833.rmeta",
+      "sha256": "3825b820ee6d4fbabb9eb11f8cfd588c1e8e196993b230636bb095fdb3bcc877"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libcpufeatures-ad6ef05eec2d6a89.rmeta",
+      "sha256": "c3ec8a284091aca4998511dbf18eaceebfdf9a94ce486f70294f85e6d54db296"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libcrypto_common-dbf15b747c9958ca.rmeta",
+      "sha256": "ab23ce61c878b5fb02131891e04748101a81b6cb09a509dcd3ff32ab40a2adb3"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libdigest-e93dcf653101f97a.rmeta",
+      "sha256": "73efd075412a88559ea1024df58645c0fd11092914c6c0f6824a57a9881363c4"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libheck-afee580cd6fd8827.rlib",
+      "sha256": "1b50e2c5704c4dfcf0fec310f3f1122f9c4e07e3aeafe28512729c5eddb86e25"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libheck-afee580cd6fd8827.rmeta",
+      "sha256": "9b40ccecc189c9c5aee7530a983fe8feee76ba8c72ae30dc24b049a89de9e54c"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libhybrid_array-4d17ac7dbdf620ee.rmeta",
+      "sha256": "c578bc67e14ca5cf2b559e89f4790be9b44bb3e67edac6ad361f09d4d6591028"
+    },
+    {
+      "name": "quant_core/target/debug/deps/liblibc-0c9e37df63255255.rmeta",
+      "sha256": "16c59f9153b80aca6148aa9ddf3723a5834cdb13a09544c023ed3dbbf9b59a4b"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libmatrixmultiply-71213c51545ce137.rmeta",
+      "sha256": "860dcad8a892ed09e79c74927353bc0914c12c9648fbc5127ee11f2a99508f7d"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libndarray-07557ce53047126c.rmeta",
+      "sha256": "db2acffdd8ec4fbad3d546d96bc32cbeb0f587951c93666b47edeeaed6c345be"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libnum_complex-c2d8483a4bc0cbaf.rmeta",
+      "sha256": "5745595a8e39f7706c08e1613fb8e768a4d8657627082aabc8c35fab41f9f673"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libnum_integer-d52ab27a33b2abf4.rmeta",
+      "sha256": "ef888cdd0b8b6043e6e60459bae0ba9fe43461621990bb68aff117440c0b0c8b"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libnum_traits-d7cb016368bf74c8.rmeta",
+      "sha256": "f676e9a309fdcda23a9108b24ad4b87feab3fa835f24a029959fad85fba94ea1"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libnumpy-4c6cbb70c772f268.rmeta",
+      "sha256": "7a701c2a9a537cc5e4c9126699c9c6f5845126c3eda06aea2ea5bfdb745006c4"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libonce_cell-2f479faa956a7d94.rmeta",
+      "sha256": "6f790dc0b1af729c12c2f8eeb514fc55282ae93b3762353f40eb2bad3bff5968"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libproc_macro2-81e3eb2b815a508b.rlib",
+      "sha256": "23b0255de9272787b8cad1cdb8b86b76e60df3a9de33c8a87b1ca41fa35e3ec2"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libproc_macro2-81e3eb2b815a508b.rmeta",
+      "sha256": "f2f2215991f24124e59e30764a8b6c554895278f64933dbed8051e34d2da3490"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3-bd11bf4ad7e8271c.rmeta",
+      "sha256": "1282ebc3d27d2043531e0b1fd0c4ca9fc82dc001623bd0c648700b425f420fef"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3_build_config-2dcd589bd8e6e0cf.rlib",
+      "sha256": "74458f964d4b667d67979e542ed080e7c01964d8f314bc4121c4466025f70f42"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3_build_config-2dcd589bd8e6e0cf.rmeta",
+      "sha256": "9d9913f7797de8ef3dfaefa9ccbb8224e36643cdf38765ef387e38297ff263e8"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3_ffi-8aaeeea494e7b50b.rmeta",
+      "sha256": "a92f2c0d6e32e59f6ded4fb96b52c82b2e9c224aafe915e06b3949782eeea886"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3_macros-bca2290a9b69c670.so",
+      "sha256": "e610ba121fb7508c1bf75aeb746954b388af9076f9aaa3758284b010d4370aa4"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3_macros_backend-68d307edcf3185a1.rlib",
+      "sha256": "97b55eb81d4155218701973f436c8a2e4cf3c9ecdd07906fd39a18ad03598556"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libpyo3_macros_backend-68d307edcf3185a1.rmeta",
+      "sha256": "b2631acd514483caf20343e6bc678cc1cc447d2dd35dbcc88dff3a866ea40429"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libquant_core-dee22e33017249fe.rmeta",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libquote-76bc3d8098badccc.rlib",
+      "sha256": "45178e68fe4d91927bbc033e1dc20e6522c251cf37beef9316b17e4987b566c6"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libquote-76bc3d8098badccc.rmeta",
+      "sha256": "a3aa86844ab216acf870fef1f81be72fd0a755534ad0bc0abc03f2b40acbd610"
+    },
+    {
+      "name": "quant_core/target/debug/deps/librawpointer-401afbff9d1170dc.rmeta",
+      "sha256": "ea810ede8fc933c7538deb4143361c2112f18cffa25e28ddb928540929b0fa2c"
+    },
+    {
+      "name": "quant_core/target/debug/deps/librustc_hash-4909c45400033eba.rmeta",
+      "sha256": "ab08446fc2a11410e6e35149dc3f763af46dfd53a6d9d10e93490948c8894397"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libsha2-3b3e4b25e67e2cd5.rmeta",
+      "sha256": "e37ec2282397dd28ddef356f3f1fce372f8897306e1e0e4aec3bc66931b37ffc"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libsyn-96807b3ec7233230.rlib",
+      "sha256": "694fc4f59bc88829545c3bad89d6e829c3e7d42507e9c27e6e89f6ecbaf0dbed"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libsyn-96807b3ec7233230.rmeta",
+      "sha256": "0a1e3a65dd232000a90c4e26eb704d1ff3729e0d68a3c15056d2efa7ce6e44d7"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libtarget_lexicon-8975955bda6cf36a.rlib",
+      "sha256": "d91005e216efdc0952e34373120967e7f9e937d0d66b583827259e6e85e578d2"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libtarget_lexicon-8975955bda6cf36a.rmeta",
+      "sha256": "6eed1f30686a13c5576b4e16e7e9b44230d20a87169a3726eeffcebf9289cbc3"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libtypenum-a0936c58bfd6120c.rmeta",
+      "sha256": "6d08694747307fb6b514803da02cdcc08a666e08e89b40f7677c98dd23cd3c88"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libunicode_ident-b95ddec2550607ba.rlib",
+      "sha256": "c8ff3ead5a9029c41e2fe4cca5768969a7d5cc62881dc3df5082a612fdc7bd94"
+    },
+    {
+      "name": "quant_core/target/debug/deps/libunicode_ident-b95ddec2550607ba.rmeta",
+      "sha256": "96b11530ee3c4dc2523ea6873ed6b09fa616f276021457966b032568077f75d4"
+    },
+    {
+      "name": "quant_core/target/debug/deps/matrixmultiply-71213c51545ce137.d",
+      "sha256": "e14565c89c092ae7277c6a67c08735085b911ef5d47f424532876e749c66cfbf"
+    },
+    {
+      "name": "quant_core/target/debug/deps/ndarray-07557ce53047126c.d",
+      "sha256": "6863e767302f7f3c79552361ba32194256e3b6a801a31c9c2a70b735544e4f97"
+    },
+    {
+      "name": "quant_core/target/debug/deps/num_complex-c2d8483a4bc0cbaf.d",
+      "sha256": "9105f24a67788168a9dc3ca29fbf970726e3b345cc1f5a1e90d0857336d73c43"
+    },
+    {
+      "name": "quant_core/target/debug/deps/num_integer-d52ab27a33b2abf4.d",
+      "sha256": "1e18500ac27371da43a5f0415d9a24ad55fa4867217561ba00da2c5ce25d0a55"
+    },
+    {
+      "name": "quant_core/target/debug/deps/num_traits-d7cb016368bf74c8.d",
+      "sha256": "57257394a4fc192d8bb7dade72824e013fc1dcc1419bcdb7f023593b59e3809d"
+    },
+    {
+      "name": "quant_core/target/debug/deps/numpy-4c6cbb70c772f268.d",
+      "sha256": "0b751b83dc4447c8e850c83a442af77b4926b88187bd403c3d5672ada35e3de5"
+    },
+    {
+      "name": "quant_core/target/debug/deps/once_cell-2f479faa956a7d94.d",
+      "sha256": "c14037f047c371260f35b114657be643c7f8e9790c315fd5cabab1e6246cf629"
+    },
+    {
+      "name": "quant_core/target/debug/deps/proc_macro2-81e3eb2b815a508b.d",
+      "sha256": "afb38eb75f0767e33d66c0721ae66e9a78248ec9a94e468cf3f7d0ce45125d3c"
+    },
+    {
+      "name": "quant_core/target/debug/deps/pyo3-bd11bf4ad7e8271c.d",
+      "sha256": "703818157705c9c6f7b2e997b53a8a34d98d8e31b8e1afac276ca2a9985df909"
+    },
+    {
+      "name": "quant_core/target/debug/deps/pyo3_build_config-2dcd589bd8e6e0cf.d",
+      "sha256": "bb1c7be76c123ddf976a2480f65547985868a9fcb007fa56997f47f9c9be8b96"
+    },
+    {
+      "name": "quant_core/target/debug/deps/pyo3_ffi-8aaeeea494e7b50b.d",
+      "sha256": "9d5e1f02db903bc0e66b4ba3b6aa9d165f42c6a470343d86d0fee831846a755f"
+    },
+    {
+      "name": "quant_core/target/debug/deps/pyo3_macros-bca2290a9b69c670.d",
+      "sha256": "cb00a6021677db00bc9827fb69a9de3c862ba6a8e7a726bb9f159c8a9c3ac7fe"
+    },
+    {
+      "name": "quant_core/target/debug/deps/pyo3_macros_backend-68d307edcf3185a1.d",
+      "sha256": "22fa94d4405b8c34eb0878060d5c3255b66ad45120aedb5037276aace2d32505"
+    },
+    {
+      "name": "quant_core/target/debug/deps/quant_core-dee22e33017249fe.d",
+      "sha256": "d4e6568f1ae14c8faf0a27ebc55645945d629b10713b50016e8c57d786acd9fe"
+    },
+    {
+      "name": "quant_core/target/debug/deps/quote-76bc3d8098badccc.d",
+      "sha256": "8f754d0991d32edef3136a95a3dd95b502a315786cdcee9a50e595d756cc14a4"
+    },
+    {
+      "name": "quant_core/target/debug/deps/rawpointer-401afbff9d1170dc.d",
+      "sha256": "943dba441c8831c464eff40f995433dce3210f73f8eec5a60b82ea6c11fe5b9a"
+    },
+    {
+      "name": "quant_core/target/debug/deps/rustc_hash-4909c45400033eba.d",
+      "sha256": "885601704f2fa09e0d6ebd4776b9bfb20d5de2a7b50238df3f5f6babd1a9cf88"
+    },
+    {
+      "name": "quant_core/target/debug/deps/sha2-3b3e4b25e67e2cd5.d",
+      "sha256": "039b5ec0dcc524f04df1bcce8719a88fbf126f90d9ed7de3496dfe872b6f41c1"
+    },
+    {
+      "name": "quant_core/target/debug/deps/syn-96807b3ec7233230.d",
+      "sha256": "de913db3d47b2cabd8f215d3a93b68ef0de50a8a86feee455b0be1547b20907a"
+    },
+    {
+      "name": "quant_core/target/debug/deps/target_lexicon-8975955bda6cf36a.d",
+      "sha256": "ba4ce16a2ed1696042f35bbc3fa23ecd09f49ce7e48795cb7e1bf807d0eaeacd"
+    },
+    {
+      "name": "quant_core/target/debug/deps/typenum-a0936c58bfd6120c.d",
+      "sha256": "55edbf98979ba6a0011f6f457e1ef988a4826dcd103db827f269da3c92c0f28d"
+    },
+    {
+      "name": "quant_core/target/debug/deps/unicode_ident-b95ddec2550607ba.d",
+      "sha256": "4e18d428688c6476d84f2bdd8426853c1c748379266cca09b1be9267bd255ab7"
+    },
+    {
+      "name": "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc-cterjqtkewhk8ciqevb1f4lgz/dep-graph.bin",
+      "sha256": "29f7d5193037934d7c5ce0055872a0828c2fd1731438b0fe8a54c82f65f4d2c9"
+    },
+    {
+      "name": "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc-cterjqtkewhk8ciqevb1f4lgz/query-cache.bin",
+      "sha256": "61a1140d1bd259fbe77cf927bda4bbee527fdf33b9c11060c3aca3ee33f44145"
+    },
+    {
+      "name": "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc-cterjqtkewhk8ciqevb1f4lgz/work-products.bin",
+      "sha256": "62f39f5804d033ba8d7e58315f5c5835777ae3993f4c113ec42dd058ce9b3873"
+    },
+    {
+      "name": "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_ccea90f0955cc21b.json",
+    "quant_core/target/.rustc_info.json",
+    "quant_core/target/CACHEDIR.TAG",
+    "quant_core/target/debug/.cargo-lock",
+    "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/dep-lib-autocfg",
+    "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/lib-autocfg",
+    "quant_core/target/debug/.fingerprint/autocfg-9c44f67432914e3b/lib-autocfg.json",
+    "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/dep-lib-block_buffer",
+    "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/lib-block_buffer",
+    "quant_core/target/debug/.fingerprint/block-buffer-3b60558e0d891e3d/lib-block_buffer.json",
+    "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/dep-lib-cfg_if",
+    "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/lib-cfg_if",
+    "quant_core/target/debug/.fingerprint/cfg-if-0ef9ec2e0c621f41/lib-cfg_if.json",
+    "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/dep-lib-const_oid",
+    "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/lib-const_oid",
+    "quant_core/target/debug/.fingerprint/const-oid-b875082817ba8833/lib-const_oid.json",
+    "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/dep-lib-cpufeatures",
+    "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/lib-cpufeatures",
+    "quant_core/target/debug/.fingerprint/cpufeatures-ad6ef05eec2d6a89/lib-cpufeatures.json",
+    "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/dep-lib-crypto_common",
+    "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/lib-crypto_common",
+    "quant_core/target/debug/.fingerprint/crypto-common-dbf15b747c9958ca/lib-crypto_common.json",
+    "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/dep-lib-digest",
+    "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/lib-digest",
+    "quant_core/target/debug/.fingerprint/digest-e93dcf653101f97a/lib-digest.json",
+    "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/dep-lib-heck",
+    "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/lib-heck",
+    "quant_core/target/debug/.fingerprint/heck-afee580cd6fd8827/lib-heck.json",
+    "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/dep-lib-hybrid_array",
+    "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/lib-hybrid_array",
+    "quant_core/target/debug/.fingerprint/hybrid-array-4d17ac7dbdf620ee/lib-hybrid_array.json",
+    "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/libc-09314212c550b1c8/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/dep-lib-libc",
+    "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/lib-libc",
+    "quant_core/target/debug/.fingerprint/libc-0c9e37df63255255/lib-libc.json",
+    "quant_core/target/debug/.fingerprint/libc-84f66ec8db3d937d/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/libc-84f66ec8db3d937d/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-1bdae97a5378c499/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-1bdae97a5378c499/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/dep-lib-matrixmultiply",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/lib-matrixmultiply",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-71213c51545ce137/lib-matrixmultiply.json",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/matrixmultiply-9a9d39d9e8db39de/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/dep-lib-ndarray",
+    "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/lib-ndarray",
+    "quant_core/target/debug/.fingerprint/ndarray-07557ce53047126c/lib-ndarray.json",
+    "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/dep-lib-num_complex",
+    "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/lib-num_complex",
+    "quant_core/target/debug/.fingerprint/num-complex-c2d8483a4bc0cbaf/lib-num_complex.json",
+    "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/dep-lib-num_integer",
+    "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/lib-num_integer",
+    "quant_core/target/debug/.fingerprint/num-integer-d52ab27a33b2abf4/lib-num_integer.json",
+    "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/num-traits-1b31f3526a6b513e/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/num-traits-65d30601380f6645/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/num-traits-65d30601380f6645/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/dep-lib-num_traits",
+    "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/lib-num_traits",
+    "quant_core/target/debug/.fingerprint/num-traits-d7cb016368bf74c8/lib-num_traits.json",
+    "quant_core/target/debug/.fingerprint/numpy-40e13528e6a2bf36/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/numpy-40e13528e6a2bf36/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/dep-lib-numpy",
+    "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/lib-numpy",
+    "quant_core/target/debug/.fingerprint/numpy-4c6cbb70c772f268/lib-numpy.json",
+    "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/numpy-fa71f7f21a18cc07/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/dep-lib-once_cell",
+    "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/lib-once_cell",
+    "quant_core/target/debug/.fingerprint/once_cell-2f479faa956a7d94/lib-once_cell.json",
+    "quant_core/target/debug/.fingerprint/proc-macro2-27b5b5afc5a1a444/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/proc-macro2-27b5b5afc5a1a444/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/proc-macro2-36fc6273a48aafef/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/dep-lib-proc_macro2",
+    "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/lib-proc_macro2",
+    "quant_core/target/debug/.fingerprint/proc-macro2-81e3eb2b815a508b/lib-proc_macro2.json",
+    "quant_core/target/debug/.fingerprint/pyo3-677b64d213e4fc87/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/pyo3-677b64d213e4fc87/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/pyo3-b1633bb5c615a744/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/dep-lib-pyo3",
+    "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/lib-pyo3",
+    "quant_core/target/debug/.fingerprint/pyo3-bd11bf4ad7e8271c/lib-pyo3.json",
+    "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/dep-lib-pyo3_build_config",
+    "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/lib-pyo3_build_config",
+    "quant_core/target/debug/.fingerprint/pyo3-build-config-2dcd589bd8e6e0cf/lib-pyo3_build_config.json",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-41d2279098ab40b2/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-72cf0be100bc17cc/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-72cf0be100bc17cc/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/dep-lib-pyo3_ffi",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/lib-pyo3_ffi",
+    "quant_core/target/debug/.fingerprint/pyo3-ffi-8aaeeea494e7b50b/lib-pyo3_ffi.json",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/dep-lib-pyo3_macros_backend",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/lib-pyo3_macros_backend",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-backend-68d307edcf3185a1/lib-pyo3_macros_backend.json",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/dep-lib-pyo3_macros",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/lib-pyo3_macros",
+    "quant_core/target/debug/.fingerprint/pyo3-macros-bca2290a9b69c670/lib-pyo3_macros.json",
+    "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/dep-lib-quant_core",
+    "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/lib-quant_core",
+    "quant_core/target/debug/.fingerprint/quant_core-dee22e33017249fe/lib-quant_core.json",
+    "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/dep-lib-quote",
+    "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/lib-quote",
+    "quant_core/target/debug/.fingerprint/quote-76bc3d8098badccc/lib-quote.json",
+    "quant_core/target/debug/.fingerprint/quote-adde8cb34909995d/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/quote-adde8cb34909995d/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/quote-ff82b0dca036a282/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/dep-lib-rawpointer",
+    "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/lib-rawpointer",
+    "quant_core/target/debug/.fingerprint/rawpointer-401afbff9d1170dc/lib-rawpointer.json",
+    "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/dep-lib-rustc_hash",
+    "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/lib-rustc_hash",
+    "quant_core/target/debug/.fingerprint/rustc-hash-4909c45400033eba/lib-rustc_hash.json",
+    "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/dep-lib-sha2",
+    "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/lib-sha2",
+    "quant_core/target/debug/.fingerprint/sha2-3b3e4b25e67e2cd5/lib-sha2.json",
+    "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/dep-lib-syn",
+    "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/lib-syn",
+    "quant_core/target/debug/.fingerprint/syn-96807b3ec7233230/lib-syn.json",
+    "quant_core/target/debug/.fingerprint/target-lexicon-2b2b6647f490c52a/run-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/target-lexicon-2b2b6647f490c52a/run-build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/dep-lib-target_lexicon",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/lib-target_lexicon",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8975955bda6cf36a/lib-target_lexicon.json",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/build-script-build-script-build.json",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/dep-build-script-build-script-build",
+    "quant_core/target/debug/.fingerprint/target-lexicon-8b0ec680a0773f18/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/dep-lib-typenum",
+    "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/lib-typenum",
+    "quant_core/target/debug/.fingerprint/typenum-a0936c58bfd6120c/lib-typenum.json",
+    "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/dep-lib-unicode_ident",
+    "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/invoked.timestamp",
+    "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/lib-unicode_ident",
+    "quant_core/target/debug/.fingerprint/unicode-ident-b95ddec2550607ba/lib-unicode_ident.json",
+    "quant_core/target/debug/deps/autocfg-9c44f67432914e3b.d",
+    "quant_core/target/debug/deps/block_buffer-3b60558e0d891e3d.d",
+    "quant_core/target/debug/deps/cfg_if-0ef9ec2e0c621f41.d",
+    "quant_core/target/debug/deps/const_oid-b875082817ba8833.d",
+    "quant_core/target/debug/deps/cpufeatures-ad6ef05eec2d6a89.d",
+    "quant_core/target/debug/deps/crypto_common-dbf15b747c9958ca.d",
+    "quant_core/target/debug/deps/digest-e93dcf653101f97a.d",
+    "quant_core/target/debug/deps/heck-afee580cd6fd8827.d",
+    "quant_core/target/debug/deps/hybrid_array-4d17ac7dbdf620ee.d",
+    "quant_core/target/debug/deps/libautocfg-9c44f67432914e3b.rlib",
+    "quant_core/target/debug/deps/libautocfg-9c44f67432914e3b.rmeta",
+    "quant_core/target/debug/deps/libblock_buffer-3b60558e0d891e3d.rmeta",
+    "quant_core/target/debug/deps/libc-0c9e37df63255255.d",
+    "quant_core/target/debug/deps/libcfg_if-0ef9ec2e0c621f41.rmeta",
+    "quant_core/target/debug/deps/libconst_oid-b875082817ba8833.rmeta",
+    "quant_core/target/debug/deps/libcpufeatures-ad6ef05eec2d6a89.rmeta",
+    "quant_core/target/debug/deps/libcrypto_common-dbf15b747c9958ca.rmeta",
+    "quant_core/target/debug/deps/libdigest-e93dcf653101f97a.rmeta",
+    "quant_core/target/debug/deps/libheck-afee580cd6fd8827.rlib",
+    "quant_core/target/debug/deps/libheck-afee580cd6fd8827.rmeta",
+    "quant_core/target/debug/deps/libhybrid_array-4d17ac7dbdf620ee.rmeta",
+    "quant_core/target/debug/deps/liblibc-0c9e37df63255255.rmeta",
+    "quant_core/target/debug/deps/libmatrixmultiply-71213c51545ce137.rmeta",
+    "quant_core/target/debug/deps/libndarray-07557ce53047126c.rmeta",
+    "quant_core/target/debug/deps/libnum_complex-c2d8483a4bc0cbaf.rmeta",
+    "quant_core/target/debug/deps/libnum_integer-d52ab27a33b2abf4.rmeta",
+    "quant_core/target/debug/deps/libnum_traits-d7cb016368bf74c8.rmeta",
+    "quant_core/target/debug/deps/libnumpy-4c6cbb70c772f268.rmeta",
+    "quant_core/target/debug/deps/libonce_cell-2f479faa956a7d94.rmeta",
+    "quant_core/target/debug/deps/libproc_macro2-81e3eb2b815a508b.rlib",
+    "quant_core/target/debug/deps/libproc_macro2-81e3eb2b815a508b.rmeta",
+    "quant_core/target/debug/deps/libpyo3-bd11bf4ad7e8271c.rmeta",
+    "quant_core/target/debug/deps/libpyo3_build_config-2dcd589bd8e6e0cf.rlib",
+    "quant_core/target/debug/deps/libpyo3_build_config-2dcd589bd8e6e0cf.rmeta",
+    "quant_core/target/debug/deps/libpyo3_ffi-8aaeeea494e7b50b.rmeta",
+    "quant_core/target/debug/deps/libpyo3_macros-bca2290a9b69c670.so",
+    "quant_core/target/debug/deps/libpyo3_macros_backend-68d307edcf3185a1.rlib",
+    "quant_core/target/debug/deps/libpyo3_macros_backend-68d307edcf3185a1.rmeta",
+    "quant_core/target/debug/deps/libquant_core-dee22e33017249fe.rmeta",
+    "quant_core/target/debug/deps/libquote-76bc3d8098badccc.rlib",
+    "quant_core/target/debug/deps/libquote-76bc3d8098badccc.rmeta",
+    "quant_core/target/debug/deps/librawpointer-401afbff9d1170dc.rmeta",
+    "quant_core/target/debug/deps/librustc_hash-4909c45400033eba.rmeta",
+    "quant_core/target/debug/deps/libsha2-3b3e4b25e67e2cd5.rmeta",
+    "quant_core/target/debug/deps/libsyn-96807b3ec7233230.rlib",
+    "quant_core/target/debug/deps/libsyn-96807b3ec7233230.rmeta",
+    "quant_core/target/debug/deps/libtarget_lexicon-8975955bda6cf36a.rlib",
+    "quant_core/target/debug/deps/libtarget_lexicon-8975955bda6cf36a.rmeta",
+    "quant_core/target/debug/deps/libtypenum-a0936c58bfd6120c.rmeta",
+    "quant_core/target/debug/deps/libunicode_ident-b95ddec2550607ba.rlib",
+    "quant_core/target/debug/deps/libunicode_ident-b95ddec2550607ba.rmeta",
+    "quant_core/target/debug/deps/matrixmultiply-71213c51545ce137.d",
+    "quant_core/target/debug/deps/ndarray-07557ce53047126c.d",
+    "quant_core/target/debug/deps/num_complex-c2d8483a4bc0cbaf.d",
+    "quant_core/target/debug/deps/num_integer-d52ab27a33b2abf4.d",
+    "quant_core/target/debug/deps/num_traits-d7cb016368bf74c8.d",
+    "quant_core/target/debug/deps/numpy-4c6cbb70c772f268.d",
+    "quant_core/target/debug/deps/once_cell-2f479faa956a7d94.d",
+    "quant_core/target/debug/deps/proc_macro2-81e3eb2b815a508b.d",
+    "quant_core/target/debug/deps/pyo3-bd11bf4ad7e8271c.d",
+    "quant_core/target/debug/deps/pyo3_build_config-2dcd589bd8e6e0cf.d",
+    "quant_core/target/debug/deps/pyo3_ffi-8aaeeea494e7b50b.d",
+    "quant_core/target/debug/deps/pyo3_macros-bca2290a9b69c670.d",
+    "quant_core/target/debug/deps/pyo3_macros_backend-68d307edcf3185a1.d",
+    "quant_core/target/debug/deps/quant_core-dee22e33017249fe.d",
+    "quant_core/target/debug/deps/quote-76bc3d8098badccc.d",
+    "quant_core/target/debug/deps/rawpointer-401afbff9d1170dc.d",
+    "quant_core/target/debug/deps/rustc_hash-4909c45400033eba.d",
+    "quant_core/target/debug/deps/sha2-3b3e4b25e67e2cd5.d",
+    "quant_core/target/debug/deps/syn-96807b3ec7233230.d",
+    "quant_core/target/debug/deps/target_lexicon-8975955bda6cf36a.d",
+    "quant_core/target/debug/deps/typenum-a0936c58bfd6120c.d",
+    "quant_core/target/debug/deps/unicode_ident-b95ddec2550607ba.d",
+    "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc-cterjqtkewhk8ciqevb1f4lgz/dep-graph.bin",
+    "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc-cterjqtkewhk8ciqevb1f4lgz/query-cache.bin",
+    "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc-cterjqtkewhk8ciqevb1f4lgz/work-products.bin",
+    "quant_core/target/debug/incremental/quant_core-3k7gy39nykp8r/s-hng1fjuh53-111q3wc.lock"
+  ],
+  "members_removed": [],
+  "n_members": 275,
+  "params": {
+    "head_sha": "6418f4f8d7e6bf8903e7fb9558120624c6327f68",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_ccea90f0955cc21b.json",
+  "prev_epoch_sha256": "74f9e1b6ebc95c44bbc1d38335dcd7cff60bb7f5f98a5922e42fcfc74458cd4f",
+  "receipt_sha256": "9bac62631af2fcb68d067e833a9ce182809bbbf25e2c82aa8c45925e0064f40b",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
