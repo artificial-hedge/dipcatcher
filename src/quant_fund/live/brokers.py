@@ -13,19 +13,48 @@ import os
 import urllib.error
 import urllib.request
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Protocol, cast
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from quant_fund.live.config import Venue
-from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
     "alpaca-live": "https://api.alpaca.markets",
 }
 _PAGE = 100
+# Alpaca's documented lifecycle. Unknown values stay ``unmapped`` so an expired
+# or suspended order is not stored as a working accept.
+_STATUS_MAP: dict[str, str] = {
+    "new": "accepted",
+    "accepted": "accepted",
+    "pending_new": "accepted",
+    "accepted_for_bidding": "accepted",
+    "pending_review": "accepted",
+    "calculated": "accepted",
+    "stopped": "accepted",
+    "partially_filled": "partially_filled",
+    "filled": "filled",
+    "done_for_day": "done_for_day",
+    "canceled": "canceled",
+    "cancelled": "canceled",
+    "expired": "expired",
+    "replaced": "replaced",
+    "pending_cancel": "pending_cancel",
+    "pending_replace": "pending_replace",
+    "rejected": "rejected",
+    "suspended": "suspended",
+    "unmapped": "unmapped",
+}
+
+
+def map_broker_status(raw: str) -> str:
+    """Map one broker status. An unknown value is ``unmapped``, never ``accepted``."""
+    return _STATUS_MAP.get(raw.strip().lower(), "unmapped")
+
 
 Transport = Callable[[str, str, dict[str, str], bytes | None, float], tuple[int, bytes]]
 
@@ -57,6 +86,7 @@ class BrokerAccount:
     cash: float
     equity: float
     positions: dict[str, float]
+    marks: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -145,6 +175,28 @@ def _redact(text: str, secrets: tuple[str, ...]) -> str:
     return cleaned[:500]
 
 
+def _position_mark(row: dict[str, Any]) -> float | None:
+    """Use the broker valuation when the operator has not stored a mark."""
+    for key in ("current_price", "lastday_price", "avg_entry_price"):
+        raw = row.get(key)
+        if raw in (None, ""):
+            continue
+        price = _money(raw, "position mark")
+        if price > 0.0:
+            return price
+    market_value = row.get("market_value")
+    qty = row.get("qty")
+    if market_value in (None, "") or qty in (None, ""):
+        return None
+    quantity = _money(qty, "position")
+    if quantity == 0.0:
+        return None
+    price = abs(_money(market_value, "market value") / quantity)
+    if price > 0.0:
+        return price
+    return None
+
+
 def _money(value: object, label: str) -> float:
     try:
         number = float(cast(Any, value))
@@ -186,7 +238,12 @@ class LoopbackBroker:
         equity = self.cash
         for symbol, qty in self.positions.items():
             equity += qty * self.marks.get(symbol, 0.0)
-        return BrokerAccount(cash=self.cash, equity=equity, positions=dict(self.positions))
+        return BrokerAccount(
+            cash=self.cash,
+            equity=equity,
+            positions=dict(self.positions),
+            marks=dict(self.marks),
+        )
 
     def submit(self, order: LiveOrder) -> BrokerAck:
         prior = self._orders.get(order.client_order_id)
@@ -347,7 +404,10 @@ class AlpacaBroker:
         return self._ack(payload)
 
     def recover(self, client_order_id: str) -> BrokerAck | None:
-        path = f"/v2/orders:by_client_order_id/{quote(client_order_id, safe='')}"
+        # Alpaca documents a query parameter, not a path segment. A path
+        # segment returns no order, so a lost POST cannot be found or canceled.
+        query = urlencode({"client_order_id": client_order_id})
+        path = f"/v2/orders:by_client_order_id?{query}"
         payload, missing = self._request_optional(path)
         if missing:
             return None
@@ -361,15 +421,22 @@ class AlpacaBroker:
         if not isinstance(payload, dict) or not isinstance(positions, list):
             raise BrokerRejected("broker account response was malformed")
         book: dict[str, float] = {}
+        marks: dict[str, float] = {}
         for row in positions:
             if not isinstance(row, dict):
                 raise BrokerRejected("broker position row was malformed")
-            book[str(row.get("symbol") or "")] = _money(row.get("qty"), "position")
+            symbol = str(row.get("symbol") or "")
+            book[symbol] = _money(row.get("qty"), "position")
+            mark = _position_mark(row)
+            if symbol and mark is not None:
+                marks[symbol] = mark
         book.pop("", None)
+        marks.pop("", None)
         return BrokerAccount(
             cash=_money(payload.get("cash"), "cash"),
             equity=_money(payload.get("equity"), "equity"),
             positions=book,
+            marks=marks,
         )
 
     def fills(self, *, broker_to_client: dict[str, str]) -> FillPage:
@@ -406,10 +473,12 @@ class AlpacaBroker:
                     fill_time_ns=_ns(when),
                 )
             )
+        fills.sort(key=lambda fill: (fill.fill_time_ns, fill.fill_id))
         return FillPage(fills=tuple(fills), truncated=len(payload) >= _PAGE)
 
     def _ack(self, payload: dict[str, Any]) -> BrokerAck:
-        status = str(payload.get("status") or "accepted")
+        raw_status = str(payload.get("status") or "")
+        status = map_broker_status(raw_status)
         filled = _money(payload.get("filled_qty") or 0, "filled quantity")
         raw_price = payload.get("filled_avg_price")
         fill_price = None if raw_price in (None, "") else _money(raw_price, "average price")
@@ -434,6 +503,10 @@ class AlpacaBroker:
                     fill_time_ns=stamp,
                 ),
             )
+        reason = ""
+        if status == "unmapped":
+            shown = raw_status or "empty"
+            reason = f"unmapped broker status {shown}"
         return BrokerAck(
             client_order_id=client,
             broker_order_id=broker_id,
@@ -441,7 +514,7 @@ class AlpacaBroker:
             filled_quantity=filled,
             fill_price=fill_price,
             fills=fills,
-            reason="",
+            reason=reason,
         )
 
     def _request(self, method: str, path: str, body: dict[str, Any] | None) -> Any:
@@ -461,6 +534,13 @@ class AlpacaBroker:
         *,
         allow_missing: bool,
     ) -> tuple[Any, bool]:
+        if self.venue == "alpaca-live":
+            raise LiveBrokerRefused(
+                "alpaca-live is refused: the honesty contract forbids live broker "
+                "connectivity (AGENTS.md; docs/INSTITUTIONAL_READINESS.md). "
+                "The venue and host api.alpaca.markets stay configured so this "
+                "refusal is explicit. Paper and loopback are unchanged."
+            )
         if self._credentials is None:
             raise LiveGateError("broker credentials are not set")
         key, secret = self._credentials
@@ -505,7 +585,7 @@ def _parse_broker_response(
 ) -> tuple[Any, bool]:
     if status == 404 and allow_missing:
         return None, True
-    text = _redact(payload.decode("utf-8", errors="replace"), secrets)
+    text = payload.decode("utf-8", errors="replace")
     if status == 204 or not text.strip():
         return _empty_response(status)
     return _parse_json_response(status, text, secrets)

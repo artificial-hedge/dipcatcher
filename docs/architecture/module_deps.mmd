@@ -165,7 +165,7 @@ flowchart LR
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|3| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
-  fx1_interactive -->|1| quant_fund_schemas
+  fx1_interactive -->|1| quant_fund_validation
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -251,19 +251,19 @@ flowchart LR
   quant_fund_cli -->|3| quant_fund_backtest
   quant_fund_cli -->|3| quant_fund_config
   quant_fund_cli -->|12| quant_fund_data
-  quant_fund_cli -->|1| quant_fund_execution
   quant_fund_cli -->|3| quant_fund_features
   quant_fund_cli -->|1| quant_fund_hmm
   quant_fund_cli -->|1| quant_fund_leakage
   quant_fund_cli -->|1| quant_fund_lightspeed
-  quant_fund_cli -->|3| quant_fund_live
+  quant_fund_cli -->|5| quant_fund_live
   quant_fund_cli -->|7| quant_fund_microstructure
   quant_fund_cli -->|1| quant_fund_monitoring
   quant_fund_cli -->|3| quant_fund_northset
   quant_fund_cli -->|1| quant_fund_observe
-  quant_fund_cli -->|6| quant_fund_paper
+  quant_fund_cli -->|7| quant_fund_paper
   quant_fund_cli -->|12| quant_fund_pipeline
   quant_fund_cli -->|1| quant_fund_pit
+  quant_fund_cli -->|1| quant_fund_pretrade
   quant_fund_cli -->|1| quant_fund_proof
   quant_fund_cli -->|2| quant_fund_proofcore
   quant_fund_cli -->|1| quant_fund_quant_models
@@ -288,9 +288,8 @@ flowchart LR
   quant_fund_execution -->|1| quant_fund_microstructure
   quant_fund_execution -->|2| quant_fund_models
   quant_fund_execution -->|1| quant_fund_monitoring
-  quant_fund_execution -->|1| quant_fund_paper
   quant_fund_execution -->|1| quant_fund_portfolio
-  quant_fund_execution -->|5| quant_fund_schemas
+  quant_fund_execution -->|3| quant_fund_schemas
   quant_fund_execution -->|2| quant_fund_utils
   quant_fund_features -->|1| quant_fund_config
   quant_fund_features -->|2| quant_fund_data
@@ -329,7 +328,8 @@ flowchart LR
   quant_fund_leakage -->|1| quant_fund_utils
   quant_fund_lightspeed -->|3| quant_fund_hedge_lab
   quant_fund_lightspeed -->|1| quant_fund_models
-  quant_fund_live -->|5| quant_fund_pretrade
+  quant_fund_live -->|1| quant_fund_formal
+  quant_fund_live -->|10| quant_fund_pretrade
   quant_fund_market_sim -->|1| quant_fund_backtest
   quant_fund_market_sim -->|2| quant_fund_config
   quant_fund_market_sim -->|1| quant_fund_lightspeed
@@ -376,14 +376,15 @@ flowchart LR
   quant_fund_paper -->|1| quant_fund_backtest
   quant_fund_paper -->|3| quant_fund_config
   quant_fund_paper -->|1| quant_fund_data
-  quant_fund_paper -->|5| quant_fund_execution
+  quant_fund_paper -->|6| quant_fund_execution
   quant_fund_paper -->|3| quant_fund_metrics
   quant_fund_paper -->|2| quant_fund_monitoring
   quant_fund_paper -->|1| quant_fund_pipeline
   quant_fund_paper -->|2| quant_fund_portfolio
   quant_fund_paper -->|4| quant_fund_research
-  quant_fund_paper -->|1| quant_fund_schemas
+  quant_fund_paper -->|2| quant_fund_schemas
   quant_fund_paper -->|7| quant_fund_utils
+  quant_fund_paper -->|1| quant_fund_validation
   quant_fund_parity -->|4| quant_fund_config
   quant_fund_parity -->|2| quant_fund_execution
   quant_fund_parity -->|1| quant_fund_schemas

@@ -152,7 +152,7 @@ def test_real_graph_shape_invariants() -> None:
     """Repo-level invariants the atlas documents (guard against regressions)."""
     modules, _edges, module_edges = gen.collect_graph(REPO)
     assert len(modules) > 400  # whole-repo scan, not a subset
-    assert all(m.split(".")[0] in {"quant_fund", "fx1"} for m in modules)
+    assert all(m.split(".")[0] in {"quant_fund", "fx1", "dipcatcher_cli"} for m in modules)
     # Pinned cross-root boundary (ADR-0002). Any added or removed edge fails.
     assert gen.cross_root_errors(module_edges) == []
 

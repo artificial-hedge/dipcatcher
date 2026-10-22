@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,9 +17,18 @@ from typer.testing import CliRunner
 from quant_fund.cli.main import app
 from quant_fund.execution.order_recon import LiveEndpointRefused, refuse_live_endpoint
 from quant_fund.live.arming import LIVE_CAPITAL_PHRASE
-from quant_fund.live.brokers import AlpacaBroker, LiveOrder, LoopbackBroker
+from quant_fund.live.brokers import (
+    AlpacaBroker,
+    BrokerAccount,
+    BrokerAck,
+    BrokerFill,
+    FillPage,
+    LiveOrder,
+    LoopbackBroker,
+    map_broker_status,
+)
 from quant_fund.live.config import LiveConfig
-from quant_fund.live.errors import LiveGateError
+from quant_fund.live.errors import LiveBrokerRefused, LiveGateError
 from quant_fund.live.ledger import LedgerFill, LiveLedger
 from quant_fund.live.session import open_session
 
@@ -251,19 +261,25 @@ def test_alpaca_paper_posts_only_to_the_paper_host(tmp_path: Path) -> None:
 
 
 def test_alpaca_live_host_is_not_the_paper_host() -> None:
+    """The live host stays configured. Submission is refused before any socket."""
     transport = _Script()
     broker = AlpacaBroker("alpaca-live", ("KEYID", "SECRETVALUE"), transport=transport)
-    broker.submit(
-        LiveOrder(
-            client_order_id="dc-live-1",
-            symbol="AAPL",
-            side="buy",
-            quantity=1.0,
-            limit_price=100.0,
-            fill_time_ns=TS,
+    assert broker.base == "https://api.alpaca.markets"
+    with pytest.raises(LiveBrokerRefused, match="honesty contract"):
+        broker.submit(
+            LiveOrder(
+                client_order_id="dc-live-1",
+                symbol="AAPL",
+                side="buy",
+                quantity=1.0,
+                limit_price=100.0,
+                fill_time_ns=TS,
+            )
         )
-    )
-    assert transport.calls[0][1].startswith("https://api.alpaca.markets/")
+    assert transport.calls == []
+    with pytest.raises(LiveBrokerRefused, match="honesty contract"):
+        broker.recover("dc-live-1")
+    assert transport.calls == []
 
 
 def test_ledger_duplicate_orphan_and_out_of_order_are_idempotent() -> None:
@@ -371,6 +387,407 @@ def test_cli_arm_and_submit(tmp_path: Path) -> None:
     snapshot = json.loads(status.stdout)
     assert snapshot["armed"] is True
     assert snapshot["computed_positions"]["AAPL"] == 1.0
+
+
+def _tight(tmp: Path, **limits: object) -> Path:
+    raw = yaml.safe_load(PRETRADE.read_text(encoding="utf-8"))
+    raw["limits"].update(limits)
+    path = tmp / "pretrade.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    return path
+
+
+def _gateway(tmp: Path, *, pretrade: Path, broker: Any = None) -> Any:
+    return open_session(
+        _config(tmp, pretrade_config=str(pretrade)),
+        pretrade,
+        state_dir=tmp,
+        now_ns=_clock,
+        broker=broker,
+    )
+
+
+def test_lost_broker_response_stays_inflight_until_it_can_be_canceled(tmp_path: Path) -> None:
+    broker = _LosingBroker()
+    first = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    _arm(first)
+    with pytest.raises(LiveGateError, match="stays inflight"):
+        _buy(first, quantity=1.0, client_order_id="dc-lost")
+    stored = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
+    assert stored["orders"][0]["status"] == "inflight"
+    second = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    assert second.orders[0]["status"] == "inflight"
+    broker.lose_recover = False
+    canceled = second.cancel(client_order_id="dc-lost", actor="ada", at_ns=TS + 1)
+    assert canceled["status"] == "canceled"
+    assert canceled["replayed"] is False
+    assert broker.cancels == 1
+
+
+def test_pretrade_limits_survive_a_new_process(tmp_path: Path) -> None:
+    pretrade = _tight(tmp_path, max_orders_per_window=1)
+    first = _gateway(tmp_path / "rate", pretrade=pretrade)
+    _arm(first)
+    assert isinstance(first.broker, LoopbackBroker)
+    first.broker.defer_fill = True
+    accepted = _buy(first, quantity=1.0, client_order_id="dc-rate-1")
+    assert accepted["status"] == "accepted"
+    second = _gateway(tmp_path / "rate", pretrade=pretrade)
+    denied = _buy(second, quantity=2.0, limit_price=100.0, client_order_id="dc-rate-2")
+    assert denied["ok"] is False
+    assert "order_rate" in denied["reasons"]
+
+    dup_root = tmp_path / "dup"
+    dup = _gateway(dup_root, pretrade=PRETRADE)
+    _arm(dup)
+    _buy(dup, client_order_id="dc-dup-1")
+    resumed = _gateway(dup_root, pretrade=PRETRADE)
+    again = _buy(resumed, client_order_id="dc-dup-2")
+    assert again["ok"] is False
+    assert "duplicate_order" in again["reasons"]
+
+
+def test_working_orders_count_toward_position_limits(tmp_path: Path) -> None:
+    pretrade = _tight(tmp_path, max_position_quantity=10)
+    root = tmp_path / "work"
+    first = _gateway(root, pretrade=pretrade)
+    _arm(first)
+    assert isinstance(first.broker, LoopbackBroker)
+    first.broker.defer_fill = True
+    working = _buy(first, quantity=10.0, client_order_id="dc-work")
+    assert working["status"] == "accepted"
+    assert first.broker.account().positions == {}
+    blocked = _buy(first, quantity=1.0, limit_price=101.0, client_order_id="dc-work-2")
+    assert blocked["ok"] is False
+    assert "position_quantity" in blocked["reasons"]
+    second = _gateway(root, pretrade=pretrade)
+    again = _buy(second, quantity=1.0, limit_price=101.0, client_order_id="dc-work-3")
+    assert again["ok"] is False
+    assert "position_quantity" in again["reasons"]
+
+
+def test_unmarked_broker_position_refuses_submission(tmp_path: Path) -> None:
+    session = _open(tmp_path)
+    _arm(session)
+    assert isinstance(session.broker, LoopbackBroker)
+    session.broker.positions["MSFT"] = 5.0
+    with pytest.raises(LiveGateError, match="no mark"):
+        _buy(session, quantity=1.0)
+
+
+def test_recovery_uses_the_client_order_id_query(tmp_path: Path) -> None:
+    del tmp_path
+    seen: list[str] = []
+
+    def transport(
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        body: bytes | None,
+        timeout: float,
+    ) -> tuple[int, bytes]:
+        del method, headers, body, timeout
+        seen.append(url)
+        return 404, b""
+
+    broker = AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=transport)
+    assert broker.recover("dc/lost") is None
+    assert len(seen) == 1
+    assert "/v2/orders:by_client_order_id?" in seen[0]
+    assert "client_order_id=dc%2Flost" in seen[0]
+    assert "/v2/orders:by_client_order_id/dc" not in seen[0]
+
+
+def test_broker_json_longer_than_500_chars_parses() -> None:
+    long_id = "ord-" + ("x" * 600)
+
+    def transport(
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        body: bytes | None,
+        timeout: float,
+    ) -> tuple[int, bytes]:
+        del method, url, headers, timeout
+        request = json.loads(body or b"{}")
+        payload = {
+            "id": long_id,
+            "client_order_id": request["client_order_id"],
+            "status": "accepted",
+            "filled_qty": "0",
+            "symbol": request["symbol"],
+            "side": request["side"],
+        }
+        encoded = json.dumps(payload).encode()
+        assert len(encoded) > 500
+        return 200, encoded
+
+    broker = AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=transport)
+    ack = broker.submit(
+        LiveOrder("dc-long", "AAPL", "buy", 1.0, 100.0, TS),
+    )
+    assert ack.status == "accepted"
+    assert ack.broker_order_id == long_id
+
+
+def test_descending_fill_page_is_recorded_chronologically() -> None:
+    rows = [
+        {
+            "id": "f-late",
+            "order_id": "ord-1",
+            "side": "buy",
+            "qty": "1",
+            "price": "11",
+            "symbol": "AAPL",
+            "transaction_time": "2024-01-03T20:00:02+00:00",
+        },
+        {
+            "id": "f-early",
+            "order_id": "ord-1",
+            "side": "buy",
+            "qty": "1",
+            "price": "10",
+            "symbol": "AAPL",
+            "transaction_time": "2024-01-03T20:00:01+00:00",
+        },
+    ]
+
+    def transport(
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        body: bytes | None,
+        timeout: float,
+    ) -> tuple[int, bytes]:
+        del method, headers, body, timeout
+        assert "direction=desc" in url
+        return 200, json.dumps(rows).encode()
+
+    broker = AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=transport)
+    page = broker.fills(broker_to_client={"ord-1": "dc-fills"})
+    assert [fill.fill_id for fill in page.fills] == ["f-early", "f-late"]
+    ledger = LiveLedger(baseline_cash=1_000.0)
+    ledger.note_order("dc-fills", expects_fill=True)
+    for fill in page.fills:
+        assert (
+            ledger.record_fill(
+                LedgerFill(
+                    fill.fill_id,
+                    fill.client_order_id,
+                    fill.symbol,
+                    fill.side,
+                    fill.quantity,
+                    fill.price,
+                    fill.fill_time_ns,
+                )
+            )
+            == "accepted"
+        )
+    assert ledger.reconcile()["out_of_order_fills"] == 0
+
+
+def test_reconcile_marks_a_working_order_filled(tmp_path: Path) -> None:
+    session = _open(tmp_path)
+    _arm(session)
+    assert isinstance(session.broker, LoopbackBroker)
+    session.broker.defer_fill = True
+    working = _buy(session, client_order_id="dc-later")
+    assert working["status"] == "accepted"
+    assert working["filled_quantity"] == 0.0
+    session.broker._fills.append(
+        BrokerFill("loopback:dc-later", "dc-later", "AAPL", "buy", 10.0, 100.0, TS + 5)
+    )
+    session.broker.cash -= 1_000.0
+    session.broker.positions["AAPL"] = 10.0
+    report = session.reconcile(at_ns=TS + 6)
+    assert report["ok"] is True
+    row = session._find("dc-later")
+    assert row is not None
+    assert row["status"] == "filled"
+    assert row["filled_quantity"] == 10.0
+    replayed = session.cancel(client_order_id="dc-later", actor="ada", at_ns=TS + 7)
+    assert replayed["replayed"] is True
+    assert replayed["status"] == "filled"
+
+
+def test_reopen_repairs_the_audit_log_mode(tmp_path: Path) -> None:
+    session = _open(tmp_path)
+    _arm(session)
+    _buy(session, quantity=1.0)
+    audit = tmp_path / "audit.jsonl"
+    os.chmod(audit, 0o644)
+    assert os.stat(audit).st_mode & 0o777 == 0o644
+    _open(tmp_path)
+    assert os.stat(audit).st_mode & 0o777 == 0o600
+
+
+def test_expired_and_unknown_broker_statuses_are_not_accepted(tmp_path: Path) -> None:
+    assert map_broker_status("expired") == "expired"
+    assert map_broker_status("done_for_day") == "done_for_day"
+    assert map_broker_status("pending_cancel") == "pending_cancel"
+    assert map_broker_status("suspended") == "suspended"
+    assert map_broker_status("not-a-status") == "unmapped"
+    assert map_broker_status("") == "unmapped"
+    transport = _StatusScript("expired")
+    broker = AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=transport)
+    session = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    _arm(session)
+    result = _buy(session, quantity=1.0, client_order_id="dc-expired")
+    assert result["status"] == "expired"
+    assert result["ok"] is False
+    canceled = session.cancel(client_order_id="dc-expired", actor="ada", at_ns=TS + 1)
+    assert canceled["replayed"] is True
+    assert canceled["status"] == "expired"
+    assert not any(call[0] == "DELETE" for call in transport.calls)
+
+    unknown = _StatusScript("halted_for_review")
+    other = open_session(
+        _config(tmp_path / "unk", venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path / "unk",
+        now_ns=_clock,
+        broker=AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=unknown),
+    )
+    _arm(other)
+    mapped = _buy(other, quantity=1.0, client_order_id="dc-unknown")
+    assert mapped["status"] == "unmapped"
+    assert mapped["status"] != "accepted"
+    assert "unmapped broker status" in mapped["reason"]
+
+
+def test_two_sessions_do_not_overwrite_each_others_orders(tmp_path: Path) -> None:
+    first = _open(tmp_path)
+    _arm(first)
+    second = _open(tmp_path)
+    barrier = threading.Barrier(2)
+    errors: list[BaseException] = []
+
+    def buy(session: Any, client: str, quantity: float) -> None:
+        try:
+            barrier.wait(timeout=5)
+            result = _buy(session, quantity=quantity, client_order_id=client)
+            if result["ok"] is not True:
+                errors.append(AssertionError(result))
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=buy, args=(first, "dc-race-1", 1.0)),
+        threading.Thread(target=buy, args=(second, "dc-race-2", 2.0)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+    assert errors == []
+    stored = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
+    assert {row["client_order_id"] for row in stored["orders"]} == {"dc-race-1", "dc-race-2"}
+
+
+class _LosingBroker:
+    """Records the order, then drops the submit response and the lookup."""
+
+    def __init__(self) -> None:
+        self.lose_recover = True
+        self.cancels = 0
+        self._stored: BrokerAck | None = None
+        self.marks: dict[str, float] = {}
+
+    def set_mark(self, symbol: str, price: float) -> None:
+        self.marks[str(symbol)] = float(price)
+
+    def account(self) -> BrokerAccount:
+        return BrokerAccount(
+            cash=1_000_000.0, equity=1_000_000.0, positions={}, marks=dict(self.marks)
+        )
+
+    def submit(self, order: LiveOrder) -> BrokerAck:
+        self._stored = BrokerAck(
+            client_order_id=order.client_order_id,
+            broker_order_id="broker-lost",
+            status="accepted",
+            filled_quantity=0.0,
+            fill_price=None,
+            fills=(),
+            reason="",
+        )
+        raise TimeoutError("response lost")
+
+    def recover(self, client_order_id: str) -> BrokerAck | None:
+        del client_order_id
+        if self.lose_recover:
+            raise TimeoutError("lookup failed")
+        return self._stored
+
+    def cancel(self, client_order_id: str, broker_order_id: str) -> BrokerAck:
+        del client_order_id
+        self.cancels += 1
+        ack = BrokerAck(
+            client_order_id=self._stored.client_order_id if self._stored else "",
+            broker_order_id=broker_order_id,
+            status="canceled",
+            filled_quantity=0.0,
+            fill_price=None,
+            fills=(),
+            reason="",
+        )
+        self._stored = ack
+        return ack
+
+    def fills(self, *, broker_to_client: dict[str, str]) -> FillPage:
+        del broker_to_client
+        return FillPage(fills=(), truncated=False)
+
+
+class _StatusScript:
+    def __init__(self, status: str) -> None:
+        self.status = status
+        self.calls: list[tuple[str, str]] = []
+
+    def __call__(
+        self,
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        body: bytes | None,
+        timeout: float,
+    ) -> tuple[int, bytes]:
+        del headers, timeout
+        self.calls.append((method, url))
+        if method == "POST":
+            request = json.loads(body or b"{}")
+            payload = {
+                "id": "ord-status",
+                "client_order_id": request["client_order_id"],
+                "status": self.status,
+                "filled_qty": "0",
+                "symbol": request["symbol"],
+                "side": request["side"],
+            }
+            return 200, json.dumps(payload).encode()
+        if url.endswith("/v2/account"):
+            return 200, json.dumps({"cash": "1000000", "equity": "1000000"}).encode()
+        if url.endswith("/v2/positions"):
+            return 200, b"[]"
+        return 404, b"{}"
 
 
 class _Script:

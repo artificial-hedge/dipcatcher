@@ -114,11 +114,13 @@ publication, preserve the run directory and resume from the last valid
 
 ## Deployment
 
-Research promotion still does not authorize live capital. The order gateway
-is a fourth, opt-in surface and it stays disarmed until `dipcatcher live arm`
-([LIVE_TRADING.md](LIVE_TRADING.md),
-[INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). "Deployment" here
-means these surfaces:
+There is **no hosted live-trading deployment**. `dipcatcher live` is the
+operator desk: shadow by default, loopback for a SYNTHETIC rehearsal, and a
+drop folder for an operator-owned bridge ([LIVE_DESK.md](LIVE_DESK.md)). A
+gateway config can add an Alpaca paper session; the live host is refused
+([LIVE_TRADING.md](LIVE_TRADING.md)). Neither path satisfies institutional
+condition 2 or claims live performance. "Deployment" here means three
+research/simulation surfaces:
 
 1. **Research harness (local or container).** `make sync` installs the locked
    environment. `Dockerfile` builds the research API image (non-root uid

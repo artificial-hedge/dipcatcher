@@ -87,7 +87,8 @@ Slash commands:
 /flash add|list|show|remove|correct|search|refresh ...
 /keys list|set|remove           model endpoints (presence-only)
 /harness list|describe|run      registered lab commands
-/trade [readiness|help]         paper book and the blocked-conditions report
+/live                           operator card for the live desk (chat does not transmit)
+/trade [readiness|help]         live orders are disabled; paper is the only book
 /use <model>  /model  /help  /exit
 ```
 

@@ -1,152 +1,106 @@
-"""Local arm file. Arming is an operator act on this machine, not a research receipt."""
+"""Venue selection for the live desk. Transmission is a separate switch.
+
+Shadow never transmits. Loopback stays inside the process and labels fills
+SYNTHETIC. Drop writes tickets only when the process environment has
+``DIP_LIVE_ARM=1``. An arming file cannot declare a live-performance claim
+or mark the institutional evidence conditions ready.
+"""
 
 from __future__ import annotations
 
-import hmac
 import json
-import os
-from datetime import UTC, datetime
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from quant_fund.live.config import Venue
-from quant_fund.live.errors import LiveGateError
+from quant_fund.live.gateway_arm import LIVE_CAPITAL_PHRASE as LIVE_CAPITAL_PHRASE
 
-LIVE_CAPITAL_PHRASE = "I AUTHORIZE LIVE CAPITAL"
-_ARM_SCHEMA = "live_arm.v1"
-_ZERO = "0" * 64
-
-
-def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
-    """Replace ``path`` with mode 0600 JSON. A crash leaves the previous file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    data = (json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    try:
-        os.write(fd, data)
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-    os.chmod(tmp, 0o600)
-    os.replace(tmp, path)
-    os.chmod(path, 0o600)
+VENUES: frozenset[str] = frozenset({"shadow", "loopback", "drop"})
+CONFIRM_DROP = "SEND-LIVE-ORDERS"
+ENV_ARM = "DIP_LIVE_ARM"
+ENV_ROOT = "DIP_LIVE_ROOT"
+_SCHEMA = "live_arming.v1"
 
 
-def _read_object(path: Path) -> dict[str, Any]:
+class ArmingError(ValueError):
+    """The arming file is missing a required refusal or names an unknown venue."""
+
+
+@dataclass(frozen=True)
+class Arming:
+    """Persisted venue. The evidence flags are fixed; callers cannot set them."""
+
+    venue: str
+
+    def __post_init__(self) -> None:
+        if self.venue not in VENUES:
+            raise ArmingError(f"unknown venue {self.venue!r}")
+
+    def as_dict(self) -> dict[str, object]:
+        capital = "operator_bridge" if self.venue == "drop" else "none"
+        return {
+            "schema": _SCHEMA,
+            "venue": self.venue,
+            "capital": capital,
+            "live_pnl_claim": False,
+            "would_promote_live": False,
+            "evidence_conditions": "blocked",
+        }
+
+
+def transmits(arming: Arming, env: Mapping[str, str], *, halted: bool, trace_ok: bool) -> bool:
+    """True only when this process may hand a ticket to a bridge."""
+    if halted or not trace_ok:
+        return False
+    if arming.venue == "loopback":
+        return True
+    if arming.venue == "drop":
+        return env.get(ENV_ARM) == "1"
+    return False
+
+
+def held_reason(arming: Arming, env: Mapping[str, str]) -> str:
+    """Why a risk-approved order would not leave the process."""
+    if arming.venue == "shadow":
+        return "shadow venue does not transmit"
+    if arming.venue == "drop" and env.get(ENV_ARM) != "1":
+        return f"{ENV_ARM} is not 1"
+    return ""
+
+
+def write_arming(path: Path, arming: Arming) -> None:
+    _atomic_text(path, json.dumps(arming.as_dict(), sort_keys=True) + "\n")
+
+
+def read_arming(path: Path) -> Arming:
+    """Load an arming file. A missing file is shadow. A forged claim raises."""
+    if not path.exists():
+        return Arming("shadow")
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
-        raise LiveGateError(f"{path.name} is not a JSON object")
-    return raw
+        raise ArmingError("arming file must be a JSON object")
+    _require_closed(raw)
+    venue = raw.get("venue")
+    if not isinstance(venue, str):
+        raise ArmingError("arming venue must be a string")
+    return Arming(venue)
 
 
-def load_hmac_key(path: Path) -> bytes:
-    """Return the on-disk HMAC key, creating a 32-byte key the first time."""
-    if path.exists():
-        data = path.read_bytes()
-        if len(data) < 16:
-            raise LiveGateError("live integrity key is unusable")
-        return data
+def _require_closed(raw: Mapping[str, Any]) -> None:
+    if raw.get("schema") != _SCHEMA:
+        raise ArmingError("arming schema is not live_arming.v1")
+    if raw.get("live_pnl_claim") is not False:
+        raise ArmingError("arming record must set live_pnl_claim false")
+    if raw.get("would_promote_live") is not False:
+        raise ArmingError("arming record must set would_promote_live false")
+    if raw.get("evidence_conditions") != "blocked":
+        raise ArmingError("evidence conditions stay blocked")
+
+
+def _atomic_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = os.urandom(32)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    try:
-        os.write(fd, data)
-        os.fsync(fd)
-    except Exception:
-        os.close(fd)
-        path.unlink(missing_ok=True)
-        raise
-    else:
-        os.close(fd)
-    os.chmod(path, 0o600)
-    return data
-
-
-def _actor(actor: str) -> str:
-    cleaned = actor.strip()
-    if not cleaned or len(cleaned) > 80 or any(ord(ch) < 32 for ch in cleaned):
-        raise LiveGateError("actor must be 1..80 visible characters")
-    return cleaned
-
-
-def arm_session(
-    path: Path,
-    *,
-    venue: Venue,
-    actor: str,
-    pretrade_sha256: str,
-    confirm_live_capital: str = "",
-    now: datetime | None = None,
-) -> dict[str, Any]:
-    """Write the arm file. ``alpaca-live`` requires the exact confirmation phrase."""
-    who = _actor(actor)
-    if len(pretrade_sha256) != 64:
-        raise LiveGateError("pretrade digest is missing")
-    confirmed = False
-    if venue == "alpaca-live":
-        phrase = confirm_live_capital.encode("utf-8")
-        expected = LIVE_CAPITAL_PHRASE.encode("utf-8")
-        if not hmac.compare_digest(phrase, expected):
-            raise LiveGateError(
-                "alpaca-live requires --confirm-live-capital to match the published phrase"
-            )
-        confirmed = True
-    elif confirm_live_capital.strip():
-        raise LiveGateError("the live-capital phrase is only used for venue alpaca-live")
-    stamp = (now or datetime.now(UTC)).isoformat()
-    payload: dict[str, Any] = {
-        "schema": _ARM_SCHEMA,
-        "venue": venue,
-        "actor": who,
-        "armed_at": stamp,
-        "pretrade_sha256": pretrade_sha256,
-        "live_capital_confirmed": confirmed,
-        "live_pnl_claim": False,
-        "research_evidence": False,
-    }
-    _atomic_json(path, payload)
-    return payload
-
-
-def disarm_session(path: Path, *, actor: str) -> dict[str, Any]:
-    """Remove the arm file. Open positions are left where they are."""
-    who = _actor(actor)
-    if path.exists():
-        path.unlink()
-    return {
-        "ok": True,
-        "armed": False,
-        "actor": who,
-        "positions_unchanged": True,
-        "live_pnl_claim": False,
-        "research_evidence": False,
-    }
-
-
-def read_arm(path: Path, *, venue: Venue, pretrade_sha256: str) -> dict[str, Any] | None:
-    """Return the arm record, or None when no arm file exists.
-
-    A file that claims a profit result, names another venue, or was signed
-    for a different pre-trade config is refused rather than treated as armed.
-    """
-    if not path.exists():
-        return None
-    raw = _read_object(path)
-    if raw.get("schema") != _ARM_SCHEMA:
-        raise LiveGateError("arm file schema is not supported")
-    if raw.get("live_pnl_claim") is not False or raw.get("research_evidence") is not False:
-        raise LiveGateError("arm file must not claim research evidence or live profit")
-    if raw.get("venue") != venue:
-        raise LiveGateError("arm file venue does not match the live config")
-    if raw.get("pretrade_sha256") != pretrade_sha256:
-        raise LiveGateError("arm file is stale for the current pre-trade config; arm again")
-    if venue == "alpaca-live" and raw.get("live_capital_confirmed") is not True:
-        raise LiveGateError("alpaca-live arm file is missing live-capital confirmation")
-    if not isinstance(raw.get("actor"), str) or not raw["actor"].strip():
-        raise LiveGateError("arm file has no actor")
-    return raw
-
-
-def zero_audit_head() -> str:
-    return _ZERO
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.chmod(0o600)
+    tmp.replace(path)

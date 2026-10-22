@@ -587,7 +587,7 @@ def trade(
     """
     import json
 
-    from quant_fund.execution.trading_session import (
+    from quant_fund.paper.trading_session import (
         SessionCommandError,
         SessionLimits,
         format_readiness,

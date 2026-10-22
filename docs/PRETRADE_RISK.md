@@ -1,10 +1,11 @@
 # Pre-trade risk engine
 
-Standalone checks for orders a simulated broker, a paper loop, or the armed
-gateway would send. The engine does not submit, cancel, or amend anything. It
-is not imported by `quant_fund.execution.simulated_broker` or
-`quant_fund.paper.loop`. `quant_fund.live` calls `decide` and submits only
-when the decision allows the order. See [Live order gateway](LIVE_TRADING.md).
+Standalone checks for orders a simulated broker, a paper loop, the operator
+desk, or the broker gateway would send. The engine does not submit, cancel,
+or amend anything. It is not imported by `quant_fund.execution.simulated_broker`
+or `quant_fund.paper.loop`. `quant_fund.live` calls `decide` and routes only
+after that decision. See [LIVE_DESK.md](LIVE_DESK.md) and
+[LIVE_TRADING.md](LIVE_TRADING.md).
 
 This is an operational control. It is not a research score and it does not
 report P&L.

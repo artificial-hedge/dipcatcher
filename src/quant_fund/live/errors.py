@@ -12,3 +12,12 @@ class LiveGateError(Exception):
 
 class BrokerRejected(LiveGateError):
     """The broker accepted the connection and refused the request."""
+
+
+class LiveBrokerRefused(LiveGateError):
+    """The Alpaca live host is configured and refused.
+
+    The honesty contract forbids live broker connectivity. The venue name and
+    the host stay in the source so the refusal is visible; paper and loopback
+    are unchanged.
+    """

@@ -233,7 +233,7 @@ flowchart LR
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|3| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
-  fx1_interactive -->|1| quant_fund_schemas
+  fx1_interactive -->|1| quant_fund_validation
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -319,19 +319,19 @@ flowchart LR
   quant_fund_cli -->|3| quant_fund_backtest
   quant_fund_cli -->|3| quant_fund_config
   quant_fund_cli -->|12| quant_fund_data
-  quant_fund_cli -->|1| quant_fund_execution
   quant_fund_cli -->|3| quant_fund_features
   quant_fund_cli -->|1| quant_fund_hmm
   quant_fund_cli -->|1| quant_fund_leakage
   quant_fund_cli -->|1| quant_fund_lightspeed
-  quant_fund_cli -->|3| quant_fund_live
+  quant_fund_cli -->|5| quant_fund_live
   quant_fund_cli -->|7| quant_fund_microstructure
   quant_fund_cli -->|1| quant_fund_monitoring
   quant_fund_cli -->|3| quant_fund_northset
   quant_fund_cli -->|1| quant_fund_observe
-  quant_fund_cli -->|6| quant_fund_paper
+  quant_fund_cli -->|7| quant_fund_paper
   quant_fund_cli -->|12| quant_fund_pipeline
   quant_fund_cli -->|1| quant_fund_pit
+  quant_fund_cli -->|1| quant_fund_pretrade
   quant_fund_cli -->|1| quant_fund_proof
   quant_fund_cli -->|2| quant_fund_proofcore
   quant_fund_cli -->|1| quant_fund_quant_models
@@ -356,9 +356,8 @@ flowchart LR
   quant_fund_execution -->|1| quant_fund_microstructure
   quant_fund_execution -->|2| quant_fund_models
   quant_fund_execution -->|1| quant_fund_monitoring
-  quant_fund_execution -->|1| quant_fund_paper
   quant_fund_execution -->|1| quant_fund_portfolio
-  quant_fund_execution -->|5| quant_fund_schemas
+  quant_fund_execution -->|3| quant_fund_schemas
   quant_fund_execution -->|2| quant_fund_utils
   quant_fund_features -->|1| quant_fund_config
   quant_fund_features -->|2| quant_fund_data
@@ -397,7 +396,8 @@ flowchart LR
   quant_fund_leakage -->|1| quant_fund_utils
   quant_fund_lightspeed -->|3| quant_fund_hedge_lab
   quant_fund_lightspeed -->|1| quant_fund_models
-  quant_fund_live -->|5| quant_fund_pretrade
+  quant_fund_live -->|1| quant_fund_formal
+  quant_fund_live -->|10| quant_fund_pretrade
   quant_fund_market_sim -->|1| quant_fund_backtest
   quant_fund_market_sim -->|2| quant_fund_config
   quant_fund_market_sim -->|1| quant_fund_lightspeed
@@ -444,14 +444,15 @@ flowchart LR
   quant_fund_paper -->|1| quant_fund_backtest
   quant_fund_paper -->|3| quant_fund_config
   quant_fund_paper -->|1| quant_fund_data
-  quant_fund_paper -->|5| quant_fund_execution
+  quant_fund_paper -->|6| quant_fund_execution
   quant_fund_paper -->|3| quant_fund_metrics
   quant_fund_paper -->|2| quant_fund_monitoring
   quant_fund_paper -->|1| quant_fund_pipeline
   quant_fund_paper -->|2| quant_fund_portfolio
   quant_fund_paper -->|4| quant_fund_research
-  quant_fund_paper -->|1| quant_fund_schemas
+  quant_fund_paper -->|2| quant_fund_schemas
   quant_fund_paper -->|7| quant_fund_utils
+  quant_fund_paper -->|1| quant_fund_validation
   quant_fund_parity -->|4| quant_fund_config
   quant_fund_parity -->|2| quant_fund_execution
   quant_fund_parity -->|1| quant_fund_schemas
@@ -807,7 +808,7 @@ sequenceDiagram
 | `quant_fund.labels` | 7 |
 | `quant_fund.leakage` | 8 |
 | `quant_fund.lightspeed` | 8 |
-| `quant_fund.live` | 7 |
+| `quant_fund.live` | 11 |
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 107 |
@@ -817,7 +818,7 @@ sequenceDiagram
 | `quant_fund.native` | 7 |
 | `quant_fund.northset` | 10 |
 | `quant_fund.observe` | 9 |
-| `quant_fund.paper` | 10 |
+| `quant_fund.paper` | 11 |
 | `quant_fund.parity` | 11 |
 | `quant_fund.parity_leak_audit` | 1 |
 | `quant_fund.pipeline` | 24 |
@@ -835,15 +836,15 @@ sequenceDiagram
 | `quant_fund.research` | 1861 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
-| `quant_fund.schemas` | 10 |
+| `quant_fund.schemas` | 9 |
 | `quant_fund.simtest` | 10 |
 | `quant_fund.stress` | 14 |
 | `quant_fund.utils` | 9 |
-| `quant_fund.validation` | 13 |
+| `quant_fund.validation` | 14 |
 
-- Modules scanned: **13392**
+- Modules scanned: **13397**
 - Packages: **95**
-- Cross-package import edges: **394**
+- Cross-package import edges: **395**
 
 <!-- END GENERATED: coverage -->
 

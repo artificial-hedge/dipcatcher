@@ -1,7 +1,8 @@
-"""Ineligible live-capital report. No broker, no socket, no promotion flag.
+"""Fail-closed live-trading readiness. Always ineligible.
 
-Chat and the paper session print this. It cannot become eligible from inside
-the process. Armed broker orders are a separate command and are not this report.
+Code cannot purchase a vendor feed, authorize a broker, or sign a
+live-capital approval. This module imports nothing else in the lab so the
+chat shell can print the block without reaching the order path.
 """
 
 from __future__ import annotations
@@ -11,11 +12,7 @@ from typing import Any
 
 
 def live_readiness_report() -> dict[str, Any]:
-    """The five live-trading conditions. Always ineligible.
-
-    There is no argument that flips this report. Code cannot purchase a
-    vendor feed, authorize a broker, or sign a live-capital approval.
-    """
+    """The five live-trading conditions. There is no argument that flips this."""
     return {
         "schema": "live_readiness.v1",
         "eligible": False,
@@ -36,9 +33,8 @@ def live_readiness_report() -> dict[str, Any]:
                 "name": "authenticated_broker_reconciliation",
                 "status": "BLOCKED",
                 "reason": (
-                    "No entitled drop-copy. dipcatcher trade session is simulated and "
-                    "refuses a live endpoint. dipcatcher live submits only after an "
-                    "explicit arm and is not this condition."
+                    "No broker credentials. The paper ledger is the reference shape; "
+                    "a live endpoint is refused."
                 ),
             },
             {
@@ -91,9 +87,6 @@ def format_readiness(report: Mapping[str, Any] | None = None) -> str:
             "  dipcatcher trade session --state <path> --commands <jsonl>",
             "Ops: mark, submit, fill, cancel, kill, clear_kill, checkpoint",
             "Prices are caller-supplied. Short sales are refused.",
-            "",
-            "Armed order gateway (separate from this report; not a live-capital claim):",
-            "  dipcatcher live",
         ]
     )
     return "\n".join(lines)

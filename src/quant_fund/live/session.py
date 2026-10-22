@@ -21,25 +21,28 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from quant_fund.live.arming import (
+from quant_fund.live.brokers import (
+    AlpacaBroker,
+    Broker,
+    BrokerAccount,
+    BrokerAck,
+    BrokerFill,
+    LiveOrder,
+    LoopbackBroker,
+    alpaca_credentials,
+    map_broker_status,
+)
+from quant_fund.live.config import LiveConfig, load_gateway_pretrade
+from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.gateway_arm import (
     arm_session,
     disarm_session,
     load_hmac_key,
     read_arm,
     zero_audit_head,
 )
-from quant_fund.live.brokers import (
-    AlpacaBroker,
-    Broker,
-    BrokerAck,
-    BrokerFill,
-    LiveOrder,
-    LoopbackBroker,
-    alpaca_credentials,
-)
-from quant_fund.live.config import LiveConfig, load_gateway_pretrade
-from quant_fund.live.errors import BrokerRejected, LiveGateError
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
+from quant_fund.live.risk_memory import export_pretrade, restore_pretrade
 from quant_fund.pretrade.codes import KIND_CANCEL, KIND_ORDER
 from quant_fund.pretrade.config import PretradeConfig
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
@@ -56,9 +59,37 @@ _ORDER_STATUSES = frozenset(
         "canceled",
         "rejected",
         "not_acknowledged",
+        "expired",
+        "replaced",
+        "done_for_day",
+        "pending_cancel",
+        "pending_replace",
+        "suspended",
+        "unmapped",
     }
 )
-_TERMINAL = frozenset({"filled", "canceled", "rejected", "not_acknowledged"})
+_TERMINAL = frozenset(
+    {
+        "filled",
+        "canceled",
+        "rejected",
+        "not_acknowledged",
+        "expired",
+        "replaced",
+        "done_for_day",
+        "suspended",
+    }
+)
+_WORKING = frozenset(
+    {
+        "inflight",
+        "accepted",
+        "partially_filled",
+        "pending_cancel",
+        "pending_replace",
+        "unmapped",
+    }
+)
 _STATE_SCHEMA = "live_session.v1"
 
 
@@ -157,32 +188,31 @@ class LiveSession:
         self.arm_path = state_dir / "arm.json"
         self.state_path = state_dir / "state.json"
         self.audit_path = state_dir / "audit.jsonl"
-        self._arm = read_arm(self.arm_path, venue=self.venue, pretrade_sha256=pretrade_sha256)
-        stored = _read_object(self.state_path)
-        self._load_state(stored)
-        self.audit_head = _verify_audit(self.audit_path)
-        for symbol, price in self.marks.items():
-            self.broker.set_mark(symbol, price)
-        nav, cash = self._opening_balances()
+        self._arm: dict[str, Any] | None = None
+        self.audit_head = zero_audit_head()
+        self._sids: dict[str, int] = {}
+        self._engine_noted: set[str] = set()
+        self._pretrade_blob: object = None
+        self._model_settled = float(config.starting_cash)
+        self._disk_token: str | None = None
         self.engine = PretradeEngine(
             pretrade,
             hmac_key=_hmac_for_engine(state_dir),
-            initial_nav=nav,
-            initial_cash=cash,
-            ts_ns=self._now(),
+            initial_nav=float(config.starting_cash),
+            initial_cash=float(config.starting_cash),
+            ts_ns=0,
         )
-        self._sids: dict[str, int] = {}
-        self._engine_noted: set[str] = set()
-        if self.venue == "loopback":
-            self._sync_account(self._now())
-        if self.kill_state["latched"]:
-            self.engine.trip(
-                str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
-            )
-        self._recover_inflight()
+        # State and the audit head are read only after the interprocess lock
+        # is held. A second CLI process cannot overwrite this snapshot.
+        with self._lock():
+            pass
 
     def status(self) -> dict[str, Any]:
-        """Local snapshot. This does not call the broker."""
+        """Local snapshot. This does not place an order."""
+        with self._lock():
+            return self._status_locked()
+
+    def _status_locked(self) -> dict[str, Any]:
         return {
             "ok": True,
             "venue": self.venue,
@@ -289,6 +319,7 @@ class LiveSession:
         at_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
+            self._recover_inflight()
             return self._submit_locked(
                 symbol=symbol,
                 side=side,
@@ -308,6 +339,7 @@ class LiveSession:
         at_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
+            self._recover_inflight()
             self._require_trading()
             _actor(actor)
             ts = self._clock(at_ns)
@@ -351,6 +383,7 @@ class LiveSession:
 
     def reconcile(self, *, at_ns: int | None = None) -> dict[str, Any]:
         with self._lock():
+            self._recover_inflight()
             self._require_trading()
             ts = self._clock(at_ns)
             self._capture_baseline()
@@ -362,7 +395,8 @@ class LiveSession:
             page = self.broker.fills(broker_to_client=mapping)
             seen: set[str] = set()
             duplicate_in_batch = False
-            for fill in page.fills:
+            ordered = sorted(page.fills, key=lambda fill: (fill.fill_time_ns, fill.fill_id))
+            for fill in ordered:
                 if fill.fill_id in seen:
                     duplicate_in_batch = True
                 seen.add(fill.fill_id)
@@ -374,6 +408,7 @@ class LiveSession:
             report["duplicate_in_batch"] = duplicate_in_batch
             if page.truncated or duplicate_in_batch:
                 report["ok"] = False
+            self._project_fills_onto_orders()
             report["venue"] = self.venue
             self._sync_account(ts)
             self._persist()
@@ -383,6 +418,7 @@ class LiveSession:
     def flatten(self, *, actor: str, at_ns: int | None = None) -> dict[str, Any]:
         """Post a limit at the stored mark for every open position. No market orders."""
         with self._lock():
+            self._recover_inflight()
             self._require_trading()
             _actor(actor)
             account = self.broker.account()
@@ -524,11 +560,13 @@ class LiveSession:
             recovered = self._safe_recover(order.client_order_id)
             if recovered is not None:
                 return recovered
-            row["status"] = "not_acknowledged"
-            row["reason"] = "broker call failed"
+            # A lost response is not proof the broker rejected the order.
+            # Leave it inflight so a later open can find it and cancel it.
+            row["status"] = "inflight"
+            row["reason"] = "broker response lost; order remains recoverable"
             self._persist()
             raise LiveGateError(
-                "broker call failed before an acknowledgement; the order was not retried"
+                "broker response lost; the order stays inflight until recovery succeeds"
             ) from None
 
     def _safe_recover(self, client_order_id: str) -> BrokerAck | None:
@@ -539,10 +577,13 @@ class LiveSession:
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
         row["broker_order_id"] = ack.broker_order_id
-        row["status"] = ack.status if ack.status in _ORDER_STATUSES else "accepted"
+        status = map_broker_status(ack.status)
+        row["status"] = status
         row["filled_quantity"] = float(ack.filled_quantity)
         row["fill_price"] = ack.fill_price
         row["reason"] = ack.reason
+        if status == "unmapped" and not row["reason"]:
+            row["reason"] = f"unmapped broker status {ack.status}"
         expects = ack.status in {"filled", "partially_filled"}
         row["expects_fill"] = expects
         self.ledger.set_expects_fill(str(row["client_order_id"]), expects)
@@ -578,6 +619,7 @@ class LiveSession:
         mark = self.marks.get(fill.symbol, fill.price)
         sid = self._install(fill.symbol, pos_after, mark, ts, seed_lots=False)
         session_id = self._session_id(ts)
+        self.engine.set_settled_cash(self._model_settled)
         self.engine.note_fill(
             symbol_id=sid,
             side=1 if fill.side == "buy" else -1,
@@ -588,9 +630,8 @@ class LiveSession:
             session_id=session_id,
             pos_before=pos_after - signed,
         )
+        self._model_settled = float(self.engine.book.settled)
         self.engine.set_symbol(sid, pos=pos_after, ref_px=mark, ref_ts_ns=ts, bid=mark)
-        if account.cash >= 0.0:
-            self.engine.set_settled_cash(account.cash)
 
     def _sync_account(self, ts: int, *, reset_session: bool = False) -> None:
         account = self.broker.account()
@@ -598,19 +639,84 @@ class LiveSession:
             raise LiveGateError("broker cash is not usable")
         if not math.isfinite(account.equity) or account.equity <= 0.0:
             raise LiveGateError("broker equity is not usable")
+        self._absorb_broker_marks(account)
+        reserved_qty, reserved_cash = self._working_exposure()
+        self._require_marks(account.positions, reserved_qty)
         self.engine.update_account(
             nav=account.equity,
             mark_ts_ns=ts,
             session_start_nav=account.equity if reset_session else None,
             peak_nav=account.equity if reset_session else None,
         )
-        self.engine.set_settled_cash(account.cash)
-        symbols = set(account.positions) | set(self.marks)
+        available = self._model_settled - reserved_cash
+        self.engine.set_settled_cash(available if available > 0.0 else 0.0)
+        symbols = set(account.positions) | set(reserved_qty) | set(self.marks)
         for symbol in sorted(symbols):
             mark = self.marks.get(symbol)
             if mark is None or mark <= 0.0:
                 continue
-            self._install(symbol, float(account.positions.get(symbol, 0.0)), mark, ts)
+            qty = float(account.positions.get(symbol, 0.0)) + float(reserved_qty.get(symbol, 0.0))
+            self._install(symbol, qty, mark, ts)
+
+    def _absorb_broker_marks(self, account: BrokerAccount) -> None:
+        for symbol, price in account.marks.items():
+            if price > 0.0 and symbol not in self.marks:
+                self.marks[symbol] = float(price)
+                self.broker.set_mark(symbol, float(price))
+
+    def _require_marks(self, positions: dict[str, float], reserved: dict[str, float]) -> None:
+        symbols = set(positions) | set(reserved)
+        for symbol in sorted(symbols):
+            held = float(positions.get(symbol, 0.0))
+            pending = float(reserved.get(symbol, 0.0))
+            if abs(held) <= 1e-9 and abs(pending) <= 1e-9:
+                continue
+            mark = self.marks.get(symbol)
+            if mark is None or mark <= 0.0:
+                raise LiveGateError(
+                    f"broker position {symbol} has no mark; submission is refused until it is marked"
+                )
+
+    def _working_exposure(self) -> tuple[dict[str, float], float]:
+        """Unfilled working quantity and buy notional still reserved at the broker."""
+        qty: dict[str, float] = {}
+        cash = 0.0
+        for row in self.orders:
+            if row["status"] not in _WORKING:
+                continue
+            remaining = float(row["quantity"]) - float(row["filled_quantity"])
+            if remaining <= 1e-9:
+                continue
+            symbol = str(row["symbol"])
+            signed = remaining if row["side"] == "buy" else -remaining
+            qty[symbol] = qty.get(symbol, 0.0) + signed
+            if row["side"] == "buy":
+                cash += remaining * float(row["limit_price"])
+        return qty, cash
+
+    def _project_fills_onto_orders(self) -> None:
+        """Copy reconciled fills onto the order row so cancel sees a filled order."""
+        grouped: dict[str, list[LedgerFill]] = {}
+        for fill in self.ledger.fills():
+            grouped.setdefault(fill.client_order_id, []).append(fill)
+        for row in self.orders:
+            fills = grouped.get(str(row["client_order_id"]))
+            if not fills:
+                continue
+            qty = sum(fill.quantity for fill in fills)
+            cost = sum(fill.quantity * fill.price for fill in fills)
+            row["filled_quantity"] = qty
+            if qty > 0.0:
+                row["fill_price"] = cost / qty
+            if qty + 1e-9 >= float(row["quantity"]):
+                row["status"] = "filled"
+                row["expects_fill"] = True
+            elif qty > 1e-9 and row["status"] not in _TERMINAL:
+                row["status"] = "partially_filled"
+                row["expects_fill"] = True
+            client = str(row["client_order_id"])
+            if client in self.ledger._expects:
+                self.ledger.set_expects_fill(client, bool(row["expects_fill"]))
 
     def _install(
         self, symbol: str, qty: float, mark: float, ts: int, *, seed_lots: bool = True
@@ -666,11 +772,9 @@ class LiveSession:
             if row["status"] != "inflight":
                 continue
             ack = self._safe_recover(str(row["client_order_id"]))
-            changed = True
             if ack is None:
-                row["status"] = "not_acknowledged"
-                row["reason"] = "no broker acknowledgement"
                 continue
+            changed = True
             self._apply_ack(row, ack, ts)
         if changed:
             self._persist()
@@ -719,6 +823,7 @@ class LiveSession:
         self.orders = []
         self.marks = {}
         self.kill_state = {"latched": False, "actor": "", "reason": ""}
+        self._pretrade_blob = None
         self._baseline_from_broker = self.venue == "loopback"
         self.ledger = self._new_ledger(float(self.config.starting_cash), {})
         if self.venue == "loopback" and not isinstance(self.broker, LoopbackBroker):
@@ -734,6 +839,7 @@ class LiveSession:
             str(symbol): _positive(float(price), "stored mark") for symbol, price in marks.items()
         }
         self.kill_state = _kill_from_state(kill)
+        self._pretrade_blob = stored.get("pretrade")
         baseline_positions = stored.get("baseline_positions") or {}
         if not isinstance(baseline_positions, dict):
             raise LiveGateError("baseline positions are malformed")
@@ -778,6 +884,7 @@ class LiveSession:
             "orders": list(self.orders),
             "fills": [fill.as_dict() for fill in self.ledger.fills()],
             "kill": dict(self.kill_state),
+            "pretrade": export_pretrade(self.engine),
             "live_pnl_claim": False,
             "research_evidence": False,
         }
@@ -796,26 +903,107 @@ class LiveSession:
         line = dict(body)
         line["event_hash"] = digest
         self.audit_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.audit_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(line, sort_keys=True) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        encoded_line = (json.dumps(line, sort_keys=True) + "\n").encode("utf-8")
+        fd = os.open(str(self.audit_path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            os.write(fd, encoded_line)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        os.chmod(self.audit_path, 0o600)
         self.audit_head = digest
 
     @contextmanager
     def _lock(self) -> Iterator[None]:
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.state_dir, 0o700)
         path = self.state_dir / "lock"
-        path.parent.mkdir(parents=True, exist_ok=True)
         handle = path.open("a+b")
         try:
             if path.stat().st_size == 0:
                 handle.write(b"\0")
                 handle.flush()
+            os.chmod(path, 0o600)
             _acquire(handle)
-            yield
+            try:
+                token = self._file_token()
+                if token != self._disk_token:
+                    self._reload_locked()
+                yield
+                self._disk_token = self._file_token()
+            finally:
+                _release(handle)
         finally:
-            _release(handle)
             handle.close()
+
+    def _file_token(self) -> str:
+        digest = hashlib.sha256()
+        for path in (self.arm_path, self.state_path, self.audit_path):
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes() if path.exists() else b"-")
+        return digest.hexdigest()
+
+    def _reload_locked(self) -> None:
+        """Read the desk from disk. The caller already holds the process lock."""
+        if self.audit_path.exists():
+            os.chmod(self.audit_path, 0o600)
+        self._arm = read_arm(self.arm_path, venue=self.venue, pretrade_sha256=self.pretrade_sha256)
+        stored = _read_object(self.state_path)
+        self.audit_head = _verify_audit(self.audit_path)
+        self._load_state(stored)
+        self._build_engine()
+        for symbol, price in self.marks.items():
+            self.broker.set_mark(symbol, price)
+        if self.venue == "loopback":
+            self._sync_account(self._now())
+        if self.kill_state["latched"]:
+            self.engine.trip(
+                str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
+            )
+        self._recover_inflight()
+
+    def _build_engine(self) -> None:
+        """New engine, then the persisted rings and a fill replay for settlement."""
+        cash = float(self.ledger.baseline_cash)
+        if cash <= 0.0:
+            cash = float(self.config.starting_cash)
+        self._model_settled = cash
+        self.engine = PretradeEngine(
+            self.pretrade,
+            hmac_key=_hmac_for_engine(self.state_dir),
+            initial_nav=cash,
+            initial_cash=cash,
+            ts_ns=self._now(),
+        )
+        self._model_settled = float(self.engine.book.settled)
+        self._sids = {}
+        self._engine_noted = set()
+        if self._pretrade_blob is not None:
+            restore_pretrade(self.engine, self._pretrade_blob)
+        self._replay_fills_into_engine(self._now())
+
+    def _replay_fills_into_engine(self, ts: int) -> None:
+        positions: dict[str, float] = {}
+        for fill in self.ledger.fills():
+            signed = fill.quantity if fill.side == "buy" else -fill.quantity
+            before = positions.get(fill.symbol, 0.0)
+            after = before + signed
+            mark = self.marks.get(fill.symbol, fill.price)
+            sid = self._install(fill.symbol, after, mark, ts, seed_lots=False)
+            self.engine.set_settled_cash(self._model_settled)
+            self.engine.note_fill(
+                symbol_id=sid,
+                side=1 if fill.side == "buy" else -1,
+                qty=fill.quantity,
+                px=fill.price,
+                fee=0.0,
+                ts_ns=fill.fill_time_ns if fill.fill_time_ns > 0 else ts,
+                session_id=self._session_id(fill.fill_time_ns if fill.fill_time_ns > 0 else ts),
+                pos_before=before,
+            )
+            self._model_settled = float(self.engine.book.settled)
+            self._engine_noted.add(fill.client_order_id)
+            positions[fill.symbol] = after
 
 
 def open_session(

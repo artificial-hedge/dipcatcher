@@ -110,10 +110,12 @@ verdict is `QUALIFYING` — every field present and consistent, nothing rejected
 > Until 2.1 is authorized and a real drop-copy passes §2b, condition 2 is
 > **BLOCKED**. `dipcatcher trade session` is a simulated book with no broker
 > client. The paper adapter raises `LiveEndpointRefused` for a live endpoint.
-> `quant_fund.live` is a separate armed gateway
-> ([LIVE_TRADING.md](LIVE_TRADING.md)). It can submit when an operator arms it
-> and supplies broker credentials. That gateway is not condition-2 evidence,
-> and it makes no live-P&L claim.
+> `quant_fund.live` is the operator desk plus an Alpaca-paper gateway
+> ([LIVE_DESK.md](LIVE_DESK.md), [LIVE_TRADING.md](LIVE_TRADING.md)). The desk
+> does not open a broker socket. The gateway can submit to Alpaca paper when
+> an operator arms it. The Alpaca live host is refused by the honesty
+> contract. Neither path is condition-2 evidence, and neither makes a
+> live-P&L claim.
 
 ### 2b. Broker order/fill-reconciliation acceptance tests (condition 2)
 

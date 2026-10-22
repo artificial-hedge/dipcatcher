@@ -1,9 +1,9 @@
 """Pre-trade engine: snapshot checks, latched kill switch, signed decisions.
 
-``check`` returns a bitset and does not route orders. The shadow adapter only
-observes a simulated broker. ``quant_fund.live`` is the armed gateway: it
-submits only after ``decide`` allows the order. This module still does not
-open a socket or choose a venue.
+Shadow checks are the engine's job. ``check`` returns a bitset and does not
+route orders. The operator desk and the broker gateway both call ``decide``
+and transmit only after that decision. This module does not open a socket
+or choose a venue.
 """
 
 from __future__ import annotations

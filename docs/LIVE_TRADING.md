@@ -1,6 +1,12 @@
 # Live order gateway
 
-`dipcatcher live` submits orders. It is disarmed until you arm it. A fill is
+`dipcatcher live` without a gateway file is the operator desk in
+[LIVE_DESK.md](LIVE_DESK.md): shadow, an in-process loopback, or a drop
+folder. That path does not open a broker socket.
+
+This page is the other book. A config with `starting_cash` and
+`pretrade_config` selects the gateway (`--config configs/live.yaml`, or
+`--actor` / `--state-dir`). It stays disarmed until you arm it. A fill is
 broker accounting. It is not a research receipt, not a proper score, and not a
 claim that a strategy made money. `live_pnl_claim` stays false on every
 gateway record.
@@ -17,7 +23,7 @@ those conditions by existing.
 |---|---|
 | `loopback` | Fills inside this process at the limit price. Default. No network. |
 | `alpaca-paper` | Alpaca paper host `paper-api.alpaca.markets`. Needs API keys. |
-| `alpaca-live` | Alpaca live host `api.alpaca.markets`. Needs API keys and the confirmation phrase below. |
+| `alpaca-live` | Host `api.alpaca.markets` stays configured. Submission is refused. The honesty contract in `AGENTS.md` forbids live broker connectivity, so the route is not deleted and it does not send. The confirmation phrase below is still required to arm, and arming does not lift the refusal. |
 
 The host is fixed by the venue. The gateway will not send credentials to any
 other host, and it refuses HTTP redirects.
