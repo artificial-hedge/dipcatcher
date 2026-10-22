@@ -1,56 +1,22 @@
-"""Operator order desk. No network. SYNTHETIC broker payloads are fixtures."""
+"""Operator live desk: shadow, loopback rehearsal, and an armed drop folder."""
 
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import date
 from pathlib import Path
-from typing import Any
-from urllib.parse import urlsplit
-from zoneinfo import ZoneInfo
 
 import pytest
-from tests.unit.pretrade.support import HMAC_KEY, limit_config
 from typer.testing import CliRunner
 
 from quant_fund.cli.main import app
-from quant_fund.live.alpaca import AlpacaClient
-from quant_fund.live.authorization import (
-    ACK_PHRASE,
-    LIVE_CONFIRM_ENV,
-    LIVE_CONFIRM_VALUE,
-    LiveAuthorization,
-    assert_live_confirmed,
-)
-from quant_fund.live.desk import LiveDesk, open_desk, preflight_report
-from quant_fund.live.errors import BrokerUncertain, LiveRefused, TransportError
-from quant_fund.live.transport import HttpResponse, UrllibTransport
+from quant_fund.execution.order_recon import LiveEndpointRefused, refuse_live_endpoint
+from quant_fund.live.desk import LiveDesk, LiveDeskError, session_id
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig
 from quant_fund.pretrade.shadow import business_session_id
-from quant_fund.schemas.errors import KillSwitchActive
+from tests.unit.pretrade.support import HMAC_KEY, TS_NS, limit_config
 
-NOW = datetime(2024, 1, 3, 15, 0, tzinfo=ZoneInfo("America/New_York"))
-CLOSED = datetime(2024, 1, 6, 15, 0, tzinfo=ZoneInfo("America/New_York"))
-KEY = "example-key-id"
-SECRET = "example-secret"
-
-
-def _auth(**overrides: object) -> LiveAuthorization:
-    payload: dict[str, object] = {
-        "schema": "live_authorization.v1",
-        "environment": "paper",
-        "broker": "alpaca",
-        "account_id": "PA123",
-        "operator": "tester",
-        "acknowledge": ACK_PHRASE,
-        "symbol_allowlist": ["AAPL"],
-        "max_order_notional": 50_000.0,
-        "max_orders_per_day": 5,
-        "created_at": "2024-01-01T00:00:00+00:00",
-        "expires_at": "2024-03-01T00:00:00+00:00",
-    }
-    payload.update(overrides)
-    return LiveAuthorization.model_validate(payload)
+_FORBIDDEN = ("sharpe", "sortino", "calmar", "pnl", "nav")
 
 
 def _config(**overrides: object) -> PretradeConfig:
@@ -61,454 +27,410 @@ def _config(**overrides: object) -> PretradeConfig:
     )
 
 
-class ScriptedTransport:
-    def __init__(self) -> None:
-        self.calls: list[tuple[str, str, bytes | None]] = []
-        self.routes: dict[tuple[str, str], tuple[int, dict[str, Any] | list[Any]]] = {}
-        self.fail_post = False
-
-    def request(
-        self,
-        *,
-        method: str,
-        url: str,
-        headers: dict[str, str],
-        body: bytes | None,
-        timeout_s: float,
-    ) -> HttpResponse:
-        assert headers["APCA-API-KEY-ID"] == KEY
-        assert SECRET not in url
-        self.calls.append((method, url, body))
-        if method == "POST" and self.fail_post:
-            raise TransportError("down")
-        status, payload = self.routes[(method, urlsplit(url).path)]
-        return HttpResponse(status=status, body=json.dumps(payload).encode())
-
-
-def _routes(
-    transport: ScriptedTransport,
-    *,
-    equity: str = "100000",
-    positions: list[dict[str, str]] | None = None,
-    post_status: int = 200,
-) -> None:
-    transport.routes[("GET", "/v2/account")] = (
-        200,
-        {
-            "id": "id-1",
-            "account_number": "PA123",
-            "status": "ACTIVE",
-            "equity": equity,
-            "cash": equity,
-        },
-    )
-    transport.routes[("GET", "/v2/positions")] = (200, positions or [])
-    transport.routes[("GET", "/v2/stocks/AAPL/trades/latest")] = (200, {"trade": {"p": 100}})
-    transport.routes[("GET", "/v2/stocks/MSFT/trades/latest")] = (200, {"trade": {"p": 100}})
-    transport.routes[("POST", "/v2/orders")] = (
-        post_status,
-        {
-            "id": "ord-1",
-            "client_order_id": "ignored",
-            "status": "accepted",
-            "symbol": "AAPL",
-            "side": "buy",
-            "qty": "1",
-            "message": "no",
-        },
-    )
-    transport.routes[("DELETE", "/v2/orders/ord-1")] = (204, {})
-    transport.routes[("DELETE", "/v2/orders")] = (207, [])
-    transport.routes[("GET", "/v2/orders:by_client_order_id")] = (404, {"message": "missing"})
-
-
-def _desk(
-    tmp_path: Path,
-    transport: ScriptedTransport,
-    *,
-    clock: datetime = NOW,
-    auth_overrides: dict[str, object] | None = None,
-    limit_overrides: dict[str, object] | None = None,
-    arm: bool = True,
-) -> LiveDesk:
-    desk = LiveDesk(
-        authorization=_auth(**(auth_overrides or {})),
-        authorization_sha256="sha",
-        config=_config(**(limit_overrides or {})),
+def _open(tmp_path: Path, **overrides: object) -> LiveDesk:
+    root = tmp_path / "desk"
+    cash = None if (root / "state.json").exists() else 1_000_000.0
+    account = None if cash is None else 1_000_000.0
+    return LiveDesk.open(
+        root,
         hmac_key=HMAC_KEY,
-        broker=AlpacaClient(environment="paper", key_id=KEY, secret=SECRET, transport=transport),
-        state_dir=tmp_path,
-        clock=lambda: clock,
+        config=_config(**overrides),
+        cash=cash,
+        account_value=account,
+        ts_ns=TS_NS,
     )
-    if arm:
-        desk.arm()
-    return desk
 
 
-def _posts(transport: ScriptedTransport) -> list[tuple[str, str, bytes | None]]:
-    return [call for call in transport.calls if call[0] == "POST"]
+def test_session_index_matches_pretrade() -> None:
+    assert session_id(date(2024, 1, 3)) == business_session_id(date(2024, 1, 3))
 
 
-def test_limit_order_routes_to_paper_and_stays_honest(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    result = desk.submit(symbol="aapl", side="buy", qty=1, limit_price=100)
-    assert result["accepted"] is True
-    assert result["live_pnl_claim"] is False
-    assert result["would_promote_live"] is False
-    assert result["institutional_live_claim"] is False
-    assert result["evidence_class"] == "broker_routing"
-    posts = _posts(transport)
-    assert len(posts) == 1
-    assert posts[0][1].startswith("https://paper-api.alpaca.markets/v2/orders")
-    body = json.loads(posts[0][2] or b"{}")
-    assert body["type"] == "limit"
-    assert body["extended_hours"] is False
-    assert body["symbol"] == "AAPL"
-    audit = (tmp_path / "audit.jsonl").read_text(encoding="utf-8")
-    assert SECRET not in audit
-    assert KEY not in audit
+def test_paper_lane_still_refuses_live_endpoints() -> None:
+    with pytest.raises(LiveEndpointRefused):
+        refuse_live_endpoint("live")
 
 
-def test_unarmed_desk_does_not_call_the_broker(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport, arm=False)
-    with pytest.raises(LiveRefused, match="not armed"):
-        desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert transport.calls == []
-
-
-def test_allowlist_and_notional_deny_before_any_request(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    with pytest.raises(LiveRefused, match="allowlist"):
-        desk.submit(symbol="MSFT", side="buy", qty=1, limit_price=100)
-    denied = desk.submit(symbol="AAPL", side="buy", qty=10, limit_price=10_000)
-    assert denied["accepted"] is False
-    assert denied["reasons"] == ["max_order_notional"]
-    assert _posts(transport) == []
-
-
-def test_kill_switch_blocks_new_orders(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    desk.kill(actor="op", reason="halt")
-    with pytest.raises(KillSwitchActive):
-        desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert _posts(transport) == []
-    status = desk.status()
-    assert status["kill_latched"] is True
-    assert status["live_pnl_claim"] is False
-
-
-def test_broker_reject_does_not_latch_kill(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport, post_status=422)
-    desk = _desk(tmp_path, transport)
-    result = desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert result["accepted"] is False
-    assert result["broker_rejected"] is True
-    assert desk.kill_latched() is False
-
-
-def test_uncertain_submit_latches_kill(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    transport.fail_post = True
-    desk = _desk(tmp_path, transport)
-    with pytest.raises(BrokerUncertain):
-        desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert desk.kill_latched() is True
-    with pytest.raises(KillSwitchActive):
-        desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=101)
-
-
-def test_server_error_on_submit_is_uncertain(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport, post_status=500)
-    desk = _desk(tmp_path, transport)
-    with pytest.raises(BrokerUncertain):
-        desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert desk.kill_latched() is True
-
-
-def test_duplicate_order_is_not_sent_again(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    assert desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)["accepted"] is True
-    duplicate = desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert duplicate["reasons"] == ["duplicate_order"]
-    assert len(_posts(transport)) == 1
-
-
-def test_daily_order_cap(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport, auth_overrides={"max_orders_per_day": 1})
-    assert desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)["accepted"] is True
-    capped = desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=101)
-    assert capped["reasons"] == ["order_rate"]
-    assert len(_posts(transport)) == 1
-
-
-def test_client_order_id_is_idempotent(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    client_id = "client-order-0001"
-    first = desk.submit(
-        symbol="AAPL", side="buy", qty=1, limit_price=100, client_order_id=client_id
+def test_unfunded_desk_does_not_invent_buying_power(tmp_path: Path) -> None:
+    desk = LiveDesk.open(
+        tmp_path / "desk",
+        hmac_key=HMAC_KEY,
+        config=_config(),
+        ts_ns=TS_NS,
     )
-    desk.kill(actor="op", reason="halt")
-    second = desk.submit(
-        symbol="AAPL", side="buy", qty=1, limit_price=100, client_order_id=client_id
-    )
-    assert second["idempotent"] is True
-    assert second["broker_order_id"] == first["broker_order_id"]
-    assert len(_posts(transport)) == 1
+    try:
+        status = desk.status()
+        assert status["funded"] is False
+        assert status["cash"] == 0.0
+        assert status["transmission"] is False
+        with pytest.raises(LiveDeskError, match="fund the desk"):
+            desk.submit("aapl", "BUY", 1, 100.0, TS_NS)
+        with pytest.raises(LiveDeskError, match="fund the desk"):
+            desk.arm("drop", "SEND-LIVE-ORDERS", TS_NS)
+    finally:
+        desk.close()
 
 
-def test_closed_market_does_not_post(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport, clock=CLOSED)
-    result = desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert result["accepted"] is False
-    assert "market_closed" in result["reasons"]
-    assert _posts(transport) == []
-
-
-def test_session_loss_latches_and_blocks(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport, equity="97000")
-    desk = _desk(tmp_path, transport, limit_overrides={"max_daily_loss_fraction": 0.02})
-    (tmp_path / "session.json").write_text(
-        json.dumps(
-            {"day": "2024-01-03", "session_start_equity": 100000.0, "peak_equity": 100000.0}
-        ),
-        encoding="utf-8",
-    )
-    result = desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    assert result["accepted"] is False
-    assert "daily_loss" in result["reasons"]
-    assert desk.kill_latched() is True
-    assert _posts(transport) == []
-
-
-def test_flatten_reduce_only_while_killed(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(
-        transport,
-        positions=[{"symbol": "AAPL", "qty": "2", "current_price": "100"}],
-    )
-    desk = _desk(tmp_path, transport)
-    desk.kill(actor="op", reason="halt")
-    result = desk.flatten(confirm="FLATTEN")
-    assert result["kill_latched"] is True
-    assert result["results"][0]["accepted"] is True
-    body = json.loads(_posts(transport)[0][2] or b"{}")
-    assert body["side"] == "sell"
-    assert body["type"] == "market"
-    assert body["qty"] == "2"
-    with pytest.raises(LiveRefused, match="FLATTEN"):
-        desk.flatten(confirm="no")
-
-
-def test_account_mismatch_and_inactive_account(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    transport.routes[("GET", "/v2/account")] = (
-        200,
-        {
-            "id": "other",
-            "account_number": "OTHER",
-            "status": "ACTIVE",
-            "equity": "100000",
-            "cash": "100000",
-        },
-    )
-    desk = _desk(tmp_path, transport)
-    with pytest.raises(LiveRefused, match="does not match"):
-        desk.submit(symbol="AAPL", side="buy", qty=1, limit_price=100)
-    transport.routes[("GET", "/v2/account")] = (
-        200,
-        {
-            "id": "id-1",
-            "account_number": "PA123",
-            "status": "ACCOUNT_CLOSED",
-            "equity": "100000",
-            "cash": "100000",
-        },
-    )
-    with pytest.raises(LiveRefused, match="ACCOUNT_CLOSED"):
-        desk.sync()
-    assert _posts(transport) == []
-
-
-def test_reconcile_reports_a_missing_broker_order(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    submitted = desk.submit(
-        symbol="AAPL", side="buy", qty=1, limit_price=100, client_order_id="client-order-0002"
-    )
-    report = desk.reconcile()
-    assert report["ok"] is False
-    assert report["missing_at_broker"] == [submitted["client_order_id"]]
+def test_shadow_transmits_nothing(tmp_path: Path) -> None:
+    with _open(tmp_path) as desk:
+        report = desk.submit("aapl", "BUY", 10, 100.0, TS_NS, client_order_id="c1")
+    assert report["accepted"] is True
+    assert report["status"] == "shadowed"
+    assert report["transmission"] is False
     assert report["live_pnl_claim"] is False
+    assert report["would_promote_live"] is False
+    assert report["evidence_conditions"] == "blocked"
+    assert report["data_label"] == "SHADOW"
+    assert report["positions"] == {}
+    assert not (tmp_path / "desk" / "outbound").exists()
+    for key in report:
+        assert key.lower() not in _FORBIDDEN
 
 
-def test_cancel_and_cancel_all(tmp_path: Path) -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = _desk(tmp_path, transport)
-    assert desk.cancel("ord-1")["accepted"] is True
-    assert desk.cancel_all()["accepted"] is True
-    assert any(call[0] == "DELETE" for call in transport.calls)
-
-
-def test_live_environment_uses_the_live_host_and_needs_confirmation() -> None:
-    transport = ScriptedTransport()
-    _routes(transport)
-    client = AlpacaClient(environment="live", key_id=KEY, secret=SECRET, transport=transport)
-    with pytest.raises(LiveRefused, match=LIVE_CONFIRM_ENV):
-        assert_live_confirmed("live", environ={})
-    assert_live_confirmed("live", environ={LIVE_CONFIRM_ENV: LIVE_CONFIRM_VALUE})
-    # The client builds the live origin. The script records the URL and then
-    # fails closed on the missing route for this symbol-less call shape.
-    transport.routes[("POST", "/v2/orders")] = (
-        200,
-        {
-            "id": "ord-9",
-            "client_order_id": "client-order-0003",
-            "status": "accepted",
-            "symbol": "AAPL",
-            "side": "buy",
-            "qty": "1",
-        },
+def test_shadow_blocks_a_short_and_an_oversized_buy(tmp_path: Path) -> None:
+    with _open(tmp_path) as desk:
+        short = desk.submit("aapl", "SELL", 1, 100.0, TS_NS)
+    assert short["accepted"] is False
+    assert "reg_sho" in short["order"]["reasons"]  # type: ignore[index]
+    tight = LiveDesk.open(
+        tmp_path / "tight",
+        hmac_key=HMAC_KEY,
+        config=_config(max_order_notional=100.0),
+        cash=1_000_000.0,
+        account_value=1_000_000.0,
+        ts_ns=TS_NS,
     )
-    client.submit_order(
-        symbol="AAPL", side="buy", qty=1, limit_price=10, client_order_id="client-order-0003"
+    try:
+        huge = tight.submit("msft", "BUY", 10, 100.0, TS_NS)
+    finally:
+        tight.close()
+    assert huge["accepted"] is False
+    assert "max_order_notional" in huge["order"]["reasons"]  # type: ignore[index]
+
+
+def test_buying_power_and_kill_switch(tmp_path: Path) -> None:
+    desk = LiveDesk.open(
+        tmp_path / "desk",
+        hmac_key=HMAC_KEY,
+        config=_config(),
+        cash=50.0,
+        account_value=1_000_000.0,
+        ts_ns=TS_NS,
     )
-    assert transport.calls[-1][1].startswith("https://api.alpaca.markets/")
+    try:
+        denied = desk.submit("aapl", "BUY", 1, 100.0, TS_NS)
+        assert denied["accepted"] is False
+        assert "buying_power" in denied["order"]["reasons"]  # type: ignore[index]
+        desk.kill("ops", "manual halt", TS_NS + 1)
+        halted = desk.submit("aapl", "BUY", 1, 10.0, TS_NS + 2, client_order_id="after")
+        assert halted["accepted"] is False
+        assert halted["kill_latched"] is True
+    finally:
+        desk.close()
 
 
-def test_transport_refuses_other_hosts() -> None:
-    transport = UrllibTransport(environment="paper")
-    with pytest.raises(LiveRefused, match="not allowed"):
-        transport.request(
-            method="GET",
-            url="https://evil.example/v2/account",
-            headers={},
-            body=None,
-            timeout_s=1,
+def test_loopback_fill_is_synthetic_and_resumes(tmp_path: Path) -> None:
+    with _open(tmp_path) as desk:
+        desk.arm("loopback", "", TS_NS)
+        report = desk.submit("aapl", "BUY", 10, 100.0, TS_NS + 1, client_order_id="fill-1")
+        again = desk.submit("aapl", "BUY", 10, 100.0, TS_NS + 1, client_order_id="fill-1")
+    assert report["data_label"] == "SYNTHETIC"
+    assert report["status"] == "filled"
+    assert report["transmission"] is True
+    order = report["order"]
+    assert isinstance(order, dict)
+    assert order["synthetic"] is True
+    assert order["filled_qty"] == 10
+    assert again["idempotent"] is True
+    assert report["cash"] == pytest.approx(999_000.0)
+    assert report["positions"] == {"AAPL": 10}
+    assert report["account_value"] == pytest.approx(1_000_000.0)
+    assert report["trace_ok"] is True
+    assert not (tmp_path / "desk" / "outbound").exists()
+
+    with _open(tmp_path) as resumed:
+        status = resumed.status()
+    assert status["positions"] == {"AAPL": 10}
+    assert status["cash"] == pytest.approx(999_000.0)
+    assert status["kill_latched"] is False
+    duplicate = None
+    with _open(tmp_path) as resumed:
+        duplicate = resumed.submit("aapl", "BUY", 10, 100.0, TS_NS + 2, client_order_id="fill-2")
+    assert duplicate is not None
+    assert duplicate["accepted"] is False
+    assert "duplicate_order" in duplicate["order"]["reasons"]  # type: ignore[index]
+
+
+def test_drop_stays_dark_until_armed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DIP_LIVE_ARM", raising=False)
+    with _open(tmp_path) as desk:
+        with pytest.raises(LiveDeskError, match="SEND-LIVE-ORDERS"):
+            desk.arm("drop", "nope", TS_NS)
+        assert desk.status()["venue"] == "shadow"
+        desk.arm("drop", "SEND-LIVE-ORDERS", TS_NS)
+        held = desk.submit("aapl", "BUY", 4, 100.0, TS_NS + 1, client_order_id="held")
+    assert held["accepted"] is True
+    assert held["status"] == "held"
+    assert held["transmission"] is False
+    assert list((tmp_path / "desk" / "outbound").glob("*.json")) == []
+
+    monkeypatch.setenv("DIP_LIVE_ARM", "1")
+    with _open(tmp_path) as desk:
+        sent = desk.submit("aapl", "BUY", 4, 100.0, TS_NS + 2_000_000_000, client_order_id="sent")
+        order = sent["order"]
+        assert isinstance(order, dict)
+        assert sent["transmission"] is True
+        assert sent["status"] == "working"
+        ticket = json.loads(
+            (tmp_path / "desk" / "outbound" / f"{order['order_id']}.json").read_text()
         )
-    with pytest.raises(LiveRefused, match="https"):
-        transport.request(
-            method="GET",
-            url="http://paper-api.alpaca.markets/v2/account",
-            headers={},
-            body=None,
-            timeout_s=1,
+        assert ticket["live_pnl_claim"] is False
+        assert ticket["evidence_conditions"] == "blocked"
+        assert ticket["qty"] == 4
+        inbound = tmp_path / "desk" / "inbound"
+        inbound.mkdir()
+        (inbound / "fill.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live_broker_event.v1",
+                    "kind": "fill",
+                    "order_id": order["order_id"],
+                    "event_id": "fill-1",
+                    "qty": 4,
+                    "price": 100,
+                }
+            ),
+            encoding="utf-8",
         )
+        applied = desk.poll(TS_NS + 2_000_000_001)
+    assert applied["positions"] == {"AAPL": 4}
+    assert applied["cash"] == pytest.approx(999_600.0)
+    assert applied["data_label"] == "OPERATOR_BRIDGE"
 
 
-def test_authorization_rejects_a_bad_phrase_and_a_long_life() -> None:
-    with pytest.raises(ValueError, match="acknowledge"):
-        _auth(acknowledge="I agree")
-    with pytest.raises(ValueError, match="90 days"):
-        _auth(expires_at="2024-06-01T00:00:00+00:00")
+def test_partial_fill_then_cancel_releases_the_rest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DIP_LIVE_ARM", "1")
+    with _open(tmp_path) as desk:
+        desk.arm("drop", "SEND-LIVE-ORDERS", TS_NS)
+        sent = desk.submit("aapl", "BUY", 10, 50.0, TS_NS + 1, client_order_id="part")
+        order = sent["order"]
+        assert isinstance(order, dict)
+        assert desk.status()["reserved_cash"] == pytest.approx(500.0)
+        inbound = tmp_path / "desk" / "inbound"
+        inbound.mkdir()
+        (inbound / "partial.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live_broker_event.v1",
+                    "kind": "fill",
+                    "order_id": order["order_id"],
+                    "event_id": "p1",
+                    "qty": 4,
+                    "price": 50,
+                }
+            ),
+            encoding="utf-8",
+        )
+        desk.poll(TS_NS + 2)
+        assert desk.status()["positions"] == {"AAPL": 4}
+        assert desk.status()["reserved_cash"] == pytest.approx(300.0)
+        (inbound / "cancel.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live_broker_event.v1",
+                    "kind": "cancel",
+                    "order_id": order["order_id"],
+                    "event_id": "c1",
+                }
+            ),
+            encoding="utf-8",
+        )
+        done = desk.poll(TS_NS + 3)
+    assert done["positions"] == {"AAPL": 4}
+    assert done["reserved_cash"] == 0
+    assert done["cash"] == pytest.approx(999_800.0)
 
 
-def test_session_index_matches_the_pretrade_rule() -> None:
-    from quant_fund.live.desk import _business_session_id
+def test_orphan_fill_halts_and_forged_claim_refuses_to_open(tmp_path: Path) -> None:
+    with _open(tmp_path) as desk:
+        desk.arm("loopback", "", TS_NS)
+        inbound = tmp_path / "desk" / "inbound"
+        inbound.mkdir()
+        (inbound / "orphan.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live_broker_event.v1",
+                    "kind": "fill",
+                    "order_id": "missing",
+                    "event_id": "o1",
+                    "qty": 1,
+                    "price": 10,
+                }
+            ),
+            encoding="utf-8",
+        )
+        report = desk.poll(TS_NS + 1)
+        assert report["kill_latched"] is True
+        assert report["orphan_count"] == 1
+    forged = {
+        "schema": "live_arming.v1",
+        "venue": "drop",
+        "capital": "operator_bridge",
+        "live_pnl_claim": True,
+        "would_promote_live": False,
+        "evidence_conditions": "blocked",
+    }
+    (tmp_path / "desk" / "arming.json").write_text(json.dumps(forged), encoding="utf-8")
+    with pytest.raises(Exception, match="live_pnl_claim"):
+        _open(tmp_path)
 
-    assert _business_session_id(NOW.date()) == business_session_id(NOW.date())
+
+def test_second_open_is_locked_until_close(tmp_path: Path) -> None:
+    first = _open(tmp_path)
+    try:
+        with pytest.raises(LiveDeskError, match="locked"):
+            _open(tmp_path)
+    finally:
+        first.close()
+    with _open(tmp_path) as second:
+        assert second.status()["venue"] == "shadow"
 
 
-def test_harness_cannot_call_live() -> None:
-    from fx1.harness import HARNESS_REGISTRY
+def test_rate_limit_survives_reopen(tmp_path: Path) -> None:
+    with _open(tmp_path, max_orders_per_window=1) as desk:
+        first = desk.submit("aapl", "BUY", 1, 100.0, TS_NS, client_order_id="one")
+        assert first["accepted"] is True
+    with _open(tmp_path, max_orders_per_window=1) as desk:
+        second = desk.submit("msft", "BUY", 1, 100.0, TS_NS + 1, client_order_id="two")
+    assert second["accepted"] is False
+    assert "order_rate" in second["order"]["reasons"]  # type: ignore[index]
 
-    assert "live" not in {command.name for command in HARNESS_REGISTRY}
 
-
-def test_example_authorization_file_matches_the_schema() -> None:
-    path = Path("configs/live_authorization.example.json")
-    LiveAuthorization.model_validate(json.loads(path.read_text(encoding="utf-8")))
-
-
-def test_open_desk_and_preflight(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    auth_path = tmp_path / "auth.json"
-    auth_path.write_text(
+def test_drop_fill_survives_a_new_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DIP_LIVE_ARM", "1")
+    with _open(tmp_path) as desk:
+        desk.arm("drop", "SEND-LIVE-ORDERS", TS_NS)
+        sent = desk.submit("aapl", "BUY", 3, 100.0, TS_NS + 1, client_order_id="cross")
+        order = sent["order"]
+        assert isinstance(order, dict)
+        order_id = str(order["order_id"])
+    inbound = tmp_path / "desk" / "inbound"
+    inbound.mkdir()
+    (inbound / "fill.json").write_text(
         json.dumps(
             {
-                "schema": "live_authorization.v1",
-                "environment": "paper",
-                "broker": "alpaca",
-                "account_id": "PA123",
-                "operator": "tester",
-                "acknowledge": ACK_PHRASE,
-                "symbol_allowlist": ["AAPL"],
-                "max_order_notional": 1000,
-                "max_orders_per_day": 2,
-                "created_at": "2024-01-01T00:00:00+00:00",
-                "expires_at": "2024-03-01T00:00:00+00:00",
+                "schema": "live_broker_event.v1",
+                "kind": "fill",
+                "order_id": order_id,
+                "event_id": "later",
+                "qty": 3,
+                "price": 100,
             }
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("DIPCATCHER_BROKER_KEY", KEY)
-    monkeypatch.setenv("DIPCATCHER_BROKER_SECRET", SECRET)
-    monkeypatch.setenv("DIPCATCHER_PRETRADE_HMAC_KEY", HMAC_KEY.hex())
-    transport = ScriptedTransport()
-    _routes(transport)
-    desk = open_desk(
-        authorization=auth_path,
-        pretrade=Path("configs/pretrade_risk.yaml"),
-        state_dir=tmp_path / "state",
-        transport=transport,
-        clock=lambda: NOW,
-    )
-    assert desk.status()["armed"] is False
-    report = preflight_report(
-        authorization_path=auth_path,
-        pretrade_path=Path("configs/pretrade_risk.yaml"),
-        state_dir=tmp_path / "state",
-        now=NOW,
-    )
-    assert report["ok"] is True
-    assert report["broker_key_present"] is True
-    assert SECRET not in json.dumps(report)
+    with _open(tmp_path) as desk:
+        report = desk.poll(TS_NS + 2)
+    assert report["positions"] == {"AAPL": 3}
+    assert report["cash"] == pytest.approx(999_700.0)
+    assert report["trace_ok"] is True
 
 
-def test_cli_order_deny_and_help(monkeypatch: pytest.MonkeyPatch) -> None:
-    class _Fake:
-        def submit(self, **_kwargs: object) -> dict[str, object]:
-            return {
-                "accepted": False,
-                "reasons": ["max_order_notional"],
-                "institutional_live_claim": False,
-                "would_promote_live": False,
-                "live_pnl_claim": False,
-            }
+def test_cancel_of_a_sent_ticket_requires_the_arm_switch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DIP_LIVE_ARM", "1")
+    with _open(tmp_path) as desk:
+        desk.arm("drop", "SEND-LIVE-ORDERS", TS_NS)
+        sent = desk.submit("aapl", "BUY", 2, 100.0, TS_NS + 1, client_order_id="work")
+        order = sent["order"]
+        assert isinstance(order, dict)
+        order_id = str(order["order_id"])
+    monkeypatch.delenv("DIP_LIVE_ARM", raising=False)
+    with _open(tmp_path) as desk:
+        refused = desk.cancel(order_id, TS_NS + 2)
+        assert refused["accepted"] is False
+        assert desk.status()["reserved_cash"] == pytest.approx(200.0)
+        assert desk.status()["positions"] == {}
 
-    monkeypatch.setattr("quant_fund.cli.live_cmds.open_desk", lambda **_kwargs: _Fake())
+
+def test_tampered_journal_freezes_the_desk(tmp_path: Path) -> None:
+    with _open(tmp_path) as desk:
+        desk.submit("aapl", "BUY", 1, 100.0, TS_NS, client_order_id="j")
+    journal = tmp_path / "desk" / "journal.jsonl"
+    text = journal.read_text(encoding="utf-8")
+    journal.write_text(text.replace("shadowed", "filled"), encoding="utf-8")
+    with _open(tmp_path) as desk:
+        status = desk.status()
+        assert status["kill_latched"] is True
+        assert status["transmission"] is False
+        with pytest.raises(LiveDeskError, match="journal"):
+            desk.submit("msft", "BUY", 1, 100.0, TS_NS + 2_000_000_000, client_order_id="next")
+
+
+def test_cli_loopback_and_unarmed_drop(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DIP_LIVE_ARM", raising=False)
+    root = tmp_path / "cli"
     runner = CliRunner()
-    denied = runner.invoke(
+    armed = runner.invoke(
         app,
-        ["live", "order", "--symbol", "AAPL", "--side", "buy", "--qty", "1", "--limit-price", "10"],
+        [
+            "live",
+            "arm",
+            "--root",
+            str(root),
+            "--venue",
+            "loopback",
+            "--ts-ns",
+            str(TS_NS),
+            "--cash",
+            "1000000",
+            "--account",
+            "1000000",
+        ],
     )
-    assert denied.exit_code == 3
-    assert "max_order_notional" in denied.stdout
-    help_result = runner.invoke(app, ["live", "--help"])
-    assert help_result.exit_code == 0
-    assert "arm" in help_result.stdout
-    missing = runner.invoke(
-        app, ["live", "order", "--symbol", "AAPL", "--side", "buy", "--qty", "1"]
+    assert armed.exit_code == 0, armed.stdout
+    submitted = runner.invoke(
+        app,
+        [
+            "live",
+            "submit",
+            "--root",
+            str(root),
+            "--symbol",
+            "aapl",
+            "--side",
+            "buy",
+            "--qty",
+            "2",
+            "--mark",
+            "100",
+            "--ts-ns",
+            str(TS_NS + 1),
+            "--client-id",
+            "cli-1",
+        ],
     )
-    assert missing.exit_code != 0
+    assert submitted.exit_code == 0, submitted.stdout
+    body = json.loads(submitted.stdout)
+    assert body["data_label"] == "SYNTHETIC"
+    assert body["status"] == "filled"
+    assert body["live_pnl_claim"] is False
+    refused = runner.invoke(
+        app,
+        [
+            "live",
+            "arm",
+            "--root",
+            str(root),
+            "--venue",
+            "drop",
+            "--confirm",
+            "no",
+            "--ts-ns",
+            str(TS_NS + 2),
+        ],
+    )
+    assert refused.exit_code == 1
+    assert "SEND-LIVE-ORDERS" in refused.stdout

@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "e4aacaa974a4784bc75dd0403646733793cde82329dbe29e6ae884cd87f08001",
+  "epoch_root_sha256": "af305c3b17d1e74e512e1f321b761ff5dc90a2fcb4ad93c26c3f08638524ab71",
   "inputs_sha256": "e87e8da9bb8ea459f3ad6e62d3b32eed38f937bd12e9489f488c324af78af002",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "d97adecc7d8dcef3eab88cb1e3c6250d7a76503a765fd012b110a498f5586316",
+  "member_tree_root": "7448496d45addb293352b96b9bc7b6a12efbbb03fb0a5a2deade66a407a126f6",
   "members": [
     {
       "name": "__init__.py",
@@ -260,7 +260,7 @@
     },
     {
       "name": "fx1/test_concierge.py",
-      "sha256": "b6bcc0af6dab76cb78f5ee3ef3213ffbea4add59df38c61b6c4c3992ea523afd"
+      "sha256": "fd75a5f5f473ade79747ea8a6611d6b85a380b2f685eda2aa89e21cd48edd4c7"
     },
     {
       "name": "fx1/test_corpus.py",
@@ -1315,6 +1315,10 @@
       "sha256": "628a90a0e274dff87db5dde0b987184b00caadbc79dc026fc48566646a6f1ed9"
     },
     {
+      "name": "unit/cli/test_trade_session.py",
+      "sha256": "05692b0a9bf01b010d0b4db38723e7e00b8cf665db0919521b758a920a3adeef"
+    },
+    {
       "name": "unit/combination/__init__.py",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
@@ -1808,7 +1812,7 @@
     },
     {
       "name": "unit/execution/test_order_recon.py",
-      "sha256": "009eb59062cefe76637780fc4634a34c4fab2ce9927209d6479262c13fde4f0d"
+      "sha256": "53a41e8bd0720083136016af1235bb5714d4251e5979103afe887a595552fc72"
     },
     {
       "name": "unit/execution/test_passive_impact.py",
@@ -1825,6 +1829,10 @@
     {
       "name": "unit/execution/test_sweep_bound.py",
       "sha256": "80f2dfddcdca99dd36e74a4bf700214cceb10808374c97c913fef204bd33ddc8"
+    },
+    {
+      "name": "unit/execution/test_trading_session.py",
+      "sha256": "217cdc6bf1bdca117ebda51b773bfa5ac21a43018455c79ceba56b5de1b3f0d1"
     },
     {
       "name": "unit/execution/test_varswap_stopping.py",
@@ -2597,10 +2605,6 @@
     {
       "name": "unit/labels/test_meta_model.py",
       "sha256": "7c032d8bae5b459f92970104c80133c9141dcb32ab8a29b5d84db31c751507b7"
-    },
-    {
-      "name": "unit/live/test_live_desk.py",
-      "sha256": "bba9cb852ffaf139878ff06e9bd30ec8d309fa6487c512f41a4433ef2d487c5f"
     },
     {
       "name": "unit/market_sim/test_benchmark.py",
@@ -14036,7 +14040,7 @@
     },
     {
       "name": "unit/paper/test_broker_adapter.py",
-      "sha256": "24f7cfdd4511089178b358939b15ce2f0ee3a411ba16d4e92cf2ae2e08a327b7"
+      "sha256": "62a14edc96ef111d3f1bb7546368768d1cd4c0bb570be370b9d9de865c7e6b9d"
     },
     {
       "name": "unit/paper/test_divergence_merge.py",
@@ -14132,7 +14136,7 @@
     },
     {
       "name": "unit/pipeline/test_config.py",
-      "sha256": "96ab07eb17e586124f9341e10aabfefa85bcc0519410c61e122401dfedb514af"
+      "sha256": "fdafcf04164ae37bcb74fd5ab4aa543eafd0ee5248b458f5aaf2dc748e542b73"
     },
     {
       "name": "unit/pipeline/test_conformal_wrappee.py",
@@ -22775,7 +22779,8 @@
     "fx1/test_webresearch.py",
     "support/panel_sources.py",
     "unit/cli/test_dipcatcher_launcher.py",
-    "unit/live/test_live_desk.py",
+    "unit/cli/test_trade_session.py",
+    "unit/execution/test_trading_session.py",
     "unit/metrics/fit_student_t_golden.json",
     "unit/metrics/test_fit_student_t_equivalence.py",
     "unit/models/test_canon_qualification.py",
@@ -22791,14 +22796,14 @@
     "unit/test_receipt_integrity_scan.py"
   ],
   "members_removed": [],
-  "n_members": 5690,
+  "n_members": 5691,
   "params": {
     "head_sha": "5e29a0d1f2adef6acb42d6de948fd930d1ef7563",
     "pattern": "*"
   },
   "prev_epoch_receipt": "corpus_epoch_fd8b09ac86c69256.json",
   "prev_epoch_sha256": "6991c504038f92f620590a8c1d036389cfc3011c027d4b31782838a698e02559",
-  "receipt_sha256": "d36fcca3740d2cf889e4d8d5b675cb70f454a2c1b902c3f1c620823267c9d648",
+  "receipt_sha256": "6de64c338e035165fc125b10887d739138da64070e60c4a7050a7220b377b494",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

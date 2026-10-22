@@ -107,10 +107,15 @@ verdict is `QUALIFYING` — every field present and consistent, nothing rejected
 | 2.1 | A **brokerage account + API credentials** with authenticated order submission and fill/execution reporting | A regulated broker/dealer with a documented order+fill API and drop-copy/executions feed | Compliance + Trading | Credentials enable authenticated order and *execution* (fill) queries, not just order status. |
 | 2.2 | A reconciliation entitlement: historical execution drop-copy or a fills export to reconcile against | Same broker | Trading | Fills can be independently re-pulled and matched. |
 
-> Until 2.1 is authorized and the acceptance tests below pass on a real
-> drop-copy, condition 2 is **BLOCKED**. The paper ledger still raises
-> `LiveEndpointRefused`. `dipcatcher live` can route an operator's own
-> orders, and that route is not this condition and makes no live-P&L claim.
+> Until 2.1 is authorized and a real drop-copy passes §2b, condition 2 is
+> **BLOCKED**. `dipcatcher trade session` is a simulated book with no broker
+> client. The paper adapter raises `LiveEndpointRefused` for a live endpoint.
+> `quant_fund.live` is the operator desk plus an Alpaca-paper gateway
+> ([LIVE_DESK.md](LIVE_DESK.md), [LIVE_TRADING.md](LIVE_TRADING.md)). The desk
+> does not open a broker socket. The gateway can submit to Alpaca paper when
+> an operator arms it. The Alpaca live host is refused by the honesty
+> contract. Neither path is condition-2 evidence, and neither makes a
+> live-P&L claim.
 
 ### 2b. Broker order/fill-reconciliation acceptance tests (condition 2)
 

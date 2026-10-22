@@ -46,12 +46,8 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
    `tests/fx1/test_honesty_inheritance.py` blocks drift.
 2. SYNTHETIC results are correctness tests, always labeled, never market
    evidence.
-3. Research output must not claim live-trading performance. Operator order
-   routing (`dipcatcher live`, `quant_fund.live`) can send orders to the
-   operator's own broker and is not research evidence. Institutional live
-   promotion stays blocked until the five conditions in
-   `docs/INSTITUTIONAL_READINESS.md`. The research runtime still refuses
-   `runtime.allow_live`.
+3. No live-trading claims — no broker connectivity; see
+   `docs/INSTITUTIONAL_READINESS.md` for the five minimum-evidence conditions.
 4. Receipts are immutable evidence (`receipts/`, `verify-research`). Every
    research claim should be reproducible from a receipt hash.
 

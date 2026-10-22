@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "87533857aafff4dbbf4beef982eb373e3ab160d975882c2525c8e6fc1f7f068d",
+  "epoch_root_sha256": "0de6182cd4d8264c89689fa53451f1feca3f4c6e6dd7fb6dc8a5108a87e3c3e2",
   "inputs_sha256": "2beef7afe03e95f8812df2dfc9365d41078d06218e4fc4775711b0553f6afa38",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "1ad9a43562bff2840044da8b3979bba82e0b916044f94e17ed004695d88d9b34",
+  "member_tree_root": "5b38be9b76b1738167c2212d4bb6a24d50fd1ab20f1a49100d1d40a339c17f7c",
   "members": [
     {
       "name": "ALLOCATION_PACK.md",
@@ -16,7 +16,7 @@
     },
     {
       "name": "ARCHITECTURE_ATLAS.md",
-      "sha256": "be2c28ffba146dd468787070d28cf4a5e093b70c906f98e9b144b6c5eda6ad2c"
+      "sha256": "6f791e6b2d26bb09e891b075ec195cb4e833f6f01a8324ef49f200916caa5d32"
     },
     {
       "name": "ARCHITECTURE_GUARDS.md",
@@ -208,11 +208,11 @@
     },
     {
       "name": "DIPCATCHER_PRODUCT_CONTRACT.md",
-      "sha256": "0d4ee9e4084ae255168a114e4f5a379ea378c74a44ad52b564ce31145d3e83e5"
+      "sha256": "f12fbe37a705c3bb40348f02b3120fefad577d022d3e6c279616259ce9e4a755"
     },
     {
       "name": "DIP_CONCIERGE.md",
-      "sha256": "4ae78218d5cde4fd4463e5c3e788f2d2e9ea30595a44bf94891b2df0f3dbb464"
+      "sha256": "1d0f02fe16e917820b096d97c598ce520cdb97d94921345874b54ae253a36e7c"
     },
     {
       "name": "EVAL_REPORT_SOTA.md",
@@ -224,7 +224,7 @@
     },
     {
       "name": "EVIDENCE_PROCUREMENT.md",
-      "sha256": "e6d777fd39b0ccf80bf4c029566870e0ce8d5298a85225f01a4f8cb645edd813"
+      "sha256": "ddf5096a96e919eb7c5f46cf5151f5e6df9f4f0a0c6a3aed09141628125bbfbd"
     },
     {
       "name": "EXECUTIVE_BLUEPRINT_IMPLEMENTATION.md",
@@ -320,11 +320,7 @@
     },
     {
       "name": "INSTITUTIONAL_READINESS.md",
-      "sha256": "0df2d5d33069b0757b798ad3c3f25db66eb47f42460dfa0b112474cf788ce28c"
-    },
-    {
-      "name": "LIVE_TRADING.md",
-      "sha256": "88b3a87e95d18081810705bb4aea6b7a07b3cbfb302db9dc774e24a6ca3d7746"
+      "sha256": "a09ccc092af18cda1522d01ad9c6fbe33a5913301f72475853f820cab1f76c25"
     },
     {
       "name": "MARKET_SIM.md",
@@ -364,7 +360,7 @@
     },
     {
       "name": "OPERATIONS_RUNBOOK.md",
-      "sha256": "5fd0ab5fa6ccbbce1e5e7010a00862a54edbf9967346b9650d0a3bd65d894453"
+      "sha256": "34028459443fc725e7a8d86bc0166e2cb0d1b69ba5967316fad4a8fc37db2ef1"
     },
     {
       "name": "P0_CLOSURE.md",
@@ -392,7 +388,7 @@
     },
     {
       "name": "PRETRADE_RISK.md",
-      "sha256": "4177077e5e9cb098a2f0076596e66503e333f0da16dea016ff51a772bed5c391"
+      "sha256": "b8274871f43688646bb7f3ce064b64d862b203917c44f77abb6b869af203ec1e"
     },
     {
       "name": "PROSPECTIVE_SOTA.md",
@@ -544,7 +540,7 @@
     },
     {
       "name": "adr/0004-fail-closed-defaults.md",
-      "sha256": "c0ae8b0ee3a0e20200ec29bb7b35a6363ab95d743a8bd11437f6ee7801039eca"
+      "sha256": "0c7231b61425d288962c378a828bfd12ad2c547b83818bc3727c2e655298395c"
     },
     {
       "name": "adr/0005-paper-ledger-publish-order.md",
@@ -961,7 +957,6 @@
     "FX1_OPERATIONS.md",
     "FXI.md",
     "HF_RV_DESIGN.md",
-    "LIVE_TRADING.md",
     "P0_CLOSURE.md",
     "REALITY_TRIAL_SURVIVORSHIP_TOTAL_RETURN_2026.md",
     "ULTRA_PROD_READINESS.md",
@@ -989,14 +984,14 @@
     "superpowers/specs/2026-10-04-fxi-interactive-cli-design.md"
   ],
   "members_removed": [],
-  "n_members": 233,
+  "n_members": 232,
   "params": {
     "head_sha": "5e29a0d1f2adef6acb42d6de948fd930d1ef7563",
     "pattern": "*"
   },
   "prev_epoch_receipt": "corpus_epoch_7be47a14a5092976.json",
   "prev_epoch_sha256": "6b75d575034efdf42b4080af9c5d21684b014c8347b780153069538159f79040",
-  "receipt_sha256": "5905442399aaf24c4d870b2661d7e26f609de5c30d024eafa53e3bf8a19a53af",
+  "receipt_sha256": "1d3b6e7291bf879d2a43ffe54ca0c01b7b4f055a3d23bcc0a213e3404e98d29c",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

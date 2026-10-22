@@ -1,18 +1,30 @@
-"""Operator order routing.
+"""Operator order surface. One package, two books, no live-capital claim.
 
-This package is not a research scorecard and not an institutional live
-promotion. The research runtime still refuses ``runtime.allow_live``.
+The desk (shadow, in-process loopback, drop folder) is the default. It does
+not open a broker socket. The gateway is selected by a gateway config and can
+submit to Alpaca paper after an explicit arm. The Alpaca live host stays
+named and is refused. Evidence conditions stay blocked. ``live_pnl_claim``
+is false.
 """
 
-from quant_fund.live.desk import LiveDesk, honesty_stamp, open_desk, preflight_report
-from quant_fund.live.errors import BrokerRejected, BrokerUncertain, LiveRefused
+from quant_fund.live.arming import CONFIRM_DROP, ENV_ARM, LIVE_CAPITAL_PHRASE, Arming
+from quant_fund.live.config import LiveConfig, load_live_config
+from quant_fund.live.desk import LiveDesk, LiveDeskError
+from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.session import LiveSession, open_session
 
 __all__ = [
+    "CONFIRM_DROP",
+    "ENV_ARM",
+    "LIVE_CAPITAL_PHRASE",
+    "Arming",
     "BrokerRejected",
-    "BrokerUncertain",
+    "LiveBrokerRefused",
+    "LiveConfig",
     "LiveDesk",
-    "LiveRefused",
-    "honesty_stamp",
-    "open_desk",
-    "preflight_report",
+    "LiveDeskError",
+    "LiveGateError",
+    "LiveSession",
+    "load_live_config",
+    "open_session",
 ]

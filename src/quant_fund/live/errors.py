@@ -1,33 +1,23 @@
-"""Failures for operator order routing.
+"""Failures for the armed order gateway.
 
-These are operational refusals. They are not research scores, and none of
-them marks an institutional live-trading claim as allowed.
+Messages are safe to print. They never include broker credentials.
 """
 
 from __future__ import annotations
 
-from quant_fund.schemas.errors import ConfigError, QuantFundError
+
+class LiveGateError(Exception):
+    """The gateway refused to continue. No new broker call should be assumed."""
 
 
-class LiveRefused(ConfigError):
-    """The desk refused to route before any broker mutation."""
+class BrokerRejected(LiveGateError):
+    """The broker accepted the connection and refused the request."""
 
 
-class TransportError(QuantFundError):
-    """The HTTP call did not complete. No response body was read."""
+class LiveBrokerRefused(LiveGateError):
+    """The Alpaca live host is configured and refused.
 
-
-class BrokerRejected(QuantFundError):
-    """The broker returned a definite reject. The kill latch is unchanged."""
-
-    def __init__(self, message: str, *, status: int) -> None:
-        super().__init__(message)
-        self.status = status
-
-
-class BrokerUncertain(QuantFundError):
-    """A mutating request may have reached the broker. The desk latches the kill switch."""
-
-    def __init__(self, message: str, *, status: int | None = None) -> None:
-        super().__init__(message)
-        self.status = status
+    The honesty contract forbids live broker connectivity. The venue name and
+    the host stay in the source so the refusal is visible; paper and loopback
+    are unchanged.
+    """

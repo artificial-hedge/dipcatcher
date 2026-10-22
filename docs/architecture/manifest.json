@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13391,
+  "module_count": 13397,
   "module_edges": [
     {
       "dst": "fx1.interactive.concierge",
@@ -2079,7 +2079,7 @@
       "src": "fx1.interactive.concierge"
     },
     {
-      "dst": "quant_fund.execution.trading_session",
+      "dst": "quant_fund.validation.live_readiness",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -4687,10 +4687,6 @@
       "src": "quant_fund.cli._app"
     },
     {
-      "dst": "quant_fund.cli.live_cmds",
-      "src": "quant_fund.cli._app"
-    },
-    {
       "dst": "quant_fund.cli.sota_cmds",
       "src": "quant_fund.cli._app"
     },
@@ -4947,6 +4943,18 @@
       "src": "quant_fund.cli.lake_cmds"
     },
     {
+      "dst": "quant_fund.cli._app",
+      "src": "quant_fund.cli.live_cmds"
+    },
+    {
+      "dst": "quant_fund.live.arming",
+      "src": "quant_fund.cli.live_cmds"
+    },
+    {
+      "dst": "quant_fund.live.config",
+      "src": "quant_fund.cli.live_cmds"
+    },
+    {
       "dst": "quant_fund.live.desk",
       "src": "quant_fund.cli.live_cmds"
     },
@@ -4955,7 +4963,11 @@
       "src": "quant_fund.cli.live_cmds"
     },
     {
-      "dst": "quant_fund.schemas.errors",
+      "dst": "quant_fund.live.session",
+      "src": "quant_fund.cli.live_cmds"
+    },
+    {
+      "dst": "quant_fund.pretrade.config",
       "src": "quant_fund.cli.live_cmds"
     },
     {
@@ -4984,6 +4996,10 @@
     },
     {
       "dst": "quant_fund.cli.lake_cmds",
+      "src": "quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.cli.live_cmds",
       "src": "quant_fund.cli.main"
     },
     {
@@ -5067,10 +5083,6 @@
       "src": "quant_fund.cli.ops_cmds"
     },
     {
-      "dst": "quant_fund.execution.trading_session",
-      "src": "quant_fund.cli.ops_cmds"
-    },
-    {
       "dst": "quant_fund.features.engine",
       "src": "quant_fund.cli.ops_cmds"
     },
@@ -5096,6 +5108,10 @@
     },
     {
       "dst": "quant_fund.paper.sim_live",
+      "src": "quant_fund.cli.ops_cmds"
+    },
+    {
+      "dst": "quant_fund.paper.trading_session",
       "src": "quant_fund.cli.ops_cmds"
     },
     {
@@ -6227,18 +6243,6 @@
       "src": "quant_fund.execution.sweep_bound"
     },
     {
-      "dst": "quant_fund.execution.order_recon",
-      "src": "quant_fund.execution.trading_session"
-    },
-    {
-      "dst": "quant_fund.paper.broker_adapter",
-      "src": "quant_fund.execution.trading_session"
-    },
-    {
-      "dst": "quant_fund.schemas.errors",
-      "src": "quant_fund.execution.trading_session"
-    },
-    {
       "dst": "quant_fund.features.engine",
       "src": "quant_fund.features"
     },
@@ -7099,6 +7103,14 @@
       "src": "quant_fund.lightspeed.rotation"
     },
     {
+      "dst": "quant_fund.live.arming",
+      "src": "quant_fund.live"
+    },
+    {
+      "dst": "quant_fund.live.config",
+      "src": "quant_fund.live"
+    },
+    {
       "dst": "quant_fund.live.desk",
       "src": "quant_fund.live"
     },
@@ -7107,35 +7119,35 @@
       "src": "quant_fund.live"
     },
     {
-      "dst": "quant_fund.live.errors",
-      "src": "quant_fund.live.alpaca"
+      "dst": "quant_fund.live.session",
+      "src": "quant_fund.live"
     },
     {
-      "dst": "quant_fund.live.transport",
-      "src": "quant_fund.live.alpaca"
+      "dst": "quant_fund.live.gateway_arm",
+      "src": "quant_fund.live.arming"
     },
     {
-      "dst": "quant_fund.live.errors",
-      "src": "quant_fund.live.authorization"
-    },
-    {
-      "dst": "quant_fund.live.alpaca",
-      "src": "quant_fund.live.desk"
-    },
-    {
-      "dst": "quant_fund.live.authorization",
-      "src": "quant_fund.live.desk"
+      "dst": "quant_fund.live.config",
+      "src": "quant_fund.live.brokers"
     },
     {
       "dst": "quant_fund.live.errors",
+      "src": "quant_fund.live.brokers"
+    },
+    {
+      "dst": "quant_fund.pretrade.config",
+      "src": "quant_fund.live.config"
+    },
+    {
+      "dst": "quant_fund.formal.order_lifecycle",
       "src": "quant_fund.live.desk"
     },
     {
-      "dst": "quant_fund.live.lock",
+      "dst": "quant_fund.live.arming",
       "src": "quant_fund.live.desk"
     },
     {
-      "dst": "quant_fund.live.transport",
+      "dst": "quant_fund.live.bridge",
       "src": "quant_fund.live.desk"
     },
     {
@@ -7151,16 +7163,64 @@
       "src": "quant_fund.live.desk"
     },
     {
-      "dst": "quant_fund.schemas.errors",
-      "src": "quant_fund.live.desk"
-    },
-    {
-      "dst": "quant_fund.schemas.errors",
-      "src": "quant_fund.live.errors"
+      "dst": "quant_fund.live.config",
+      "src": "quant_fund.live.gateway_arm"
     },
     {
       "dst": "quant_fund.live.errors",
-      "src": "quant_fund.live.transport"
+      "src": "quant_fund.live.gateway_arm"
+    },
+    {
+      "dst": "quant_fund.live.errors",
+      "src": "quant_fund.live.risk_memory"
+    },
+    {
+      "dst": "quant_fund.pretrade.engine",
+      "src": "quant_fund.live.risk_memory"
+    },
+    {
+      "dst": "quant_fund.pretrade.kernel",
+      "src": "quant_fund.live.risk_memory"
+    },
+    {
+      "dst": "quant_fund.live.brokers",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.live.config",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.live.errors",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.live.gateway_arm",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.live.ledger",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.live.risk_memory",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.pretrade.codes",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.pretrade.config",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.pretrade.engine",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.pretrade.shadow",
+      "src": "quant_fund.live.session"
     },
     {
       "dst": "quant_fund.market_sim.book",
@@ -14141,6 +14201,22 @@
     {
       "dst": "quant_fund.utils.receipt",
       "src": "quant_fund.paper.sim_live"
+    },
+    {
+      "dst": "quant_fund.execution.order_recon",
+      "src": "quant_fund.paper.trading_session"
+    },
+    {
+      "dst": "quant_fund.paper.broker_adapter",
+      "src": "quant_fund.paper.trading_session"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "quant_fund.paper.trading_session"
+    },
+    {
+      "dst": "quant_fund.validation.live_readiness",
+      "src": "quant_fund.paper.trading_session"
     },
     {
       "dst": "quant_fund.parity.checker",
@@ -62058,12 +62134,16 @@
     "quant_fund.lightspeed.rotation",
     "quant_fund.lightspeed.specs",
     "quant_fund.live",
-    "quant_fund.live.alpaca",
-    "quant_fund.live.authorization",
+    "quant_fund.live.arming",
+    "quant_fund.live.bridge",
+    "quant_fund.live.brokers",
+    "quant_fund.live.config",
     "quant_fund.live.desk",
     "quant_fund.live.errors",
-    "quant_fund.live.lock",
-    "quant_fund.live.transport",
+    "quant_fund.live.gateway_arm",
+    "quant_fund.live.ledger",
+    "quant_fund.live.risk_memory",
+    "quant_fund.live.session",
     "quant_fund.market_sim",
     "quant_fund.market_sim.__main__",
     "quant_fund.market_sim.agents",
@@ -72821,6 +72901,7 @@
     "quant_fund.paper.quantile_signals",
     "quant_fund.paper.recon",
     "quant_fund.paper.sim_live",
+    "quant_fund.paper.trading_session",
     "quant_fund.paper.xnys_calendar",
     "quant_fund.parity",
     "quant_fund.parity.__main__",
@@ -74877,6 +74958,7 @@
     "quant_fund.validation.fdr",
     "quant_fund.validation.gates",
     "quant_fund.validation.leakage_redteam",
+    "quant_fund.validation.live_readiness",
     "quant_fund.validation.multiple_testing",
     "quant_fund.validation.optuna_guard",
     "quant_fund.validation.purging",
@@ -75256,7 +75338,7 @@
       "src": "fx1.interactive"
     },
     {
-      "dst": "quant_fund.execution",
+      "dst": "quant_fund.validation",
       "imports": 1,
       "src": "fx1.interactive"
     },
@@ -75717,7 +75799,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 39,
+      "imports": 40,
       "src": "quant_fund.cli"
     },
     {
@@ -75728,11 +75810,6 @@
     {
       "dst": "quant_fund.data",
       "imports": 12,
-      "src": "quant_fund.cli"
-    },
-    {
-      "dst": "quant_fund.execution",
-      "imports": 1,
       "src": "quant_fund.cli"
     },
     {
@@ -75757,7 +75834,7 @@
     },
     {
       "dst": "quant_fund.live",
-      "imports": 2,
+      "imports": 5,
       "src": "quant_fund.cli"
     },
     {
@@ -75782,7 +75859,7 @@
     },
     {
       "dst": "quant_fund.paper",
-      "imports": 6,
+      "imports": 7,
       "src": "quant_fund.cli"
     },
     {
@@ -75792,6 +75869,11 @@
     },
     {
       "dst": "quant_fund.pit",
+      "imports": 1,
+      "src": "quant_fund.cli"
+    },
+    {
+      "dst": "quant_fund.pretrade",
       "imports": 1,
       "src": "quant_fund.cli"
     },
@@ -75827,7 +75909,7 @@
     },
     {
       "dst": "quant_fund.schemas",
-      "imports": 3,
+      "imports": 2,
       "src": "quant_fund.cli"
     },
     {
@@ -75927,7 +76009,7 @@
     },
     {
       "dst": "quant_fund.execution",
-      "imports": 11,
+      "imports": 10,
       "src": "quant_fund.execution"
     },
     {
@@ -75946,18 +76028,13 @@
       "src": "quant_fund.execution"
     },
     {
-      "dst": "quant_fund.paper",
-      "imports": 1,
-      "src": "quant_fund.execution"
-    },
-    {
       "dst": "quant_fund.portfolio",
       "imports": 1,
       "src": "quant_fund.execution"
     },
     {
       "dst": "quant_fund.schemas",
-      "imports": 4,
+      "imports": 3,
       "src": "quant_fund.execution"
     },
     {
@@ -76191,18 +76268,18 @@
       "src": "quant_fund.lightspeed"
     },
     {
+      "dst": "quant_fund.formal",
+      "imports": 1,
+      "src": "quant_fund.live"
+    },
+    {
       "dst": "quant_fund.live",
-      "imports": 11,
+      "imports": 19,
       "src": "quant_fund.live"
     },
     {
       "dst": "quant_fund.pretrade",
-      "imports": 3,
-      "src": "quant_fund.live"
-    },
-    {
-      "dst": "quant_fund.schemas",
-      "imports": 2,
+      "imports": 10,
       "src": "quant_fund.live"
     },
     {
@@ -76482,7 +76559,7 @@
     },
     {
       "dst": "quant_fund.execution",
-      "imports": 5,
+      "imports": 6,
       "src": "quant_fund.paper"
     },
     {
@@ -76497,7 +76574,7 @@
     },
     {
       "dst": "quant_fund.paper",
-      "imports": 9,
+      "imports": 10,
       "src": "quant_fund.paper"
     },
     {
@@ -76517,12 +76594,17 @@
     },
     {
       "dst": "quant_fund.schemas",
-      "imports": 1,
+      "imports": 2,
       "src": "quant_fund.paper"
     },
     {
       "dst": "quant_fund.utils",
       "imports": 7,
+      "src": "quant_fund.paper"
+    },
+    {
+      "dst": "quant_fund.validation",
+      "imports": 1,
       "src": "quant_fund.paper"
     },
     {

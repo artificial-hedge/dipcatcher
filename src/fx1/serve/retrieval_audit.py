@@ -567,7 +567,7 @@ def _ordering_paging_probes() -> dict[str, bool]:
     ).json()
 
     def item_ids(body: dict[str, Any]) -> list[Any]:
-        return [item["id"] for item in body["data"]]
+        return [i["id"] for i in body["data"]]
 
     out["conv_items_insertion_order_asc"] = item_ids(asc) == ids
     out["conv_items_order_desc_flips"] = item_ids(desc) == ids[::-1]

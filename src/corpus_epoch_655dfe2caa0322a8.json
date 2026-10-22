@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "afee3b38081997cade30cf43466255b64cac3d57a46b7e8ead57e34296782fc2",
+  "epoch_root_sha256": "460f7435b0af5d98dd838217c0a9a3009248073afea2e7c9ea07421e5d53d48e",
   "inputs_sha256": "058b9eef52fa657daa0f02820c06b473987dcc600032f7c2ac0a46a3e58b2b3b",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "a93f2eb431c636a92e139137a4952b57773b9536ec06c1744929148e213b0210",
+  "member_tree_root": "e5ed9a82724b40121daa66d3f0a676b257e30f87fd81637389a79c4438b692fe",
   "members": [
     {
       "name": "corpus_epoch_0e52b4b63f34e399.json",
@@ -31,6 +31,10 @@
       "sha256": "5769cc242cff49316f76a46bb8ed22f101ad40f2ade0dd7654d35c2e6cebcb73"
     },
     {
+      "name": "corpus_epoch_7aedfef1f56188c5.json",
+      "sha256": "37381833e665bfc34376f9ccb0b33a7a4ffb4753403d8563cfa4e3530adcd8eb"
+    },
+    {
       "name": "corpus_epoch_7b10d212cd791f48.json",
       "sha256": "26aa11d8f666bcae7044cd927b029f486db8746a2f7a861bf50586cd022ffff5"
     },
@@ -49,10 +53,6 @@
     {
       "name": "corpus_epoch_93fd25d4507d2767.json",
       "sha256": "d4e75b23fb6ed4357cf8f538b7442defba29def4dee59157fb6ece0e7926e090"
-    },
-    {
-      "name": "corpus_epoch_97041305614c1211.json",
-      "sha256": "a3f955dbb53ad1ef7b3a83841577b57a7d564528f2d37039f188f78bd169a200"
     },
     {
       "name": "corpus_epoch_9738c927854ef996.json",
@@ -820,7 +820,7 @@
     },
     {
       "name": "fx1/harness.py",
-      "sha256": "04c265bd7c14d2fc76e8fdd1906c762c2c35fc538f2a88d57a5f9c4c22066825"
+      "sha256": "9d5f508d6f1b51f822e4619f2f13adbeb090fd0d9ca027959b0275a4dd2f3676"
     },
     {
       "name": "fx1/harness_audit.py",
@@ -864,7 +864,7 @@
     },
     {
       "name": "fx1/interactive/concierge.py",
-      "sha256": "cdac86c0a4f706aa0c6f1f4fc88c6ff44995b854c985f5196d08a0be6680e889"
+      "sha256": "bc0bd581ef84535e8a3ac1786f8c8ce3c5f08426ab07e46a01e53b12c20f8c5c"
     },
     {
       "name": "fx1/interactive/orb.py",
@@ -880,7 +880,7 @@
     },
     {
       "name": "fx1/interactive/superpower.py",
-      "sha256": "f2a0fac69263525ddda5bd72da942e6e404ee79444c8a78e2bf40a6d6ea3edc0"
+      "sha256": "2db0618c588c33f169ed464348fd9544f1d52b8953529ba78c19c4f3b9432b5f"
     },
     {
       "name": "fx1/interactive/wizard.py",
@@ -1604,7 +1604,7 @@
     },
     {
       "name": "quant_fund/cli/_app.py",
-      "sha256": "26ce510cd62c8b6754467e39463a6e0d7a9471d244ade43c25dc6a928c585011"
+      "sha256": "bbf1d13976b119a779dedbe000399ddf4663e56d821fc20fb264a891a7cb425a"
     },
     {
       "name": "quant_fund/cli/app.py",
@@ -1636,11 +1636,11 @@
     },
     {
       "name": "quant_fund/cli/live_cmds.py",
-      "sha256": "d416687687dab05e95eb1c70c4fc5d7ee527d0237459d31109cf580f66ab3fca"
+      "sha256": "0bd18785b38b1cbed3efe366049963b5e266915822cef7b954266cef6f487878"
     },
     {
       "name": "quant_fund/cli/main.py",
-      "sha256": "c391b581b51782a2edc7ebf83ddaa4a84269f05f3dae870a06c44660b02db544"
+      "sha256": "6e9bfad13ffa58bdb49b11e44c41667fc745f40f9acdbe993226f40d8df36c57"
     },
     {
       "name": "quant_fund/cli/micro_cmds.py",
@@ -1648,7 +1648,7 @@
     },
     {
       "name": "quant_fund/cli/ops_cmds.py",
-      "sha256": "cb697fc4a5f8c8f5c8feb249224c9f22869d2413a078e9bfef72dc298571bbf8"
+      "sha256": "c85a48abb5051aa7a65d7aaacfb42c02398883e133aa695339e1835ce3f599f1"
     },
     {
       "name": "quant_fund/cli/report_cmds.py",
@@ -1748,7 +1748,7 @@
     },
     {
       "name": "quant_fund/config/models.py",
-      "sha256": "96f454dbe66c8043053fc9a9a83b4e89f8940f966516807ed172860dec476c9a"
+      "sha256": "2e5fed534cc28edc1ac8693f1a96eb98e63ddcd83fbc02c59544c87c6751a1ec"
     },
     {
       "name": "quant_fund/config/schema_fingerprint.py",
@@ -2056,7 +2056,7 @@
     },
     {
       "name": "quant_fund/execution/trading_session.py",
-      "sha256": "90c057f6009d869998c4dcf163e72d348b979da906d04c4adbaede89684fff12"
+      "sha256": "f6d2c1d0c7c0b2f8ef08b28e5407934738b52313298eb8197942014b920f8991"
     },
     {
       "name": "quant_fund/execution/varswap_stopping.py",
@@ -2384,31 +2384,19 @@
     },
     {
       "name": "quant_fund/live/__init__.py",
-      "sha256": "ae12d9ff2af77b71e8ff6a28893fb1ba94c9e40e27b85b2a1f404336faa824b2"
+      "sha256": "f5028e6e9c6bbac586d13cad9ebec1f94673e564ec24cdeff926216a7a932af8"
     },
     {
-      "name": "quant_fund/live/alpaca.py",
-      "sha256": "12570e50fa738b4ce9a4549599a390a93b0c057355f07ed5f4bf06263deb288c"
+      "name": "quant_fund/live/arming.py",
+      "sha256": "8e0c6650c297a5c0b122a5f6beb5bc820ccd4a03b161ad22983af251a0ffd6f3"
     },
     {
-      "name": "quant_fund/live/authorization.py",
-      "sha256": "daff3ff0a0fe0f78de4d58e8fde796fb359c65877aa77680b68047cc2f6ae7e4"
+      "name": "quant_fund/live/bridge.py",
+      "sha256": "ff7320d4a309fe907b8b03669702bccee58084f6db31040e5fe9233969021d22"
     },
     {
       "name": "quant_fund/live/desk.py",
-      "sha256": "fa53853adaf2604ac0836c7ecf987ee3ce3d36ccc7fb0aeba2807390db4122b4"
-    },
-    {
-      "name": "quant_fund/live/errors.py",
-      "sha256": "74556692e33589081043140ed58145c9ad97a3fd0bb0ba5aad4e84d6f4f80123"
-    },
-    {
-      "name": "quant_fund/live/lock.py",
-      "sha256": "919287c56207bb72d13bc282d36f8dbcc4c20faa25750ac5efae72763509c2d1"
-    },
-    {
-      "name": "quant_fund/live/transport.py",
-      "sha256": "45b85da05a2c30a486e4fe80d5c56073ab0ac428ecaa55042e0ac5da8a1cb715"
+      "sha256": "b370bff2ef5913c5c4fadba2610f16bd18f8f40047e61bc6c51b43d818b6bfb5"
     },
     {
       "name": "quant_fund/market_sim/__init__.py",
@@ -45443,6 +45431,10 @@
       "sha256": "c8bafa0b0e89c200ce229033bda37cdb4fd5d951d1fb8b16dc1e157a58819d55"
     },
     {
+      "name": "quant_fund/paper/trading_session.py",
+      "sha256": "31515bacaea4d610c2906d7a47782f23ed303b09569ec379423f92572d5be8dd"
+    },
+    {
       "name": "quant_fund/paper/xnys_calendar.py",
       "sha256": "1311437f385e7893ffdd65e9b22fbc8c2561b5357fc433bf383f5c5c70013188"
     },
@@ -45696,7 +45688,7 @@
     },
     {
       "name": "quant_fund/pretrade/engine.py",
-      "sha256": "f95c53814e3ea747aa6714666f7461395065074acd627d6c7f759b894ef09739"
+      "sha256": "7682b170056f6af6a7057decffdd3d60e5378ab4c2b9fd702dbfdba95d0a3950"
     },
     {
       "name": "quant_fund/pretrade/kernel.py",
@@ -53683,6 +53675,10 @@
       "sha256": "3bde6bbc1c631b31772d9df1309351dbc7aa7b6d120164411b70bddff728fff9"
     },
     {
+      "name": "quant_fund/validation/live_readiness.py",
+      "sha256": "89d40d2872e0082f0fc3aba77885438441932babede615923073c6270cf314ee"
+    },
+    {
       "name": "quant_fund/validation/multiple_testing.py",
       "sha256": "0bef1c614016c20f42d06aa286b8685ce61913d1e9d092f63e56cdb7127719c6"
     },
@@ -53708,18 +53704,24 @@
     }
   ],
   "members_added": [
-    "corpus_epoch_97041305614c1211.json",
-    "quant_fund/execution/trading_session.py"
+    "corpus_epoch_7aedfef1f56188c5.json",
+    "quant_fund/cli/live_cmds.py",
+    "quant_fund/live/__init__.py",
+    "quant_fund/live/arming.py",
+    "quant_fund/live/bridge.py",
+    "quant_fund/live/desk.py",
+    "quant_fund/paper/trading_session.py",
+    "quant_fund/validation/live_readiness.py"
   ],
   "members_removed": [],
-  "n_members": 13425,
+  "n_members": 13424,
   "params": {
-    "head_sha": "be749b553e57be89f0635e50dfb9a23ceedd2313",
+    "head_sha": "0baca13742fa80079751073c4ea259892006ab2e",
     "pattern": "*"
   },
-  "prev_epoch_receipt": "corpus_epoch_97041305614c1211.json",
-  "prev_epoch_sha256": "250a80c88d86f152181f5ad5d60d648cb305c24a0f4c113feab0426a741a5f3d",
-  "receipt_sha256": "93a13b62f9860be8d089ffb4c094a925ff73763bcdf152aa5d885d149fd03fc6",
+  "prev_epoch_receipt": "corpus_epoch_7aedfef1f56188c5.json",
+  "prev_epoch_sha256": "bf50f5516b5587049bbdeba178442d6fcd6f3242da3ea532268c38fadfc423e5",
+  "receipt_sha256": "655dfe2caa0322a8216589eb8cef1f5c6c99f7f6df5cdd8816c99d0ccb422880",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "ad0089482720ff0cf87a67ce2791419a4bcdf8bd72c44e50c5d701ad4cadd61d",
+  "epoch_root_sha256": "b6cd9bbe132d9e6d9ed26b30ec694b27360b4f00b0f6953b0cd2806b2306ed45",
   "inputs_sha256": "2beef7afe03e95f8812df2dfc9365d41078d06218e4fc4775711b0553f6afa38",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "0da5e5ac907f436abdbdd8bd95400182e33a7f0bfb1d3a675bd01df2a5ac4116",
+  "member_tree_root": "409a4839981528a94c21c73066f556433d996590ffed7da85817223bece6f243",
   "members": [
     {
       "name": "ALLOCATION_PACK.md",
@@ -16,7 +16,7 @@
     },
     {
       "name": "ARCHITECTURE_ATLAS.md",
-      "sha256": "be2c28ffba146dd468787070d28cf4a5e093b70c906f98e9b144b6c5eda6ad2c"
+      "sha256": "6f791e6b2d26bb09e891b075ec195cb4e833f6f01a8324ef49f200916caa5d32"
     },
     {
       "name": "ARCHITECTURE_GUARDS.md",
@@ -208,11 +208,11 @@
     },
     {
       "name": "DIPCATCHER_PRODUCT_CONTRACT.md",
-      "sha256": "0d4ee9e4084ae255168a114e4f5a379ea378c74a44ad52b564ce31145d3e83e5"
+      "sha256": "f12fbe37a705c3bb40348f02b3120fefad577d022d3e6c279616259ce9e4a755"
     },
     {
       "name": "DIP_CONCIERGE.md",
-      "sha256": "46409dbcfc4b1f1678521cf18f3e9f91514af8e0a1c5301f8394df95dbdd5390"
+      "sha256": "53cd9586b7a2c53c586f8d76512404d6b91140217d53727347d44db6558d3955"
     },
     {
       "name": "EVAL_REPORT_SOTA.md",
@@ -224,7 +224,7 @@
     },
     {
       "name": "EVIDENCE_PROCUREMENT.md",
-      "sha256": "7705e0cc4a7950544bbe2977f59955de6f48dde2af811bdd1195ddbd6f60af43"
+      "sha256": "ddf5096a96e919eb7c5f46cf5151f5e6df9f4f0a0c6a3aed09141628125bbfbd"
     },
     {
       "name": "EXECUTIVE_BLUEPRINT_IMPLEMENTATION.md",
@@ -320,11 +320,11 @@
     },
     {
       "name": "INSTITUTIONAL_READINESS.md",
-      "sha256": "2fd8caac97d953f79438e5afd5be9cfb77cdf1003058f160a0898e7757f3ecb3"
+      "sha256": "3a2fb2a791fac4ba80e28d937ed64f897e68b64a1bc9de976113ab622d5a952d"
     },
     {
-      "name": "LIVE_TRADING.md",
-      "sha256": "88b3a87e95d18081810705bb4aea6b7a07b3cbfb302db9dc774e24a6ca3d7746"
+      "name": "LIVE_DESK.md",
+      "sha256": "84b13a9474a6514dd83757dd54e06d25f319c86459cfa92452f60beedf1023f7"
     },
     {
       "name": "MARKET_SIM.md",
@@ -364,7 +364,7 @@
     },
     {
       "name": "OPERATIONS_RUNBOOK.md",
-      "sha256": "5fd0ab5fa6ccbbce1e5e7010a00862a54edbf9967346b9650d0a3bd65d894453"
+      "sha256": "6650a78331525eea32c303ae7d02fae56476eff033c3215ab0e18c0323b65685"
     },
     {
       "name": "P0_CLOSURE.md",
@@ -392,7 +392,7 @@
     },
     {
       "name": "PRETRADE_RISK.md",
-      "sha256": "4177077e5e9cb098a2f0076596e66503e333f0da16dea016ff51a772bed5c391"
+      "sha256": "d5da57625707e9fdd9f6b7c3d1e5a5598f7adad592b6d5fa89500d62e9f34af1"
     },
     {
       "name": "PROSPECTIVE_SOTA.md",
@@ -544,7 +544,7 @@
     },
     {
       "name": "adr/0004-fail-closed-defaults.md",
-      "sha256": "c0ae8b0ee3a0e20200ec29bb7b35a6363ab95d743a8bd11437f6ee7801039eca"
+      "sha256": "0c7231b61425d288962c378a828bfd12ad2c547b83818bc3727c2e655298395c"
     },
     {
       "name": "adr/0005-paper-ledger-publish-order.md",
@@ -623,12 +623,12 @@
       "sha256": "53b8e6a1c2f50b2765422d9fb5fc338bd1312d9abdde85d5a09a85eb300711a2"
     },
     {
-      "name": "corpus_epoch_4796ea20eecd1c13.json",
-      "sha256": "c150d36175348209f6b27ce2aed2dee06596456c2d60c7fc203c32c0e07b30c3"
+      "name": "corpus_epoch_1d3b6e7291bf879d.json",
+      "sha256": "013cd271ad9236b00bc77fad9d0d1f548144bfa1643c6d9075616b64c5c67a13"
     },
     {
-      "name": "corpus_epoch_5905442399aaf24c.json",
-      "sha256": "e8bfa822e659c58960109038e3745662a9bf7d0f78668aea58b74b40c837707f"
+      "name": "corpus_epoch_4796ea20eecd1c13.json",
+      "sha256": "c150d36175348209f6b27ce2aed2dee06596456c2d60c7fc203c32c0e07b30c3"
     },
     {
       "name": "corpus_epoch_7be47a14a5092976.json",
@@ -820,7 +820,7 @@
     },
     {
       "name": "index.md",
-      "sha256": "b754c56a6bf8919d13e5d1adf56a72c1362ebb0ace09d93bcb93d4b4acc360f9"
+      "sha256": "ac6060345cf114faed29d7f680230e1c732ec4fea0884af72e71f4578bab850e"
     },
     {
       "name": "javascripts/mathjax.js",
@@ -944,17 +944,18 @@
     }
   ],
   "members_added": [
-    "corpus_epoch_5905442399aaf24c.json"
+    "LIVE_DESK.md",
+    "corpus_epoch_1d3b6e7291bf879d.json"
   ],
   "members_removed": [],
   "n_members": 234,
   "params": {
-    "head_sha": "be749b553e57be89f0635e50dfb9a23ceedd2313",
+    "head_sha": "0baca13742fa80079751073c4ea259892006ab2e",
     "pattern": "*"
   },
-  "prev_epoch_receipt": "corpus_epoch_5905442399aaf24c.json",
-  "prev_epoch_sha256": "87533857aafff4dbbf4beef982eb373e3ab160d975882c2525c8e6fc1f7f068d",
-  "receipt_sha256": "530221f7e99c96b5e5d78ca4d097a06b06137312876ed6886b859a86d661d846",
+  "prev_epoch_receipt": "corpus_epoch_1d3b6e7291bf879d.json",
+  "prev_epoch_sha256": "0de6182cd4d8264c89689fa53451f1feca3f4c6e6dd7fb6dc8a5108a87e3c3e2",
+  "receipt_sha256": "a66ff222be65e48ba42f22eb4edba79a13d384789fd20eda886925c4547d4375",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

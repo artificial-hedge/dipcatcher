@@ -113,7 +113,7 @@ import threading
 import time
 import urllib.error
 import urllib.parse
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -486,7 +486,7 @@ def _error_map_probes() -> dict[str, bool]:  # NOSONAR(S3776) — status table f
 
     def mapped(
         status: int, body: bytes = _ERR_BODY, headers: dict[str, str] | None = None
-    ) -> tuple[Any, Any]:
+    ) -> tuple[BaseException | None, Any]:
         tr, calls = _scripted((status, headers or {}, body))
         exc = _exc(lambda: _mk(tr).commands())
         return exc, calls
@@ -910,11 +910,10 @@ def _transport_fault_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     def oserror_send(
         method: str,
         url: str,
-        payload: dict[str, Any] | bytes | None,
+        payload: Any,
         headers: dict[str, str],
         timeout_s: float,
-    ) -> NoReturn:
-        del method, url, payload, headers, timeout_s
+    ) -> None:  # NOSONAR(S1172)
         raise OSError("foreign fault")
 
     exc = _exc(lambda: _mk(oserror_send, max_retries=2).commands())
@@ -1125,11 +1124,7 @@ def _idem_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     state = {"n": 0}
 
     def flaky(
-        method: str,
-        url: str,
-        payload: dict[str, Any] | bytes | None,
-        headers: dict[str, str],
-        timeout_s: float,
+        method: str, url: str, payload: Any, headers: dict[str, str], timeout_s: float
     ) -> Any:
         state["n"] += 1
         res = real_send(method, url, payload, headers, timeout_s)
@@ -1267,13 +1262,8 @@ def _cli_probes() -> dict[str, bool]:  # NOSONAR(S3776) — CLI legs each pin ex
     import fx1.serve.client as _cm  # noqa: PLC0415
 
     def _dial(
-        method: str,
-        url: str,
-        payload: dict[str, Any] | bytes | None,
-        headers: dict[str, str],
-        timeout_s: float,
-    ) -> NoReturn:
-        del method, url, payload, headers, timeout_s
+        method: str, url: str, payload: Any, headers: dict[str, str], timeout_s: float
+    ) -> Any:  # NOSONAR(S1172)
         raise _cm.HarnessTransportError("dial failed")
 
     dead_c = _mk(_dial)

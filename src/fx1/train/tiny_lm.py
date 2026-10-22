@@ -225,7 +225,8 @@ def train_tiny_lm(
         logits = model(window[:, :-1])
         loss = nn.functional.cross_entropy(logits[0], window[0, 1:])
         opt.zero_grad()
-        loss.backward()  # type: ignore[no-untyped-call]
+        backward = cast(Callable[[], None], loss.backward)
+        backward()
         opt.step()
         final_loss = float(loss.item())
         done += 1

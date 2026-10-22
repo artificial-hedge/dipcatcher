@@ -1391,7 +1391,7 @@ For viewers without mermaid — the same architecture, in plain text:
 | `web/` | A read-only explorer UI over sealed receipts and evidence (102 files) — see [Web explorer and tooling](#web-explorer-and-tooling). |
 | `clients/typescript` | A generated TypeScript client (`openapi.json`, `client.ts`, `schema.d.ts`) for the FastAPI service's OpenAPI schema. |
 | `verifier/` | The repository's own acceptance-history ledger for its turnover into the fx-1 harness (`v1`…`v8`, 24 files) — see [Repository health](#repository-health). |
-| **Live orders** | Research `runtime.allow_live: true` still raises. `dipcatcher live` routes an operator's own Alpaca orders after a local authorization file. That route is not a research live-performance claim. See [LIVE_TRADING.md](docs/LIVE_TRADING.md). |
+| **Live orders** | **Refused.** Setting `runtime.allow_live: true` raises `allow_live is unsupported: no live broker adapter in this repository`. |
 
 Research scores that the lab will headline are proper scores: pinball,
 CRPS, PIT, QLIKE, Brier, ECE, Kupiec, and HMM likelihood — never Sharpe,
@@ -2806,7 +2806,7 @@ Report vulnerabilities privately through a
 [GitHub private security advisory](https://github.com/artificial-hedge/dipcatcher/security/advisories/new) —
 never in a public issue, PR, or discussion. [`SECURITY.md`](SECURITY.md)
 has the full scope, hard rules (fail-closed defaults, no credentials in
-source, opt-in network access, research commands do not place orders), a 72-hour
+source, opt-in network access, no broker connectivity), a 72-hour
 acknowledgment / 7-day status-update / 90-day disclosure target, a safe
 harbor for good-faith research, and the supply-chain controls summarized
 in [Testing, CI, and supply chain](#testing-ci-and-supply-chain).
@@ -2926,11 +2926,10 @@ atlas, and a terminal cheat-sheet.
 <details>
 <summary><strong>Is this a trading bot?</strong></summary>
 
-It is receipt-bound quant research and simulated paper trading, plus an
-opt-in operator desk. `dipcatcher live` can route orders to your own
-Alpaca account after you arm a local authorization file. Research commands
-do not. `runtime.allow_live: true` still raises. See
-[Operator order routing](docs/LIVE_TRADING.md).
+No. It is receipt-bound quant research and simulated paper trading. There
+is no broker connectivity anywhere in the tree; setting
+`runtime.allow_live: true` raises by construction. See
+[Read this first](#read-this-first).
 
 </details>
 
@@ -3281,11 +3280,11 @@ performance-shaped number above is either a **correctness check** (the
 qlib parity NAV comparison) or a **proper score on labeled data**
 (pinball, CRPS, PIT, Brier, ECE), never a forbidden headline metric.
 SYNTHETIC-labeled results are correctness tests on generated data, always
-labeled as such, never market evidence. Research commands do not place
-orders and do not claim live performance. `dipcatcher live` can route an
-operator's own orders; that is not institutional live evidence. The five
-conditions in [Institutional readiness](#institutional-readiness) are still
-unmet. This repository, in full, is the
+labeled as such, never market evidence. There is no broker connectivity,
+no order-placement path, and no live-trading claim anywhere in this
+repository — see [Institutional readiness](#institutional-readiness) for
+the five concrete conditions that would have to exist before that
+changed, none of which exist today. This repository, in full, is the
 proprietary property of Advaith Vaithianathan / Artificial Hedge under
 the [License](#license) above: **no forking, copying, or reuse without
 prior written permission.**

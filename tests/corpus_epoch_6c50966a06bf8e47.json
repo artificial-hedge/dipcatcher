@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "db8c417b5d4fbe767fdf2ed056735ae5bbda194f5af837deadfb7be0b05f2b35",
+  "epoch_root_sha256": "f38e8148697ac43f197dc9f7e15bd62c8c769a4e8b13b20ec604e4a5dfacee25",
   "inputs_sha256": "e87e8da9bb8ea459f3ad6e62d3b32eed38f937bd12e9489f488c324af78af002",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "dc82d3c8f5fe5943f5bc3c6d70407e8c0e6fa84ccab3a0e9f0ea179ad8cd47ba",
+  "member_tree_root": "1c23de7be7595fa22771c745efb8734874d609a3ee4728ec445716f136c59643",
   "members": [
     {
       "name": "__init__.py",
@@ -41,6 +41,10 @@
     {
       "name": "corpus_epoch_6b67b235fbb35aa2.json",
       "sha256": "d2d45bfaadb9f0e518223481c1b9a5bb3902cabf04c3d8b5a6e5580bc8f61a01"
+    },
+    {
+      "name": "corpus_epoch_6de64c338e035165.json",
+      "sha256": "84df5033b6692604326e0e3ff6e57b824781ce27f3df22d472c5faac716a6043"
     },
     {
       "name": "corpus_epoch_7992017004797c98.json",
@@ -81,10 +85,6 @@
     {
       "name": "corpus_epoch_ccc7f71261399a3d.json",
       "sha256": "4c5d8cc8219a6e14103317f545bf8a98092652034f776227844f0a81962d926d"
-    },
-    {
-      "name": "corpus_epoch_d36fcca3740d2cf8.json",
-      "sha256": "5ebc5606e8c3537d097c80e962fc339ee8e7e499ae71bc07c5a573433ffaa890"
     },
     {
       "name": "corpus_epoch_d61d596045dc6028.json",
@@ -264,7 +264,7 @@
     },
     {
       "name": "fx1/test_concierge.py",
-      "sha256": "fd75a5f5f473ade79747ea8a6611d6b85a380b2f685eda2aa89e21cd48edd4c7"
+      "sha256": "f0378fe95fb7386c6d83fa10441df746af7933791fea993af8f704cc7c95ff0b"
     },
     {
       "name": "fx1/test_corpus.py",
@@ -368,7 +368,7 @@
     },
     {
       "name": "fx1/test_harness.py",
-      "sha256": "91e932bddd04ca932ddba4d3ced774ca640f6a171ec170eba52b7a343dc822f2"
+      "sha256": "1a1de976cb6197b3fc4fd6134f66b7fcb834019a183ac50e2373ae7b0d8c994b"
     },
     {
       "name": "fx1/test_harness_bench.py",
@@ -496,7 +496,7 @@
     },
     {
       "name": "fx1/test_superpower.py",
-      "sha256": "70cfc2ebd53e2ba35dc83a7a9470220c5ea2375cc706e0894baa5d8d980176da"
+      "sha256": "f7679243e9c9e8bf56887859e92ed5603b6ac7abffb991e2354a3852a8c8aaf9"
     },
     {
       "name": "fx1/test_tiny_lm.py",
@@ -1836,7 +1836,7 @@
     },
     {
       "name": "unit/execution/test_trading_session.py",
-      "sha256": "217cdc6bf1bdca117ebda51b773bfa5ac21a43018455c79ceba56b5de1b3f0d1"
+      "sha256": "349a91f666b8986e27567b681e3aee5a1cd95787c2ebe4bf8fa0e8b694695c8e"
     },
     {
       "name": "unit/execution/test_varswap_stopping.py",
@@ -2611,8 +2611,12 @@
       "sha256": "7c032d8bae5b459f92970104c80133c9141dcb32ab8a29b5d84db31c751507b7"
     },
     {
+      "name": "unit/live/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
       "name": "unit/live/test_live_desk.py",
-      "sha256": "bba9cb852ffaf139878ff06e9bd30ec8d309fa6487c512f41a4433ef2d487c5f"
+      "sha256": "9f672de279894c3a1521e73e8b731300cb4578221040c88a1192302714cdac2f"
     },
     {
       "name": "unit/market_sim/test_benchmark.py",
@@ -14075,6 +14079,10 @@
       "sha256": "b9c67f93ec5c18f83fa86ce0fc44e9864420e600c5744f89211331ae0f43df67"
     },
     {
+      "name": "unit/paper/test_trading_session.py",
+      "sha256": "f9098761386349cf2ca52ddf15bbc9150e1acbcdb57aab6f765bb538decbee04"
+    },
+    {
       "name": "unit/parity/__init__.py",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
@@ -14144,7 +14152,7 @@
     },
     {
       "name": "unit/pipeline/test_config.py",
-      "sha256": "96ab07eb17e586124f9341e10aabfefa85bcc0519410c61e122401dfedb514af"
+      "sha256": "fdafcf04164ae37bcb74fd5ab4aa543eafd0ee5248b458f5aaf2dc748e542b73"
     },
     {
       "name": "unit/pipeline/test_conformal_wrappee.py",
@@ -22440,7 +22448,7 @@
     },
     {
       "name": "unit/test_architecture.py",
-      "sha256": "0593f020a45d81b04d50ee7246ae6c0a1d09c74273a772050fa83ca2e8d51665"
+      "sha256": "9a164e8fa9940864ba4ce9ac283ffb3ba9d2eee020e489dead0065540cecf3c8"
     },
     {
       "name": "unit/test_audit_cli_mounts.py",
@@ -22780,19 +22788,20 @@
     }
   ],
   "members_added": [
-    "corpus_epoch_d36fcca3740d2cf8.json",
-    "unit/cli/test_trade_session.py",
-    "unit/execution/test_trading_session.py"
+    "corpus_epoch_6de64c338e035165.json",
+    "unit/live/__init__.py",
+    "unit/live/test_live_desk.py",
+    "unit/paper/test_trading_session.py"
   ],
   "members_removed": [],
-  "n_members": 5693,
+  "n_members": 5695,
   "params": {
-    "head_sha": "be749b553e57be89f0635e50dfb9a23ceedd2313",
+    "head_sha": "0baca13742fa80079751073c4ea259892006ab2e",
     "pattern": "*"
   },
-  "prev_epoch_receipt": "corpus_epoch_d36fcca3740d2cf8.json",
-  "prev_epoch_sha256": "e4aacaa974a4784bc75dd0403646733793cde82329dbe29e6ae884cd87f08001",
-  "receipt_sha256": "91144cc0f26623c33df9113b8b27bb636d834b99e6f1d2c53faab37dfcb66c42",
+  "prev_epoch_receipt": "corpus_epoch_6de64c338e035165.json",
+  "prev_epoch_sha256": "af305c3b17d1e74e512e1f321b761ff5dc90a2fcb4ad93c26c3f08638524ab71",
+  "receipt_sha256": "6c50966a06bf8e4796df951eb1e72ce2275aa2c070cc35dbd209861b7adf91c1",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

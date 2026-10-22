@@ -1,7 +1,8 @@
-"""Standalone pre-trade risk engine. Shadow mode only.
+"""Standalone pre-trade risk engine.
 
 This package does not submit orders and is not imported by the simulated
-broker or the paper loop. See ``docs/PRETRADE_RISK.md``.
+broker or the paper loop. ``quant_fund.live`` calls it and submits only
+after a decision allows the order. See ``docs/PRETRADE_RISK.md``.
 """
 
 from quant_fund.pretrade.codes import (

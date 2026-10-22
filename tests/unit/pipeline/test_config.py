@@ -341,8 +341,8 @@ def test_allow_live_without_live_mode_fail_closed() -> None:
 
 
 def test_allow_live_with_live_mode_fail_closed_no_broker() -> None:
-    """Research runtime cannot enable live routing. Orders go through dipcatcher live."""
-    with pytest.raises(ValueError, match="unsupported on the research runtime"):
+    """Even mode=live + allow_live=true fails: no live broker adapter in repo."""
+    with pytest.raises(ValueError, match="no live broker adapter"):
         AppConfig.model_validate({"runtime": {"mode": "live", "allow_live": True}})
 
 
