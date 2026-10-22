@@ -1,0 +1,158 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "40f54ff5930e71b20153990645870aab5e65548129332046cb7bf9f576105f9a",
+  "inputs_sha256": "e15b4dbb78f1dffc2d683ed2a68b040cf3d4f825151fed914aafdf4aabef9204",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "535786ec237901a71261d48751e8cce48ef1e6902aa269ad414c344a3b363aaa",
+  "members": [
+    {
+      "name": ".gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "corpus_epoch_1833207f020fdbd6.json",
+      "sha256": "8fd3b727e5fe61f6424c800ce08ff5a6269d2990f30227ce5acff5a217e4da83"
+    },
+    {
+      "name": "corpus_epoch_c3933c09965aa008.json",
+      "sha256": "24f7dce5f6d45f9318dcc1d70bdb83152ceefb15345aa36adb2f3480015fc04d"
+    },
+    {
+      "name": "cost_aware_tournament/us_wide_20260925/manifest.json",
+      "sha256": "ea26eaf805da7963eea40d81ffb69078199d3695bed6669b281a38947160a763"
+    },
+    {
+      "name": "cost_aware_tournament/us_wide_20260925/validation.attempt.json",
+      "sha256": "1fe173b736824f8372d5e94c7c09cb7f8d30c71b4020796db3802babfca3efa5"
+    },
+    {
+      "name": "cost_aware_tournament/us_wide_20260925/validation.json.gz",
+      "sha256": "67c1a4738e479fb3c54a95d422e1e32e9a276c7dc63d1c876f554e0fc50f4273"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/manifest.json",
+      "sha256": "a4a8f384c14b4a7805fbab5f52158a11a38aa78d87368a65c933acd061054eaf"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/test.attempt.json",
+      "sha256": "1f87f6ca24f8787a812ab6f757ec1d6f5e2f96c805433b9c9def538bdbda9c9c"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/test.json.gz",
+      "sha256": "61f2a1cd147f5d418e190c685e2b7845e09e8a44746e64a3726797bea48b3efe"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/validation.attempt.json",
+      "sha256": "d4ffa0198f2bab8da516a96bb4829726d1e3ef900b015cd5a010117b28f98ff2"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/validation.json.gz",
+      "sha256": "abf8037e85987750fcc6cff42b53137464612e0409e97642e64a43ec961ece36"
+    },
+    {
+      "name": "real_benchmark/us_wide_20260925/manifest.json",
+      "sha256": "b4b4ec2f1f41eec36862747f64697a175f30858d05f7753fcc6f766e98b979f8"
+    },
+    {
+      "name": "real_benchmark/us_wide_20260925/test.json",
+      "sha256": "2a9a4d5bf16a78ae396eaaa5f8cf89b03db45c8286795f4a1adc902b5d0e75f5"
+    },
+    {
+      "name": "real_benchmark/us_wide_20260925/validation.json",
+      "sha256": "73f2c74d1f7f62caa76f0ca2760badfa80bb5844d4d0069afb71ddbd8185f86e"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/MANIFEST.json",
+      "sha256": "0955bcf4d32c1550c09f0a1c174c0e8e2fe6016257c7f13b860c019cdcba9e6e"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/bandit_report.json",
+      "sha256": "809cd6121547aa0fe7ba43a02bee5b7d032cf7677b4e186f697e3afad325118c"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/bandit_strict.txt",
+      "sha256": "87a0d55d41533af09c000df7e63d6fa0aa38f2a585fda3748f2d824c1713a822"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/deptry_src.txt",
+      "sha256": "ff6a683d5c49cc51f281f71b0d33bdd6b3b3f6a98cc32e827d42489cdb26b6a9"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/environment.txt",
+      "sha256": "51db324590116cdb29cde79a5e84e163b558ad5205ca99de5982ca5bd9413649"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/export_all.txt",
+      "sha256": "9fbf64df6666d2cfa7f4c6e7ffb8da02d4f0a55c16c8fc6519c46d851518730b"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/gitleaks_report.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/licenses_all.json",
+      "sha256": "a6fd604a5b417cae275fab6b11a080394bc8d3081e7c647ea1022caa4efd5121"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/pip_audit.json",
+      "sha256": "049e4778f823e4f6e95ea20dc9426dde053a1920d865b5912e5509c74ec29ba6"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/uv_audit.json",
+      "sha256": "737891e2dfea09ce5a31b82b8a023663d03d6f2de336f16f2d8e492275e04e21"
+    },
+    {
+      "name": "research/PHASE1_CODE_RESEAL.md",
+      "sha256": "80c9fb43c5c3090c517d13ec791ae325a133c6d932253c3f3392d6225817b54c"
+    },
+    {
+      "name": "research/PHASE1_PROVENANCE_CORRECTION.md",
+      "sha256": "38011bedb4d6bca772da35a03378aaf3b8897a8bfc2859316c6266bdcf779560"
+    },
+    {
+      "name": "research/phase1_20260925.md",
+      "sha256": "50ca01e0f2801e1ad84293a6b65c7e7dbe1c41fbcbbae78d9d427b80b85c041d"
+    },
+    {
+      "name": "research/phase1_evidence_index.json",
+      "sha256": "3e8d28e2ad08137d5e0ea7b8703600d710cdda37ebe83e384afc50fbc94d1f7a"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_1833207f020fdbd6.json"
+  ],
+  "members_removed": [
+    "corpus_epoch_04d8ad4f6ac237ab.json",
+    "corpus_epoch_168aaa4fcdf4dbc1.json",
+    "corpus_epoch_37b8b8445efafdfc.json",
+    "corpus_epoch_40d136b338802d53.json",
+    "corpus_epoch_40d1752161f289c3.json",
+    "corpus_epoch_41440524979109a2.json",
+    "corpus_epoch_45a810e9447f88b8.json",
+    "corpus_epoch_84cb6b0e1e09357d.json",
+    "corpus_epoch_8e10040f63da710b.json",
+    "corpus_epoch_9c3282bc1b94cc45.json",
+    "corpus_epoch_a1199701236877bc.json",
+    "corpus_epoch_a590ddeebcb1f4e6.json",
+    "corpus_epoch_aba3ba4667cec97f.json",
+    "corpus_epoch_c202a4bc3961ab8c.json",
+    "corpus_epoch_ca86051d283766c5.json",
+    "corpus_epoch_e0580bbed4486027.json",
+    "corpus_epoch_fe89a34240da06f5.json",
+    "data_manifest.json",
+    "resolved_config.json"
+  ],
+  "n_members": 28,
+  "params": {
+    "head_sha": "3e3498ff3dc8f504ef47029dab8aef826bfe99aa",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_1833207f020fdbd6.json",
+  "prev_epoch_sha256": "2bb775e885d0d76002fd37cd43501a2411b98b13018d6c30080eea8dca1159f3",
+  "receipt_sha256": "39a2bfe477cdc688d9c4357a8f3ded63665fa02fab8120278659fd4e6076284f",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "shrinking"
+}
