@@ -67,7 +67,10 @@ jobs:
   test:
     name: ${{ matrix.os }} / py${{ matrix.python }} / shard${{ matrix.shard }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    # macOS/Windows shards regularly brush the old 45-min ceiling after
+    # uv sync --all-extras + collect + full not-network suite. Raise
+    # modestly; do not drop tests or shrink the OS/Python band.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
