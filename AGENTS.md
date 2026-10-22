@@ -30,7 +30,7 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
 
 | Gate | Command |
 |---|---|
-| Lint | `make lint` (ruff check + format --check on `src`/`tests`) |
+| Lint | `make lint` (ruff check + format --check repo-wide) |
 | Types | `make typecheck` (mypy `src/quant_fund`); fx1: `uv run mypy src/fx1` |
 | Lab tests | `make test` (PR gate: not network, not slow, xdist). `make test-full` includes slow. |
 | fx1 suite | `make fx1-test` — separate lane, ~200 tests |

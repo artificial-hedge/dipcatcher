@@ -69,6 +69,7 @@ labeled `role=1` / research-only.
 
 ```python
 from quant_fund.paper import validate_ledger_schema
+
 report = validate_ledger_schema("data/metadata/paper/<run_id>")  # default subdir
 assert report["ok"]
 ```
@@ -106,6 +107,7 @@ in-loop:
 
 ```python
 from quant_fund.metrics import validate_analytics_export
+
 report = validate_analytics_export(metrics["analytics_export"])
 assert report["ok"]  # fail-closed on live_pnl_claim=true / research_only=false / missing keys
 ```

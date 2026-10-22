@@ -80,7 +80,7 @@ from quant_fund.research.compare import compare_runs
 
 comp = compare_runs("run_a.json", "run_b.json")
 print(comp.to_markdown())
-payload = comp.to_dict()          # JSON-safe (NaN -> null)
+payload = comp.to_dict()  # JSON-safe (NaN -> null)
 ```
 
 ## Limitations

@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.binance_crypto.MODULE. R
 """
 
 from array import array
+
 from fx1.extensions.plugins.binance_crypto import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(1)
 _register(55)
@@ -18533,6 +18535,7 @@ _register(999811)
 _register(999865)
 _register(999919)
 _register(999973)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

@@ -64,15 +64,15 @@ frozen where possible, same style as `ProofBundleV1`.
 
 ```python
 class DecisionTraceRow(BaseModel, frozen=True):
-    seq: int                      # 0-based, strictly increasing, gapless
-    decision_time: datetime       # tz-aware
-    known_at_ceiling: datetime    # tz-aware; == decision_time enforced by runner
-    data_manifest_sha256: str     # sha256 over the sorted vault-object hashes read this window
-    feature_set_sha256: str       # sha256 over the feature frame's canonical bytes
-    estimator_state_sha256: str   # sha256 over estimator state AFTER fit/predict this window
-    action_sha256: str            # sha256 over the emitted action/fill payload
-    rng_counter_sha256: str       # sha256 over (seed, draws_used) after the window
-    prev_row_sha256: str          # sha256 over the previous row's canonical bytes; "" for seq 0
+    seq: int  # 0-based, strictly increasing, gapless
+    decision_time: datetime  # tz-aware
+    known_at_ceiling: datetime  # tz-aware; == decision_time enforced by runner
+    data_manifest_sha256: str  # sha256 over the sorted vault-object hashes read this window
+    feature_set_sha256: str  # sha256 over the feature frame's canonical bytes
+    estimator_state_sha256: str  # sha256 over estimator state AFTER fit/predict this window
+    action_sha256: str  # sha256 over the emitted action/fill payload
+    rng_counter_sha256: str  # sha256 over (seed, draws_used) after the window
+    prev_row_sha256: str  # sha256 over the previous row's canonical bytes; "" for seq 0
 ```
 
 Canonical bytes for hashing: `row.model_dump_json(sort_keys=True).encode()`.
@@ -83,11 +83,11 @@ Helper `trace_row_hash(row) -> str` in contracts.
 ```python
 class DecisionTrace(BaseModel, frozen=True):
     rows: tuple[DecisionTraceRow, ...]
-    spec_sha256: str        # sha256 of the RunSpec canonical json
-    code_fingerprint: str   # git sha of quant_fund when in a worktree;
-                            # else src-tree hash fallback (§7.2)
-    env_fingerprint: str    # f"{platform}|{python_version_tag}|{quant_fund.__version__ or 'dev'}"
-    head_row_sha256: str    # == trace_row_hash(last row); "" when empty
+    spec_sha256: str  # sha256 of the RunSpec canonical json
+    code_fingerprint: str  # git sha of quant_fund when in a worktree;
+    # else src-tree hash fallback (§7.2)
+    env_fingerprint: str  # f"{platform}|{python_version_tag}|{quant_fund.__version__ or 'dev'}"
+    head_row_sha256: str  # == trace_row_hash(last row); "" when empty
 
     def verify_chain(self) -> None: ...  # raises ProofError on any break
 ```
@@ -98,21 +98,23 @@ class DecisionTrace(BaseModel, frozen=True):
 class FeatureDecl(BaseModel, frozen=True):
     name: str
     kind: Literal["vault_column_lag", "vault_window_agg", "prior_decision_state"]
-    params: dict[str, Any]      # frozen jsonable; hashed into spec_sha256
+    params: dict[str, Any]  # frozen jsonable; hashed into spec_sha256
+
 
 class DecisionGrid(BaseModel, frozen=True):
-    start: datetime             # tz-aware
-    step: str                   # e.g. "1d", parsed by scheduler (no dateutil dep beyond stdlib? -> use datetime.timedelta parse helper we ship)
-    count: int                  # >0
+    start: datetime  # tz-aware
+    step: str  # e.g. "1d", parsed by scheduler (no dateutil dep beyond stdlib? -> use datetime.timedelta parse helper we ship)
+    count: int  # >0
+
 
 class RunSpec(BaseModel, frozen=True):
     name: str
-    vault_uri: str              # logical, e.g. "vault://main"
+    vault_uri: str  # logical, e.g. "vault://main"
     decision_grid: DecisionGrid
     features: tuple[FeatureDecl, ...]
-    estimator: str              # allowlist name, see §4.3
+    estimator: str  # allowlist name, see §4.3
     estimator_params: dict[str, Any]
-    seed: int                   # top-level; window seeds derived deterministically
+    seed: int  # top-level; window seeds derived deterministically
 ```
 
 ### 2.4 `ReplayVerdict`
@@ -120,17 +122,18 @@ class RunSpec(BaseModel, frozen=True):
 ```python
 class Divergence(BaseModel, frozen=True):
     seq: int
-    field: str                  # one of the DecisionTraceRow hash fields, or "metric:<name>"
+    field: str  # one of the DecisionTraceRow hash fields, or "metric:<name>"
     expected_sha256: str
     actual_sha256: str
+
 
 class ReplayVerdict(BaseModel, frozen=True):
     bundle_id: str
     status: Literal["identical", "diverged", "unavailable"]
-    reason: str | None = None               # set iff status != "identical"
+    reason: str | None = None  # set iff status != "identical"
     first_divergence: Divergence | None = None
     compared_rows: int
-    recomputed_metrics: dict[str, str]      # name -> sha256 of recomputed value set
+    recomputed_metrics: dict[str, str]  # name -> sha256 of recomputed value set
 ```
 
 ### 2.5 Bundle integration
@@ -155,8 +158,9 @@ Pure stdlib + contracts. No IO, no vault imports (layer 1).
 class DecisionWindow:
     seq: int
     decision_time: datetime
-    prior_times: tuple[datetime, ...]   # all earlier decision times, in order
-    seed: int                           # sha256(f"{spec.seed}|{seq}") -> int
+    prior_times: tuple[datetime, ...]  # all earlier decision times, in order
+    seed: int  # sha256(f"{spec.seed}|{seq}") -> int
+
 
 class Scheduler:
     def __init__(self, spec: RunSpec) -> None: ...

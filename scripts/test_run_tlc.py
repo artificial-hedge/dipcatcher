@@ -2,11 +2,10 @@
 
 import hashlib
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-
+from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("run_tlc.sh")
 PAYLOAD = b"verified test fixture, not executable code\n"
@@ -38,10 +37,10 @@ class DownloaderTests(unittest.TestCase):
         self.stub(
             "curl",
             'printf "%s\\n" "$*" >> "$CURL_CALLS"\n'
-            'while [[ $# -gt 0 ]]; do\n'
+            "while [[ $# -gt 0 ]]; do\n"
             '  if [[ "$1" == "-o" ]]; then out="$2"; shift; fi\n'
-            '  shift\n'
-            'done\n'
+            "  shift\n"
+            "done\n"
             'cp "$FIXTURE" "$out"\n'
             'exit "${CURL_STATUS:-0}"\n',
         )
@@ -121,7 +120,7 @@ class DownloaderTests(unittest.TestCase):
         self.assertFalse(self.jar.exists())
 
     def test_java_failure_is_propagated_and_metadata_cleaned(self):
-        self.stub("java", 'exit 42\n')
+        self.stub("java", "exit 42\n")
         result = self.run_script()
         self.assertEqual(result.returncode, 42)
         self.assertEqual(list(self.root.glob("tmp.*")), [])
@@ -140,10 +139,10 @@ class DownloaderTests(unittest.TestCase):
     def test_interruption_removes_partial_download(self):
         self.stub(
             "curl",
-            'while [[ $# -gt 0 ]]; do\n'
+            "while [[ $# -gt 0 ]]; do\n"
             '  if [[ "$1" == "-o" ]]; then out="$2"; shift; fi\n'
-            '  shift\n'
-            'done\n'
+            "  shift\n"
+            "done\n"
             'cp "$FIXTURE" "$out"\n'
             'kill -TERM "$PPID"\n',
         )
@@ -153,9 +152,7 @@ class DownloaderTests(unittest.TestCase):
     def test_default_cache_is_versioned(self):
         del self.env["TLA_TOOLS_JAR"]
         self.assertEqual(self.run_script().returncode, 0)
-        self.assertEqual(
-            (self.root / ".tla" / "tla2tools-1.7.4.jar").read_bytes(), PAYLOAD
-        )
+        self.assertEqual((self.root / ".tla" / "tla2tools-1.7.4.jar").read_bytes(), PAYLOAD)
 
 
 if __name__ == "__main__":

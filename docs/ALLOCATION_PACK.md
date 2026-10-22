@@ -85,15 +85,21 @@ Minimal example:
 ```python
 import numpy as np
 from quant_fund.research.allocation import (
-    AllocationConstraints, build_receipt, run_walk_forward,
+    AllocationConstraints,
+    build_receipt,
+    run_walk_forward,
 )
 
 returns = ...  # T x N simple per-period returns
 ev = run_walk_forward(
-    returns, "vol_target", window=60, step=20, target_vol=0.02,
+    returns,
+    "vol_target",
+    window=60,
+    step=20,
+    target_vol=0.02,
     constraints=AllocationConstraints(leverage_cap=2.0),
 )
-print(ev.metrics)                      # calibration/stability stats only
+print(ev.metrics)  # calibration/stability stats only
 receipt = build_receipt(ev, synthetic=True, label="example")
 ```
 

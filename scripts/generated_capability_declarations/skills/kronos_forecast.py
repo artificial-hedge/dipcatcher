@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.skills.kronos_forecast.MODULE. R
 """
 
 from array import array
+
 from fx1.extensions.skills.kronos_forecast import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(36)
 _register(105)
@@ -14507,6 +14509,7 @@ _register(999777)
 _register(999846)
 _register(999915)
 _register(999984)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

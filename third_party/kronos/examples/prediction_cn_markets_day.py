@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 prediction_cn_markets_day.py
 
@@ -21,15 +20,17 @@ Example:
     python3 prediction_cn_markets_day.py --symbol 002594
 """
 
-import os
 import argparse
+import os
+import sys
 import time
-import pandas as pd
+
 import akshare as ak
 import matplotlib.pyplot as plt
-import sys
+import pandas as pd
+
 sys.path.append("../")
-from model import Kronos, KronosTokenizer, KronosPredictor
+from model import Kronos, KronosPredictor, KronosTokenizer
 
 save_dir = "./outputs"
 os.makedirs(save_dir, exist_ok=True)
@@ -44,6 +45,7 @@ PRED_LEN = 120
 T = 1.0
 TOP_P = 0.9
 SAMPLE_COUNT = 1
+
 
 def load_data(symbol: str) -> pd.DataFrame:
     print(f"📥 Fetching {symbol} daily data from akshare ...")
@@ -65,16 +67,19 @@ def load_data(symbol: str) -> pd.DataFrame:
     if df is None or df.empty:
         print(f"❌ Failed to fetch data for {symbol} after {max_retries} attempts. Exiting.")
         sys.exit(1)
-    
-    df.rename(columns={
-        "日期": "date",
-        "开盘": "open",
-        "收盘": "close",
-        "最高": "high",
-        "最低": "low",
-        "成交量": "volume",
-        "成交额": "amount"
-    }, inplace=True)
+
+    df.rename(
+        columns={
+            "日期": "date",
+            "开盘": "open",
+            "收盘": "close",
+            "最高": "high",
+            "最低": "low",
+            "成交量": "volume",
+            "成交额": "amount",
+        },
+        inplace=True,
+    )
 
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values("date").reset_index(drop=True)
@@ -83,10 +88,7 @@ def load_data(symbol: str) -> pd.DataFrame:
     numeric_cols = ["open", "high", "low", "close", "volume", "amount"]
     for col in numeric_cols:
         df[col] = (
-            df[col]
-            .astype(str)
-            .str.replace(",", "", regex=False)
-            .replace({"--": None, "": None})
+            df[col].astype(str).str.replace(",", "", regex=False).replace({"--": None, "": None})
         )
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -110,13 +112,14 @@ def load_data(symbol: str) -> pd.DataFrame:
 
 
 def prepare_inputs(df):
-    x_df = df.iloc[-LOOKBACK:][["open","high","low","close","volume","amount"]]
+    x_df = df.iloc[-LOOKBACK:][["open", "high", "low", "close", "volume", "amount"]]
     x_timestamp = df.iloc[-LOOKBACK:]["date"]
     y_timestamp = pd.bdate_range(start=df["date"].iloc[-1] + pd.Timedelta(days=1), periods=PRED_LEN)
     return x_df, pd.Series(x_timestamp), pd.Series(y_timestamp)
 
+
 def apply_price_limits(pred_df, last_close, limit_rate=0.1):
-    print(f"🔒 Applying ±{limit_rate*100:.0f}% price limit ...")
+    print(f"🔒 Applying ±{limit_rate * 100:.0f}% price limit ...")
 
     # Ensure integer index
     pred_df = pred_df.reset_index(drop=True)
@@ -184,10 +187,12 @@ def predict_future(symbol):
     pred_df = apply_price_limits(pred_df, last_close, limit_rate=0.1)
 
     # Merge historical and predicted data
-    df_out = pd.concat([
-        df[["date", "open", "high", "low", "close", "volume", "amount"]],
-        pred_df[["date", "open", "high", "low", "close", "volume", "amount"]]
-    ]).reset_index(drop=True)
+    df_out = pd.concat(
+        [
+            df[["date", "open", "high", "low", "close", "volume", "amount"]],
+            pred_df[["date", "open", "high", "low", "close", "volume", "amount"]],
+        ]
+    ).reset_index(drop=True)
 
     # Save CSV
     out_file = os.path.join(save_dir, f"pred_{symbol.replace('.', '_')}_data.csv")

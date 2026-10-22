@@ -198,21 +198,23 @@ sigma, fail-closed on missing intraday.
 from dataclasses import dataclass
 import pandas as pd
 
+
 @dataclass
 class HFRVResult:
-    rv_5min: float                  # realized variance, 5-min grid
-    bpv: float                      # bipower variation
-    jump_stat: float                # max |Lee-Mykland| over the window
-    n_jumps: int                    # count of bars flagged as jumps
-    rv_5min_jump_clean: float       # RV excluding flagged bars
-    n_obs: int                      # # of 5-min bars used
+    rv_5min: float  # realized variance, 5-min grid
+    bpv: float  # bipower variation
+    jump_stat: float  # max |Lee-Mykland| over the window
+    n_jumps: int  # count of bars flagged as jumps
+    rv_5min_jump_clean: float  # RV excluding flagged bars
+    n_obs: int  # # of 5-min bars used
     asof: pd.Timestamp
-    available_time: pd.Timestamp    # latest observable restatement
-    source: str                     # 'cls' / 'binance' / 'imf'
-    source_secondary: str | None    # cross-check source if present
+    available_time: pd.Timestamp  # latest observable restatement
+    source: str  # 'cls' / 'binance' / 'imf'
+    source_secondary: str | None  # cross-check source if present
     clock_drift_seconds: float
-    holes_count: int                # single-bar holes interpolated
-    honest: bool                    # fail-closed flag (False = not used)
+    holes_count: int  # single-bar holes interpolated
+    honest: bool  # fail-closed flag (False = not used)
+
 
 def compute_hf_rv(
     bars: pd.DataFrame,

@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.caixin.MODULE. Regenerat
 """
 
 from array import array
+
 from fx1.extensions.plugins.caixin import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(4)
 _register(58)
@@ -18533,6 +18535,7 @@ _register(999814)
 _register(999868)
 _register(999922)
 _register(999976)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

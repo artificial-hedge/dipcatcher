@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.dongcai.MODULE. Regenera
 """
 
 from array import array
+
 from fx1.extensions.plugins.dongcai import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(10)
 _register(64)
@@ -18533,6 +18535,7 @@ _register(999820)
 _register(999874)
 _register(999928)
 _register(999982)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

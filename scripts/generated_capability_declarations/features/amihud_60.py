@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.features.amihud_60.MODULE. Regen
 """
 
 from array import array
+
 from fx1.extensions.features.amihud_60 import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(104)
 _register(239)
@@ -7421,6 +7423,7 @@ _register(999509)
 _register(999644)
 _register(999779)
 _register(999914)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""
