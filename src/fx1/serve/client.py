@@ -3531,8 +3531,7 @@ class HarnessClient:
         return report
 
     def capabilities(self) -> dict[str, Any]:
-        """GET /harness/capabilities — the server's self-describing feature
-        flags and effective limits (batch caps, store bounds, rate limit).
+        """GET /harness/capabilities — feature flags and effective limits.
         Clients self-configure from this instead of hardcoding limits."""
         out = self._json("GET", "/harness/capabilities", idempotent=True)
         return dict(out)

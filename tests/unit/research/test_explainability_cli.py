@@ -12,6 +12,7 @@ and it fails closed when a bound report changes.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -21,6 +22,16 @@ from typer.testing import CliRunner
 
 from quant_fund.research.allocation_cli import allocation_app
 from quant_fund.research.explainability_cli import _data_label, explainability_app
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich error boxes so a wrapped, styled sentence still matches."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 runner = CliRunner()
 
@@ -251,7 +262,7 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
         ["report", "--model-path", str(model_path), "--features", str(features)],
     )
     assert neither.exit_code != 0
-    assert "--labels or --label-col" in neither.output
+    assert "--labels or --label-col" in _plain(neither.output)
 
     both = runner.invoke(
         explainability_app,
@@ -268,7 +279,7 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
         ],
     )
     assert both.exit_code != 0
-    assert "not both" in both.output
+    assert "not both" in _plain(both.output)
 
 
 def _sealed_receipt(directory: Path) -> Path:

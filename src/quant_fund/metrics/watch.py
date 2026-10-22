@@ -365,14 +365,17 @@ class WATCHMonitor:
             self._x_dim = int(features.size)
         elif features.size != self._x_dim:
             raise ValueError("x feature dimension changed")
+        completed = False
         try:
-            return self._update_validated(score, features)
-        except Exception:
-            # Weight callbacks and numerical routines can fail after the X
-            # martingale has advanced. Reusing that partial state would make
-            # the next alarm misleading; callers must start a new monitor.
-            self._poisoned = True
-            raise
+            step_record = self._update_validated(score, features)
+            completed = True
+            return step_record
+        finally:
+            if not completed:
+                # Weight callbacks and numerical routines can fail after the X
+                # martingale has advanced. Reusing that partial state would make
+                # the next alarm misleading; callers must start a new monitor.
+                self._poisoned = True
 
     def _update_validated(self, score: float, features: Array) -> WATCHStep:
         self._x.append(features.copy())

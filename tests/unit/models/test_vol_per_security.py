@@ -270,7 +270,9 @@ def test_ewma_forecast_matches_the_documented_recursion() -> None:
     var = history[0] ** 2
     for value in history[1:-1]:
         var = lam * var + (1.0 - lam) * value**2
-    expected = lam * var + (1.0 - lam) * history[-2] ** 2
+    # One-step RiskMetrics update uses the last observed return. The loop
+    # above stops before it (``history[1:-1]``), matching ``ewma_variance``.
+    expected = lam * var + (1.0 - lam) * history[-1] ** 2
     assert np.allclose(model.forecast("S00")["variance"][0], expected)
 
 
@@ -424,7 +426,10 @@ def test_per_security_artifact_admits_only_per_security_consumers() -> None:
 def test_pooled_artifact_rejects_per_security_consumers_symmetrically() -> None:
     from quant_fund.models.volatility import GARCHVol
 
-    pooled = GARCHVol()
+    # Default GARCHVol is the univariate series token. The pooled date-level
+    # artifact is the overlay scope, and only that token admits
+    # date_level_portfolio consumers.
+    pooled = GARCHVol(series_scope="date_level_equal_weight_cross_section")
     with pytest.raises(ValueError, match="consumable only by date_level_portfolio"):
         pooled.assert_consumer_scope("per_security")
 

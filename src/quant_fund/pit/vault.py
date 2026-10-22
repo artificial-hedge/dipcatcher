@@ -495,7 +495,8 @@ class PitVault:
             )
             try:
                 row = stats.collect().row(0)
-            except Exception as exc:  # unreadable part: report, never raise
+            except (OSError, pl.exceptions.PolarsError) as exc:
+                # Unreadable parquet is an audit finding, not a crash.
                 violations.append(f"{entry.path}: unreadable part: {exc}")
                 continue
             if row[0] != entry.rows:

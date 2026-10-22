@@ -40,6 +40,16 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+def _load_default_fetch() -> FetchFn:
+    """Bind the web-research fetcher at the moment a default refresh starts."""
+    from fx1.webresearch.fetch import fetch_page
+
+    def fetch(url: str) -> object:
+        return fetch_page(url)
+
+    return fetch
+
+
 def refresh_entry(
     store: FlashStore,
     entry: FlashEntry,
@@ -53,10 +63,7 @@ def refresh_entry(
     sources at all the entry is left untouched and the report says so.
     """
     if fetch_fn is None:
-        from fx1.webresearch.fetch import fetch_page
-
-        def fetch_fn(url: str) -> object:
-            return fetch_page(url)
+        fetch_fn = _load_default_fetch()
 
     report = RefreshReport(entry_id=entry.id)
     for source in entry.sources:

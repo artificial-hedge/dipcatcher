@@ -440,7 +440,7 @@ def sim_live(
             ).stdout.strip()
             or None
         )
-    except Exception:  # noqa: BLE001
+    except OSError:
         git_sha = None
     champion_policy = QuantilePolicy(
         mode=mode,

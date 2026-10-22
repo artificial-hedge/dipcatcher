@@ -25,14 +25,14 @@ from pathlib import Path
 # artifacts live under `receipts/legacy-unsealed/`, a quarantined subdir.
 KNOWN_UNSEALED: dict[str, str] = {}
 
-# Sealed receipts that predate their kind's deep contract (drill artifacts
-# written before `changepoint_localize.v1` required a `params` block).
-# Exempt ONLY for the exact `missing_params` contract error — any other
-# failure still fails. Values pin the file bytes.
-KNOWN_CONTRACT_LEGACY: dict[str, str] = {
-    "cp_real_drill_gaussian_minus_conf_t_pinball.json": "64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7",
-    "cp_real_drill_gaussian_pit.json": "6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62",
-}
+# Sealed receipts that predate their kind's deep contract. Exempt ONLY for
+# the exact `missing_params` error — any other failure still fails. Values
+# pin the file bytes. Empty: the changepoint drills that used to need this
+# pin now verify, because their alpha/window/min_left knobs (stored beside
+# the result, before the `params` block existed) are range-checked in
+# ``_changepoint_localize_errors``. Shrink-only; do not re-add a file whose
+# bytes can be made contract-conformant.
+KNOWN_CONTRACT_LEGACY: dict[str, str] = {}
 
 
 def _bytes_match(path: Path, expected: str) -> bool:

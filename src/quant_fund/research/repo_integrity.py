@@ -48,16 +48,28 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # require_stamped=True everywhere: an unstamped member is a silent
     # injection vector — the fuzz drill demonstrated arrivals passed as
     # notes. Arrivals are errors until the epoch restamp commits them.
-    ("receipts", "*.json", True, False, ("legacy-unsealed/README.md",)),
+    # The inventory sidecar is a digest of the chained JSON, not a second
+    # receipt. A new ``*.json`` pattern would fork the receipts chain.
+    ("receipts", "*.json", True, False, ("legacy-unsealed/README.md", "*.sha256")),
     ("verifier", "*.md", True, False, ()),
-    # quality's non-.json residents are jewel-pinned keys/certs or
-    # self-authenticating TSA anchors — pinned elsewhere, exempt here.
+    # quality's non-.json residents are jewel-pinned keys/certs,
+    # self-authenticating TSA anchors, or ratchet notes — pinned elsewhere
+    # or not corpus evidence, so they are exempt here.
     (
         "quality",
         "*.json",
         True,
         True,
-        ("*.pub", "*.pem", "*.crt", "*.tsr", "*.txt", "timestamps/*", "timestamps/ots/*"),
+        (
+            "*.pub",
+            "*.pem",
+            "*.crt",
+            "*.tsr",
+            "*.txt",
+            "*.md",
+            "timestamps/*",
+            "timestamps/ots/*",
+        ),
     ),
     # Closed world: a `.yaml` workflow beside `*.yml` members would run on
     # GitHub while dodging the epoch chain — uncovered is an error.

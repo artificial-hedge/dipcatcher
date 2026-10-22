@@ -15,16 +15,10 @@ Routes (all POST bodies are ``extra="forbid"`` — no silent arguments):
 - ``POST /harness/runs`` — execute a registered command through
   :class:`~fx1.harness.Harness`; unknown names 404, ``configs/`` escapes
   422, and the command's own timeout bounds the call.
-- ``POST /harness/complete`` — chat completion through
-  ``get_backend(backend)`` wrapped by ``cited_complete`` (the honesty gate
-  runs server-side, in production, on every response). Backend config
-  failures 503, unknown backends 404, honesty violations 502 — the model's
-  output contract is enforced before bytes leave.
-- ``POST /harness/complete/batch`` — many gated completions over one shared
-  backend instance; per-item ok/error verdicts, never a 5xx per item.
-- ``POST /receipts/verify`` — verify an arbitrary receipt object with
-  ``verify_receipt_payload``; callers never need filesystem access to the
-  evidence store.
+- ``POST /harness/complete`` and ``/complete/batch`` — gated chat through
+  ``cited_complete``. Config failures 503, unknown backends 404, honesty
+  violations 502. Batch items return per-item verdicts.
+- ``POST /receipts/verify`` — ``verify_receipt_payload`` with no filesystem.
 
 Auth posture mirrors ``quant_fund.api.research_api``: ``/health`` is the
 only unauthenticated route; when ``FX1_API_KEY`` is set every other route
@@ -2744,6 +2738,15 @@ def _make_lifespan(
     return _lifespan
 
 
+def _stored_receipt_matches(body: bytes, sha256: str) -> bool:
+    """True when the sealed JSON's ``receipt_sha256`` equals *sha256*."""
+    try:
+        stored_sha = json.loads(body).get("receipt_sha256")
+    except (AttributeError, TypeError, ValueError):
+        stored_sha = None
+    return isinstance(stored_sha, str) and hmac.compare_digest(stored_sha, sha256)
+
+
 def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
     """Receipt-verify + content-addressed fetch routes, kept out of
     ``create_app`` to keep its branch complexity under the repo's ruff cap."""
@@ -2871,11 +2874,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
                 "stored receipt failed integrity verification",
                 code="receipt_integrity_failed",
             )
-        try:
-            stored_sha = json.loads(body).get("receipt_sha256")
-        except (AttributeError, TypeError, ValueError):
-            stored_sha = None
-        if not isinstance(stored_sha, str) or not hmac.compare_digest(stored_sha, sha256):
+        if not _stored_receipt_matches(body, sha256):
             raise ApiError(
                 409,
                 "stored receipt does not match requested digest",

@@ -65,7 +65,7 @@ from quant_fund.pipeline.train import (
 )
 from quant_fund.schemas.errors import PointInTimeError
 from quant_fund.validation.walk_forward import Fold
-from tests.support.panel_sources import materialize_panel_sources
+from tests.support.panel_sources import materialize_panel_sources, save_bound_stub
 
 D0 = datetime(2020, 1, 1, tzinfo=UTC)
 
@@ -1284,7 +1284,8 @@ def test_train_reinforcement_auto_records_policy_gradient_unavailable(
         if model_name == "policy_gradient":
             raise ImportError("torch is not installed")
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        save_joblib_artifact(
+        save_bound_stub(
+            config,
             {"policy": LinUCBRanker(1), "policy_name": model_name, "features": ["f0"]},
             path,
         )
@@ -1877,7 +1878,7 @@ def test_train_distribution_auto_selects_lowest_pinball(
 
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
-        save_joblib_artifact({"model": model_name}, path)
+        save_bound_stub(config, {"model": model_name}, path)
         return {
             "path": str(path),
             "metrics": {
@@ -1906,7 +1907,7 @@ def test_train_volatility_auto_selects_lowest_qlike(
 
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
-        save_joblib_artifact({"model": model_name}, path)
+        save_bound_stub(config, {"model": model_name}, path)
         return {
             "path": str(path),
             "metrics": {"qlike": qlike[model_name], "n_oos_rows": 20.0},

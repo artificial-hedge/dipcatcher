@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -26,6 +27,16 @@ import pytest
 from typer.testing import CliRunner
 
 from quant_fund.cli.main import app
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich error boxes so a wrapped, styled sentence still matches."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 runner = CliRunner()
 
@@ -217,7 +228,7 @@ def test_real_benchmark_rejects_a_bad_receipt_version(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code != 0
-    assert "--receipt-version must be 1 or 2" in result.output
+    assert "--receipt-version must be 1 or 2" in _plain(result.output)
 
 
 def test_net_tournament_freeze_then_run(
@@ -290,7 +301,7 @@ def test_ranker_probability_rejects_incomplete_input_selection(tmp_path: Path) -
 
     neither = runner.invoke(app, ["ranker-probability", "run", "--output", str(out)])
     assert neither.exit_code != 0
-    assert "--features and --labels" in neither.output
+    assert "--features and --labels" in _plain(neither.output)
 
     only_features = tmp_path / "features.parquet"
     pl.DataFrame({"a": [1.0]}).write_parquet(only_features)
@@ -306,7 +317,7 @@ def test_ranker_probability_rejects_incomplete_input_selection(tmp_path: Path) -
         ],
     )
     assert half.exit_code != 0
-    assert "--features and --labels" in half.output
+    assert "--features and --labels" in _plain(half.output)
 
 
 def test_ranker_probability_rejects_a_half_specified_bronze_build(tmp_path: Path) -> None:
@@ -326,7 +337,7 @@ def test_ranker_probability_rejects_a_half_specified_bronze_build(tmp_path: Path
         ],
     )
     assert no_lake.exit_code != 0
-    assert "--bronze-root requires --lake-root" in no_lake.output
+    assert "--bronze-root requires --lake-root" in _plain(no_lake.output)
 
     features = tmp_path / "features.parquet"
     labels = tmp_path / "labels.parquet"
@@ -350,7 +361,7 @@ def test_ranker_probability_rejects_a_half_specified_bronze_build(tmp_path: Path
         ],
     )
     assert mixed.exit_code != 0
-    assert "excludes --features/--labels" in mixed.output
+    assert "excludes --features/--labels" in _plain(mixed.output)
 
 
 def test_ranker_probability_rejects_a_bad_receipt_version(tmp_path: Path) -> None:
@@ -374,4 +385,4 @@ def test_ranker_probability_rejects_a_bad_receipt_version(tmp_path: Path) -> Non
         ],
     )
     assert result.exit_code != 0
-    assert "--receipt-version must be 1 or 2" in result.output
+    assert "--receipt-version must be 1 or 2" in _plain(result.output)

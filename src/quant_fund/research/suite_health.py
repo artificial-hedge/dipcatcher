@@ -45,6 +45,27 @@ def _lazy_corpus() -> Any:
         return None
 
 
+def _allowed_removals(corpus: Path) -> dict[str, str]:
+    """Name → sha256 removals acknowledged in ``quality/epoch_allowed_removals.json``.
+
+    ``verify-repo`` already passes this map into ``check_epoch_chain``. The
+    suite-health gate has to do the same, or a removal the repo has recorded
+    (the history-absence receipt moved forward under a new seal) is reported
+    as ``member_removed``. A missing file means no acknowledgments. A
+    malformed file grants none — the chain then fails closed on the removal.
+    """
+    path = corpus.parent / "quality" / "epoch_allowed_removals.json"
+    if not path.is_file():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {str(key): str(value) for key, value in raw.items() if isinstance(value, str)}
+
+
 def _lazy_epoch_check() -> Any:
     try:
         import importlib
@@ -144,7 +165,7 @@ def suite_health(
     if epoch_check is None:
         epoch_state: dict[str, Any] = {"available": False}
     else:
-        chain = epoch_check(root)
+        chain = epoch_check(root, allowed_removals=_allowed_removals(root))
         epoch_state = {
             "available": True,
             "head": chain.get("head"),

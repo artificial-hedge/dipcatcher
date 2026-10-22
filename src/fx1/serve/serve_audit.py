@@ -55,6 +55,16 @@ if TYPE_CHECKING:
 __all__ = ["serve_audit", "serve_audit_bench"]
 
 
+def _counting_popen(seen: dict[str, int], real: Any) -> Any:
+    """Count Popen calls without a nested def inside ``serve_audit``."""
+
+    def tracking(*args: Any, **kwargs: Any) -> Any:
+        seen["n"] += 1
+        return real(*args, **kwargs)
+
+    return tracking
+
+
 def serve_audit() -> dict[str, Any]:
     import json
     import tempfile
@@ -290,6 +300,9 @@ def serve_audit() -> dict[str, Any]:
                     == "RuntimeError"
                 )
             out["local_is_streaming_backend"] = isinstance(attached, StreamingBackend)
+            import subprocess  # noqa: PLC0415
+            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
             spawned = LocalFx1Backend(
                 root,
                 require_signature=True,
@@ -297,17 +310,24 @@ def serve_audit() -> dict[str, Any]:
                 serve_cmd='${python} -c "import time; time.sleep(30)"',
             )
             captured2["urls"] = []
+            # _ensure_engine publishes _proc only after the models probe
+            # succeeds, so the cold fake cannot key off that attribute —
+            # it would refuse the probe forever and the sleeper would exit.
+            spawn_seen = {"n": 0}
+            real_popen_cold = subprocess.Popen
+            tracking_popen = _counting_popen(spawn_seen, real_popen_cold)
 
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
-                # The engine reads as down only until a proc exists — the
-                # spawn template must actually run (a concurrent-ready fake
-                # would let the lock's re-check skip spawning entirely).
+                # The engine reads as down only until the spawn template has
+                # run. Keying off ``_proc`` never works: that attribute is
+                # published after this probe succeeds.
                 url = req.full_url if hasattr(req, "full_url") else str(req)
-                if url.endswith("/v1/models") and spawned._proc is None:
+                if url.endswith("/v1/models") and spawn_seen["n"] == 0:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
             with (
+                patch.object(subprocess, "Popen", tracking_popen),
                 patch.object(urllib.request, "urlopen", fake_urlopen_cold),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold),
             ):
@@ -332,9 +352,6 @@ def serve_audit() -> dict[str, Any]:
 
             # Concurrency: N threads sharing one backend must spawn exactly
             # once — the engine lock makes the check-spawn sequence atomic.
-            import subprocess  # noqa: PLC0415
-            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
-
             real_popen = subprocess.Popen
             spawn_count = [0]
 

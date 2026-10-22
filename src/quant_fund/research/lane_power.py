@@ -22,6 +22,11 @@ process class, and records whether/when the alarm fired:
 - ``conformal_monitor.ConformalMartingale`` — level-shifted stream
 - ``promotion`` (evalues.LossEProcess) — challenger beats incumbent by d
   per origin
+- ``mean_eprocess.MeanEProcess`` — Bernoulli mean shifted off 1/2; alarm
+  when the two-sided CS excludes 1/2
+- ``policy_eprocess`` — bounded dominance share (challenger edge ``d``);
+  alarm when ``MeanEProcess`` rejects ``E[x] <= 1/2``. The probe streams
+  ``dominance_stream`` gaps; the ZI-LOB episode bench stays on the receipt
 
 Every lane is lazy-imported: on a checkout where a lane's branch hasn't
 merged, that lane is reported with ``status: lane_missing`` — never
@@ -269,6 +274,62 @@ def _run_serial(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
     return _LaneResult(alarmed, t_alarm, stat, _stream_digest(stream))
 
 
+def _run_mean_eprocess(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """Bounded-mean CS. ``x ~ Bernoulli(clip(1/2 + 0.4 d))``; alarm when the
+    two-sided CS excludes 1/2. ``defect=0`` is the false-alarm control."""
+    from quant_fund.research.mean_eprocess import MeanEProcess
+
+    rng = np.random.default_rng(seed)
+    mu = float(np.clip(0.5 + 0.4 * defect, 0.05, 0.95))
+    proc = MeanEProcess(alpha=alpha)
+    t_alarm = float("nan")
+    stream: list[float] = []
+    alarmed = False
+    stat = float("nan")
+    for i in range(n):
+        x = float(rng.random() < mu)
+        stream.append(x)
+        lo, hi = proc.update(x)
+        if np.isfinite(lo) and (lo > 0.5 or hi < 0.5):
+            alarmed = True
+            if not np.isfinite(t_alarm):
+                t_alarm = float(i)
+                stat = float(lo)
+    if not np.isfinite(stat):
+        lo, _hi = proc.interval()
+        stat = float(lo) if np.isfinite(lo) else float("nan")
+    return _LaneResult(alarmed, t_alarm, stat, _stream_digest(stream))
+
+
+def _run_policy_eprocess(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """Dominance-share CS. A synthetic pnl gap of mean ``0.4 d`` is mapped
+    through ``dominance_stream``; alarm when the challenger mean share
+    rejects ``E[x] <= 1/2``. Episode-level ZI-LOB runs stay on the receipt
+    bench — this probe measures the e-process, not the simulator."""
+    from quant_fund.research.mean_eprocess import MeanEProcess
+    from quant_fund.research.policy_eprocess import dominance_stream
+
+    rng = np.random.default_rng(seed)
+    scale = 1.0
+    edge = float(np.clip(defect, -1.0, 1.0)) * 0.4
+    proc = MeanEProcess(alpha=alpha)
+    t_alarm = float("nan")
+    stream: list[float] = []
+    alarmed = False
+    stat = float("nan")
+    for i in range(n):
+        gap = float(edge + rng.uniform(-0.2, 0.2))
+        x = float(dominance_stream([0.0], [gap], pnl_scale=scale)[0])
+        stream.append(x)
+        proc.update(x)
+        if proc.alarm_above(0.5):
+            alarmed = True
+            if not np.isfinite(t_alarm):
+                t_alarm = float(i)
+        stat = float(proc.evalue_le(0.5))
+    return _LaneResult(alarmed, t_alarm, stat, _stream_digest(stream))
+
+
 _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "coverage_watch": _run_coverage,
     "tail_watch": _run_tail,
@@ -280,6 +341,8 @@ _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "conformal_monitor": _run_conformal,
     "coverage_cs": _run_coverage_cs,
     "serial_watch": _run_serial,
+    "mean_eprocess": _run_mean_eprocess,
+    "policy_eprocess": _run_policy_eprocess,
 }
 
 # lane key → the module its runner lazy-imports (test ratchet scans the
@@ -379,6 +442,11 @@ def lane_power_bench(
         "schema": LANE_POWER_SCHEMA,
         "kind": "lane_power",
         "level": "research",
+        # Injected-defect grid, not a market tape. Without this label the
+        # dataset fingerprint is mistaken for a tape-manifest pin.
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         # Corpus-level fingerprint: digest over the exact update streams fed
         # to each lane process per (lane, defect, seed) cell — runs over

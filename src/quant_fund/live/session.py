@@ -46,7 +46,6 @@ from quant_fund.live.risk_memory import export_pretrade, restore_pretrade
 from quant_fund.pretrade.codes import KIND_CANCEL, KIND_ORDER
 from quant_fund.pretrade.config import PretradeConfig
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
-from quant_fund.pretrade.shadow import business_session_id
 
 _SYMBOL = re.compile(r"^[A-Z][A-Z0-9.]{0,9}$")
 _CLIENT = re.compile(r"^[A-Za-z0-9_-]{1,48}$")
@@ -747,6 +746,9 @@ class LiveSession:
         )
 
     def _session_id(self, ts: int) -> int:
+        # shadow imports the simulated broker. Keep that off the CLI import path.
+        from quant_fund.pretrade.shadow import business_session_id
+
         zone = ZoneInfo(self.pretrade.session.timezone)
         local = datetime.fromtimestamp(ts / 1_000_000_000, zone)
         return business_session_id(local.date())

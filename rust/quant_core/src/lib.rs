@@ -236,16 +236,19 @@ fn hash_bytes(data: &[u8]) -> String {
 }
 
 #[pyfunction]
-fn hash_many(chunks: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
-    let mut out = Vec::new();
+fn hash_many(py: Python<'_>, chunks: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
+    // Copy under the GIL, then hash outside it. Per-item pyo3 calls were
+    // most of the 64-byte workload, and Python 3.13's hashlib loop was
+    // close enough that the median speedup fell under the floor.
+    let mut owned: Vec<Vec<u8>> = Vec::new();
     for item in chunks.try_iter()? {
         let item = item?;
         let blob = item.cast::<PyBytes>().map_err(|_| {
             pyo3::exceptions::PyTypeError::new_err("hash_many expects a sequence of bytes")
         })?;
-        out.push(hashing::sha256_hex(blob.as_bytes()));
+        owned.push(blob.as_bytes().to_vec());
     }
-    Ok(out)
+    Ok(py.detach(|| owned.iter().map(|blob| hashing::sha256_hex(blob)).collect()))
 }
 
 #[pymodule]

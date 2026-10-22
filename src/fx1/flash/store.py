@@ -95,6 +95,16 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+def _nofollow_stat(path: Path, directory_fd: int) -> os.stat_result | None:
+    """Stat *path* without following a symlink. ``None`` when it does not exist."""
+    try:
+        if directory_fd == _NO_DIRECTORY_FD:
+            return path.lstat()
+        return os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return None
+
+
 class FlashStore:
     """Append-only JSONL store for flash entries.
 
@@ -149,17 +159,7 @@ class FlashStore:
         if directory_fd is None:
             return None
         try:
-            try:
-                if directory_fd == _NO_DIRECTORY_FD:
-                    target_stat = self._path.lstat()
-                else:
-                    target_stat = os.stat(
-                        self._path.name,
-                        dir_fd=directory_fd,
-                        follow_symlinks=False,
-                    )
-            except FileNotFoundError:
-                target_stat = None
+            target_stat = _nofollow_stat(self._path, directory_fd)
             if target_stat is not None and not stat.S_ISREG(target_stat.st_mode):
                 raise ValueError("flash store path must be a regular file")
 
