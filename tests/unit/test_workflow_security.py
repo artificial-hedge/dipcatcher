@@ -40,7 +40,12 @@ def test_fast_gates_report_merge_queue_checks() -> None:
             "types": ["checks_requested"],
             "branches": ["main"],
         }, name
-        assert config["concurrency"]["cancel-in-progress"] == "false", name
+        # Main/merge_group/schedule must not cancel; PRs may cancel superseded runs.
+        cancel = config["concurrency"]["cancel-in-progress"]
+        assert cancel in {
+            "false",
+            "${{ github.event_name == 'pull_request' }}",
+        }, (name, cancel)
 
     ci = yaml.load(_workflow("ci.yml"), Loader=yaml.BaseLoader)
     base_step = next(
