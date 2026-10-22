@@ -71,7 +71,9 @@ def main() -> None:
         config.validation.train_bars = TRAIN_BARS
         config.validation.val_bars = VAL_BARS
         config.validation.test_bars = TEST_BARS
-        notebook = run_research(config)
+        # Required families plus the roughness panel. The live-optional canon
+        # is a separate seeded catalog and is not part of this seal.
+        notebook = run_research(config, include_live_optional=False)
         if notebook.data_source != "SYNTHETIC" or notebook.synthetic is not True:
             raise SystemExit("synthetic research run was not labeled SYNTHETIC")
         if notebook.claim != "research_only":

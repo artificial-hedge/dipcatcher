@@ -135,6 +135,45 @@ class BackgroundJob:
 # ---------------------------------------------------------------------------
 
 
+def _parse_research_command(rest: str) -> tuple[str, dict[str, Any]]:
+    """Split ``/research`` text into ``(goal, options)``.
+
+    Raises ``ValueError`` with the command's usage text when the goal or a
+    numeric flag is missing or malformed.
+    """
+    tokens = shlex.split(rest)
+    if not tokens:
+        raise ValueError(
+            "usage: /research <goal> [--budget-s N] [--max-sources N] [--queries q1|q2|q3] [--sync]"
+        )
+    options: dict[str, Any] = {}
+    positional: list[str] = []
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        if token in {"--budget-s", "--max-sources"} and i + 1 < len(tokens):
+            try:
+                options[token[2:].replace("-", "_")] = int(tokens[i + 1])
+            except ValueError:
+                raise ValueError(f"{token} needs an integer") from None
+            i += 2
+            continue
+        if token == "--queries" and i + 1 < len(tokens):
+            options["queries"] = [q for q in tokens[i + 1].split("|") if q]
+            i += 2
+            continue
+        if token == "--sync":
+            options["sync"] = True
+            i += 1
+            continue
+        positional.append(token)
+        i += 1
+    goal = " ".join(positional)
+    if not goal.strip():
+        raise ValueError("usage: /research <goal> ...")
+    return goal, options
+
+
 class Concierge:
     """Conversational orchestrator; one instance per session."""
 
@@ -488,37 +527,7 @@ class Concierge:
     # -- /research -----------------------------------------------------------
 
     def _cmd_research(self, rest: str) -> bool:
-        tokens = shlex.split(rest)
-        if not tokens:
-            raise ValueError(
-                "usage: /research <goal> [--budget-s N] [--max-sources N] "
-                "[--queries q1|q2|q3] [--sync]"
-            )
-        options: dict[str, Any] = {}
-        positional: list[str] = []
-        i = 0
-        while i < len(tokens):
-            token = tokens[i]
-            if token in {"--budget-s", "--max-sources"} and i + 1 < len(tokens):
-                try:
-                    options[token[2:].replace("-", "_")] = int(tokens[i + 1])
-                except ValueError:
-                    raise ValueError(f"{token} needs an integer") from None
-                i += 2
-                continue
-            if token == "--queries" and i + 1 < len(tokens):
-                options["queries"] = [q for q in tokens[i + 1].split("|") if q]
-                i += 2
-                continue
-            if token == "--sync":
-                options["sync"] = True
-                i += 1
-                continue
-            positional.append(token)
-            i += 1
-        goal = " ".join(positional)
-        if not goal.strip():
-            raise ValueError("usage: /research <goal> ...")
+        goal, options = _parse_research_command(rest)
         if not self._job_slot_available():
             return False
         from fx1.webresearch.engine import ResearchBudget

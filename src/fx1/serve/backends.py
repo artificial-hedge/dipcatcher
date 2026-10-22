@@ -1256,6 +1256,17 @@ class HostedK3Backend(_UsageTracker):
         )
 
 
+def _plain_http_host_problem(host: str) -> str | None:
+    """Why plain HTTP is unsafe for this host — ``None`` for literal loopback."""
+    try:
+        address = _normalized_address(host)
+    except ValueError:
+        return "must use HTTPS unless the host is a literal loopback address"
+    if not address.is_loopback:
+        return "must use HTTPS unless the host is a literal loopback address"
+    return None
+
+
 def hosted_api_url_problem(url: str) -> str | None:
     """Why a credentialed hosted-model URL is unsafe — ``None`` when safe.
 
@@ -1283,12 +1294,7 @@ def hosted_api_url_problem(url: str) -> str | None:
     if not host:
         return "must name a host"
     if parsed.scheme == "http":
-        try:
-            address = _normalized_address(host)
-        except ValueError:
-            return "must use HTTPS unless the host is a literal loopback address"
-        if not address.is_loopback:
-            return "must use HTTPS unless the host is a literal loopback address"
+        return _plain_http_host_problem(host)
     return None
 
 

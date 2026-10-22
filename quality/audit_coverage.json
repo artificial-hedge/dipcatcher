@@ -5326,7 +5326,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1859,
+      "n_modules": 1861,
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
       "status": "partial"
     },
@@ -5349,11 +5349,11 @@
       "status": "audited"
     },
     "paper": {
-      "n_modules": 9,
+      "n_modules": 11,
       "status": "audited"
     },
     "schemas": {
-      "n_modules": 8,
+      "n_modules": 9,
       "status": "audited"
     },
     "leakage": {
@@ -5391,7 +5391,7 @@
       "status": "audited"
     },
     "pipeline": {
-      "n_modules": 23,
+      "n_modules": 24,
       "status": "audited"
     },
     "utils": {
@@ -5401,7 +5401,7 @@
     },
     "proof": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "reporting": {
@@ -5414,7 +5414,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 16,
+      "n_modules": 18,
       "status": "audited"
     },
     "hedge_lab": {
@@ -5442,7 +5442,7 @@
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 14,
+      "n_modules": 16,
       "status": "audited"
     },
     "northset": {
@@ -5487,7 +5487,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 10397,
+      "n_modules": 10400,
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
       "status": "partial"
     },
@@ -5510,7 +5510,7 @@
     },
     "validation": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 13,
+      "n_modules": 14,
       "status": "audited"
     },
     "market_sim": {
@@ -5529,8 +5529,33 @@
     },
     "data": {
       "doc": "docs/AUDIT_P63_DATA.md",
-      "n_modules": 42,
+      "n_modules": 45,
       "status": "audited"
+    },
+    "combination": {
+      "n_modules": 8,
+      "reason": "Forecast combination. Census only; not yet line-audited.",
+      "status": "pending"
+    },
+    "decay": {
+      "n_modules": 7,
+      "reason": "Signal-decay diagnostics. Census only; not yet line-audited.",
+      "status": "pending"
+    },
+    "flowbars": {
+      "n_modules": 9,
+      "reason": "Information and flow bars. Census only; not yet line-audited.",
+      "status": "pending"
+    },
+    "live": {
+      "n_modules": 11,
+      "reason": "Live desk and arming. Census only; not yet line-audited.",
+      "status": "pending"
+    },
+    "realized": {
+      "n_modules": 2,
+      "reason": "Realized-volatility estimators. Census only; not yet line-audited.",
+      "status": "pending"
     }
   },
   "statuses": {

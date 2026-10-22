@@ -11,6 +11,7 @@ without a target).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,16 @@ from typer.testing import CliRunner
 from quant_fund.research.allocation import ENGINE_NAMES
 from quant_fund.research.allocation_cli import _data_label, allocation_app
 from quant_fund.research.catalog.registry import FORBIDDEN_RESEARCH_METRIC_KEYS
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich error boxes so a wrapped, styled sentence still matches."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 runner = CliRunner()
 
@@ -110,7 +121,7 @@ def test_walk_forward_rejects_unknown_engine(tmp_path: Path) -> None:
         ["walk-forward", "--engine", "not_an_engine", *_SMALL, "--out", str(tmp_path / "x.json")],
     )
     assert result.exit_code != 0
-    assert "unknown engine" in result.output
+    assert "unknown engine" in _plain(result.output)
     assert ", ".join(ENGINE_NAMES) in result.output  # remediation lists the registry
 
 
@@ -120,7 +131,7 @@ def test_walk_forward_vol_target_needs_a_target(tmp_path: Path) -> None:
         ["walk-forward", "--engine", "vol_target", *_SMALL, "--out", str(tmp_path / "x.json")],
     )
     assert result.exit_code != 0
-    assert "--target-vol" in result.output
+    assert "--target-vol" in _plain(result.output)
 
 
 def test_walk_forward_bad_receipt_version(tmp_path: Path) -> None:
@@ -138,7 +149,7 @@ def test_walk_forward_bad_receipt_version(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code != 0
-    assert "--receipt-version must be 1 or 2" in result.output
+    assert "--receipt-version must be 1 or 2" in _plain(result.output)
 
 
 def test_compare_default_set_excludes_vol_target() -> None:
@@ -261,4 +272,4 @@ def test_synthetic_panel_rejects_degenerate_sizes(tmp_path: Path) -> None:
         ["walk-forward", "--engine", "risk_parity", "--n-assets", "1", "--n-periods", "100"],
     )
     assert result.exit_code != 0
-    assert "--n-assets must be >= 2" in result.output
+    assert "--n-assets must be >= 2" in _plain(result.output)

@@ -33,6 +33,9 @@ def test_committed_receipts_verify_or_are_known_legacy() -> None:
     unsealed: list[str] = []
     failures: list[str] = []
     for path in sorted(RECEIPTS.glob("*.json")):
+        # Sidecars are seal evidence. Receipt verification does not ingest them.
+        if path.name.endswith(".seal.json"):
+            continue
         result = verify_receipt_file(path)
         if result["valid"]:
             continue

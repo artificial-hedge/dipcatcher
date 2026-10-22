@@ -44,25 +44,25 @@ from typing import Any
 # attributes, so a module-level stub shadows it and silently returns None
 # to every caller. Defaults mirror `research.receipt_v2` exactly so omitted
 # arguments behave identically to the in-research call path.
-def seal_receipt(receipt: Any) -> Any:  # type: ignore[no-untyped-def]
+def seal_receipt(receipt: Any) -> Any:
     from quant_fund.research import receipt_v2
 
     return receipt_v2.seal_receipt(receipt)
 
 
-def verify_receipt_bytes(data: bytes, path: Any = Path("<memory>")) -> Any:  # type: ignore[no-untyped-def]
+def verify_receipt_bytes(data: bytes, path: Any = Path("<memory>")) -> Any:
     from quant_fund.research import receipt_v2
 
     return receipt_v2.verify_receipt_bytes(data, path)
 
 
-def verify_receipt_file(path: Any) -> Any:  # type: ignore[no-untyped-def]
+def verify_receipt_file(path: Any) -> Any:
     from quant_fund.research import receipt_v2
 
     return receipt_v2.verify_receipt_file(path)
 
 
-def verify_receipt_payload(payload: Any, path: Any = Path("<memory>")) -> Any:  # type: ignore[no-untyped-def]
+def verify_receipt_payload(payload: Any, path: Any = Path("<memory>")) -> Any:
     from quant_fund.research import receipt_v2
 
     return receipt_v2.verify_receipt_payload(payload, path)

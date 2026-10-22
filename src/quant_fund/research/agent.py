@@ -4179,20 +4179,7 @@ def _build_hypotheses(
 
 
 def _retired_optional_families() -> frozenset[str]:
-    """Optional benchmark families that must not be emitted at runtime.
-
-    ``LIVE_OPTIONAL_BENCHMARK_FAMILIES`` (= ``OPTIONAL_BENCHMARK_FAMILIES -
-    RETIRED_BENCHMARK_FAMILIES``, owned by catalog maintenance) wins when
-    present. ``OPTIONAL_BENCHMARK_FAMILIES`` stays append-only so frozen
-    receipts keep verifying against old catalog state. Until the symbols
-    land, nothing is retired and behavior is unchanged.
-
-    The DEFAULT research surface is ``DEFAULT_BENCHMARK_FAMILIES`` (the 23
-    REQUIRED families); this function only decides which *optional* names are
-    suppressed from emission. It deliberately enumerates the full optional set
-    — retirement cannot be computed otherwise, and narrowing it here would let
-    a retired family back into a live receipt.
-    """
+    """Optional families suppressed at runtime. Live-optional catalog wins when present."""
     from quant_fund.research.catalog import registry
 
     optional = frozenset(registry.OPTIONAL_BENCHMARK_FAMILIES)
@@ -4210,79 +4197,9 @@ def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
     return {name: payload for name, payload in families.items() if name not in retired}
 
 
-def run_research(config: AppConfig) -> ResearchNotebook:
-    set_global_seed(config.train.random_seed)
-    build_gold(config, refresh=config.data.source == "synthetic")
-    df = panel(config)
-    if "security_id" in df.columns:
-        df = df.filter(pl.col("security_id") != config.data.benchmark_id)
-    label = config.train.ranking_target
-    if label not in df.columns:
-        cands = [c for c in df.columns if c.startswith("future_idio_return")]
-        if not cands:
-            cands = [c for c in df.columns if c.startswith("future_excess_return")]
-        label = cands[0] if cands else "future_return_1"
-
-    rankers = bench_ranking(df, config, label)
-    # Multi-fold stability from date-level IC series (promotion evidence)
-    from quant_fund.validation.walk_forward import fold_ic_stability
-
-    fold_stability_summary = {}
-    for r in rankers:
-        if str(r.get("name", "")).startswith("_"):
-            continue
-        series = r.get("ic_series") or []
-        if series:
-            stab = fold_ic_stability(series, min_ic=float(config.promotion.min_mean_ic))
-            r["fold_ic_stability"] = stab["stability"]
-            r["n_folds"] = stab["n_folds"]
-            fold_stability_summary[str(r["name"])] = stab
-    northset_frame = ensure_silver(config)
-    if "security_id" in northset_frame.columns:
-        northset_frame = northset_frame.filter(pl.col("security_id") != config.data.benchmark_id)
-    provenance = _provenance(
-        config,
-        df,
-        label,
-        northset_frame=northset_frame,
-    )
-    ranking_blob: dict[str, Any] = {
-        "target": label,
-        "models": rankers,
-        "fold_stability": fold_stability_summary,
-    }
-    # Data-snooping over the ranker universe: is the best date-level IC real
-    # after accounting for every ranker/feature-set tried? Research diagnostic.
-    snooping = _ranker_data_snooping(rankers)
-    if snooping is not None:
-        ranking_blob["data_snooping"] = snooping
-    families = {
-        "ranking": ranking_blob,
-        "alpha": bench_alpha(df, config, label),
-        "volatility": bench_volatility(df, config),
-        "distribution": bench_distribution(df, config),
-        "regime": bench_regime(df, config),
-        "tail": bench_tail(df, config),
-        "drawdown": bench_drawdown(df, config),
-        "liquidity": bench_liquidity(df),
-        "reinforcement": bench_rl(df, label),
-        "conformal": bench_conformal(df, config),
-        "evalues": bench_evalues(df, config),
-        "jackknife_plus": bench_jackknife_plus(df, config),
-        "crc": bench_crc(df, config),
-        "weighted_conformal": bench_weighted_conformal(df, config),
-        "interval_risk": bench_interval_risk(df, config),
-        "quantile_bandit": bench_quantile_bandit(df, label),
-        "cv_plus": bench_cv_plus(df, config),
-        "cpcv": bench_cpcv_audit(),
-        "localized_conformal": bench_localized_from_panel(df, config),
-        "conformal_rank": bench_conformal_topk_from_panel(df, config),
-        "online_crc": bench_online_crc_from_panel(df, config),
-        "portfolio_conformal": bench_portfolio_from_panel(df, config),
-        "northset": bench_northset(northset_frame, config),
-        "complexity": bench_complexity(df),
-        "roughness": bench_roughness(df),
-        "serial_randomness": bench_serial_randomness(df),
+def _live_optional_family_blobs() -> dict[str, Any]:
+    """Seeded live-optional benches. Default ``run_research`` still runs them."""
+    return {
         "anytime_valid": bench_anytime_valid(),
         "energy_score": bench_energy_score(),
         "ts_conformal": bench_ts_conformal(),
@@ -5693,6 +5610,88 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "swim_gossip": bench_swim_gossip_family(),
         "two_three_pc": bench_two_three_pc_family(),
     }
+
+
+def _merge_live_optional(families: dict[str, Any], *, include: bool) -> None:
+    if include:
+        families.update(_live_optional_family_blobs())
+
+
+def run_research(config: AppConfig, *, include_live_optional: bool = True) -> ResearchNotebook:
+    set_global_seed(config.train.random_seed)
+    build_gold(config, refresh=config.data.source == "synthetic")
+    df = panel(config)
+    if "security_id" in df.columns:
+        df = df.filter(pl.col("security_id") != config.data.benchmark_id)
+    label = config.train.ranking_target
+    if label not in df.columns:
+        cands = [c for c in df.columns if c.startswith("future_idio_return")]
+        if not cands:
+            cands = [c for c in df.columns if c.startswith("future_excess_return")]
+        label = cands[0] if cands else "future_return_1"
+
+    rankers = bench_ranking(df, config, label)
+    # Multi-fold stability from date-level IC series (promotion evidence)
+    from quant_fund.validation.walk_forward import fold_ic_stability
+
+    fold_stability_summary = {}
+    for r in rankers:
+        if str(r.get("name", "")).startswith("_"):
+            continue
+        series = r.get("ic_series") or []
+        if series:
+            stab = fold_ic_stability(series, min_ic=float(config.promotion.min_mean_ic))
+            r["fold_ic_stability"] = stab["stability"]
+            r["n_folds"] = stab["n_folds"]
+            fold_stability_summary[str(r["name"])] = stab
+    northset_frame = ensure_silver(config)
+    if "security_id" in northset_frame.columns:
+        northset_frame = northset_frame.filter(pl.col("security_id") != config.data.benchmark_id)
+    provenance = _provenance(
+        config,
+        df,
+        label,
+        northset_frame=northset_frame,
+    )
+    ranking_blob: dict[str, Any] = {
+        "target": label,
+        "models": rankers,
+        "fold_stability": fold_stability_summary,
+    }
+    # Data-snooping over the ranker universe: is the best date-level IC real
+    # after accounting for every ranker/feature-set tried? Research diagnostic.
+    snooping = _ranker_data_snooping(rankers)
+    if snooping is not None:
+        ranking_blob["data_snooping"] = snooping
+    families = {
+        "ranking": ranking_blob,
+        "alpha": bench_alpha(df, config, label),
+        "volatility": bench_volatility(df, config),
+        "distribution": bench_distribution(df, config),
+        "regime": bench_regime(df, config),
+        "tail": bench_tail(df, config),
+        "drawdown": bench_drawdown(df, config),
+        "liquidity": bench_liquidity(df),
+        "reinforcement": bench_rl(df, label),
+        "conformal": bench_conformal(df, config),
+        "evalues": bench_evalues(df, config),
+        "jackknife_plus": bench_jackknife_plus(df, config),
+        "crc": bench_crc(df, config),
+        "weighted_conformal": bench_weighted_conformal(df, config),
+        "interval_risk": bench_interval_risk(df, config),
+        "quantile_bandit": bench_quantile_bandit(df, label),
+        "cv_plus": bench_cv_plus(df, config),
+        "cpcv": bench_cpcv_audit(),
+        "localized_conformal": bench_localized_from_panel(df, config),
+        "conformal_rank": bench_conformal_topk_from_panel(df, config),
+        "online_crc": bench_online_crc_from_panel(df, config),
+        "portfolio_conformal": bench_portfolio_from_panel(df, config),
+        "northset": bench_northset(northset_frame, config),
+        "complexity": bench_complexity(df),
+        "roughness": bench_roughness(df),
+        "serial_randomness": bench_serial_randomness(df),
+    }
+    _merge_live_optional(families, include=include_live_optional)
 
     hyps = _build_hypotheses(families, rankers)
     scorecard = _benchmark_scorecard(families)

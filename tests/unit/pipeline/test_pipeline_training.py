@@ -29,13 +29,12 @@ from quant_fund.pipeline.train import (
     train_volatility,
     train_volatility_auto,
 )
-from tests.support.panel_sources import materialize_panel_sources
+from tests.support.panel_sources import materialize_panel_sources, save_bound_stub
 
 
 def test_train_distribution_auto_selects_lowest_finite_pinball(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.pipeline import train as train_module
 
     scores = {
@@ -48,7 +47,7 @@ def test_train_distribution_auto_selects_lowest_finite_pinball(
 
     def fake_train(config, model_name):
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
-        save_joblib_artifact({"features": ["f0"], "model": model_name}, path)
+        save_bound_stub(config, {"features": ["f0"], "model": model_name}, path)
         return {
             "path": str(path),
             "metrics": {"mean_pinball": scores[model_name], "n_oos_rows": 20},
@@ -65,14 +64,13 @@ def test_train_distribution_auto_selects_lowest_finite_pinball(
 def test_train_volatility_auto_selects_lowest_finite_qlike(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.pipeline import train as train_module
 
     scores = {"rolling": 0.4, "ewma": 0.1, "har": 0.2, "xgboost": float("nan"), "lightgbm": 0.3}
 
     def fake_train(config, model_name):
         path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
-        save_joblib_artifact({"features": ["f0"], "model": model_name}, path)
+        save_bound_stub(config, {"features": ["f0"], "model": model_name}, path)
         return {"path": str(path), "metrics": {"qlike": scores[model_name], "n_oos_rows": 20}}
 
     monkeypatch.setattr(train_module, "train_volatility", fake_train)
@@ -104,7 +102,6 @@ def test_train_distribution_auto_rejects_trivially_small_oos_sample(
 def test_train_reinforcement_auto_selects_best_finite_policy(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.models.rl import LinUCBRanker
     from quant_fund.pipeline import train as train_module
 
@@ -117,7 +114,8 @@ def test_train_reinforcement_auto_selects_best_finite_policy(
 
     def fake_train(config, model_name):
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        save_joblib_artifact(
+        save_bound_stub(
+            config,
             {"policy": LinUCBRanker(1), "policy_name": model_name, "features": ["f0"]},
             path,
         )
@@ -148,7 +146,7 @@ def test_train_ranking_auto_selects_best_finite_candidate(
         path = Path(config.data.root) / "metadata" / f"ranker_{model_name}.joblib"
         model = RidgeRanker().fit(np.ones((4, 2)), np.arange(4, dtype=float))
         model.features = ["f0", "f1"]
-        model.save(path)
+        save_bound_stub(config, model, path)
         return {"path": str(path), "metrics": {"mean_ic": scores[model_name]}}
 
     monkeypatch.setattr(train_module, "train_ranking", fake_train)

@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
 
 from fx1.serve.batch_audit import batch_audit, batch_audit_bench
 from quant_fund.research.receipt_v2 import verify_receipt_payload
-
-os.environ.setdefault("NUMBA_DISABLE_JIT", "1")
 
 _FORMER_DEFECTS = frozenset(
     {

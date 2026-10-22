@@ -305,6 +305,56 @@ def verify_manifest(
     return errors
 
 
+def _rederived_dataset_sha256(body: Mapping[str, Any]) -> str | None:
+    """Composite ``dataset_sha256`` the basis lanes re-derive from input digests.
+
+    ``basis_carry`` / ``crossvenue_basis`` hash the embedded series digests.
+    That field is an internal consistency check (the lane contract recomputes
+    it and flags ``dataset_sha256_mismatch``). It is not a tape-file,
+    frame-CSV, or manifest seal, so the tape registry cannot attest it unless
+    someone later pins the underlying venue tapes. Treating the composite as
+    a tape binding fails closed on receipts whose own contract already binds
+    the digest — a false ``tape_manifest_unknown``.
+    """
+    schema = body.get("schema") or body.get("kind")
+    inputs = body.get("inputs")
+    if not isinstance(inputs, Mapping):
+        return None
+    try:
+        if schema in {"basis_carry.v1", "basis_carry"}:
+            spot = inputs.get("spot")
+            contracts = inputs.get("contracts")
+            if not isinstance(spot, Mapping) or not isinstance(contracts, Mapping):
+                return None
+            material: Mapping[str, Any] = {
+                "spot": spot.get("sha256"),
+                "contracts": {
+                    str(sym): meta.get("sha256")
+                    for sym, meta in contracts.items()
+                    if isinstance(meta, Mapping)
+                },
+            }
+        elif schema in {"crossvenue_basis.v1", "crossvenue_basis"}:
+            legs = inputs.get("legs")
+            if not isinstance(legs, Mapping):
+                return None
+            material = {
+                venue: {
+                    field: (meta.get(field) or {}).get("sha256")
+                    if meta.get(field) is not None
+                    else None
+                    for field in ("spot", "mark", "funding")
+                }
+                for venue, meta in legs.items()
+                if isinstance(meta, Mapping)
+            }
+        else:
+            return None
+        return hash_bytes(canonical_json_bytes(dict(material)))
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
 def tape_binding_errors(body: Mapping[str, Any], *, root: Path | str | None = None) -> list[str]:
     """A non-synthetic receipt binding a tape digest must resolve to a manifest.
 
@@ -312,6 +362,10 @@ def tape_binding_errors(body: Mapping[str, Any], *, root: Path | str | None = No
     ``dataset_sha256`` stay admissible, and SYNTHETIC/CORPUS lanes are
     exempt. Any declared binding that no committed ``tape_manifest.v1``
     attests fails closed as ``tape_manifest_unknown``.
+
+    A ``dataset_sha256`` that recomputes as the lane's composite of embedded
+    series digests is not a tape pin (see ``_rederived_dataset_sha256``).
+    ``tape_manifest_sha256`` is always a tape pin.
     """
     label = body.get("data_label")
     if isinstance(label, str) and label.upper() in SYNTHETIC_LABELS:
@@ -320,7 +374,15 @@ def tape_binding_errors(body: Mapping[str, Any], *, root: Path | str | None = No
     # the corpus epoch chains (verify-repo), not by a tape manifest.
     if str(body.get("kind")) in {"corpus_inference.v1", "suite_health"}:
         return []
-    bound = [body[key] for key in TAPE_BINDING_KEYS if isinstance(body.get(key), str)]
+    composite = _rederived_dataset_sha256(body)
+    bound: list[str] = []
+    for key in TAPE_BINDING_KEYS:
+        value = body.get(key)
+        if not isinstance(value, str):
+            continue
+        if key == "dataset_sha256" and composite is not None and value == composite:
+            continue
+        bound.append(value)
     if not bound:
         return []
     registry = load_registry(_repo_root() if root is None else root)

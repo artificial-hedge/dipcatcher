@@ -24,6 +24,7 @@ risk gate apply, and every result is ``research_only``.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -123,6 +124,124 @@ def _pair_bars(
     return out
 
 
+@dataclass
+class _CarryBarMarks:
+    """Opens, closes, ages, and liquidity stats for one paired bar."""
+
+    exec_spot: dict[str, float]
+    exec_perp: dict[str, float]
+    close_spot: dict[str, float]
+    close_perp: dict[str, float]
+    ages: dict[str, int]
+    advs_p: dict[str, float]
+    vols_p: dict[str, float]
+    advs_s: dict[str, float]
+    vols_s: dict[str, float]
+
+
+def _carry_bar_marks(
+    slot: dict[str, dict[str, float]],
+    last_spot: dict[str, float],
+    last_perp: dict[str, float],
+    mark_ages: dict[str, int],
+) -> _CarryBarMarks:
+    """Build execution and close marks from one joined perp/spot slot."""
+    exec_spot: dict[str, float] = {}
+    exec_perp: dict[str, float] = {}
+    close_spot = dict(last_spot)
+    close_perp = dict(last_perp)
+    next_ages = dict(mark_ages)
+    advs_p: dict[str, float] = {}
+    vols_p: dict[str, float] = {}
+    advs_s: dict[str, float] = {}
+    vols_s: dict[str, float] = {}
+    marked: set[str] = set()
+    for sid, row in slot.items():
+        po, pc = _valid_price(row["po"]), _valid_price(row["pc"])
+        so, sc = _valid_price(row["so"]), _valid_price(row["sc"])
+        if po is not None:
+            exec_perp[sid] = po
+        if so is not None:
+            exec_spot[sid] = so
+        if pc is not None and sc is not None:
+            close_perp[sid] = pc
+            close_spot[sid] = sc
+            next_ages[sid] = 0
+            marked.add(sid)
+        advs_p[sid] = _valid_price(row.get("adv")) or 1.0
+        vols_p[sid] = _valid_price(row.get("vol_20")) or 0.02
+        advs_s[sid] = _valid_price(row.get("sadv")) or 1.0
+        vols_s[sid] = _valid_price(row.get("svol")) or 0.02
+    for sid in set(close_perp) & set(close_spot):
+        if sid not in marked:
+            next_ages[sid] = next_ages.get(sid, 0) + 1
+    return _CarryBarMarks(
+        exec_spot=exec_spot,
+        exec_perp=exec_perp,
+        close_spot=close_spot,
+        close_perp=close_perp,
+        ages=next_ages,
+        advs_p=advs_p,
+        vols_p=vols_p,
+        advs_s=advs_s,
+        vols_s=vols_s,
+    )
+
+
+def _apply_carry_funding(
+    book: CarryBook,
+    events: list[tuple[str, float]],
+    last_perp: dict[str, float],
+    attr_for: Callable[[str], dict[str, float]],
+) -> tuple[float, float, int]:
+    """Apply one bar's funding cashflows. Returns received, paid, and count."""
+    received = 0.0
+    paid = 0.0
+    applied = 0
+    for sid, rate in events:
+        u = book.units.get(sid, 0.0)
+        if abs(u) < 1e-12:
+            continue
+        mark = last_perp.get(sid)
+        if mark is None:
+            continue
+        flow = u * mark * rate  # short perp: positive rate → receive
+        book.cash += flow
+        attr_for(sid)["funding"] += flow
+        if flow >= 0:
+            received += flow
+        else:
+            paid += -flow
+        applied += 1
+    return received, paid, applied
+
+
+def _carry_liquidation_marks(
+    slot: dict[str, dict[str, float]],
+    last_spot: dict[str, float],
+    last_perp: dict[str, float],
+    units: dict[str, float],
+    *,
+    on_wick: bool,
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Adverse perp mark for a short, with the hedge still at the close.
+
+    The venue can tag the SHORT at the bar's adverse excursion (perp high).
+    The hedge leg is ours to unwind, so it marks at the bar's close — using
+    the same bar's spot LOW while the perp sits at its HIGH assumes two
+    opposite extremes filled simultaneously on two venues, fabricating a
+    cross-venue basis that never traded.
+    """
+    liq_perp = dict(last_perp)
+    liq_spot = dict(last_spot)
+    if on_wick:
+        for sid, row in slot.items():
+            if abs(units.get(sid, 0.0)) < 1e-12:
+                continue
+            liq_perp[sid] = _valid_price(row["ph"]) or last_perp.get(sid, 0.0)
+    return liq_perp, liq_spot
+
+
 def run_carry_backtest(
     perp_bars: pl.DataFrame,
     spot_bars: pl.DataFrame,
@@ -213,40 +332,18 @@ def run_carry_backtest(
 
     for i, dt in enumerate(times):
         slot = by_time[dt]
-        exec_spot: dict[str, float] = {}
-        exec_perp: dict[str, float] = {}
-        close_spot = dict(last_spot)
-        close_perp = dict(last_perp)
-        next_ages = dict(mark_ages)
-        advs_p: dict[str, float] = {}
-        vols_p: dict[str, float] = {}
-        advs_s: dict[str, float] = {}
-        vols_s: dict[str, float] = {}
-        marked: set[str] = set()
-        for sid, row in slot.items():
-            po, pc = _valid_price(row["po"]), _valid_price(row["pc"])
-            so, sc = _valid_price(row["so"]), _valid_price(row["sc"])
-            if po is not None:
-                exec_perp[sid] = po
-            if so is not None:
-                exec_spot[sid] = so
-            if pc is not None and sc is not None:
-                close_perp[sid] = pc
-                close_spot[sid] = sc
-                next_ages[sid] = 0
-                marked.add(sid)
-            advs_p[sid] = _valid_price(row.get("adv")) or 1.0
-            vols_p[sid] = _valid_price(row.get("vol_20")) or 0.02
-            advs_s[sid] = _valid_price(row.get("sadv")) or 1.0
-            vols_s[sid] = _valid_price(row.get("svol")) or 0.02
-        for sid in set(close_perp) & set(close_spot):
-            if sid not in marked:
-                next_ages[sid] = next_ages.get(sid, 0) + 1
+        marks = _carry_bar_marks(slot, last_spot, last_perp, mark_ages)
+        exec_spot = marks.exec_spot
+        exec_perp = marks.exec_perp
+        advs_p = marks.advs_p
+        vols_p = marks.vols_p
+        advs_s = marks.advs_s
+        vols_s = marks.vols_s
         # Marks knowable at execution time: before this bar's close prints.
         # Non-executing names valued at this bar's close would leak future
         # prices into pair sizing and the leverage cap.
         prev_spot, prev_perp = last_spot, last_perp
-        last_spot, last_perp, mark_ages = close_spot, close_perp, next_ages
+        last_spot, last_perp, mark_ages = marks.close_spot, marks.close_perp, marks.ages
         stale_held = {
             sid: mark_ages.get(sid)
             for sid, u in book.units.items()
@@ -412,37 +509,21 @@ def run_carry_backtest(
             )
 
         # --- funding on the perp leg ---
-        for sid, rate in fund_map.get(dt, []):
-            u = book.units.get(sid, 0.0)
-            if abs(u) < 1e-12:
-                continue
-            # Funding accrues at the bar's close mark, matching the perp
-            # engine's convention (exec opens in mark_p are not close marks).
-            mark = last_perp.get(sid)
-            if mark is None:
-                continue
-            flow = u * mark * rate  # short perp: positive rate → receive
-            book.cash += flow
-            _attr(sid)["funding"] += flow
-            if flow >= 0:
-                funding_received += flow
-            else:
-                funding_paid += -flow
-            funding_events_applied += 1
+        # Funding accrues at the bar's close mark, matching the perp
+        # engine's convention (exec opens in mark_p are not close marks).
+        received, paid, applied = _apply_carry_funding(book, fund_map.get(dt, []), last_perp, _attr)
+        funding_received += received
+        funding_paid += paid
+        funding_events_applied += applied
 
         # --- wick-paranoid liquidation on the perp leg ---
-        # The venue can tag the SHORT at the bar's adverse excursion (perp
-        # high). The hedge leg is ours to unwind, so it marks at the bar's
-        # close — using the same bar's spot LOW while the perp sits at its
-        # HIGH assumes two opposite extremes filled simultaneously on two
-        # venues, fabricating a cross-venue basis that never traded.
-        liq_perp = dict(last_perp)
-        liq_spot = dict(last_spot)
-        if perp_cfg.liquidation_on_wick:
-            for sid, row in slot.items():
-                if abs(book.units.get(sid, 0.0)) < 1e-12:
-                    continue
-                liq_perp[sid] = _valid_price(row["ph"]) or last_perp.get(sid, 0.0)
+        liq_perp, liq_spot = _carry_liquidation_marks(
+            slot,
+            last_spot,
+            last_perp,
+            book.units,
+            on_wick=perp_cfg.liquidation_on_wick,
+        )
 
         def _mmr_deficit(lp: dict[str, float] = liq_perp, ls: dict[str, float] = liq_spot) -> float:
             return perp_cfg.maint_margin_ratio * book.perp_gross(lp) - book.equity(ls, lp)

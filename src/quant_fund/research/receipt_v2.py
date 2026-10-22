@@ -857,10 +857,84 @@ def _carries_v2_evidence(payload: Mapping[str, Any]) -> bool:
     )
 
 
+def _forward_prereg_honesty_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Honesty-flag failures on a forward-record pre-registration."""
+    errors: list[str] = []
+    honesty = payload.get("honesty")
+    if not isinstance(honesty, Mapping) or honesty.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if not isinstance(honesty, Mapping) or honesty.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if isinstance(honesty, Mapping) and honesty.get("live_trading_claim") is not False:
+        errors.append("live_trading_claim_not_false")
+    return errors
+
+
+def _extend_custody_release_errors(errors: list[str], payload: Mapping[str, Any]) -> None:
+    if payload.get("schema") == "custody_proof.v1":
+        from quant_fund.research.custody import custody_contract_errors
+
+        errors.extend(custody_contract_errors(payload))
+    if payload.get("schema") == "release_attestation.v1":
+        from quant_fund.research.release_attestation import release_contract_errors
+
+        errors.extend(release_contract_errors(payload))
+
+
+def _prereg_documented_errors(path: Path, payload: Mapping[str, Any]) -> list[str] | None:
+    """Errors for documents sealed by ``prereg_seal.v1`` rather than ``receipt_sha256``.
+
+    Returns ``None`` when the body is an ordinary research receipt (caller
+    falls through to the ``receipt_sha256`` check). Forward-record
+    pre-registrations embed ``_seal.content_sha256``; the cost-aware lane
+    receipt binds the file bytes with a sibling ``.seal.json``. Both verify
+    through ``quant_fund.data.prereg_seal``. A sidecar file itself is not a
+    receipt and returns ``None`` so scanners that skip ``*.seal.json`` stay
+    the only callers that should see one.
+    """
+    schema = payload.get("schema")
+    embedded = payload.get("_seal")
+    is_forward = schema == "forward_record_preregistration.v1" or (
+        isinstance(embedded, Mapping)
+        and embedded.get("schema") == "prereg_seal.v1"
+        and schema != "prereg_seal.v1"
+    )
+    is_sidecar_lane = schema == "lane_receipt.v1" and not _is_sha256(payload.get("receipt_sha256"))
+    if not is_forward and not is_sidecar_lane:
+        return None
+
+    from quant_fund.data.prereg_seal import verify_payload, verify_seal
+
+    errors: list[str] = []
+    if is_forward:
+        if not isinstance(payload, dict):
+            return ["seal_missing"]
+        checked = verify_payload(dict(payload))
+        errors.extend(str(item) for item in checked.get("errors", []))
+        errors.extend(_forward_prereg_honesty_errors(payload))
+    else:
+        if payload.get("research_only") is not True:
+            errors.append("research_only_not_true")
+        if payload.get("live_pnl_claim") is not False:
+            errors.append("live_pnl_claim_not_false")
+
+    if path.is_file():
+        side = verify_seal(path)
+        errors.extend(str(item) for item in side.get("errors", []))
+    elif is_sidecar_lane:
+        errors.append("seal_sidecar_missing")
+    return errors
+
+
 def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     errors: list[str] = []
-    convention, seal_errors = _seal_errors(payload)
-    errors.extend(seal_errors)
+    alternate = _prereg_documented_errors(path, payload)
+    if alternate is None:
+        convention, seal_errors = _seal_errors(payload)
+        errors.extend(seal_errors)
+    else:
+        convention = "prereg_seal"
+        errors.extend(alternate)
     if _carries_v2_evidence(payload):
         errors.append("possible_v2_downgrade")
     claim = payload.get("live_pnl_claim")
@@ -946,14 +1020,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
         errors.extend(cost_calibration_contract_errors(payload))
     errors.extend(_tape_binding_errors(payload))
-    if payload.get("schema") == "custody_proof.v1":
-        from quant_fund.research.custody import custody_contract_errors
-
-        errors.extend(custody_contract_errors(payload))
-    if payload.get("schema") == "release_attestation.v1":
-        from quant_fund.research.release_attestation import release_contract_errors
-
-        errors.extend(release_contract_errors(payload))
+    _extend_custody_release_errors(errors, payload)
     return _result(path, payload, convention, errors)
 
 

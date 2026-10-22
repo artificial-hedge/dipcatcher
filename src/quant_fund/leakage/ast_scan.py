@@ -24,6 +24,7 @@ import hashlib
 import io
 import re
 import tokenize
+from collections.abc import Callable
 from pathlib import Path
 
 from quant_fund.leakage.rules import (
@@ -211,6 +212,35 @@ def _fold_num(
     return None
 
 
+def _call_receiver_price_like(receiver: ast.Call) -> bool:
+    """Price-like check for a call used as a ``.shift`` receiver."""
+    # pl.col("close").shift(-1) — inspect the column-name literal.
+    func = receiver.func
+    func_name = ""
+    if isinstance(func, ast.Attribute):
+        func_name = func.attr
+    elif isinstance(func, ast.Name):
+        func_name = func.id
+    if func_name == "col" and receiver.args:
+        first = receiver.args[0]
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            return bool(_PRICE_NAME_RE.search(first.value))
+        if isinstance(first, ast.Name):
+            name = first.id
+            return name.lower() in _PRICE_EXACT_NAMES or bool(_PRICE_NAME_RE.search(name))
+    # ADVERSARIAL §1a-E4: a negative shift on a rolling statistic
+    # (`rolling_mean(21).shift(k)`, k negative) centers the window on the
+    # future regardless of the inner receiver's name.
+    if func_name.startswith("rolling"):
+        return True
+    # Chained transforms still read the underlying series:
+    # `close.fill_null(0).shift(-1)` (method receiver) and
+    # `np.log(close).shift(-1)` (function argument) were silent misses.
+    if _chained_method_receiver_price_like(func):
+        return True
+    return any(_receiver_price_like(arg) for arg in receiver.args)
+
+
 def _receiver_price_like(receiver: ast.AST) -> bool:
     """True if the `.shift` receiver looks price-like (close/mid/px/...)."""
     if isinstance(receiver, ast.Name):
@@ -226,31 +256,7 @@ def _receiver_price_like(receiver: ast.AST) -> bool:
             and bool(_PRICE_NAME_RE.search(key.value))
         )
     if isinstance(receiver, ast.Call):
-        # pl.col("close").shift(-1) — inspect the column-name literal.
-        func = receiver.func
-        func_name = ""
-        if isinstance(func, ast.Attribute):
-            func_name = func.attr
-        elif isinstance(func, ast.Name):
-            func_name = func.id
-        if func_name == "col" and receiver.args:
-            first = receiver.args[0]
-            if isinstance(first, ast.Constant) and isinstance(first.value, str):
-                return bool(_PRICE_NAME_RE.search(first.value))
-            if isinstance(first, ast.Name):
-                name = first.id
-                return name.lower() in _PRICE_EXACT_NAMES or bool(_PRICE_NAME_RE.search(name))
-        # ADVERSARIAL §1a-E4: a negative shift on a rolling statistic
-        # (`rolling_mean(21).shift(k)`, k negative) centers the window on the
-        # future regardless of the inner receiver's name.
-        if func_name.startswith("rolling"):
-            return True
-        # Chained transforms still read the underlying series:
-        # `close.fill_null(0).shift(-1)` (method receiver) and
-        # `np.log(close).shift(-1)` (function argument) were silent misses.
-        if _chained_method_receiver_price_like(func):
-            return True
-        return any(_receiver_price_like(arg) for arg in receiver.args)
+        return _call_receiver_price_like(receiver)
     return False
 
 
@@ -1057,6 +1063,77 @@ def _lh011_package(path_str: str) -> str | None:
     return None
 
 
+def _lh011_imported_modules(node: ast.Import | ast.ImportFrom, path_str: str) -> list[str]:
+    """Module names an import statement binds, including relative forms."""
+    if isinstance(node, ast.ImportFrom):
+        if node.level:
+            parts = Path(path_str).parts
+            quant_index = parts.index("quant_fund")
+            package_parts = list(parts[quant_index:-1])
+            if node.level > len(package_parts):
+                return ["quant_fund.__invalid_relative_import__"]
+            base = package_parts[: len(package_parts) - node.level + 1]
+            return [".".join([*base, *([node.module] if node.module else [])])]
+        if node.module == "quant_fund":
+            # `from quant_fund import backtest` — the bare root prefix
+            # let a top-level sibling-package edge slip past
+            # startswith("quant_fund.").
+            return [f"quant_fund.{alias.name}" for alias in node.names]
+        if node.module:
+            return [node.module]
+        return []
+    return [alias.name for alias in node.names]
+
+
+def _lh011_lazy(node: ast.AST, parents: dict[int, ast.AST]) -> bool:
+    """True when *node* sits inside a function (lazy-import allowance)."""
+    _, funcs = _enclosing_scopes(node, parents)
+    return bool(funcs)
+
+
+def _lh011_dynamic_findings(
+    tree: ast.AST,
+    package: str,
+    whitelist: frozenset[str],
+    lazy_whitelist: frozenset[str],
+    parents: dict[int, ast.AST],
+) -> list[_Finding]:
+    """Same whitelist check for ``import_module`` / ``__import__`` calls.
+
+    Dynamic imports (``importlib.import_module("quant_fund.backtest")``,
+    ``__import__(...)``) are the same edge smuggled through a call — a
+    provably-constant target gets the same whitelist check, at the same
+    function-level lazy allowance.
+    """
+    out: list[_Finding] = []
+    module_assigns = _scope_assignments(tree)
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and _call_name(node) in ("import_module", "__import__")):
+            continue
+        if not node.args:
+            continue
+        target = _fold_str(node.args[0], module_assigns, node.lineno)
+        if target is None or not target.startswith("quant_fund."):
+            continue
+        sub = target.split(".")[1]
+        if sub == package:
+            continue
+        nested = _lh011_lazy(node, parents)
+        allowed = whitelist | (lazy_whitelist if nested else frozenset())
+        if sub not in allowed:
+            out.append(
+                _Finding(
+                    "LH011",
+                    node.lineno,
+                    node.col_offset,
+                    f"quant_fund.{package} dynamically imports non-whitelisted "
+                    f"quant_fund.{sub} ({'lazy ' if nested else ''}import; "
+                    f"whitelist: {sorted(allowed) or 'none'})",
+                )
+            )
+    return out
+
+
 def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
     package = _lh011_package(path_str)
     if package is None:
@@ -1068,34 +1145,8 @@ def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
     for node in ast.walk(tree):
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
-        modules: list[str] = []
-        if isinstance(node, ast.ImportFrom):
-            if node.level:
-                parts = Path(path_str).parts
-                quant_index = parts.index("quant_fund")
-                package_parts = list(parts[quant_index:-1])
-                if node.level > len(package_parts):
-                    modules = ["quant_fund.__invalid_relative_import__"]
-                else:
-                    base = package_parts[: len(package_parts) - node.level + 1]
-                    modules = [".".join([*base, *([node.module] if node.module else [])])]
-            elif node.module == "quant_fund":
-                # `from quant_fund import backtest` — the bare root prefix
-                # let a top-level sibling-package edge slip past
-                # startswith("quant_fund.").
-                modules = [f"quant_fund.{alias.name}" for alias in node.names]
-            elif node.module:
-                modules = [node.module]
-        elif isinstance(node, ast.Import):
-            modules = [alias.name for alias in node.names]
-        # Function-level (lazy) imports may use the lazy whitelist.
-        cur = parents.get(id(node))
-        nested = False
-        while cur is not None:
-            if isinstance(cur, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                nested = True
-                break
-            cur = parents.get(id(cur))
+        modules = _lh011_imported_modules(node, path_str)
+        nested = _lh011_lazy(node, parents)
         allowed = whitelist | (lazy_whitelist if nested else frozenset())
         for module in modules:
             if not module.startswith("quant_fund."):
@@ -1113,43 +1164,175 @@ def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
                         f"({'lazy ' if nested else ''}import; whitelist: {sorted(allowed) or 'none'})",
                     )
                 )
-
-    # Dynamic imports (`importlib.import_module("quant_fund.backtest")`,
-    # `__import__(...)`) are the same edge smuggled through a call — a
-    # provably-constant target gets the same whitelist check, at the same
-    # function-level lazy allowance.
-    module_assigns = _scope_assignments(tree)
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Call) and _call_name(node) in ("import_module", "__import__")):
-            continue
-        if not node.args:
-            continue
-        target = _fold_str(node.args[0], module_assigns, node.lineno)
-        if target is None or not target.startswith("quant_fund."):
-            continue
-        sub = target.split(".")[1]
-        if sub == package:
-            continue
-        cur = parents.get(id(node))
-        nested = False
-        while cur is not None:
-            if isinstance(cur, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                nested = True
-                break
-            cur = parents.get(id(cur))
-        allowed = whitelist | (lazy_whitelist if nested else frozenset())
-        if sub not in allowed:
-            out.append(
-                _Finding(
-                    "LH011",
-                    node.lineno,
-                    node.col_offset,
-                    f"quant_fund.{package} dynamically imports non-whitelisted "
-                    f"quant_fund.{sub} ({'lazy ' if nested else ''}import; "
-                    f"whitelist: {sorted(allowed) or 'none'})",
-                )
-            )
+    out.extend(_lh011_dynamic_findings(tree, package, whitelist, lazy_whitelist, parents))
     return out
+
+
+class _Lh013Patterns:
+    """Pattern matchers bound once per LH013 scan, not once per syntax node."""
+
+    __slots__ = ("headline", "mentions", "spelled")
+
+    def __init__(
+        self,
+        headline: Callable[[str], list[str]],
+        mentions: Callable[[str], list[str]],
+        spelled: Callable[[str], list[str]],
+    ) -> None:
+        self.headline = headline
+        self.mentions = mentions
+        self.spelled = spelled
+
+
+def _lh013_patterns() -> _Lh013Patterns:
+    from quant_fund.leakage.patterns import (
+        find_forbidden_headline,
+        find_forbidden_token_mentions,
+        find_spelled_out_headline,
+    )
+
+    return _Lh013Patterns(
+        find_forbidden_headline,
+        find_forbidden_token_mentions,
+        find_spelled_out_headline,
+    )
+
+
+def _lh013_emit(out: list[_Finding], line: int, col: int, tokens: list[str], channel: str) -> None:
+    out.append(
+        _Finding(
+            "LH013",
+            line,
+            col,
+            f"{channel} headlines forbidden metric token(s): {', '.join(tokens)}",
+        )
+    )
+
+
+def _lh013_comment_findings(
+    source: str, path_str: str, out: list[_Finding], patterns: _Lh013Patterns
+) -> None:
+    """Flag forbidden headline tokens in comments (invisible to the AST)."""
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(source).readline):
+            if tok.type != tokenize.COMMENT:
+                continue
+            text = tok.string.lstrip("#").strip()
+            tokens = patterns.headline(text) or patterns.spelled(text)
+            if tokens and not _lh008_allowed(path_str, text):
+                _lh013_emit(out, tok.start[0], tok.start[1], tokens, "comment")
+    except tokenize.TokenError:
+        pass
+
+
+def _lh013_constant_findings(
+    node: ast.AST,
+    path_str: str,
+    docstrings: set[int],
+    out: list[_Finding],
+    patterns: _Lh013Patterns,
+) -> None:
+    """Docstrings and spelled-out numerals in other string literals."""
+    if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+        return
+    if id(node) in docstrings:
+        tokens = patterns.headline(node.value) or patterns.spelled(node.value)
+        if tokens and not _lh008_allowed(path_str, node.value):
+            _lh013_emit(out, node.lineno, node.col_offset, tokens, "docstring")
+        return
+    # Spelled-out numerals in non-docstring string literals (digit forms
+    # stay with LH008 at error severity).
+    if node.value and _headline_literal(node.value) and not patterns.headline(node.value):
+        tokens = patterns.spelled(node.value)
+        if tokens and not _lh008_allowed(path_str, node.value):
+            _lh013_emit(
+                out,
+                node.lineno,
+                node.col_offset,
+                tokens,
+                "string literal (spelled-out numeral)",
+            )
+
+
+def _lh013_fstring_findings(
+    node: ast.AST, path_str: str, out: list[_Finding], patterns: _Lh013Patterns
+) -> None:
+    """f-string templates whose number arrives at runtime."""
+    if not isinstance(node, ast.JoinedStr):
+        return
+    literal = "".join(
+        part.value
+        for part in node.values
+        if isinstance(part, ast.Constant) and isinstance(part.value, str)
+    )
+    if not literal or not patterns.mentions(literal):
+        return
+    has_runtime_value = any(isinstance(part, ast.FormattedValue) for part in node.values)
+    tokens = (
+        patterns.headline(literal)
+        or (patterns.mentions(literal) if has_runtime_value else [])
+        or patterns.spelled(literal)
+    )
+    if tokens and not _lh008_allowed(path_str, literal):
+        _lh013_emit(out, node.lineno, node.col_offset, tokens, "f-string template")
+
+
+def _lh013_format_findings(
+    node: ast.AST,
+    path_str: str,
+    module_assigns: _ScopeAssigns,
+    out: list[_Finding],
+    patterns: _Lh013Patterns,
+) -> None:
+    """``"Sharpe %s" % sr`` and ``"Sharpe {}".format(sr)`` templates."""
+    template: str | None = None
+    channel = ""
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
+        template = _fold_str(node.left, module_assigns, node.lineno)
+        channel = "percent-format template"
+    elif (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in ("format", "format_map")
+    ):
+        template = _fold_str(node.func.value, module_assigns, node.lineno)
+        channel = "str.format template"
+    else:
+        return
+    if template is None:
+        return
+    tokens = (
+        patterns.headline(template) or patterns.mentions(template) or patterns.spelled(template)
+    )
+    if tokens and not _lh008_allowed(path_str, template):
+        _lh013_emit(out, node.lineno, node.col_offset, tokens, channel)
+
+
+def _lh013_concat_findings(
+    node: ast.AST,
+    path_str: str,
+    module_assigns: _ScopeAssigns,
+    parents: dict[int, ast.AST],
+    out: list[_Finding],
+    patterns: _Lh013Patterns,
+) -> None:
+    """``"Sharpe " + str(sr)``: a concat that does not fully constant-fold.
+
+    Fully-foldable concats are LH008's job (error severity).
+    """
+    if not (
+        isinstance(node, ast.BinOp)
+        and isinstance(node.op, ast.Add)
+        and not _parent_is_add_binop(node, parents)
+        and _fold_str(node, module_assigns, node.lineno) is None
+    ):
+        return
+    literal = "".join(_concat_literal_parts(node))
+    if not literal:
+        return
+    tokens = patterns.headline(literal) or patterns.mentions(literal) or patterns.spelled(literal)
+    if tokens and not _lh008_allowed(path_str, literal):
+        _lh013_emit(out, node.lineno, node.col_offset, tokens, "string concat template")
 
 
 def _check_lh013(tree: ast.AST, path_str: str, source: str) -> list[_Finding]:
@@ -1163,128 +1346,17 @@ def _check_lh013(tree: ast.AST, path_str: str, source: str) -> list[_Finding]:
     - spelled-out numerals in any string channel
       (``"Sharpe, which exceeded two"``).
     """
-    from quant_fund.leakage.patterns import (
-        find_forbidden_headline,
-        find_forbidden_token_mentions,
-        find_spelled_out_headline,
-    )
-
     out: list[_Finding] = []
-
-    def _fire(line: int, col: int, tokens: list[str], channel: str) -> None:
-        out.append(
-            _Finding(
-                "LH013",
-                line,
-                col,
-                f"{channel} headlines forbidden metric token(s): {', '.join(tokens)}",
-            )
-        )
-
-    # comments
-    try:
-        for tok in tokenize.generate_tokens(io.StringIO(source).readline):
-            if tok.type != tokenize.COMMENT:
-                continue
-            text = tok.string.lstrip("#").strip()
-            tokens = find_forbidden_headline(text) or find_spelled_out_headline(text)
-            if tokens and not _lh008_allowed(path_str, text):
-                _fire(tok.start[0], tok.start[1], tokens, "comment")
-    except tokenize.TokenError:
-        pass
-
+    patterns = _lh013_patterns()
+    _lh013_comment_findings(source, path_str, out, patterns)
     docstrings = _docstring_constant_ids(tree)
     parents = _build_parent_map(tree)
     module_assigns = _scope_assignments(tree)
     for node in ast.walk(tree):
-        # docstrings
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and id(node) in docstrings
-        ):
-            tokens = find_forbidden_headline(node.value) or find_spelled_out_headline(node.value)
-            if tokens and not _lh008_allowed(path_str, node.value):
-                _fire(node.lineno, node.col_offset, tokens, "docstring")
-        # spelled-out numerals in non-docstring string literals (digit forms
-        # stay with LH008 at error severity)
-        elif (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and node.value
-            and _headline_literal(node.value)
-            and not find_forbidden_headline(node.value)
-        ):
-            tokens = find_spelled_out_headline(node.value)
-            if tokens and not _lh008_allowed(path_str, node.value):
-                _fire(node.lineno, node.col_offset, tokens, "string literal (spelled-out numeral)")
-        # f-string templates: forbidden token + any interpolated value —
-        # the number arrives at runtime whether it carries a format spec
-        # (``{sr:.2f}``) or not (``f"Sharpe {sr}"``).
-        elif isinstance(node, ast.JoinedStr):
-            literal = "".join(
-                part.value
-                for part in node.values
-                if isinstance(part, ast.Constant) and isinstance(part.value, str)
-            )
-            if not literal or not find_forbidden_token_mentions(literal):
-                continue
-            has_runtime_value = any(isinstance(part, ast.FormattedValue) for part in node.values)
-            tokens = (
-                find_forbidden_headline(literal)
-                or (find_forbidden_token_mentions(literal) if has_runtime_value else [])
-                or find_spelled_out_headline(literal)
-            )
-            if tokens and not _lh008_allowed(path_str, literal):
-                _fire(node.lineno, node.col_offset, tokens, "f-string template")
-        # `"Sharpe %s" % sr` and `"Sharpe {}".format(sr)`: the template is a
-        # static string but the number arrives at runtime — same channel as
-        # the f-string.
-        elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
-            template = _fold_str(node.left, module_assigns, node.lineno)
-            if template is None:
-                continue
-            tokens = (
-                find_forbidden_headline(template)
-                or find_forbidden_token_mentions(template)
-                or find_spelled_out_headline(template)
-            )
-            if tokens and not _lh008_allowed(path_str, template):
-                _fire(node.lineno, node.col_offset, tokens, "percent-format template")
-        elif (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and node.func.attr in ("format", "format_map")
-        ):
-            template = _fold_str(node.func.value, module_assigns, node.lineno)
-            if template is None:
-                continue
-            tokens = (
-                find_forbidden_headline(template)
-                or find_forbidden_token_mentions(template)
-                or find_spelled_out_headline(template)
-            )
-            if tokens and not _lh008_allowed(path_str, template):
-                _fire(node.lineno, node.col_offset, tokens, "str.format template")
-        # `"Sharpe " + str(sr)`: a concat that does NOT fully constant-fold
-        # embeds a runtime value — flag the token mention in its literal
-        # parts. Fully-foldable concats are LH008's job (error severity).
-        elif (
-            isinstance(node, ast.BinOp)
-            and isinstance(node.op, ast.Add)
-            and not _parent_is_add_binop(node, parents)
-            and _fold_str(node, module_assigns, node.lineno) is None
-        ):
-            literal = "".join(_concat_literal_parts(node))
-            if not literal:
-                continue
-            tokens = (
-                find_forbidden_headline(literal)
-                or find_forbidden_token_mentions(literal)
-                or find_spelled_out_headline(literal)
-            )
-            if tokens and not _lh008_allowed(path_str, literal):
-                _fire(node.lineno, node.col_offset, tokens, "string concat template")
+        _lh013_constant_findings(node, path_str, docstrings, out, patterns)
+        _lh013_fstring_findings(node, path_str, out, patterns)
+        _lh013_format_findings(node, path_str, module_assigns, out, patterns)
+        _lh013_concat_findings(node, path_str, module_assigns, parents, out, patterns)
     return out
 
 

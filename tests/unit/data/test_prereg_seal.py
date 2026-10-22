@@ -17,6 +17,7 @@ from quant_fund.data.prereg_seal import (
     verify_payload,
     verify_seal,
 )
+from quant_fund.research.receipt_v2 import verify_receipt_file
 
 RECEIPTS = Path(__file__).resolve().parents[3] / "receipts"
 COMMITTED = RECEIPTS / "forward_record_preregistration_v1.json"
@@ -101,3 +102,9 @@ def test_committed_forward_preregistration_is_sealed() -> None:
     assert payload["window"]["start"] == "2026-07-01"
     assert verify_payload(payload)["valid"] is True
     assert verify_seal(COMMITTED)["valid"] is True
+    # verify-receipt dispatches to the prereg seal instead of demanding receipt_sha256.
+    checked = verify_receipt_file(COMMITTED)
+    assert checked["valid"] is True, checked["errors"]
+    cost = RECEIPTS / "cost_aware_rerun_20261007.json"
+    cost_checked = verify_receipt_file(cost)
+    assert cost_checked["valid"] is True, cost_checked["errors"]

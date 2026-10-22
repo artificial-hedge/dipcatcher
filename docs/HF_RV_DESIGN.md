@@ -128,7 +128,7 @@ sigma, fail-closed on missing intraday.
 
 ### Synthetic intraday
 
-- `tests/unit/test_hf_rv_synthetic.py` — Brownian motion + sparse jumps,
+- Synthetic unit test (not landed) — Brownian motion + sparse jumps,
   expect `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.
 - Jump detection accuracy: at SNR=10, ≥ 95% true-positive rate; at SNR=1,
   ≤ 5% false-positive rate (Lee–Mykland operating characteristics).
@@ -136,19 +136,19 @@ sigma, fail-closed on missing intraday.
 
 ### PIT contamination
 
-- `tests/unit/test_hf_rv_pit.py` — feed a bar with
+- PIT unit test (not landed) — feed a bar with
   `available_time > asof`, expect drop + receipt stamp. Feed null
   `available_time`, expect `HFRVResult(honest=False)`.
 
 ### Fail-closed for missing intraday
 
-- `tests/unit/test_hf_rv_fail_closed.py` — empty bars, single-bar
+- Fail-closed unit test (not landed) — empty bars, single-bar
   windows, 100% holes, expect `HFRVResult(honest=False)` and no
   `market_risk_overlay=hf_rv` stamp.
 
 ### Source authority
 
-- `tests/unit/test_hf_rv_source_authority.py` — CLS + Binance both
+- Source-authority unit test (not landed) — CLS + Binance both
   available → CLS wins, receipt records `primary=cls, secondary=binance`.
 - Source missing → `hf_rv_source_missing` stamp + `honest=False`.
 
@@ -171,7 +171,7 @@ sigma, fail-closed on missing intraday.
    co-RV we'd need a 2-bar frame with aligned `event_time`. Deferred.
 5. **Receipt schema** — `HFRVResult` is a Python dataclass, but receipts
    are JSON. Do we serialize via `dataclasses.asdict` or define a
-   stable JSON schema? Recommend the latter, in `quality/hf_rv_receipt.json`.
+   stable JSON schema? Recommend the latter, as a quality JSON schema that is not in the tree yet.
 
 ## 8. Honest reporting (per AGENTS.md)
 

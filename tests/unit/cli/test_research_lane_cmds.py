@@ -108,7 +108,9 @@ _EXPECTED_KIND = {
 def test_lane_help(cmd: str) -> None:
     result = runner.invoke(app, [cmd, "--help"])
     assert result.exit_code == 0, result.output
-    assert "--out-dir" in result.output
+    # GitHub Actions sets CI, and rich then styles each character of the
+    # option name. Collapse ANSI before looking for the flag.
+    assert "--out-dir" in _plain(result.output)
 
 
 @pytest.mark.parametrize("cmd", sorted(_LANE_ARGS))
@@ -193,7 +195,7 @@ def test_multih_fleet_rejects_non_integer_horizons(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code != 0
-    assert "--horizons" in result.output
+    assert "--horizons" in _plain(result.output)
 
 
 def test_multih_fleet_rejects_zero_horizon(tmp_path: Path) -> None:

@@ -430,7 +430,7 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
         else:
             try:
                 durable_equity_rows = pl.read_parquet(equity_path).height
-            except Exception as exc:
+            except (OSError, pl.exceptions.PolarsError) as exc:
                 raise ValueError("cannot resume: durable equity.parquet is unreadable") from exc
             if durable_equity_rows != resume_step:
                 raise ValueError(
@@ -438,7 +438,7 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
                 )
         try:
             ledger.load_existing()
-        except Exception as exc:
+        except (OSError, pl.exceptions.PolarsError) as exc:
             raise ValueError("cannot resume: durable ledger artifact is unreadable") from exc
 
     px = bars

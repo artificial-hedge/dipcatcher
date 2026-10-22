@@ -87,6 +87,7 @@ import asyncio
 import json
 import os
 import threading
+import time
 from collections.abc import Callable
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any
@@ -235,6 +236,27 @@ def _post2(client: TestClient, path: str, body: Any, key: str, **extra: str) -> 
     """Two keyed POSTs, same key + same body — the atomic replay pair."""
     h = _ih(key, **extra)
     return client.post(path, json=body, headers=h), client.post(path, json=body, headers=h)
+
+
+def _await_terminal_eval(client: TestClient, eval_id: str, timeout_s: float = 60.0) -> None:
+    """Wait until an async eval has stopped calling the shared stub.
+
+    ``/harness/evals`` returns 202 and runs the suite on the job executor.
+    A later probe that counts ``stub.calls`` is contaminated if those model
+    calls are still landing — the overlap is load-dependent, so the counter
+    and the sealed receipt both move.
+    """
+    deadline = time.monotonic() + timeout_s
+    status: object = None
+    while True:
+        rec = client.get(f"/harness/evals/{eval_id}", headers=_h())
+        if rec.status_code == 200:
+            status = rec.json().get("status")
+            if status in {"succeeded", "failed", "cancelled"}:
+                return
+        if time.monotonic() >= deadline:
+            raise TimeoutError(f"eval {eval_id} still {status!r} after {timeout_s}s")
+        time.sleep(0.01)
 
 
 def _replay_hdr(r: Any) -> bool:
@@ -397,6 +419,10 @@ def _probe_cov_harness() -> dict[str, bool]:
         and r1.json().get("eval_id") == r2.json().get("eval_id")
     )
     out["coverage.evals.once"] = evals_total == 1
+    if r1.status_code == 202:
+        pending = r1.json().get("eval_id")
+        if isinstance(pending, str) and pending:
+            _await_terminal_eval(client, pending)
 
     before = stub.calls
     r1, r2 = _post2(client, "/harness/complete", _complete_body(), "cov.complete")
