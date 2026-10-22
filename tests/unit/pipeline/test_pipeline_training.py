@@ -35,7 +35,6 @@ from tests.support.panel_sources import materialize_panel_sources, save_bound_st
 def test_train_distribution_auto_selects_lowest_finite_pinball(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.pipeline import train as train_module
 
     scores = {
@@ -65,7 +64,6 @@ def test_train_distribution_auto_selects_lowest_finite_pinball(
 def test_train_volatility_auto_selects_lowest_finite_qlike(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.pipeline import train as train_module
 
     scores = {"rolling": 0.4, "ewma": 0.1, "har": 0.2, "xgboost": float("nan"), "lightgbm": 0.3}
@@ -104,7 +102,6 @@ def test_train_distribution_auto_rejects_trivially_small_oos_sample(
 def test_train_reinforcement_auto_selects_best_finite_policy(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.models.rl import LinUCBRanker
     from quant_fund.pipeline import train as train_module
 

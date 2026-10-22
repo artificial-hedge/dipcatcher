@@ -61,6 +61,7 @@ class _IdentityView(Protocol):
 
     def model_dump(self, *, mode: str = "python") -> dict[str, Any]: ...
 
+
 PROMOTION_RECEIPT_SCHEMA = "promotion_receipt.v1"
 PROMOTION_RECEIPT_KIND = "promotion_receipt"
 EVIDENCE_REPORT_SCHEMA = "evidence_report.v1"
@@ -361,6 +362,7 @@ def compose_promotion_receipt(
     overwritten; a second composition to the same ``out_path`` raises.
     """
     from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
+
     identity, artifact_path, manifest_file, artifact_sha, manifest_sha, artifact_class = (
         _artifact_identity_checked(artifact)
     )
