@@ -638,7 +638,7 @@ The code in that commit implements exactly that (`if value is not False: return 
 ```python
 for key in _iter_mapping_keys(payload):
     if key == "live_pnl_claim":
-        continue          # exempt regardless of value — a live claim passes
+        continue  # exempt regardless of value — a live claim passes
 ```
 
 So `{"live_pnl_claim": False, "receipts": [{"live_pnl_claim": True}]}` returned **True** — a receipt asserting a live P&L was passing the research-headline honesty gate. The test asserting the opposite has therefore never been green since that commit.
@@ -771,8 +771,9 @@ The work was sound. One defect was found and fixed in review: the export `LIVE_O
   **Cost.** The gate shells out once per receipt:
   ```python
   # src/quant_fund/proofcore/ci.py:291
-  verifier = verify if verify is not None else _cli_verifier   # ← subprocess
-  for path in paths: ok = verifier(path)
+  verifier = verify if verify is not None else _cli_verifier  # ← subprocess
+  for path in paths:
+      ok = verifier(path)
   ```
   391 receipts × a measured **3.1 s** per invocation ≈ **20 minutes**, with **zero output until the end**. Almost all of that is interpreter startup and heavy transitive imports, not verification. The injection seam already exists — verifying in-process would collapse this to seconds. Isolation is probably deliberate, so keep it behind a flag rather than delete it.
 

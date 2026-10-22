@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.features.reversal_1.MODULE. Rege
 """
 
 from array import array
+
 from fx1.extensions.features.reversal_1 import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(50)
 _register(185)
@@ -7422,6 +7424,7 @@ _register(999590)
 _register(999725)
 _register(999860)
 _register(999995)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

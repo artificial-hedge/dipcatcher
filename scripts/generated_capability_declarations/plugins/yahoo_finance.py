@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.yahoo_finance.MODULE. Re
 """
 
 from array import array
+
 from fx1.extensions.plugins.yahoo_finance import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(52)
 _register(106)
@@ -18532,6 +18534,7 @@ _register(999808)
 _register(999862)
 _register(999916)
 _register(999970)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

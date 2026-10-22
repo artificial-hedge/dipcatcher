@@ -41,9 +41,9 @@ gates and not evidence of live profitability.
 ```python
 from quant_fund.research.explainability import pinball, crps_quantiles, brier
 
-pinball(0.5)          # default; a point forecast is the τ-quantile forecast
+pinball(0.5)  # default; a point forecast is the τ-quantile forecast
 crps_quantiles((0.05, 0.25, 0.5, 0.75, 0.95))  # heads emitting (n, k) quantile grids
-brier()               # probability heads emitting P(y=1)
+brier()  # probability heads emitting P(y=1)
 ```
 
 `build_report(..., scoring=...)` also accepts `"pinball:0.5"`,
@@ -59,12 +59,16 @@ from quant_fund.research.explainability import build_report, write_report
 
 model = RidgeRanker(alpha=1.0).fit(x_train, y_train)
 report = build_report(
-    model, x_eval, y_eval,
-    times=eval_dates,        # optional; enables time-ordered drift blocks
+    model,
+    x_eval,
+    y_eval,
+    times=eval_dates,  # optional; enables time-ordered drift blocks
     feature_names=features,  # optional; falls back to model.metadata().features
     scoring="pinball:0.5",
-    n_blocks=4, n_repeats=5, seed=42,
-    synthetic=True,          # required label for synthetic eval data
+    n_blocks=4,
+    n_repeats=5,
+    seed=42,
+    synthetic=True,  # required label for synthetic eval data
 )
 paths = write_report(report, "out/explainability")
 # -> explainability.md, explainability.html, explainability.json (+ .sha256)
@@ -93,7 +97,8 @@ data/metadata/research/latest.explainability.json   (sidecar binding)
 
 ```python
 from quant_fund.research.explainability import (
-    attach_explainability_report, verify_explainability_sidecar,
+    attach_explainability_report,
+    verify_explainability_sidecar,
 )
 
 paths = attach_explainability_report(receipt_path, report)

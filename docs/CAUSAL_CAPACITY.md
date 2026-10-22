@@ -14,13 +14,19 @@ starting capital and conservative haircuts on the known ADV estimate:
 from quant_fund.backtest.engine import capacity_sensitivity
 
 report = capacity_sensitivity(
-    bars, weights, config,
+    bars,
+    weights,
+    config,
     nav_levels=(100_000.0, 1_000_000.0, 10_000_000.0),
     adv_haircuts=(1.0, 0.5),
 )
 for case in report["cases"]:
-    print(case["initial_nav"], case["adv_haircut"],
-          case["executed_notional_fraction"], case["end_nav"])
+    print(
+        case["initial_nav"],
+        case["adv_haircut"],
+        case["executed_notional_fraction"],
+        case["end_nav"],
+    )
 ```
 
 Each cell reruns order sizing, risk limits, participation caps, cash checks,

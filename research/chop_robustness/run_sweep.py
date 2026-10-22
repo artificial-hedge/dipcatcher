@@ -69,6 +69,7 @@ WINDOWS: dict[str, dict[str, Any]] = {
     "W4_2018_05_8p3y": {"symbols": MAJORS_3, "eval_tail_bars": None},
 }
 
+
 def _bench_config() -> AppConfig:
     """The lane's bench config, loaded through the resolved YAML inheritance chain.
 
@@ -139,10 +140,7 @@ def decision_rows(cells: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Apply the pre-declared decision rules to every mechanism."""
     rows = []
     for name in MECHANISMS:
-        deltas = {
-            wid: _delta(case["book_stats"], name)
-            for wid, case in cells.items()
-        }
+        deltas = {wid: _delta(case["book_stats"], name) for wid, case in cells.items()}
         helped = [w for w, d in deltas.items() if d is not None and d > 0]
         hurt = [w for w, d in deltas.items() if d is not None and d < 0]
         known = [d for d in deltas.values() if d is not None]
@@ -201,14 +199,19 @@ def main() -> None:
         "spec": SPEC,
         "base_policy": BASE_POLICY,
         "mechanisms": MECHANISMS,
-        "windows": {k: {"symbols": v["symbols"], "eval_tail_bars": v["eval_tail_bars"]} for k, v in WINDOWS.items()},
+        "windows": {
+            k: {"symbols": v["symbols"], "eval_tail_bars": v["eval_tail_bars"]}
+            for k, v in WINDOWS.items()
+        },
         "cells": cells,
         "verdicts": verdicts,
     }
     (OUT_DIR / "sweep_results.json").write_text(json.dumps(report, indent=2, allow_nan=False))
     print(json.dumps({"verdicts": verdicts}, indent=2))
     for wid, case in cells.items():
-        print(wid, json.dumps({k: v.get("sharpe_simulated") for k, v in case["book_stats"].items()}))
+        print(
+            wid, json.dumps({k: v.get("sharpe_simulated") for k, v in case["book_stats"].items()})
+        )
 
 
 if __name__ == "__main__":

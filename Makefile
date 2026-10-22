@@ -43,15 +43,15 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 	# partial data files and applies the same threshold once.
 	uv run pytest -n auto --dist loadfile -m "not network and not slow" --cov --cov-report=term-missing --cov-report=xml
 
-lint: ## Ruff check + format check on src/ and tests/
-	uv run ruff check src tests
-	uv run ruff format --check src tests
+lint: ## Ruff check + format check repo-wide
+	uv run ruff check .
+	uv run ruff format --check .
 	uv run python scripts/check_mypy_strict_allowlist.py
 	uv run python scripts/check_mccabe_ratchet.py
 
-fmt: ## Auto-fix lint + format
-	uv run ruff check --fix src tests
-	uv run ruff format src tests
+fmt: ## Auto-fix lint + format repo-wide
+	uv run ruff check --fix .
+	uv run ruff format .
 
 typecheck: ## mypy on the harness (public modules are strict; see pyproject)
 	uv run mypy src/quant_fund

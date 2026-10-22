@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.skills.vendor_book_map.MODULE. R
 """
 
 from array import array
+
 from fx1.extensions.skills.vendor_book_map import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(48)
 _register(117)
@@ -14507,6 +14509,7 @@ _register(999789)
 _register(999858)
 _register(999927)
 _register(999996)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""
