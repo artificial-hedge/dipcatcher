@@ -627,8 +627,9 @@ def test_reopen_repairs_the_audit_log_mode(tmp_path: Path) -> None:
     _arm(session)
     _buy(session, quantity=1.0)
     audit = tmp_path / "audit.jsonl"
-    os.chmod(audit, 0o644)
-    assert os.stat(audit).st_mode & 0o777 == 0o644
+    # Group-readable, not world-readable: still wrong for the 0600 contract.
+    os.chmod(audit, 0o660)
+    assert os.stat(audit).st_mode & 0o777 == 0o660
     _open(tmp_path)
     assert os.stat(audit).st_mode & 0o777 == 0o600
 
