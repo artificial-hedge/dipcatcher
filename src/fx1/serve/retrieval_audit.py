@@ -565,7 +565,10 @@ def _ordering_paging_probes() -> dict[str, bool]:
     desc = client.get(
         f"/v1/conversations/{conv['id']}/items", params={"order": "desc"}, headers=_h()
     ).json()
-    item_ids = lambda b: [i["id"] for i in b["data"]]  # noqa: E731
+
+    def item_ids(body: dict[str, Any]) -> list[Any]:
+        return [i["id"] for i in body["data"]]
+
     out["conv_items_insertion_order_asc"] = item_ids(asc) == ids
     out["conv_items_order_desc_flips"] = item_ids(desc) == ids[::-1]
 

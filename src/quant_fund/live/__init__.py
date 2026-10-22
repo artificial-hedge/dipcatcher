@@ -1,19 +1,30 @@
-"""Operator live desk. Shadow by default. No live-performance claim.
+"""Operator order surface. One package, two books, no live-capital claim.
 
-The paper broker still refuses live endpoints. This package is the separate
-operator surface: pre-trade risk, an order lifecycle, and a bridge. Shadow
-transmits nothing. Loopback fills are SYNTHETIC. The drop folder writes order
-tickets only when the desk is armed and ``DIP_LIVE_ARM=1``. Evidence
-conditions stay blocked; ``live_pnl_claim`` is false.
+The desk (shadow, in-process loopback, drop folder) is the default. It does
+not open a broker socket. The gateway is selected by a gateway config and can
+submit to Alpaca paper after an explicit arm. The Alpaca live host stays
+named and is refused. Evidence conditions stay blocked. ``live_pnl_claim``
+is false.
 """
 
-from quant_fund.live.arming import CONFIRM_DROP, ENV_ARM, Arming
+from quant_fund.live.arming import CONFIRM_DROP, ENV_ARM, LIVE_CAPITAL_PHRASE, Arming
+from quant_fund.live.config import LiveConfig, load_live_config
 from quant_fund.live.desk import LiveDesk, LiveDeskError
+from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.session import LiveSession, open_session
 
 __all__ = [
     "CONFIRM_DROP",
     "ENV_ARM",
+    "LIVE_CAPITAL_PHRASE",
     "Arming",
+    "BrokerRejected",
+    "LiveBrokerRefused",
+    "LiveConfig",
     "LiveDesk",
     "LiveDeskError",
+    "LiveGateError",
+    "LiveSession",
+    "load_live_config",
+    "open_session",
 ]

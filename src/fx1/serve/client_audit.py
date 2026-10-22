@@ -484,7 +484,9 @@ def _error_map_probes() -> dict[str, bool]:  # NOSONAR(S3776) — status table f
     """Every status class → its declared exception, synthetic + e2e."""
     out: dict[str, bool] = {}
 
-    def mapped(status: int, body: bytes = _ERR_BODY, headers: dict[str, str] | None = None):
+    def mapped(
+        status: int, body: bytes = _ERR_BODY, headers: dict[str, str] | None = None
+    ) -> tuple[BaseException | None, Any]:
         tr, calls = _scripted((status, headers or {}, body))
         exc = _exc(lambda: _mk(tr).commands())
         return exc, calls
@@ -618,7 +620,7 @@ def _retry_probes() -> dict[str, bool]:  # NOSONAR(S3776) — retry matrix fans 
     bare503: _Step = (503, {}, _ERR_BODY)
     fault = HarnessTransportError("dial failed")
 
-    def client_for(*steps, **kw):
+    def client_for(*steps: Any, **kw: Any) -> tuple[Any, Any, list[float]]:
         tr, calls = _scripted(*steps)
         sleeps: list[float] = []
         c = _mk(tr, sleep=lambda s: sleeps.append(s), **kw)
@@ -905,7 +907,13 @@ def _transport_fault_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     # a custom transport that raises a foreign (non-HarnessTransportError)
     # exception leaks it raw — the transport injection owns its own
     # taxonomy; pinned so callers know the seam's contract.
-    def oserror_send(method, url, payload, headers, timeout_s):  # NOSONAR(S1172)
+    def oserror_send(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: dict[str, str],
+        timeout_s: float,
+    ) -> None:  # NOSONAR(S1172)
         raise OSError("foreign fault")
 
     exc = _exc(lambda: _mk(oserror_send, max_retries=2).commands())
@@ -1115,7 +1123,9 @@ def _idem_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     real_send = _tc_transport(client)
     state = {"n": 0}
 
-    def flaky(method, url, payload, headers, timeout_s):
+    def flaky(
+        method: str, url: str, payload: Any, headers: dict[str, str], timeout_s: float
+    ) -> Any:
         state["n"] += 1
         res = real_send(method, url, payload, headers, timeout_s)
         if state["n"] == 1:
@@ -1251,7 +1261,9 @@ def _cli_probes() -> dict[str, bool]:  # NOSONAR(S3776) — CLI legs each pin ex
     # unreachable remote → HarnessTransportError → same shape.
     import fx1.serve.client as _cm  # noqa: PLC0415
 
-    def _dial(method, url, payload, headers, timeout_s):  # NOSONAR(S1172)
+    def _dial(
+        method: str, url: str, payload: Any, headers: dict[str, str], timeout_s: float
+    ) -> Any:  # NOSONAR(S1172)
         raise _cm.HarnessTransportError("dial failed")
 
     dead_c = _mk(_dial)

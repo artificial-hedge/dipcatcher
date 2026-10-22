@@ -101,12 +101,13 @@ On Windows the console uses blocking input because console handles are not
 supported by `select`; queued background progress appears between submitted
 lines. Full cross-platform editing and live progress remain acceptance work.
 
-## /trade — paper book, live orders refused
+## /trade — paper book and the blocked-conditions report
 
 `/trade` and `/trade readiness` print the five institutional conditions.
-Every condition is blocked or not yet collected: live orders stay disabled,
-and the report cannot be flipped from inside the process. The shell command
-that actually runs a book is simulated:
+Every condition is blocked or not yet collected, and this report cannot be
+flipped from inside the process. The book this command runs is simulated.
+Armed broker orders are a different command, `dipcatcher live`, and a fill
+there is not this report and not a live-performance claim.
 
 ```sh
 dipcatcher trade readiness

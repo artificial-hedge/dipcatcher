@@ -106,4 +106,4 @@ uv run pytest tests/native/test_native_bench.py -q -s
 ```
 
 The crate is safe Rust: there are no `unsafe` blocks. `cargo fmt` and
-`cargo clippy -- -D warnings` are clean on 1.83.0.
+`cargo clippy -- -D warnings` are clean on 1.85.0.

@@ -1090,10 +1090,19 @@ def _emitted_header_probes() -> dict[str, bool]:
     results: dict[str, bool] = {}
     client, _api = _client()
 
+    def receipt_sha_on_complete() -> Any:
+        return _complete(client)
+
+    def receipt_sha_on_chat() -> Any:
+        return _chat(client)
+
+    def receipt_sha_on_messages() -> Any:
+        return _messages(client)
+
     for name, fn in (
-        ("receipt_sha_on_complete", lambda: _complete(client)),
-        ("receipt_sha_on_chat", lambda: _chat(client)),
-        ("receipt_sha_on_messages", lambda: _messages(client)),
+        ("receipt_sha_on_complete", receipt_sha_on_complete),
+        ("receipt_sha_on_chat", receipt_sha_on_chat),
+        ("receipt_sha_on_messages", receipt_sha_on_messages),
     ):
         r = fn()
         cid = r.headers.get("x-fx1-completion-id")

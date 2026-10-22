@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from quant_fund.live.gateway_arm import LIVE_CAPITAL_PHRASE as LIVE_CAPITAL_PHRASE
+
 VENUES: frozenset[str] = frozenset({"shadow", "loopback", "drop"})
 CONFIRM_DROP = "SEND-LIVE-ORDERS"
 ENV_ARM = "DIP_LIVE_ARM"

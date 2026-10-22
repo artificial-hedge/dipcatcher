@@ -382,7 +382,8 @@ class Concierge:
             self._say(
                 "Live orders are disabled. /trade readiness prints the five blocked "
                 "conditions. A paper book is the shell command "
-                "`dipcatcher trade session --state <path> --commands <jsonl>`."
+                "`dipcatcher trade session --state <path> --commands <jsonl>`. "
+                "`dipcatcher live` is the operator desk and does not transmit from this chat."
             )
             return False
         from quant_fund.validation.live_readiness import format_readiness, live_readiness_report

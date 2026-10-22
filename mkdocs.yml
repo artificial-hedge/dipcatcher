@@ -235,6 +235,8 @@ nav:
       - Backtest-to-live parity: BACKTEST_LIVE_PARITY.md
       - Deterministic simulation: DETERMINISTIC_SIMULATION.md
       - Pre-trade risk: PRETRADE_RISK.md
+      - Operator order desk: LIVE_DESK.md
+      - Live order gateway: LIVE_TRADING.md
   - fx-1:
       - Overview: FX1.md
       - Interactive CLI (fxi): FXI.md

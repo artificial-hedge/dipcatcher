@@ -73,6 +73,7 @@ class SessionConfig(BaseModel):
     timezone: str
     open_minute: int = Field(ge=0, lt=24 * 60)
     close_minute: int = Field(gt=0, le=24 * 60)
+    weekends_open: bool = False
 
     @field_validator("timezone")
     @classmethod
