@@ -59,7 +59,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-nn = ["torch>=2.6", "tirex-2>=0.3.0"]
+# safetensors is what fx1.serve.local_engine uses to load weight bytes.
+# The loader tells operators to install this extra; the extra has to
+# actually provide the package.
+nn = ["torch>=2.6", "tirex-2>=0.3.0", "safetensors>=0.5"]
 # shap 0.52 pins numba<0.63 on darwin x86_64, and that numba pins numpy<2.4.
 # Keeping shap there forks uv.lock into numpy 2.3.5 and 2.5.3. Phase-1
 # rejects a duplicated locked runtime package, so the extra is omitted on
@@ -125,8 +128,8 @@ build-backend = "hatchling.build"
 [tool.uv]
 # Security floors for transitive packages; these are not runtime imports.
 # urllib3: CVE-2026-97687/97688/97689; virtualenv: activation/config injection
-# and downloaded-wheel integrity fixes through 21.7.13.
-constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.7.13"]
+# (CVE-2026-113722, CVE-2026-113725, CVE-2026-113726) fixed in 21.14.9.
+constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.14.9"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fx1", "src/quant_fund", "src/dipcatcher_cli"]
