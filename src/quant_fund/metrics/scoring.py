@@ -114,11 +114,15 @@ def crps_from_quantiles(y: Array, quantiles: Array, taus: Array) -> float:
     if y.size == 0:
         return float("nan")
     dt = np.diff(np.concatenate([[0.0], t]))
-    total = np.zeros(y.shape[0], dtype=float)
+    # Fuse pinball into the tau loop: one validation pass, no per-tau
+    # ``pinball_loss`` length checks, accumulate the mean directly.
+    # CRPS = 2 * integral_0^1 pinball_tau(y, q_tau) dtau (Gneiting-Raftery).
+    acc = 0.0
     for k, tau in enumerate(t):
-        # CRPS = 2 * integral_0^1 pinball_tau(y, q_tau) dtau (Gneiting-Raftery).
-        total += 2.0 * pinball_loss(y, q[:, k], float(tau)) * dt[k]
-    return float(np.mean(total))
+        diff = y - q[:, k]
+        pin = np.maximum(float(tau) * diff, (float(tau) - 1.0) * diff)
+        acc += 2.0 * float(np.mean(pin)) * float(dt[k])
+    return acc
 
 
 def crps_gaussian(y: Array, mu: Array, sigma: Array) -> Array:

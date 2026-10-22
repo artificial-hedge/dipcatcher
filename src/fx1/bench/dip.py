@@ -16,11 +16,29 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import Any
+
+import numpy as np
 
 from fx1.honesty import FORBIDDEN_HEADLINE_TOKENS
 
 # Shared with fx1.honesty so bench honesty cannot drift from the contract.
 _FORBIDDEN_TOKENS = FORBIDDEN_HEADLINE_TOKENS
+
+try:
+    from numba import njit
+
+    _HAVE_NUMBA = True
+except (ImportError, OSError):  # pragma: no cover - numba-less / broken llvmlite
+    _HAVE_NUMBA = False
+
+    def njit(*_a: Any, **_k: Any) -> Any:  # type: ignore[no-redef]
+        def _deco(fn: Any) -> Any:
+            return fn
+
+        if len(_a) == 1 and callable(_a[0]) and not _k:
+            return _a[0]
+        return _deco
 
 
 @dataclass(frozen=True)
@@ -50,11 +68,23 @@ def _require_positive_int(value: int, name: str) -> None:
 
 
 def _validate_closes(closes: list[float]) -> None:
-    for i, price in enumerate(closes):
-        if not math.isfinite(price):
-            raise ValueError(f"close at index {i} is not finite: {price!r}")
-        if price <= 0:
-            raise ValueError(f"close at index {i} must be strictly positive: {price!r}")
+    _validated_close_array(closes)
+
+
+def _validated_close_array(closes: list[float]) -> np.ndarray:
+    """Finite, strictly positive closes as a contiguous float64 buffer."""
+    arr = np.ascontiguousarray(closes, dtype=np.float64)
+    if arr.size == 0:
+        return arr
+    non_finite = ~np.isfinite(arr)
+    if bool(np.any(non_finite)):
+        i = int(np.flatnonzero(non_finite)[0])
+        raise ValueError(f"close at index {i} is not finite: {closes[i]!r}")
+    non_positive = arr <= 0.0
+    if bool(np.any(non_positive)):
+        i = int(np.flatnonzero(non_positive)[0])
+        raise ValueError(f"close at index {i} must be strictly positive: {closes[i]!r}")
+    return arr
 
 
 def _recovery_flags(
@@ -69,6 +99,92 @@ def _recovery_flags(
         else:
             recovered[horizon] = any(closes[j] >= peak for j in range(trigger + 1, end))
     return recovered
+
+
+@njit(cache=True)
+def _detect_dip_core(
+    closes: np.ndarray, threshold: float, horizons: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Numba core: trough/peak indices, depths, recovery flags (−1/0/1)."""
+    n = closes.shape[0]
+    n_h = horizons.shape[0]
+    trough_idx = np.empty(n, dtype=np.int64)
+    peak_idx = np.empty(n, dtype=np.int64)
+    depths = np.empty(n, dtype=np.float64)
+    recovered = np.empty((n, n_h), dtype=np.int8)
+    n_events = 0
+    peak = -1.0e300
+    pidx = -1
+    in_dip = False
+    for i in range(n):
+        price = closes[i]
+        if price >= peak:
+            peak = price
+            pidx = i
+            in_dip = False
+            continue
+        depth = (peak - price) / peak
+        if depth >= threshold and not in_dip:
+            trough_idx[n_events] = i
+            peak_idx[n_events] = pidx
+            depths[n_events] = depth
+            for h in range(n_h):
+                end = i + 1 + horizons[h]
+                if end > n:
+                    recovered[n_events, h] = -1
+                else:
+                    flag = np.int8(0)
+                    for j in range(i + 1, end):
+                        if closes[j] >= peak:
+                            flag = np.int8(1)
+                            break
+                    recovered[n_events, h] = flag
+            n_events += 1
+            in_dip = True
+        elif in_dip and depth < threshold:
+            # Shallow recovery below the peak re-arms detection so a later,
+            # distinct dip on the same peak is recorded as its own event.
+            in_dip = False
+    return (
+        trough_idx[:n_events].copy(),
+        peak_idx[:n_events].copy(),
+        depths[:n_events].copy(),
+        recovered[:n_events].copy(),
+    )
+
+
+def _detect_dip_events_python(
+    closes: list[float],
+    dates: list[str],
+    asset: str,
+    threshold: float,
+    horizons_bars: dict[str, int],
+) -> list[DipEvent]:
+    """Interpreted reference path (also the numba-less fallback)."""
+    events: list[DipEvent] = []
+    peak = -math.inf
+    peak_date = ""
+    in_dip = False
+    for i, (price, date) in enumerate(zip(closes, dates, strict=True)):
+        if price >= peak:
+            peak, peak_date = price, date
+            in_dip = False
+            continue
+        depth = (peak - price) / peak
+        if depth >= threshold and not in_dip:
+            events.append(
+                DipEvent(
+                    asset=asset,
+                    peak_date=peak_date,
+                    trough_date=date,
+                    depth=depth,
+                    recovered=_recovery_flags(closes, i, peak, horizons_bars),
+                )
+            )
+            in_dip = True
+        elif in_dip and depth < threshold:
+            in_dip = False
+    return events
 
 
 def detect_dip_events(
@@ -95,32 +211,32 @@ def detect_dip_events(
     horizons_bars = horizons_bars or {"1m": 21, "3m": 63, "6m": 126, "12m": 252}
     for horizon, bars in horizons_bars.items():
         _require_positive_int(bars, f"horizon {horizon!r} bars")
-    _validate_closes(closes)
+    closes_arr = _validated_close_array(closes)
+    if not _HAVE_NUMBA or closes_arr.size == 0:
+        return _detect_dip_events_python(closes, dates, asset, threshold, horizons_bars)
+    horizon_names = list(horizons_bars.keys())
+    horizons = np.asarray([horizons_bars[name] for name in horizon_names], dtype=np.int64)
+    trough_idx, peak_idx, depths, recovered = _detect_dip_core(
+        closes_arr, float(threshold), horizons
+    )
     events: list[DipEvent] = []
-    peak = -math.inf
-    peak_date = ""
-    in_dip = False
-    for i, (price, date) in enumerate(zip(closes, dates, strict=True)):
-        if price >= peak:
-            peak, peak_date = price, date
-            in_dip = False
-            continue
-        depth = (peak - price) / peak
-        if depth >= threshold and not in_dip:
-            events.append(
-                DipEvent(
-                    asset=asset,
-                    peak_date=peak_date,
-                    trough_date=date,
-                    depth=depth,
-                    recovered=_recovery_flags(closes, i, peak, horizons_bars),
-                )
+    for e in range(int(trough_idx.size)):
+        flags: dict[str, bool | None] = {}
+        for h, name in enumerate(horizon_names):
+            code = int(recovered[e, h])
+            if code < 0:
+                flags[name] = None
+            else:
+                flags[name] = bool(code)
+        events.append(
+            DipEvent(
+                asset=asset,
+                peak_date=dates[int(peak_idx[e])],
+                trough_date=dates[int(trough_idx[e])],
+                depth=float(depths[e]),
+                recovered=flags,
             )
-            in_dip = True
-        elif in_dip and depth < threshold:
-            # Shallow recovery below the peak re-arms detection so a later,
-            # distinct dip on the same peak is recorded as its own event.
-            in_dip = False
+        )
     return events
 
 
