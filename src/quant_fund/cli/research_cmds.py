@@ -26,47 +26,8 @@ from .research_pvalues import _harvest_p_values
 from .support import _cfg, format_data_label, format_fdr_families
 
 
-@app.command()
-def research(
-    config: Path = typer.Option(Path("configs/research.yaml")),
-    only: str | None = typer.Option(
-        None,
-        "--only",
-        help="Qualified family ids. Runs those families only and refuses the full scorecard.",
-    ),
-) -> None:
-    """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
-    if only:
-        from quant_fund.cli.family_cmds import emit_selected_run
-
-        emit_selected_run(config, only)
-        return
-    from quant_fund.research.agent import format_p_value, run_research
-
-    cfg = _cfg(config)
-    nb = run_research(cfg)
-    # Always print DATA_LABEL + FDR families (regression-tested).
-    typer.echo(format_data_label(synthetic=bool(nb.synthetic), data_source=str(nb.data_source)))
-    if nb.synthetic:
-        typer.echo("SYNTHETIC")
-    typer.echo(f"{nb.product} — {nb.firm}'s proprietary research lab {nb.version}")
-    typer.echo(format_fdr_families(list(nb.hypotheses)))
-    typer.echo(nb.disclaimer)
-    for h in nb.hypotheses:
-        typer.echo(f"{h.id}: {h.decision} (p={format_p_value(h.p_value)})")
-    for r in nb.rankers:
-        if str(r.get("name", "")).startswith("_"):
-            dm_all = r.get("pairwise_dm_all") or []
-            for d in dm_all:
-                typer.echo(
-                    f"DM {d.get('a')} vs {d.get('b')}: "
-                    f"stat={d.get('statistic')} p={d.get('p_value')} preferred={d.get('preferred')}"
-                )
-            continue
-        typer.echo(
-            f"{r['name']}: IC={r['mean_ic']:.4f} RankIC={r.get('mean_rank_ic') or 0:.4f} "
-            f"t={r['t_ic']:.2f} mono={r.get('decile_monotonicity') or 0:.3f}"
-        )
+def _echo_family_lines(nb: Any) -> None:
+    """Print the per-family result lines for a research notebook."""
     vol = nb.families.get("volatility", {})
     if vol:
         typer.echo(
@@ -116,6 +77,11 @@ def research(
             f"high_vol_bound={crc.get('high_vol_mean_bound')} "
             f"low_vol_bound={crc.get('low_vol_mean_bound')}"
         )
+    _echo_family_lines_late(nb)
+
+
+def _echo_family_lines_late(nb: Any) -> None:
+    """Print the tail families (weighted conformal through northset)."""
     wcqr = nb.families.get("weighted_conformal", {})
     if wcqr:
         typer.echo(
@@ -171,6 +137,51 @@ def research(
             f"session_book_vpin_mean={ns.get('session_book_vpin_mean')} "
             f"mean_session_book_snaps={ns.get('mean_session_book_snaps')}"
         )
+
+
+@app.command()
+def research(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    only: str | None = typer.Option(
+        None,
+        "--only",
+        help="Qualified family ids. Runs those families only and refuses the full scorecard.",
+    ),
+) -> None:
+    """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
+    if only:
+        from quant_fund.cli.family_cmds import emit_selected_run
+
+        emit_selected_run(config, only)
+        return
+    from quant_fund.research.agent import format_p_value, run_research
+
+    cfg = _cfg(config)
+    nb = run_research(cfg)
+    # Always print DATA_LABEL + FDR families (regression-tested).
+    typer.echo(format_data_label(synthetic=bool(nb.synthetic), data_source=str(nb.data_source)))
+    if nb.synthetic:
+        typer.echo("SYNTHETIC")
+    typer.echo(f"{nb.product} — {nb.firm}'s proprietary research lab {nb.version}")
+    typer.echo(format_fdr_families(list(nb.hypotheses)))
+    typer.echo(nb.disclaimer)
+    for h in nb.hypotheses:
+        typer.echo(f"{h.id}: {h.decision} (p={format_p_value(h.p_value)})")
+    for r in nb.rankers:
+        if str(r.get("name", "")).startswith("_"):
+            dm_all = r.get("pairwise_dm_all") or []
+            for d in dm_all:
+                typer.echo(
+                    f"DM {d.get('a')} vs {d.get('b')}: "
+                    f"stat={d.get('statistic')} p={d.get('p_value')} preferred={d.get('preferred')}"
+                )
+            continue
+        typer.echo(
+            f"{r['name']}: IC={r['mean_ic']:.4f} RankIC={r.get('mean_rank_ic') or 0:.4f} "
+            f"t={r['t_ic']:.2f} mono={r.get('decile_monotonicity') or 0:.3f}"
+        )
+    _echo_family_lines(nb)
+    _echo_family_lines_late(nb)
     typer.echo(f"json={nb.artifacts.get('json')}")
     typer.echo(f"markdown={nb.artifacts.get('markdown')}")
 

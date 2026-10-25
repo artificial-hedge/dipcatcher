@@ -86,12 +86,10 @@ src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
 src/fx1/serve/api_audit_finetune.py:probe_finetune 46
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
-src/fx1/serve/backends.py:_openai_chat_complete 10
-src/fx1/serve/backends.py:_openai_chat_complete_tools 19
-src/fx1/serve/backends.py:_openai_chat_stream 18
+src/fx1/serve/backends.py:_openai_chat_complete_tools 15
 src/fx1/serve/backends.py:_openai_embeddings_complete 12
 src/fx1/serve/backends.py:_openai_tokenize_count 10
-src/fx1/serve/backends.py:hosted_api_url_problem 11
+src/fx1/serve/backends.py:hosted_api_url_problem 10
 src/fx1/serve/byok_audit.py:_StubUpstream._respond 15
 src/fx1/serve/byok_audit.py:_backend_probes 18
 src/fx1/serve/byok_audit.py:_client 11
@@ -183,7 +181,6 @@ src/quant_fund/cli/research_cmds.py:custody_cmd 13
 src/quant_fund/cli/research_cmds.py:epoch_position_cmd 10
 src/quant_fund/cli/research_cmds.py:execution_sensitivity_cmd 10
 src/quant_fund/cli/research_cmds.py:online_fdr_cmd 12
-src/quant_fund/cli/research_cmds.py:research 16
 src/quant_fund/cli/research_cmds.py:xvenue_basis_cmd 15
 src/quant_fund/config/models.py:KronosConfig.valid_kronos_settings 14
 src/quant_fund/config/models.py:NorthsetConfig.valid_northset_settings 25

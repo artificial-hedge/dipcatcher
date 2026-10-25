@@ -26,7 +26,7 @@ import subprocess  # noqa: S404 - runner is injectable; see Harness.run
 import sys
 import threading
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -885,15 +885,7 @@ class Harness:
         if config is not None:
             argv += ["--config", str(check_contained(str(config)))]
         if extra_args:
-            # --config passed through extra_args must obey the same
-            # containment as the keyword arg — otherwise it is a bypass.
-            for i, arg in enumerate(extra_args):
-                if arg == "--config":
-                    if i + 1 >= len(extra_args):
-                        raise ValueError("config path escapes the configs/ allowlist")
-                    check_contained(extra_args[i + 1])
-                elif arg.startswith("--config="):
-                    check_contained(arg.split("=", 1)[1])
+            _check_extra_config_args(extra_args, check_contained)
             argv += list(extra_args)
         if self._use_default_runner and not default_runner_available():
             raise RuntimeError(_MISSING_EXECUTABLE)
@@ -911,3 +903,35 @@ class Harness:
             timed_out=outcome.timed_out,
             duration_s=duration_s,
         )
+
+
+def _check_extra_config_args(
+    extra_args: Sequence[str], check_contained: Callable[[str], Path]
+) -> None:
+    """Enforce configs/ containment on ``--config`` flags inside extra_args.
+
+    The keyword ``config`` and the passthrough ``extra_args`` must obey the
+    same allowlist — otherwise a passthrough flag is a containment bypass.
+    """
+    _check_flag_config_args(extra_args, check_contained)
+    _check_inline_config_args(extra_args, check_contained)
+
+
+def _check_flag_config_args(
+    extra_args: Sequence[str], check_contained: Callable[[str], Path]
+) -> None:
+    """Containment for the two-token ``--config <path>`` form."""
+    for i, arg in enumerate(extra_args):
+        if arg == "--config":
+            if i + 1 >= len(extra_args):
+                raise ValueError("config path escapes the configs/ allowlist")
+            check_contained(extra_args[i + 1])
+
+
+def _check_inline_config_args(
+    extra_args: Sequence[str], check_contained: Callable[[str], Path]
+) -> None:
+    """Containment for the inline ``--config=<path>`` form."""
+    for arg in extra_args:
+        if arg.startswith("--config="):
+            check_contained(arg.split("=", 1)[1])

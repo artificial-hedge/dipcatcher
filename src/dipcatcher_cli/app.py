@@ -167,6 +167,11 @@ def _forward_lab(args: Sequence[str]) -> None:
     app(args=lab_args, prog_name="dipcatcher")
 
 
+def _with_model(args: Sequence[str], model: str | None) -> list[str]:
+    """Prefix chat-style args with the leading model when one was given."""
+    return list(args) if model is None else ["--model", model, *args]
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     """Open chat in a terminal; retain the existing lab command/exit contracts."""
     args = list(sys.argv[1:] if argv is None else argv)
@@ -176,10 +181,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     model, rest = _split_leading_model(args)
     if rest[:1] == [CHAT_COMMAND]:
-        chat_args = list(rest[1:])
-        if model is not None:
-            chat_args = ["--model", model, *chat_args]
-        _chat(chat_args)
+        _chat(_with_model(rest[1:], model))
         return
     if not rest and _interactive():
         _chat([] if model is None else ["--model", model])
@@ -191,10 +193,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         _sessions(rest[1:])
         return
     if rest[:1] == ["resume"]:
-        resume_args = list(rest[1:])
-        if model is not None:
-            resume_args = ["--model", model, *resume_args]
-        _resume(resume_args)
+        _resume(_with_model(rest[1:], model))
         return
     if rest and rest[0] in ONESHOT_COMMANDS:
         _oneshot(args)

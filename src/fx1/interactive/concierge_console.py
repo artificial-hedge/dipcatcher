@@ -112,25 +112,30 @@ def _print_startup(
             f"No endpoint configured. Run /keys set {model} to add your API key and URL, "
             "or /doctor for a readiness checklist."
         )
+    _echo_interrupted_jobs(concierge, output_fn)
+    if resume:
+        try:
+            concierge.handle_line(f"/resume {resume}")
+        except Exception as exc:  # noqa: BLE001
+            output_fn(f"could not resume {resume!r}: {exc}")
+
+
+def _echo_interrupted_jobs(concierge: Concierge, output_fn: Callable[..., None]) -> None:
+    """Reconcile and report interrupted jobs from earlier sessions, never re-run."""
     try:
         interrupted = session_mod.reconcile_interrupted(exclude_session_id=concierge.session_id)
     except Exception as exc:  # noqa: BLE001 — a damaged journal dir must not block startup
-        interrupted = []
         output_fn(
             f"note: could not reconcile prior session journals ({type(exc).__name__}: {exc}); "
             "new work continues — /sessions may be incomplete until the journal is repaired"
         )
+        return
     if interrupted:
         ids = ", ".join(sorted({sid for sid, _ in interrupted}))
         output_fn(
             f"{len(interrupted)} job(s) from earlier sessions were still open and are now "
             f"marked interrupted (nothing is re-run): {ids} — /sessions, /resume <id>"
         )
-    if resume:
-        try:
-            concierge.handle_line(f"/resume {resume}")
-        except Exception as exc:  # noqa: BLE001
-            output_fn(f"could not resume {resume!r}: {exc}")
 
 
 def _on_interrupt(

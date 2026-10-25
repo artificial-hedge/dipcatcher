@@ -230,6 +230,40 @@ class EngineCompletion:
     token_ids: list[int]
 
 
+def _enforce_card_gates(
+    card: ModelCard, *, enforce_ship_gate: bool, synthetic_fixture: bool
+) -> None:
+    """Refuse to serve a card that fails the fixture, opt-in, or ship gates.
+
+    ``enforce_ship_gate=False`` is the measurement path, not a serving path:
+    an eval must be able to load the candidate checkpoint before the real
+    eval_delta it is about to measure exists. The artifact layer always
+    verifies; only the card verdict is bypassed, and callers must never
+    serve through an engine built this way.
+    """
+    placeholder = card.eval_delta.is_placeholder
+    if synthetic_fixture and not placeholder:
+        raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
+    if not synthetic_fixture and card.fixture_only:
+        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
+
+        require_nonfixture_or_test_opt_in(card)
+    if (
+        enforce_ship_gate
+        and not card.ship_eligible
+        and not synthetic_fixture
+        and not card.fixture_only
+    ):
+        detail = " (placeholder eval_delta is not measured evidence)" if placeholder else ""
+        raise RuntimeError(
+            f"{card.version} failed the ship gate{detail}; refusing to serve its weights"
+        )
+    if not synthetic_fixture:
+        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
+
+        require_nonfixture_or_test_opt_in(card)
+
+
 class LocalWeightsEngine:
     """A verified fx-1 checkpoint dir, loaded and queryable.
 
@@ -263,27 +297,9 @@ class LocalWeightsEngine:
         if not card_path.is_file():
             raise FileNotFoundError(f"no model card at {card_path}")
         card = ModelCard.load(card_path)
-        placeholder = card.eval_delta.is_placeholder
-        if synthetic_fixture and not placeholder:
-            raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
-        if not synthetic_fixture and card.fixture_only:
-            from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
-
-            require_nonfixture_or_test_opt_in(card)
-        if (
-            enforce_ship_gate
-            and not card.ship_eligible
-            and not synthetic_fixture
-            and not card.fixture_only
-        ):
-            detail = " (placeholder eval_delta is not measured evidence)" if placeholder else ""
-            raise RuntimeError(
-                f"{card.version} failed the ship gate{detail}; refusing to serve its weights"
-            )
-        if not synthetic_fixture:
-            from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
-
-            require_nonfixture_or_test_opt_in(card)
+        _enforce_card_gates(
+            card, enforce_ship_gate=enforce_ship_gate, synthetic_fixture=synthetic_fixture
+        )
         self.evidence_class = "SYNTHETIC" if synthetic_fixture else "measured"
         manifest = self._load_manifest(root)
         weights_rel = manifest["weights_file"]

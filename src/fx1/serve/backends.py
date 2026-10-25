@@ -416,6 +416,30 @@ class _UsageTracker:
                 self.total_usage[k] = self.total_usage.get(k, 0) + v
 
 
+def _openai_post_json(request: _ByokRequest, *, timeout_s: float, label: str) -> Any:
+    """POST one OpenAI-compatible request and decode its JSON response.
+
+    All transport and decoding failures are mapped to ``RuntimeError`` with
+    the label prefixed, so a caller never sees a bare 500 escape the error
+    envelope. ``OSError`` covers ``TimeoutError`` — urlopen does not wrap
+    read-side stalls in ``URLError``.
+    """
+    try:
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
+            return json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+
+
 def _openai_chat_complete(
     url: str,
     *,
@@ -448,23 +472,7 @@ def _openai_chat_complete(
     request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
-    try:
-        with _openai_urlopen(request, timeout_s=timeout_s) as response:
-            payload = json.loads(response.read().decode())
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
-    except urllib.error.URLError as exc:
-        reason = type(exc.reason).__name__
-        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
-    except (OSError, http.client.HTTPException) as exc:
-        # OSError covers TimeoutError — urlopen does not wrap read-side
-        # stalls in URLError, so without this a slow upstream escapes the
-        # error envelope as a bare 500.
-        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
-    except UnicodeError as exc:
-        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    payload = _openai_post_json(request, timeout_s=timeout_s, label=label)
     try:
         content = payload["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
@@ -580,6 +588,27 @@ def _tool_call_shape(raw: Any, label: str, i: int) -> dict[str, Any]:
     return raw
 
 
+def _add_tool_body_fields(
+    body_map: dict[str, Any],
+    *,
+    tools: list[dict[str, Any]] | None,
+    tool_choice: str | dict[str, Any] | None,
+    parallel_tool_calls: bool | None,
+    logprobs: bool | None,
+    top_logprobs: int | None,
+) -> None:
+    """Attach optional OpenAI tool-call fields; absent ones are omitted verbatim."""
+    for key, value in (
+        ("tools", tools),
+        ("tool_choice", tool_choice),
+        ("parallel_tool_calls", parallel_tool_calls),
+        ("logprobs", logprobs),
+        ("top_logprobs", top_logprobs),
+    ):
+        if value is not None:
+            body_map[key] = value
+
+
 def _openai_chat_complete_tools(
     url: str,
     *,
@@ -616,16 +645,14 @@ def _openai_chat_complete_tools(
         "messages": messages,
         **(sampling or SamplingParams()).body_fields(),
     }
-    if tools is not None:
-        body_map["tools"] = tools
-    if tool_choice is not None:
-        body_map["tool_choice"] = tool_choice
-    if parallel_tool_calls is not None:
-        body_map["parallel_tool_calls"] = parallel_tool_calls
-    if logprobs is not None:
-        body_map["logprobs"] = logprobs
-    if top_logprobs is not None:
-        body_map["top_logprobs"] = top_logprobs
+    _add_tool_body_fields(
+        body_map,
+        tools=tools,
+        tool_choice=tool_choice,
+        parallel_tool_calls=parallel_tool_calls,
+        logprobs=logprobs,
+        top_logprobs=top_logprobs,
+    )
     body = json.dumps(body_map).encode()
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -693,6 +720,89 @@ def _openai_chat_complete_tools(
     )
 
 
+def _probe_matched_model(payload: Any, model: str) -> dict[str, Any]:
+    """Return the probed ``data[]`` row advertising *model*, fail-closed."""
+    data = payload.get("data") if isinstance(payload, dict) else None
+    rows = data if isinstance(data, list) else []
+    for item in rows:
+        if isinstance(item, dict) and item.get("id") == model:
+            return item
+    raise RuntimeError("identity probe did not report the requested model")
+
+
+def _stream_deltas(
+    response: Any,
+    *,
+    model: str,
+    label: str,
+    usage_out: list[dict[str, int]] | None,
+) -> Iterator[str]:
+    """Yield ``choices[0].delta.content`` strings from an SSE completion stream.
+
+    Empty delta frames (role/handshake chunks), usage-only frames, and
+    ``data: [DONE]`` terminate or skip cleanly; every malformed frame fails
+    closed as ``RuntimeError`` — a stream is never silently truncated.
+    """
+    for raw_line in response:
+        line = raw_line.decode("utf-8", "replace").strip()
+        if not line.startswith("data:"):
+            continue
+        data = line[len("data:") :].strip()
+        if data == "[DONE]":
+            break
+        chunk = _parse_stream_chunk(data, label)
+        u = _extract_usage(chunk)
+        if u is not None and usage_out is not None:
+            usage_out.clear()
+            usage_out.append(u)
+        content = _stream_chunk_content(chunk, model=model, label=label)
+        if content is not None:
+            yield content
+
+
+def _parse_stream_chunk(data: str, label: str) -> Any:
+    """Decode one SSE data frame, fail-closed on a non-JSON payload."""
+    try:
+        return json.loads(data)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"malformed {label} stream chunk: not JSON ({data[:48]!r})") from exc
+
+
+def _stream_chunk_content(chunk: Any, *, model: str, label: str) -> str | None:
+    """Extract ``choices[0].delta.content`` from one stream chunk, fail-closed.
+
+    A usage-only frame is valid even when its counters are absent or
+    unbillable; frame recognition must not depend on whether the accounting
+    sieve accepted any. Everything else malformed raises ``RuntimeError`` —
+    a stream is never silently truncated.
+    """
+    choices = chunk.get("choices") if isinstance(chunk, dict) else None
+    if choices is None:
+        if isinstance(chunk, dict) and isinstance(chunk.get("usage"), dict):
+            return None
+        raise RuntimeError(f"malformed {label} stream chunk: missing choices")
+    if not choices:
+        return None
+    delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
+    if not isinstance(delta, dict):
+        raise RuntimeError(f"malformed {label} stream chunk: missing delta")
+    _require_streamed_model(chunk, model=model, label=label)
+    content = delta.get("content")
+    if content is None:
+        return None
+    if not isinstance(content, str):
+        raise RuntimeError(
+            f"malformed {label} stream chunk: content is {type(content).__name__}, not str"
+        )
+    return content
+
+
+def _require_streamed_model(chunk: Any, *, model: str, label: str) -> None:
+    """When a chunk names its served model, it must be the requested one."""
+    if label in {"hosted_k3", "local_fx1"} and isinstance(chunk, dict) and "model" in chunk:
+        _require_served_model(chunk, model)
+
+
 def _openai_chat_stream(
     url: str,
     *,
@@ -735,51 +845,7 @@ def _openai_chat_stream(
         _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
-            for raw_line in response:
-                line = raw_line.decode("utf-8", "replace").strip()
-                if not line.startswith("data:"):
-                    continue
-                data = line[len("data:") :].strip()
-                if data == "[DONE]":
-                    break
-                try:
-                    chunk = json.loads(data)
-                except json.JSONDecodeError as exc:
-                    raise RuntimeError(
-                        f"malformed {label} stream chunk: not JSON ({data[:48]!r})"
-                    ) from exc
-                u = _extract_usage(chunk)
-                if u is not None and usage_out is not None:
-                    usage_out.clear()
-                    usage_out.append(u)
-                choices = chunk.get("choices") if isinstance(chunk, dict) else None
-                if choices is None:
-                    # A usage-only frame is valid even when its counters
-                    # are absent or unbillable. Frame recognition must not
-                    # depend on whether the accounting sieve accepted any.
-                    if isinstance(chunk, dict) and isinstance(chunk.get("usage"), dict):
-                        continue
-                    raise RuntimeError(f"malformed {label} stream chunk: missing choices")
-                if not choices:
-                    continue
-                delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
-                if not isinstance(delta, dict):
-                    raise RuntimeError(f"malformed {label} stream chunk: missing delta")
-                if (
-                    label in {"hosted_k3", "local_fx1"}
-                    and isinstance(chunk, dict)
-                    and "model" in chunk
-                ):
-                    _require_served_model(chunk, model)
-                content = delta.get("content")
-                if content is None:
-                    continue
-                if not isinstance(content, str):
-                    raise RuntimeError(
-                        f"malformed {label} stream chunk: content is "
-                        f"{type(content).__name__}, not str"
-                    )
-                yield content
+            yield from _stream_deltas(response, model=model, label=label, usage_out=usage_out)
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
@@ -1267,6 +1333,14 @@ def _require_served_model(payload: Mapping[str, Any], requested: str) -> None:
         )
 
 
+def _is_loopback_host(host: str) -> bool:
+    """True only when the host resolves to a literal loopback address."""
+    try:
+        return _normalized_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 def hosted_api_url_problem(url: str) -> str | None:
     """Why a credentialed hosted-model URL is unsafe — ``None`` when safe.
 
@@ -1295,13 +1369,8 @@ def hosted_api_url_problem(url: str) -> str | None:
     host = parsed.hostname
     if not host:
         return "must name a host"
-    if parsed.scheme == "http":
-        try:
-            address = _normalized_address(host)
-        except ValueError:
-            return "must use HTTPS unless the host is a literal loopback address"
-        if not address.is_loopback:
-            return "must use HTTPS unless the host is a literal loopback address"
+    if parsed.scheme == "http" and not _is_loopback_host(host):
+        return "must use HTTPS unless the host is a literal loopback address"
     return None
 
 
@@ -1732,15 +1801,7 @@ class LocalFx1Backend(_UsageTracker):
             raise RuntimeError(f"identity probe failed (HTTP {exc.code})") from exc
         except (urllib.error.URLError, OSError, ValueError, UnicodeError) as exc:
             raise RuntimeError(f"identity probe failed ({type(exc).__name__})") from exc
-        data = payload.get("data") if isinstance(payload, dict) else None
-        rows = data if isinstance(data, list) else []
-        matched: dict[str, Any] | None = None
-        for item in rows:
-            if isinstance(item, dict) and item.get("id") == self._model:
-                matched = item
-                break
-        if matched is None:
-            raise RuntimeError("identity probe did not report the requested model")
+        matched = _probe_matched_model(payload, self._model)
         if self._expected_weights_sha is not None:
             fx1_meta = matched.get("fx1")
             served_sha = fx1_meta.get("weights_sha256") if isinstance(fx1_meta, dict) else None
