@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.igo_open_data.MODULE. Re
 """
 
 from array import array
+
 from fx1.extensions.plugins.igo_open_data import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(28)
 _register(82)
@@ -18533,6 +18535,7 @@ _register(999838)
 _register(999892)
 _register(999946)
 _register(1000000)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

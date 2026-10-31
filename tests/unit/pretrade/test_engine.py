@@ -120,6 +120,39 @@ def test_stale_and_non_finite_fail_closed_without_latching() -> None:
     assert "non_finite" in reason_names(bad)
 
 
+def test_weekends_open_keeps_saturday_inside_the_session() -> None:
+    saturday = int(
+        datetime(2024, 1, 6, 15, 0, tzinfo=ZoneInfo("America/New_York")).timestamp() * 1_000_000_000
+    )
+    config = PretradeConfig(
+        schema_version=1,
+        limits=limit_config(),
+        session=SessionConfig(
+            timezone="America/New_York",
+            open_minute=570,
+            close_minute=960,
+            weekends_open=True,
+        ),
+    )
+    engine = PretradeEngine(
+        config,
+        hmac_key=HMAC_KEY,
+        initial_nav=1_000_000.0,
+        initial_cash=1_000_000.0,
+        ts_ns=saturday,
+    )
+    sid = arm(engine, ts_ns=saturday)
+    assert engine.check(order(sid, ts_ns=saturday), apply=False) == 0
+
+
+def test_settled_cash_rejects_a_negative_balance() -> None:
+    engine = make_engine()
+    with pytest.raises(ValueError, match="settled cash"):
+        engine.set_settled_cash(-1.0)
+    engine.set_settled_cash(0.0)
+    assert engine.book.settled == 0.0
+
+
 def test_market_hours_and_halt() -> None:
     saturday = int(
         datetime(2024, 1, 6, 15, 0, tzinfo=ZoneInfo("America/New_York")).timestamp() * 1_000_000_000

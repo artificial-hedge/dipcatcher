@@ -8,7 +8,7 @@
     "lazy_lane_resolution",
     "proper_score_only"
   ],
-  "inputs_sha256": "b1a31d66d88e2934bb13c29f4161d1f51ebaa0afaa3de2b135c73fbb44521b0b",
+  "inputs_sha256": "b9859c5255c17708ab5588eb88bd13ffa2eac4ff25f339b0268c67932d722db6",
   "kind": "monitor_run",
   "lanes_available": {
     "calibration": true,
@@ -46,7 +46,11 @@
       0.1
     ]
   },
+<<<<<<<< HEAD:receipts/monitor_run_e69a3aed9568e30d.json
   "receipt_sha256": "e69a3aed9568e30d31960e7d213af03a3ba81299a58ff8db4d53792747a1952f",
+========
+  "receipt_sha256": "85aece35e89b5b12ddd19560e9d6b32b5c23e6222f56e95cc18095a954b1bd2b",
+>>>>>>>> origin/main:receipts/monitor_run_85aece35e89b5b12.json
   "replay": {
     "argv": [
       "dipcatcher",

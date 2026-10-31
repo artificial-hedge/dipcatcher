@@ -153,7 +153,7 @@ class ShadowRiskAdapter:
         cash = float(broker.cash)
         try:
             nav = float(broker.nav())
-        except Exception:
+        except ValueError:
             nav = cash
         if not (nav == nav and nav > 0.0):
             nav = cash if cash > 0.0 else 1.0
@@ -196,7 +196,7 @@ class ShadowRiskAdapter:
             )
         try:
             nav = float(broker.nav(marks))
-        except Exception:
+        except ValueError:
             nav = float("nan")
         engine.update_account(nav=nav, mark_ts_ns=ts_ns if nav == nav and nav > 0.0 else 0)
 

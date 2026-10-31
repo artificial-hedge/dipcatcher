@@ -184,6 +184,25 @@ def test_loss_cs_contract() -> None:
     assert "bound_invalid" in evalue_family_contract_errors(bad3)
 
 
+def test_changepoint_localize_flat_precontract_knobs() -> None:
+    """Drills written before the params block still expose alpha/window/min_left."""
+    flat = {
+        "kind": "changepoint_localize.v1",
+        "alpha": 0.05,
+        "window": 40,
+        "min_left": 10,
+        "n": 300,
+        "cs_lo": 11,
+        "cs_hi": 46,
+        "tau_hat": 34,
+    }
+    assert evalue_family_contract_errors(flat) == []
+    missing = {"kind": "changepoint_localize.v1", "alpha": 0.05}
+    assert evalue_family_contract_errors(missing) == ["missing_params"]
+    inverted = dict(flat, cs_lo=50, cs_hi=10)
+    assert "cs_bounds_inverted" in evalue_family_contract_errors(inverted)
+
+
 def test_changepoint_localize_contract() -> None:
     assert evalue_family_contract_errors(_BASE_LOCALIZE) == []
     bad = dict(_BASE_LOCALIZE, result={"tau_hat": 5, "cs_lo": 300, "cs_hi": 100, "n": 400})

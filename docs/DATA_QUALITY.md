@@ -10,8 +10,8 @@ import polars as pl
 from quant_fund.data.quality import score_bars, report_json, write_report
 
 report = score_bars(pl.read_parquet("bars.parquet"), dataset="aapl-1m")
-print(report.score, report.passed)          # score in [0, 1]; passed = zero violations
-text = report_json(report)                  # deterministic JSON (sorted keys)
+print(report.score, report.passed)  # score in [0, 1]; passed = zero violations
+text = report_json(report)  # deterministic JSON (sorted keys)
 write_report(report, "reports/aapl-1m.json")  # receipt-style artifact
 ```
 

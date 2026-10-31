@@ -12,7 +12,7 @@ import hmac
 import json
 from pathlib import Path
 from typing import Any, Literal
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -73,13 +73,14 @@ class SessionConfig(BaseModel):
     timezone: str
     open_minute: int = Field(ge=0, lt=24 * 60)
     close_minute: int = Field(gt=0, le=24 * 60)
+    weekends_open: bool = False
 
     @field_validator("timezone")
     @classmethod
     def _timezone(cls, value: str) -> str:
         try:
             ZoneInfo(value)
-        except Exception as exc:
+        except ZoneInfoNotFoundError as exc:
             raise ValueError(f"unknown timezone {value!r}") from exc
         return value
 

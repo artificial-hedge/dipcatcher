@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/calib_real_drill.py",
-  "receipt_sha256": "17664d1891cde1b68154e094e6ba8edf34e97e558b2f197a0d1b5867040a50f3",
+  "receipt_sha256": "17cdd52a303d589cdcc6fcf742f2e398add60493bbc1319201ddb78809fb6f7d",
   "replay": {
     "argv": [
       "scripts/calib_real_drill.py",
@@ -29,9 +29,9 @@
         "n_models"
       ],
       "claims_equal": false,
-      "committed_sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
-      "drift_reason": "registry_growth",
-      "receipt": "receipts/calib_real_drill.json"
+      "committed_sha256": "2a3300764a5b916130f64db8c29b05c0a48e2212b43730f75f4970bff2eae354",
+      "drift_reason": "schema retag calibration_audit.drill.v1 kept as its own receipt; replay still emits the pre-retag drill (registry_growth on n_models)",
+      "receipt": "receipts/calibration_audit_drill.json"
     }
   ],
   "research_only": true,

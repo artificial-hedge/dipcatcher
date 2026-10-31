@@ -77,7 +77,8 @@ def process_map[T, R](
     try:
         ctx = _process_pool_context()
         pool = ProcessPoolExecutor(max_workers=workers, mp_context=ctx)
-    except Exception:
+    except (OSError, ValueError):
+        # fork is unavailable, or the pool cannot be created.
         return _serial()
     try:
         return list(pool.map(_invoke, payloads))

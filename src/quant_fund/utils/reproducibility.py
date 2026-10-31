@@ -6,6 +6,8 @@ import hashlib
 import os
 import shutil
 import subprocess
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -78,21 +80,56 @@ def git_worktree_sha256() -> str:
         return "UNKNOWN"
 
 
+# One resolved HEAD per checkout. pytest-xdist workers share the index lock,
+# so a later ``git rev-parse`` can time out after an earlier one succeeded.
+# Caching the success keeps two seals of the same tree identical. A miss is
+# not cached: the next call may still read the real revision.
+_revision_lock = threading.Lock()
+_revision_cache: dict[str, str] = {}
+
+
+def clear_git_revision_cache() -> None:
+    """Drop the process-local HEAD cache."""
+    with _revision_lock:
+        _revision_cache.clear()
+
+
 def git_revision() -> str:
-    """Return the checked-out revision, or an explicit unknown marker."""
+    """Return the checked-out revision, or an explicit unknown marker.
+
+    A loaded runner can miss a short ``git rev-parse`` budget while the
+    index lock is held. Retry, then reuse a resolved HEAD for this process
+    so two seals of the same tree do not disagree by one call landing on
+    ``UNKNOWN``.
+    """
     git = shutil.which("git")
     if git is None:
         return "UNKNOWN"
-    try:
-        return subprocess.run(
-            [git, "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        ).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return "UNKNOWN"
+    key = os.path.realpath(os.getcwd())
+    with _revision_lock:
+        cached = _revision_cache.get(key)
+    if cached is not None:
+        return cached
+    delay = 0.05
+    for attempt in range(6):
+        try:
+            rev = subprocess.run(
+                [git, "rev-parse", "HEAD"],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=15,
+            ).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            if attempt < 5:
+                time.sleep(delay)
+                delay = min(delay * 2, 1.0)
+            continue
+        if rev:
+            with _revision_lock:
+                _revision_cache.setdefault(key, rev)
+                return _revision_cache[key]
+    return "UNKNOWN"
 
 
 def _parse_name_status(raw: bytes) -> list[tuple[bytes, bytes]]:

@@ -57,6 +57,8 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "Executive Summary.pdf",  # product overview (tracked input)
     "FULL_COVERAGE.md",  # full-offline coverage lane contract
     "Dockerfile",  # the container definition — a build-env tamper surface
+    "Executive Summary.pdf",  # tracked root brief — no epoch coverage
+    "FULL_COVERAGE.md",  # coverage notes at repo root
     "HONESTY_RATING.md",  # the public honesty ledger
     "INFLIGHT",  # work ledger
     "install.sh",  # curl installer for fxi/dipcatcher — supply-chain surface
@@ -68,6 +70,8 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "sonar-project.properties",  # Sonar analysis scope — dropping src would hide findings
     "day_grind_progress.md",  # progress tracker
     "docker-compose.yml",  # local service definitions
+    "install.sh",  # tracked root installer — a supply-chain surface
+    "p",  # tracked root file; no epoch coverage above the corpus dirs
     # --- gate-defining files ---
     ".gitleaks.toml",  # secret-scan allowlist — removing a rule opens exfil lanes
     ".github/dependabot.yml",  # dep-bump policy — tampering injects malicious upgrades

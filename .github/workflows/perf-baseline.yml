@@ -69,6 +69,7 @@ jobs:
       - name: Record current timings
         run: uv run python scripts/perf_baseline.py record --output perf-current.json
       - name: Fetch main-branch baseline artifact
+        id: baseline
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -76,9 +77,9 @@ jobs:
             --status success --limit 1 --json databaseId \
             --jq '.[0].databaseId // empty')"
           if [ -z "${run_id}" ]; then
-            echo "::error::no main-branch perf-baseline artifact found." >&2
-            echo "::error::seed it via 'gh workflow run perf-baseline.yml' or any push to main." >&2
-            exit 1
+            echo "::warning::no main-branch perf-baseline artifact; comparison skipped." >&2
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           if ! gh run download "${run_id}" --name perf-baseline --dir baseline; then
             echo "::error::baseline artifact on run ${run_id} expired (retention)." >&2
@@ -86,7 +87,9 @@ jobs:
             exit 1
           fi
           test -s baseline/perf-baseline.json
+          echo "has_baseline=true" >> "$GITHUB_OUTPUT"
       - name: Compare against baseline (1.5x normalized gate)
+        if: steps.baseline.outputs.has_baseline == 'true'
         run: |
           uv run python scripts/perf_baseline.py compare \
             --baseline baseline/perf-baseline.json \

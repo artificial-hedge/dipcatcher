@@ -1,16 +1,39 @@
 {
   "data_label": "CORPUS",
+<<<<<<<< HEAD:data/metadata/corpus_epoch_c99ec5c22770b0c2.json
   "epoch_root_sha256": "e19d12a20aa0dda6c8717444f7779160f25976ee09789f568bcd5488364d03e6",
   "inputs_sha256": "e15b4dbb78f1dffc2d683ed2a68b040cf3d4f825151fed914aafdf4aabef9204",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
   "member_tree_root": "7160639240a4256d4888bc0e040a6c26850e9bb3edd22e4af5722d623f6499de",
+========
+  "epoch_root_sha256": "41bade21c6ae81cfb9f083ddf9accef0d3ca4f1bcfe01d21a54b9a62248b5edc",
+  "inputs_sha256": "e15b4dbb78f1dffc2d683ed2a68b040cf3d4f825151fed914aafdf4aabef9204",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "9999b971a4d713953b94b124e559e7cba280f51b4f2b8190e600845acf07a910",
+>>>>>>>> origin/main:data/metadata/corpus_epoch_3ea16584db64f1b1.json
   "members": [
     {
       "name": ".gitkeep",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
+<<<<<<<< HEAD:data/metadata/corpus_epoch_c99ec5c22770b0c2.json
+========
+      "name": "corpus_epoch_39a2bfe477cdc688.json",
+      "sha256": "d46b3c2c81cc535bac5a3635d2a7ec32d036a7d37ca6f3d69e9e7999f5046b56"
+    },
+    {
+      "name": "corpus_epoch_622e44359e93a6d4.json",
+      "sha256": "54747015bc367c40b9e6876ca54d3f53041dba0a85f56177c32501b1a394db40"
+    },
+    {
+      "name": "corpus_epoch_768ae9d6b32ab689.json",
+      "sha256": "9cfbd3178010548c27697a148c011157a5c484891230da072c0c3262050136d4"
+    },
+    {
+>>>>>>>> origin/main:data/metadata/corpus_epoch_3ea16584db64f1b1.json
       "name": "cost_aware_tournament/us_wide_20260925/manifest.json",
       "sha256": "ea26eaf805da7963eea40d81ffb69078199d3695bed6669b281a38947160a763"
     },
@@ -109,13 +132,10 @@
     {
       "name": "research/phase1_evidence_index.json",
       "sha256": "3e8d28e2ad08137d5e0ea7b8703600d710cdda37ebe83e384afc50fbc94d1f7a"
-    },
-    {
-      "name": "resolved_config.json",
-      "sha256": "375ba1ea5473e0c275bb77f995fdb22a64290de93a918e1313c7250e372f9ab2"
     }
   ],
   "members_added": [
+<<<<<<<< HEAD:data/metadata/corpus_epoch_c99ec5c22770b0c2.json
     ".gitkeep",
     "cost_aware_tournament/us_wide_20260925/manifest.json",
     "cost_aware_tournament/us_wide_20260925/validation.attempt.json",
@@ -153,6 +173,19 @@
   "prev_epoch_receipt": null,
   "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "receipt_sha256": "c99ec5c22770b0c2a9b343d4a501d5343bde644def92a157bdc6828c06997eea",
+========
+    "corpus_epoch_768ae9d6b32ab689.json"
+  ],
+  "members_removed": [],
+  "n_members": 29,
+  "params": {
+    "head_sha": "69e3b67e9aa7ef4dac50240fcb029550ed9b025b",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_768ae9d6b32ab689.json",
+  "prev_epoch_sha256": "beb02d69915bd38286683a8dcda17341ac66a5a5b434196aaa07806f26bf4cb4",
+  "receipt_sha256": "3ea16584db64f1b16cdd8b8b3cc3eaa4c9bbffdd4415dc2bdc9dd138a1a1720b",
+>>>>>>>> origin/main:data/metadata/corpus_epoch_3ea16584db64f1b1.json
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

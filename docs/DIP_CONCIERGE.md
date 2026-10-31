@@ -131,6 +131,8 @@ Slash commands:
 /keys list|set|test|remove      model endpoints (presence-only); test = identity probe
 /doctor                         readiness: endpoint, store, journal, budget, family catalog
 /harness list|describe|run      registered lab commands
+/live                           operator card for the live desk (chat does not transmit)
+/trade [readiness|help]         live orders are disabled; paper is the only book
 /use <model>  /model  /help  /exit
 ```
 
@@ -199,6 +201,24 @@ key. `/keys test [model]` sends one minimal authenticated completion and
 renders requested vs served model id, latency, and the failure class on
 error; a served identity that differs from the requested id is flagged
 (provider routing), recorded, and not treated as success of anything else.
+
+## /trade — paper book and the blocked-conditions report
+
+`/trade` and `/trade readiness` print the five institutional conditions.
+Every condition is blocked or not yet collected, and this report cannot be
+flipped from inside the process. The book this command runs is simulated.
+Armed broker orders are a different command, `dipcatcher live`, and a fill
+there is not this report and not a live-performance claim.
+
+```sh
+dipcatcher trade readiness
+dipcatcher trade session --state ./paper-session.json --commands ./orders.jsonl
+```
+
+`orders.jsonl` is one command per line: `mark`, `submit`, `fill`, `cancel`,
+`kill`, `clear_kill`, `checkpoint`. Prices are caller-supplied. Short sales
+are refused. A live endpoint is not a flag on this command. This session is
+not a broker connection and not evidence for a live-trading claim.
 
 ## /superpower — capability orchestration
 

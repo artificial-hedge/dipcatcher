@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "83d7d0ba4a83a919eba7fce73e68411a9d50cb3d8f9119d2d87a3703b397aed2",
+  "epoch_root_sha256": "c6368f7ac2c3d8af941bb91a62b9a880a2d70e4aecf0ddad0e865a168c59c1da",
   "inputs_sha256": "d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "09152eed218b4b9b51d490a3c2f1049e8dd45660b927fbfbb7687f1774b34b67",
+  "member_tree_root": "0f732bedddf29e791d029e05732e01fdfc3ae395e24cccd2ce437ca38a6e76d0",
   "members": [
     {
       "name": "abc_calibrate_amzn.json",
@@ -75,12 +75,12 @@
       "sha256": "248835c82eeba8f0ef65fc30345da462bcea7180374008d5aa56c526f4bd5f61"
     },
     {
-      "name": "calib_real_drill.json",
-      "sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c"
-    },
-    {
       "name": "calibration_audit.json",
       "sha256": "c9f800216f05073fed4da606f04823cc71bb37909d4242492f5e280cdb64964f"
+    },
+    {
+      "name": "calibration_audit_drill.json",
+      "sha256": "2a3300764a5b916130f64db8c29b05c0a48e2212b43730f75f4970bff2eae354"
     },
     {
       "name": "cancel_cluster_amzn.json",
@@ -351,6 +351,10 @@
       "sha256": "3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f"
     },
     {
+      "name": "corpus_inference_2ee42848a1d51937.json",
+      "sha256": "25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e"
+    },
+    {
       "name": "corpus_proof_a56dff22d5b4931c.json",
       "sha256": "0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c"
     },
@@ -360,7 +364,15 @@
     },
     {
       "name": "corpus_real_drill.json",
-      "sha256": "25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e"
+      "sha256": "082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119"
+    },
+    {
+      "name": "cost_aware_rerun_20261007.json",
+      "sha256": "618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f"
+    },
+    {
+      "name": "cost_aware_rerun_20261007.json.seal.json",
+      "sha256": "62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1"
     },
     {
       "name": "cost_calibration_eval_df9b8d7068bf709b.json",
@@ -615,6 +627,14 @@
       "sha256": "bd9b0903ffd6f40e3b237f4bbe46557ef345cfd547ec9e045dadc0ee806084c2"
     },
     {
+      "name": "forward_record_preregistration_v1.json",
+      "sha256": "d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3"
+    },
+    {
+      "name": "forward_record_preregistration_v1.json.seal.json",
+      "sha256": "afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc"
+    },
+    {
       "name": "full_impact.json",
       "sha256": "29a1b45e52fca254985f19c30d096eb6b2de14a406494282206e1092b3ea905e"
     },
@@ -633,6 +653,10 @@
     {
       "name": "fx1_auth_audit.json",
       "sha256": "fb7e0783ffa11fb79b7c4a1fceedb0b9e3f5eb836db4cda2b195b000128d8044"
+    },
+    {
+      "name": "fx1_cap_audit.json",
+      "sha256": "99737d09622533bad5f5793cd7fef198e211b235251bb79455c9a5e8643547b3"
     },
     {
       "name": "fx1_cli_audit.json",
@@ -656,7 +680,7 @@
     },
     {
       "name": "fx1_eval_lifecycle_audit.json",
-      "sha256": "03851ed9f14a7c2c5b9958f758d3ec5496c50255a671212db7e3f06f4b7388f3"
+      "sha256": "16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd"
     },
     {
       "name": "fx1_fault_audit.json",
@@ -671,6 +695,10 @@
       "sha256": "2e1421dd4e7b06191da9ee4c537d10ecd0fcb5e8a13a32608820f295e81fd0fb"
     },
     {
+      "name": "fx1_ops_audit.json",
+      "sha256": "6362b090bd931070e3f1a12caec01d2dc0df14db98c71658c29b58bf10fb8d08"
+    },
+    {
       "name": "fx1_parity_audit.json",
       "sha256": "e71e77a4d8169d731bdc48c27765c24c3db59f1240437e55fc1f9edb928c90af"
     },
@@ -681,6 +709,10 @@
     {
       "name": "fx1_quota2_audit.json",
       "sha256": "6e135a43144e89e3fab4b7d4473d89db1d98ae6f888f7611d2e9433ac00cadca"
+    },
+    {
+      "name": "fx1_replay_audit.json",
+      "sha256": "d3cbeaa2e484021f6a1524df38d01c42cf19db7ad0de0aa78b4a44e750dcbacf"
     },
     {
       "name": "fx1_retrieval_audit.json",
@@ -984,7 +1016,7 @@
     },
     {
       "name": "mid_dark_amzn.json",
-      "sha256": "da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1"
+      "sha256": "e12eaa45923bc159ae83d6a62ce9fc3e09e6f80eb47d04d3b27a43adfe550624"
     },
     {
       "name": "mid_jump_amzn.json",
@@ -1045,6 +1077,10 @@
     {
       "name": "order_revision_amzn.json",
       "sha256": "dbb7239f51f26e176f62493fea10a2e921b1a97945eb251eae5e3432badab3ce"
+    },
+    {
+      "name": "p0_evidence_inventory_v1.json",
+      "sha256": "14ec1043293364e48787bc29446dbfb51b0fb55d69e20d0ba1328c905269cab4"
     },
     {
       "name": "panel_audit_real_drill.json",
@@ -1582,6 +1618,7 @@
     "byok_audit.json",
     "cache_audit.json",
     "calibration_audit.json",
+    "calibration_audit_drill.json",
     "cancel_cluster_amzn.json",
     "cancel_gradient_amzn.json",
     "cancel_gradient_bench.json",
@@ -1600,6 +1637,9 @@
     "contract_probe.json",
     "corpus_audit.json",
     "corpus_epoch_959513b12d66742b.json",
+    "corpus_inference_2ee42848a1d51937.json",
+    "cost_aware_rerun_20261007.json",
+    "cost_aware_rerun_20261007.json.seal.json",
     "cost_calibration_eval_f130c7e871e9aa64.json",
     "crossvenue_basis_3f4ff76f517655a7.json",
     "crown_behind.json",
@@ -1647,11 +1687,14 @@
     "forecast_data_audit.json",
     "forecast_infra_audit.json",
     "forecast_pipeline_audit.json",
+    "forward_record_preregistration_v1.json",
+    "forward_record_preregistration_v1.json.seal.json",
     "full_impact.json",
     "full_stack.json",
     "fx1_anthropic_sdk_audit.json",
     "fx1_api_audit.json",
     "fx1_auth_audit.json",
+    "fx1_cap_audit.json",
     "fx1_cli_audit.json",
     "fx1_client_audit.json",
     "fx1_contract_audit.json",
@@ -1661,9 +1704,11 @@
     "fx1_fault_audit.json",
     "fx1_jobs_audit.json",
     "fx1_oai_sdk_audit.json",
+    "fx1_ops_audit.json",
     "fx1_parity_audit.json",
     "fx1_perf_audit.json",
     "fx1_quota2_audit.json",
+    "fx1_replay_audit.json",
     "fx1_retrieval_audit.json",
     "fx1_sdk_audit.json",
     "fx1_spec_audit.json",
@@ -1734,6 +1779,7 @@
     "options_audit.json",
     "order_lifetime_amzn.json",
     "order_revision_amzn.json",
+    "p0_evidence_inventory_v1.json",
     "parity_audit.json",
     "parity_leak_audit.json",
     "pin_stability.json",
@@ -1844,17 +1890,19 @@
     "zone_stability.json",
     "zone_ttl.json"
   ],
-  "members_removed": [],
-  "n_members": 389,
+  "members_removed": [
+    "calib_real_drill.json"
+  ],
+  "n_members": 398,
   "params": {
-    "head_sha": "8312bb586199a74a08367a3820b0ea1815643ce0",
+    "head_sha": "6418f4f8d7e6bf8903e7fb9558120624c6327f68",
     "pattern": "*.json"
   },
   "prev_epoch_receipt": "corpus_epoch_959513b12d66742b.json",
   "prev_epoch_sha256": "ff5c1c2d974331e9d4b23af34208dc435ef184ff37f5e74a23eb305a4f43394d",
-  "receipt_sha256": "2bd794275af2b3d8e419616244ab441c0163b11c7a8776c5a7dc779f665f2496",
+  "receipt_sha256": "62bfa90c28254f197438cda426f1808e6475db14c98f1823093cc8326a38708f",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,
-  "verdict": "advancing"
+  "verdict": "shrinking"
 }

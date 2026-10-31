@@ -133,8 +133,20 @@ def verified_corpus_files(root: Path, *, pattern: str = "*.json") -> list[Path]:
 
     Per-file verification must match the epoch chain's ``rglob`` member
     semantics — a claim receipt dropped in a subdirectory is still corpus
-    evidence, not a blind spot."""
-    return sorted(p for p in root.rglob(pattern) if p.is_file() and not is_quarantined(p, root))
+    evidence, not a blind spot.
+
+    ``<receipt>.json.seal.json`` sidecars are seal evidence, not receipts.
+    They are checked by ``quant_fund.data.prereg_seal.verify_seal``. Feeding
+    one to the research-receipt verifier reports a spurious
+    ``receipt_sha256_missing_or_invalid``. The epoch chain still hashes them
+    as corpus members; only receipt verification skips them. This matches
+    ``quant_fund.proofcore.ci.receipt_paths``.
+    """
+    return sorted(
+        p
+        for p in root.rglob(pattern)
+        if p.is_file() and not p.name.endswith(".seal.json") and not is_quarantined(p, root)
+    )
 
 
 def seal_receipt(receipt: Mapping[str, Any], *, exclude: Iterable[str] = ()) -> dict[str, Any]:

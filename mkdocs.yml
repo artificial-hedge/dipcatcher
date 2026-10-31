@@ -241,6 +241,7 @@ nav:
   - Operations:
       - Platform matrix: PLATFORM_MATRIX.md
       - Runbook: OPERATIONS_RUNBOOK.md
+      - Production checklist: PRODUCTION.md
       - Ultra plan — production readiness: ULTRA_PROD_READINESS.md
       - Proposed main CI ruleset: CI_ENFORCEMENT_PROPOSAL.md
       - Audit ledger and observability: AUDIT_OBSERVABILITY.md
@@ -248,6 +249,8 @@ nav:
       - Backtest-to-live parity: BACKTEST_LIVE_PARITY.md
       - Deterministic simulation: DETERMINISTIC_SIMULATION.md
       - Pre-trade risk: PRETRADE_RISK.md
+      - Operator order desk: LIVE_DESK.md
+      - Live order gateway: LIVE_TRADING.md
   - fx-1:
       - Overview: FX1.md
       - Interactive CLI (fxi): FXI.md

@@ -22,6 +22,8 @@ jobs:
           persist-credentials: false
 
       - name: Dependency review
+        # Fail closed. A missing dependency graph is a repository setting, and
+        # a green review must not be reported when the action cannot run.
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: moderate

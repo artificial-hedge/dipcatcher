@@ -156,6 +156,36 @@ def test_receipt_binding_unknown_digest_fails_closed(tmp_path: Path) -> None:
     assert "tape_manifest_unknown" not in verify_receipt_payload(synthetic)["errors"]
 
 
+def test_basis_composite_dataset_sha256_is_not_a_tape_pin() -> None:
+    """basis_carry dataset_sha256 re-derives from embedded series digests.
+
+    That composite is not a tape-file or manifest seal. A random dataset
+    digest on the same schema still fails closed.
+    """
+    inputs = {
+        "spot": {"sha256": "ab" * 32, "data_label": "kraken"},
+        "contracts": {"FI_XBTUSD_260925": {"sha256": "cd" * 32, "data_label": "kraken"}},
+    }
+    composite = hash_bytes(
+        canonical_json_bytes(
+            {
+                "spot": inputs["spot"]["sha256"],
+                "contracts": {"FI_XBTUSD_260925": "cd" * 32},
+            }
+        )
+    )
+    body = {
+        "schema": "basis_carry.v1",
+        "kind": "basis_carry",
+        "data_label": "kraken",
+        "inputs": inputs,
+        "dataset_sha256": composite,
+    }
+    assert tape_binding_errors(body) == []
+    body["dataset_sha256"] = "f" * 64
+    assert tape_binding_errors(body) == ["tape_manifest_unknown"]
+
+
 def test_receipt_binding_resolves_pinned_digests(tmp_path: Path) -> None:
     tape = _write_tape(tmp_path)
     manifest = _pin(tmp_path, tape)["manifest"]
