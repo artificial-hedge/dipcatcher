@@ -38,7 +38,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,7 +67,7 @@ jobs:
         run: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
 
   audit:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,7 +101,7 @@ jobs:
           if-no-files-found: error
 
   package:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     permissions:
       contents: read
@@ -135,7 +135,7 @@ jobs:
             dist/*.tar.gz
 
   container:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -167,7 +167,7 @@ jobs:
   test-inventory:
     # One collect-only per suite marker; shard jobs pytest only their file list so
     # xdist workers avoid importing the full ~5.5k-module tree (WP-3J-4).
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     env:
       OMP_NUM_THREADS: "1"
@@ -240,7 +240,7 @@ jobs:
 
   test:
     needs: [test-inventory]
-    runs-on: instabox-medium
+    runs-on: instabox-large
     # 75m cancelled test (3.12, 3) on f75dc11c3 at 99% with no failures.
     timeout-minutes: 120
     env:
@@ -377,7 +377,7 @@ jobs:
   coverage:
     needs: [test]
     if: ${{ !cancelled() }}
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -436,7 +436,7 @@ jobs:
           if-no-files-found: error
 
   perf:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -470,7 +470,7 @@ jobs:
   smoke:
     needs: [test, lint]
     if: ${{ !cancelled() }}
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -587,7 +587,7 @@ jobs:
             data/metadata/research/runs/
 
   mc-engine-smoke:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -627,7 +627,7 @@ jobs:
           PY
 
   rust-accel:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -661,7 +661,7 @@ jobs:
         run: uv run pytest -q -m native tests/property tests/unit tests/native
 
   market-sim:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -680,7 +680,7 @@ jobs:
         run: uv run pytest -q tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"
 
   parity-smoke:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -703,7 +703,7 @@ jobs:
           if-no-files-found: error
 
   examples:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -722,7 +722,7 @@ jobs:
         run: make examples
 
   audit-observability:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -746,7 +746,7 @@ jobs:
         run: docker compose -f deploy/observability/docker-compose.yml config
 
   diffbacktest:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -763,7 +763,7 @@ jobs:
         run: JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" uv run pytest -q tests/unit/diffbacktest
 
   robustness-smoke:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -782,7 +782,7 @@ jobs:
         run: uv run python -m quant_fund.robustness
 
   formal:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -807,7 +807,7 @@ jobs:
         run: uv run pytest tests/formal -q --tb=short
 
   evidence-audit:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     permissions:
       contents: read
       actions: read
@@ -1000,7 +1000,7 @@ jobs:
           if-no-files-found: error
 
   pretrade-risk:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1025,7 +1025,7 @@ jobs:
           if-no-files-found: error
 
   stress-smoke:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1064,7 +1064,7 @@ jobs:
     # Regenerates .test_durations offline; download the artifact and commit manually.
     # Full ``make test-durations`` exceeds the 4-vCPU cloud-agent budget.
     if: github.event_name == 'workflow_dispatch' && inputs.suite == 'full'
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 180
     env:
       OMP_NUM_THREADS: "1"
@@ -1122,7 +1122,7 @@ jobs:
         stress-smoke,
       ]
     if: ${{ always() }}
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 5
     steps:
       - name: Require every CI job to succeed

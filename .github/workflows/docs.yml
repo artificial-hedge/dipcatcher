@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     permissions:
       contents: read
@@ -58,7 +58,7 @@ jobs:
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 10
     environment:
       name: github-pages
