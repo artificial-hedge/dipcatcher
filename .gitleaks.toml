@@ -136,3 +136,61 @@ condition = "AND"
 paths = ['''(?:^|/)web/public/fixtures/index\.json$''']
 regexTarget = "secret"
 regexes = ['''^[0-9a-f]{64}$''']
+
+# Historical and current fx1 tests embed deterministic fake credentials for
+# redaction, honesty-gate, and serve smoke coverage. gitleaks scans full
+# history (including deleted paths), so bind each fixture file explicitly.
+[[allowlists]]
+description = "fx1 test fixtures: synthetic credential strings (history + HEAD)"
+paths = [
+  '''(?:^|/)tests/fx1/test_kernel_redact\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence_ledger\.py$''',
+  '''(?:^|/)tests/fx1/test_model_smoke\.py$''',
+  '''(?:^|/)tests/fx1/test_orchestration_e2e\.py$''',
+  '''(?:^|/)tests/fx1/test_telemetry_live\.py$''',
+  '''(?:^|/)tests/fx1/journeys/textutil\.py$''',
+  '''(?:^|/)tests/fx1/test_bank_modelcard_serve\.py$''',
+  '''(?:^|/)tests/unit/cli/test_dipcatcher_latency\.py$''',
+]
+
+[[allowlists]]
+description = "Prereg timestamp test fixture (removed path; history scan only)"
+paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+
+[[allowlists]]
+description = "Interactive profile env-var constant names (not stored secrets)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)src/fx1/interactive/profiles\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*ENV_FX1_[A-Z0-9_]*KEY\s*=''']
+
+# Historical and current fx1 tests embed deterministic fake credentials for
+# redaction, honesty-gate, and serve smoke coverage. gitleaks scans full
+# history (including deleted paths), so bind each fixture file explicitly.
+[[allowlists]]
+description = "fx1 test fixtures: synthetic credential strings (history + HEAD)"
+paths = [
+  '''(?:^|/)tests/fx1/test_kernel_redact\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence_ledger\.py$''',
+  '''(?:^|/)tests/fx1/test_model_smoke\.py$''',
+  '''(?:^|/)tests/fx1/test_orchestration_e2e\.py$''',
+  '''(?:^|/)tests/fx1/test_telemetry_live\.py$''',
+  '''(?:^|/)tests/fx1/journeys/textutil\.py$''',
+  '''(?:^|/)tests/fx1/test_bank_modelcard_serve\.py$''',
+  '''(?:^|/)tests/unit/cli/test_dipcatcher_latency\.py$''',
+]
+
+[[allowlists]]
+description = "Prereg timestamp test fixture (removed path; history scan only)"
+paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+
+[[allowlists]]
+description = "Interactive profile env-var constant names (not stored secrets)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)src/fx1/interactive/profiles\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*ENV_FX1_[A-Z0-9_]*KEY\s*=''']
