@@ -28,7 +28,7 @@ concurrency:
 jobs:
   preflight:
     name: Require green CI and evidence-audit on tag SHA
-    runs-on: ubuntu-latest
+    runs-on: instabox-medium
     timeout-minutes: 10
     permissions:
       actions: read
@@ -48,7 +48,7 @@ jobs:
   build:
     needs: preflight
     name: Build, SBOM, sign, attest
-    runs-on: ubuntu-latest
+    runs-on: instabox-medium
     timeout-minutes: 30
     permissions:
       contents: read

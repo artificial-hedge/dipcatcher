@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: instabox-medium
     timeout-minutes: 30
     # Makefile TEST_ENV block, mirrored (keep both sides identical) — OpenMP
     # thread pinning + fork/fault hardening (.dsh-24x7/lane_reports/l3-segfault.md
@@ -142,7 +142,7 @@ jobs:
     name: fx1-required
     needs: [test]
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: instabox-medium
     timeout-minutes: 5
     steps:
       - name: Require every fx1 job to succeed
