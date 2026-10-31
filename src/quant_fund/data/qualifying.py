@@ -166,12 +166,15 @@ def _guard_timestamps(
         parsed[name] = _opt_datetime(row, name)
         if parsed[name] is None:
             acc.soft(f"missing_field:{idx}:{name}")
-    if any(v is None for v in parsed.values()):
+    event_time = parsed["event_time"]
+    available_time = parsed["available_time"]
+    ingested_time = parsed["ingested_time"]
+    if event_time is None or available_time is None or ingested_time is None:
         return None
     return _CausalTriple(
-        event_time=parsed["event_time"],  # type: ignore[arg-type]
-        available_time=parsed["available_time"],  # type: ignore[arg-type]
-        ingested_time=parsed["ingested_time"],  # type: ignore[arg-type]
+        event_time=event_time,
+        available_time=available_time,
+        ingested_time=ingested_time,
     )
 
 

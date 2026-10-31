@@ -31,19 +31,36 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import Any, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from quant_fund.pipeline.artifact_manifest import (
-    ArtifactIdentity,
-    ArtifactManifestError,
-    manifest_path,
-    verify_artifact_manifest,
-)
-from quant_fund.registry.mlflow_store import promotion_is_approved
-from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
 from quant_fund.utils.hashing import hash_file
+
+
+class _DatasetView(Protocol):
+    """Attributes promotion reads off a verified dataset identity."""
+
+    materialized_panel_sha256: str
+    source_manifest_sha256: str
+    row_count: int
+    column_count: int
+    data_source: str
+    label: str
+
+
+class _IdentityView(Protocol):
+    """Attributes promotion reads off a verified artifact identity.
+
+    The concrete type lives in ``pipeline.artifact_manifest``. Proof reaches
+    it only inside the functions that verify a manifest, so this package does
+    not import the pipeline at module scope.
+    """
+
+    dataset: _DatasetView
+
+    def model_dump(self, *, mode: str = "python") -> dict[str, Any]: ...
+
 
 PROMOTION_RECEIPT_SCHEMA = "promotion_receipt.v1"
 PROMOTION_RECEIPT_KIND = "promotion_receipt"
@@ -113,7 +130,7 @@ def _load_evidence_report(path: Path) -> dict[str, Any]:
     return report
 
 
-def _require_dataset_identity(identity: ArtifactIdentity) -> None:
+def _require_dataset_identity(identity: _IdentityView) -> None:
     dataset = identity.dataset
     _require(
         bool(dataset.materialized_panel_sha256) and bool(dataset.source_manifest_sha256),
@@ -142,8 +159,14 @@ def _gate_results_checked(gates: Mapping[str, Any]) -> dict[str, dict[str, Any]]
 
 def _artifact_identity_checked(
     artifact: Path,
-) -> tuple[ArtifactIdentity, Path, Path, str, str, object]:
+) -> tuple[_IdentityView, Path, Path, str, str, object]:
     """Step 1: verified artifact manifest with mandated dataset identity."""
+    from quant_fund.pipeline.artifact_manifest import (
+        ArtifactManifestError,
+        manifest_path,
+        verify_artifact_manifest,
+    )
+
     artifact_path = Path(artifact)
     try:
         identity = verify_artifact_manifest(artifact_path)
@@ -152,7 +175,11 @@ def _artifact_identity_checked(
             "artifact manifest is absent or unverified (dataset identity "
             f"cannot be established); promotion is blocked: {exc}"
         ) from exc
-    _require_dataset_identity(identity)
+    # ArtifactIdentity satisfies this view at runtime. Its pydantic
+    # model_dump signature is wider than the Protocol, so the cast is the
+    # type boundary; the checks below still run on the live object.
+    checked = cast(_IdentityView, identity)
+    _require_dataset_identity(checked)
     artifact_sha = hash_file(artifact_path)
     manifest_file = manifest_path(artifact_path)
     manifest_sha = hash_file(manifest_file)
@@ -163,11 +190,13 @@ def _artifact_identity_checked(
             f"artifact manifest is unreadable: {manifest_file}"
         ) from exc
     artifact_class = manifest_record.get("class") if isinstance(manifest_record, dict) else None
-    return identity, artifact_path, manifest_file, artifact_sha, manifest_sha, artifact_class
+    return checked, artifact_path, manifest_file, artifact_sha, manifest_sha, artifact_class
 
 
 def _decision_checked(decision: Mapping[str, Any], artifact_sha: str) -> str:
     """Step 2: approved, non-synthetic decision bound to this artifact."""
+    from quant_fund.registry.mlflow_store import promotion_is_approved
+
     _require(
         promotion_is_approved(dict(decision)),
         "promotion decision is not an approved fail-closed promotion.v1 decision",
@@ -188,7 +217,7 @@ def _decision_checked(decision: Mapping[str, Any], artifact_sha: str) -> str:
 def _metrics_checked(
     input_metrics: Mapping[str, Any],
     artifact_sha: str,
-    identity: ArtifactIdentity,
+    identity: _IdentityView,
     decision_source: str,
 ) -> None:
     """Step 3: metrics bind the same artifact and dataset (staleness)."""
@@ -244,7 +273,7 @@ def _report_stage_warnings(report: Mapping[str, Any]) -> list[str]:
 
 
 def _report_checked(
-    report_path: Path, artifact_sha: str, identity: ArtifactIdentity
+    report_path: Path, artifact_sha: str, identity: _IdentityView
 ) -> tuple[str, str, list[str]]:
     """Step 6: report bytes-bound, complete-or-resolved, research-only."""
     if not report_path.is_file():
@@ -336,6 +365,8 @@ def compose_promotion_receipt(
     stale, synthetic or dishonest input. The written receipt is never
     overwritten; a second composition to the same ``out_path`` raises.
     """
+    from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
+
     identity, artifact_path, manifest_file, artifact_sha, manifest_sha, artifact_class = (
         _artifact_identity_checked(artifact)
     )

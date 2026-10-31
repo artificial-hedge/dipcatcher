@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.features.vol_parkinson.MODULE. R
 """
 
 from array import array
+
 from fx1.extensions.features.vol_parkinson import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(77)
 _register(212)
@@ -7421,6 +7423,7 @@ _register(999482)
 _register(999617)
 _register(999752)
 _register(999887)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

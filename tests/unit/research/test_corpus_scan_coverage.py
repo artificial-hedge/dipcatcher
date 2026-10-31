@@ -35,6 +35,10 @@ def test_verified_corpus_files_recurse_and_skip_quarantine(tmp_path: Path) -> No
     _write(tmp_path / "drills" / "b.json", _receipt("x", 0.2))
     _write(tmp_path / "legacy-unsealed" / "old.json", _receipt("x", 0.3))
     _write(tmp_path / "legacy-unsealed" / "deep" / "older.json", _receipt("x", 0.4))
+    _write(
+        tmp_path / "a.json.seal.json",
+        {"schema": "prereg_seal.v1", "file": "a.json", "sha256": "ab" * 32},
+    )
     files = verified_corpus_files(tmp_path)
     rels = [p.relative_to(tmp_path).as_posix() for p in files]
     assert rels == ["a.json", "drills/b.json"]

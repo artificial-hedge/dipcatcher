@@ -1195,12 +1195,14 @@ def _ensure_month(
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(path.name + ".partial")
     url = month_parquet_url(year, month, revision)
+    stored = False
     try:
         fetcher(url, partial)
         _require_vendor_parquet(partial)
-    except Exception:
-        partial.unlink(missing_ok=True)
-        raise
+        stored = True
+    finally:
+        if not stored:
+            partial.unlink(missing_ok=True)
     partial.replace(path)
     return path
 

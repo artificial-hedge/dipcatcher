@@ -26,7 +26,45 @@ from __future__ import annotations
 
 from pathlib import Path
 
-__all__ = ["materialize_panel_sources"]
+__all__ = ["materialize_panel_sources", "save_bound_stub"]
+
+
+def save_bound_stub(config: object, payload: object, path: Path) -> None:
+    """Save a training stub whose manifest carries a real dataset identity.
+
+    Auto-selectors copy the winning artifact with
+    ``identity_from_artifact``. A raw ``save_joblib_artifact`` has no
+    identity block, so the copy fails closed. This helper binds an
+    unsupervised identity over a one-row panel and the sources
+    ``materialize_panel_sources`` already wrote under ``config.data.root``.
+    """
+    from datetime import UTC, datetime
+
+    import polars as pl
+
+    from quant_fund.pipeline.artifact_manifest import (
+        UNSUPERVISED_LABEL,
+        identity_for_training,
+        save_training_artifact,
+    )
+
+    frame = pl.DataFrame({"event_time": [datetime(2020, 1, 1, tzinfo=UTC)]})
+    features = ["_identity_stub"]
+    body = payload
+    if isinstance(payload, dict):
+        raw = payload.get("features")
+        if isinstance(raw, list) and all(isinstance(name, str) and name.strip() for name in raw):
+            features = list(raw)
+        else:
+            body = {**payload, "features": features}
+    identity = identity_for_training(
+        frame,
+        config=config,
+        label=UNSUPERVISED_LABEL,
+        features=features,
+        label_horizon_bars=1,
+    )
+    save_training_artifact(body, Path(path), identity=identity)
 
 
 def materialize_panel_sources(data_root: Path) -> Path:

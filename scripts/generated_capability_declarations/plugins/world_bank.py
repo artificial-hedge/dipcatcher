@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.world_bank.MODULE. Regen
 """
 
 from array import array
+
 from fx1.extensions.plugins.world_bank import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(46)
 _register(100)
@@ -18532,6 +18534,7 @@ _register(999802)
 _register(999856)
 _register(999910)
 _register(999964)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

@@ -241,6 +241,17 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         "Simulated broker shadow runs (no live fills).",
         timeout_s=1800,
     ),
+    HarnessCommand(
+        name="live",
+        role=HarnessRole.MODEL_TRAINING,
+        argv=["live", "status"],
+        timeout_s=120,
+        description=(
+            "Read live-desk status. Does not transmit orders. Shadow is the "
+            "default venue. live_pnl_claim is false and evidence conditions "
+            "stay blocked."
+        ),
+    ),
 )
 
 # Captured at import so a later mutation of a registry object cannot raise

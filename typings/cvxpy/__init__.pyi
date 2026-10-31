@@ -15,12 +15,12 @@ from cvxpy.atoms.elementwise.abs import abs as abs
 from cvxpy.atoms.elementwise.log import log as log
 from cvxpy.atoms.log_sum_exp import log_sum_exp as log_sum_exp
 from cvxpy.atoms.norm1 import norm1 as norm1
+from cvxpy.atoms.sum_squares import sum_squares as sum_squares
 from cvxpy.expressions.constants.constant import Constant as Constant
 from cvxpy.expressions.variable import Variable as Variable
 from cvxpy.problems.objective import Maximize as Maximize
 from cvxpy.problems.objective import Minimize as Minimize
 from cvxpy.problems.problem import Problem as _Problem
-from cvxpy.atoms.sum_squares import sum_squares as sum_squares
 from cvxpy.settings import (
     INFEASIBLE as INFEASIBLE,
 )

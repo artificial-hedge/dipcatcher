@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.sec_edgar.MODULE. Regene
 """
 
 from array import array
+
 from fx1.extensions.plugins.sec_edgar import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(34)
 _register(88)
@@ -18532,6 +18534,7 @@ _register(999790)
 _register(999844)
 _register(999898)
 _register(999952)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

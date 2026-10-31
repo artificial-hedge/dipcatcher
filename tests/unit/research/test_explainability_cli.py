@@ -23,6 +23,16 @@ from typer.testing import CliRunner
 from quant_fund.research.allocation_cli import allocation_app
 from quant_fund.research.explainability_cli import _data_label, explainability_app
 
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich error boxes so a wrapped, styled sentence still matches."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
+
 runner = CliRunner()
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
@@ -300,7 +310,7 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
         ],
     )
     assert both.exit_code != 0
-    assert "not both" in both.output
+    assert "not both" in _plain(both.output)
 
 
 class _MarkerGadget:

@@ -133,16 +133,16 @@ import pandas as pd
 
 # Load your data
 df = pd.read_csv("./data/XSHG_5min_600977.csv")
-df['timestamps'] = pd.to_datetime(df['timestamps'])
+df["timestamps"] = pd.to_datetime(df["timestamps"])
 
 # Define context window and prediction length
 lookback = 400
 pred_len = 120
 
 # Prepare inputs for the predictor
-x_df = df.loc[:lookback-1, ['open', 'high', 'low', 'close', 'volume', 'amount']]
-x_timestamp = df.loc[:lookback-1, 'timestamps']
-y_timestamp = df.loc[lookback:lookback+pred_len-1, 'timestamps']
+x_df = df.loc[: lookback - 1, ["open", "high", "low", "close", "volume", "amount"]]
+x_timestamp = df.loc[: lookback - 1, "timestamps"]
+y_timestamp = df.loc[lookback : lookback + pred_len - 1, "timestamps"]
 ```
 
 #### 4. Generate Forecasts 
@@ -156,9 +156,9 @@ pred_df = predictor.predict(
     x_timestamp=x_timestamp,
     y_timestamp=y_timestamp,
     pred_len=pred_len,
-    T=1.0,          # Temperature for sampling
-    top_p=0.9,      # Nucleus sampling probability
-    sample_count=1  # Number of forecast paths to generate and average
+    T=1.0,  # Temperature for sampling
+    top_p=0.9,  # Nucleus sampling probability
+    sample_count=1,  # Number of forecast paths to generate and average
 )
 
 print("Forecasted Data Head:")
@@ -184,7 +184,7 @@ pred_df_list = predictor.predict_batch(
     T=1.0,
     top_p=0.9,
     sample_count=1,
-    verbose=True
+    verbose=True,
 )
 
 # pred_df_list contains prediction results in the same order as input

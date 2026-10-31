@@ -546,6 +546,11 @@ def _local_headers(ckpt: str) -> dict[str, str]:
 def _verdict(resp: Any) -> str:
     """Stable per-cell verdict: ``status[:error.code]`` — the wire's own
     words, so the matrix records what the config actually answered."""
+    # A successful async submission can already carry a terminal job.error
+    # when the worker beats response serialization. That is job data, not
+    # an HTTP refusal; the terminal outcome is measured by separate probes.
+    if resp.status_code < 400:
+        return str(resp.status_code)
     try:
         body = resp.json()
     except (ValueError, json.JSONDecodeError):
@@ -1558,6 +1563,10 @@ def _probe_managed() -> _Probe:
 
 def _run() -> tuple[dict[str, bool], dict[str, dict[str, str]]]:
     """The full battery: probe map + measured config × surface matrix."""
+    # byok/hosted configs own a loopback stub. Production BYOK stays
+    # public-network-only unless this opt-in is set; the audit context
+    # restores the caller's environment on the way out.
+    os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     out: dict[str, bool] = {}
     matrix: dict[str, dict[str, str]] = {}
     for fn in (

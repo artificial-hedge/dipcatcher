@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-from tqdm import tqdm
-
 from model import Kronos, KronosPredictor, KronosTokenizer
+from tqdm import tqdm
 
 TEST_DATA_ROOT = Path(__file__).parent / "data"
 INPUT_DATA_PATH = TEST_DATA_ROOT / "regression_input.csv"
@@ -33,6 +32,7 @@ MAX_CTX_LEN = 512
 SEED = 123
 DEVICE = "cpu"
 
+
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -56,10 +56,14 @@ def test_kronos_predictor_regression(context_len):
     context_df = df.iloc[:context_len].copy()
     context_features = context_df[FEATURE_NAMES].reset_index(drop=True)
     x_timestamp = context_df["timestamps"].reset_index(drop=True)
-    future_timestamp = df["timestamps"].iloc[context_len:context_len + len(expected_df)].reset_index(drop=True)
+    future_timestamp = (
+        df["timestamps"].iloc[context_len : context_len + len(expected_df)].reset_index(drop=True)
+    )
     expected = expected_df[FEATURE_NAMES].values.astype(np.float32)
 
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base", revision=TOKENIZER_REVISION)
+    tokenizer = KronosTokenizer.from_pretrained(
+        "NeoQuasar/Kronos-Tokenizer-base", revision=TOKENIZER_REVISION
+    )
     model = Kronos.from_pretrained("NeoQuasar/Kronos-small", revision=MODEL_REVISION)
     tokenizer.eval()
     model.eval()
@@ -87,15 +91,20 @@ def test_kronos_predictor_regression(context_len):
 
     np.testing.assert_allclose(obtained, expected, rtol=REL_TOLERANCE)
 
-@pytest.mark.parametrize("context_len, expected_mse", zip(MSE_CTX_LEN, MSE_EXPECTED))
+
+@pytest.mark.parametrize("context_len, expected_mse", zip(MSE_CTX_LEN, MSE_EXPECTED, strict=False))
 def test_kronos_predictor_mse(context_len, expected_mse):
     set_seed(SEED)
 
     df = pd.read_csv(INPUT_DATA_PATH, parse_dates=["timestamps"])
     if df.shape[0] <= context_len + MSE_PRED_LEN:
-        raise ValueError("Example data does not contain enough rows for the random sample regression test.")
+        raise ValueError(
+            "Example data does not contain enough rows for the random sample regression test."
+        )
 
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base", revision=TOKENIZER_REVISION)
+    tokenizer = KronosTokenizer.from_pretrained(
+        "NeoQuasar/Kronos-Tokenizer-base", revision=TOKENIZER_REVISION
+    )
     model = Kronos.from_pretrained("NeoQuasar/Kronos-small", revision=MODEL_REVISION)
     tokenizer.eval()
     model.eval()
@@ -131,7 +140,9 @@ def test_kronos_predictor_mse(context_len, expected_mse):
             expected = future_slice[MSE_FEATURE_NAMES].to_numpy(dtype=np.float32)
             mse_values.append(float(np.mean((obtained - expected) ** 2)))
 
-    assert len(mse_values) == MSE_SAMPLE_SIZE, f"Expected {MSE_SAMPLE_SIZE} MSE values, got {len(mse_values)}."
+    assert len(mse_values) == MSE_SAMPLE_SIZE, (
+        f"Expected {MSE_SAMPLE_SIZE} MSE values, got {len(mse_values)}."
+    )
 
     mse = np.mean(mse_values).item()
     mse_diff = mse - expected_mse

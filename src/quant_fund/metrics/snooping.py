@@ -28,6 +28,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.metrics._bootstrap_kernels import HAVE_NUMBA, fill_bootstrap_counts
 from quant_fund.metrics.inference import optimal_block_length, stationary_bootstrap_indices
 
 Array = NDArray[np.float64]
@@ -161,8 +162,11 @@ def _bootstrap_means(arr: Array, idx: NDArray[np.intp]) -> Array:
     """
     n_boot, n = int(idx.shape[0]), int(idx.shape[1])
     counts = np.zeros((n_boot, n), dtype=float)
-    for b in range(n_boot):
-        counts[b] = np.bincount(idx[b], minlength=n)
+    if HAVE_NUMBA:
+        fill_bootstrap_counts(counts, np.ascontiguousarray(idx, dtype=np.int64))
+    else:  # pragma: no cover - numba is a required dependency
+        for b in range(n_boot):
+            counts[b] = np.bincount(idx[b], minlength=n)
     return (counts @ arr) / float(n)
 
 

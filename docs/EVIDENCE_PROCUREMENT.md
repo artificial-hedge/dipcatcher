@@ -106,10 +106,15 @@ verdict is `QUALIFYING` — every field present and consistent, nothing rejected
 | 2.1 | A **brokerage account + API credentials** with authenticated order submission and fill/execution reporting | A regulated broker/dealer with a documented order+fill API and drop-copy/executions feed | Compliance + Trading | Credentials enable authenticated order and *execution* (fill) queries, not just order status. |
 | 2.2 | A reconciliation entitlement: historical execution drop-copy or a fills export to reconcile against | Same broker | Trading | Fills can be independently re-pulled and matched. |
 
-> Until 2.1 is authorized and connected **outside** this repo, condition 2 is
-> **BLOCKED**. This lane ships the **paper/simulated** reconciliation surface
-> only and sends **no live orders** (configuring a live endpoint raises
-> `LiveEndpointRefused`). It makes **no** live-connectivity or live-P&L claim.
+> Until 2.1 is authorized and a real drop-copy passes §2b, condition 2 is
+> **BLOCKED**. `dipcatcher trade session` is a simulated book with no broker
+> client. The paper adapter raises `LiveEndpointRefused` for a live endpoint.
+> `quant_fund.live` is the operator desk plus an Alpaca-paper gateway
+> ([LIVE_DESK.md](LIVE_DESK.md), [LIVE_TRADING.md](LIVE_TRADING.md)). The desk
+> does not open a broker socket. The gateway can submit to Alpaca paper when
+> an operator arms it. The Alpaca live host is refused by the honesty
+> contract. Neither path is condition-2 evidence, and neither makes a
+> live-P&L claim.
 
 ### 2b. Broker order/fill-reconciliation acceptance tests (condition 2)
 
@@ -130,6 +135,10 @@ matrix against real broker drop-copy. Owner: Engineering; reviewer: independent.
 | 2.b.7 | Kill switch | Trips and blocks new orders | Trading |
 | 2.b.8 | **Live-endpoint refusal** | Configuring a live endpoint **raises** | Engineering |
 | 2.b.9 | Crash/resume mid-run | NAV seam parity, **no duplicate orders** | Engineering |
+| 2.b.10 | Overfill (fill quantity above the residual) | Detected and **not applied** to position or cash | Engineering |
+| 2.b.11 | Fill security differs from the order | Detected and **not applied** | Engineering |
+| 2.b.12 | Cancel, then a late fill | Cancel is durable across resume; the late fill is **not applied**. A halt does not block cancel | Engineering |
+| 2.b.13 | Paper session pre-trade | Short sales, missing marks, cash, and size caps refuse before the book moves. No network client | Engineering |
 
 ---
 

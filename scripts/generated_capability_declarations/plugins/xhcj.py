@@ -4,6 +4,7 @@ The generated runtime wrapper is fx1.extensions.plugins.xhcj.MODULE. Regenerate;
 """
 
 from array import array
+
 from fx1.extensions.plugins.xhcj import MODULE
 
 CAPABILITY_REFERENCES = array("I")
@@ -13,6 +14,7 @@ def _register(seed_id: int) -> None:
     if seed_id < 0:
         raise ValueError("capability seed id must be non-negative")
     CAPABILITY_REFERENCES.append(seed_id)
+
 
 _register(49)
 _register(103)
@@ -18532,6 +18534,7 @@ _register(999805)
 _register(999859)
 _register(999913)
 _register(999967)
+
 
 def extension():
     """Return the separately loadable generated runtime wrapper."""

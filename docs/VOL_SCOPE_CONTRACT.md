@@ -73,27 +73,53 @@ SECURITY_LEVEL_RET_1_SCOPE: Final[str] = "security_level_ret_1"
 UNIVARIATE_RETURN_SERIES_SCOPE: Final[str] = "univariate_return_series"
 DATE_LEVEL_PORTFOLIO_CONSUMER: Final[str] = "date_level_portfolio"
 PER_SECURITY_CONSUMER: Final[str] = "per_security"
-ARTIFACT_SCOPE_TO_CONSUMER: Final[dict[str, str]]   # the matrix above
+ARTIFACT_SCOPE_TO_CONSUMER: Final[dict[str, str]]  # the matrix above
 KNOWN_ARTIFACT_SCOPES: Final[frozenset[str]]
 KNOWN_CONSUMER_SCOPES: Final[frozenset[str]]
 
-class VolScopeError(ValueError): ...          # base; ValueError keeps legacy call sites
+
+class VolScopeError(ValueError): ...  # base; ValueError keeps legacy call sites
+
+
 class MissingScopeError(VolScopeError): ...
+
+
 class CorruptedScopeError(VolScopeError): ...
+
+
 class UnknownScopeError(VolScopeError): ...
+
+
 class ScopeMismatchError(VolScopeError): ...
 
-def validate_scope_token(scope: object) -> str: ...
+
+def validate_scope_token(scope: object) -> str:
+    ...
     # validates ONE artifact token; returns it exactly as registered
-def assert_scope_compatible(artifact_scope: object, consumer_scope: object) -> str: ...
+
+
+def assert_scope_compatible(artifact_scope: object, consumer_scope: object) -> str:
+    ...
     # validates both tokens and admits/rejects the pair; returns the artifact token
-def allowed_consumer_for(artifact_scope: object) -> str: ...
+
+
+def allowed_consumer_for(artifact_scope: object) -> str:
+    ...
     # the single consumer token the artifact admits
-def artifact_scope_of(artifact: object) -> str: ...
+
+
+def artifact_scope_of(artifact: object) -> str:
+    ...
     # validates artifact.series_scope (missing attribute -> MissingScopeError)
-def require_per_security(artifact: object) -> str: ...
+
+
+def require_per_security(artifact: object) -> str:
+    ...
     # == assert_scope_compatible(artifact_scope_of(artifact), PER_SECURITY_CONSUMER)
-def require_pooled(artifact: object) -> str: ...
+
+
+def require_pooled(artifact: object) -> str:
+    ...
     # == assert_scope_compatible(artifact_scope_of(artifact), DATE_LEVEL_PORTFOLIO_CONSUMER)
 ```
 
@@ -107,72 +133,105 @@ its own `series_scope="per_security"`.
 ```python
 KEYED_VOL_SPECS: Final[tuple[str, ...]] = ("ewma", "garch", "har", "aparch", "figarch")
 
-class PerKeyVolError(ValueError): ...   # one-key failure -> honest NaN channel
+
+class PerKeyVolError(ValueError): ...  # one-key failure -> honest NaN channel
+
 
 @dataclass(frozen=True)
 class KeyedReturnPanel:
-    keys: NDArray[Any]                 # (n,) non-empty str — the explicit key axis
-    times: NDArray[Any]                # (n,) strictly increasing integer event time PER KEY
-    returns: Array                     # (n,) decimal log returns
-    labels: Array | None = None        # forward realized-var labels, VARIANCE_UNITS,
-                                       # indexed at their forecast origin — EVALUATION ONLY
+    keys: NDArray[Any]  # (n,) non-empty str — the explicit key axis
+    times: NDArray[Any]  # (n,) strictly increasing integer event time PER KEY
+    returns: Array  # (n,) decimal log returns
+    labels: Array | None = None  # forward realized-var labels, VARIANCE_UNITS,
+    # indexed at their forecast origin — EVALUATION ONLY
     source_label: str = "UNSPECIFIED"  # tests MUST pass "SYNTHETIC"
+
     def key_names(self) -> tuple[str, ...]: ...
-    def key_returns(self, key: str) -> Array: ...              # time-ascending
-    def trailing(self, key: str, as_of: int) -> Array: ...     # returns with time < as_of
-    def label_at(self, key: str, time: int) -> float: ...      # NaN when absent
+    def key_returns(self, key: str) -> Array: ...  # time-ascending
+    def trailing(self, key: str, as_of: int) -> Array: ...  # returns with time < as_of
+    def label_at(self, key: str, time: int) -> float: ...  # NaN when absent
     def realized_return_at(self, key: str, time: int) -> float: ...
     def with_labels(self, labels: Array | None) -> KeyedReturnPanel: ...
     def with_returns(self, returns: Array) -> KeyedReturnPanel: ...
 
+
 class PerSecurityVol:
     series_scope: str = "per_security"
-    def __init__(self, spec: str = "garch", *, lam: float = 0.94, min_obs: int = 50,
-                 p: int = 1, q: int = 1, dist: str = "normal", seed: int = 0) -> None: ...
+
+    def __init__(
+        self,
+        spec: str = "garch",
+        *,
+        lam: float = 0.94,
+        min_obs: int = 50,
+        p: int = 1,
+        q: int = 1,
+        dist: str = "normal",
+        seed: int = 0,
+    ) -> None: ...
     def clone(self) -> PerSecurityVol: ...
     def fit(self, panel: KeyedReturnPanel, *, as_of: int | None = None) -> PerSecurityVol: ...
-    def forecast(self, key: str, horizon: int = 1, *,
-                 quantiles: Sequence[float] | None = None,
-                 seed: int | None = None) -> dict[str, Any]: ...
-    def forecast_keys(self, horizon: int = 1, *, keys: Sequence[str] | None = None,
-                      quantiles: Sequence[float] | None = None,
-                      seed: int | None = None) -> KeyedVarianceForecast: ...
+    def forecast(
+        self,
+        key: str,
+        horizon: int = 1,
+        *,
+        quantiles: Sequence[float] | None = None,
+        seed: int | None = None,
+    ) -> dict[str, Any]: ...
+    def forecast_keys(
+        self,
+        horizon: int = 1,
+        *,
+        keys: Sequence[str] | None = None,
+        quantiles: Sequence[float] | None = None,
+        seed: int | None = None,
+    ) -> KeyedVarianceForecast: ...
     def assert_consumer_scope(self, consumer_scope: str) -> None: ...
     def diagnostics(self) -> dict[str, Any]: ...
     def metadata(self) -> ModelMeta: ...
 
+
 @dataclass(frozen=True)
 class KeyedVarianceForecast:
     keys: tuple[str, ...]
-    variance: Array                    # (n_keys, horizon) VARIANCE_UNITS; NaN for failed keys
-    status: tuple[str, ...]            # "ok" | "failed:<reason>" per key
+    variance: Array  # (n_keys, horizon) VARIANCE_UNITS; NaN for failed keys
+    status: tuple[str, ...]  # "ok" | "failed:<reason>" per key
     horizon: int
-    means: Array                       # (n_keys,)
-    quantiles: Array | None = None     # (n_keys, horizon, n_levels) VOLATILITY_UNITS
+    means: Array  # (n_keys,)
+    quantiles: Array | None = None  # (n_keys, horizon, n_levels) VOLATILITY_UNITS
     units: str = VARIANCE_UNITS
     scope: str = PER_SECURITY_SCOPE
     source_label: str = "UNSPECIFIED"
-    def forecast(self, key: str) -> dict[str, Any]: ...   # same dict shape as below
+
+    def forecast(self, key: str) -> dict[str, Any]: ...  # same dict shape as below
+
 
 @dataclass(frozen=True)
 class KeyedWalkForwardResult:
     keys: tuple[str, ...]
-    origins: Array                     # (n_origins,)
-    one_step_variance: Array           # (n_keys, n_origins) VARIANCE_UNITS
-    cumulative_variance: Array         # (n_keys, n_origins) h-bar target, VARIANCE_UNITS
-    realized_variance: Array           # (n_keys, n_origins) forward labels — EVALUATION ONLY
-    realized_return: Array             # (n_keys, n_origins) — EVALUATION ONLY
+    origins: Array  # (n_origins,)
+    one_step_variance: Array  # (n_keys, n_origins) VARIANCE_UNITS
+    cumulative_variance: Array  # (n_keys, n_origins) h-bar target, VARIANCE_UNITS
+    realized_variance: Array  # (n_keys, n_origins) forward labels — EVALUATION ONLY
+    realized_return: Array  # (n_keys, n_origins) — EVALUATION ONLY
     status: dict[str, tuple[str, ...]]
     horizon: int
-    quantiles: Array | None = None     # (n_keys, n_origins, n_levels)
+    quantiles: Array | None = None  # (n_keys, n_origins, n_levels)
     units: str = VARIANCE_UNITS
     scope: str = PER_SECURITY_SCOPE
     source_label: str = "UNSPECIFIED"
 
-def walk_forward_per_security(panel: KeyedReturnPanel, model: PerSecurityVol, *,
-                              origins: Sequence[int], horizon: int = 1,
-                              quantiles: Sequence[float] | None = None,
-                              seed: int | None = None) -> KeyedWalkForwardResult: ...
+
+def walk_forward_per_security(
+    panel: KeyedReturnPanel,
+    model: PerSecurityVol,
+    *,
+    origins: Sequence[int],
+    horizon: int = 1,
+    quantiles: Sequence[float] | None = None,
+    seed: int | None = None,
+) -> KeyedWalkForwardResult: ...
 ```
 
 ### Per-key `forecast(...)` dict shape (the variance entry point)
@@ -199,15 +258,19 @@ Rules for T6:
 ## 4. Units contract (`quant_fund.metrics.vol_eval`)
 
 ```python
-VARIANCE_UNITS: Final[str] = "decimal_squared"   # a VARIANCE (sigma^2) of decimal log returns
-VOLATILITY_UNITS: Final[str] = "decimal"         # a VOLATILITY (sigma); same numeric scale as returns
+VARIANCE_UNITS: Final[str] = "decimal_squared"  # a VARIANCE (sigma^2) of decimal log returns
+VOLATILITY_UNITS: Final[str] = "decimal"  # a VOLATILITY (sigma); same numeric scale as returns
 KNOWN_VOL_UNITS: Final[frozenset[str]]
+
 
 class VolUnitsError(ValueError): ...
 
+
 def assert_units(actual: object, expected: object) -> str: ...
 def coerce_units(values: Array, *, from_units: object, to_units: object) -> NDArray[np.float64]: ...
-def rescale_units(values: Array, *, from_units: object, to_units: object) -> NDArray[np.float64]: ...
+def rescale_units(
+    values: Array, *, from_units: object, to_units: object
+) -> NDArray[np.float64]: ...
 ```
 
 - `coerce_units` returns the values **bit-identical** when units match
@@ -222,15 +285,25 @@ def rescale_units(values: Array, *, from_units: object, to_units: object) -> NDA
 ## 5. Keyed proper scores (`quant_fund.metrics.vol_eval`)
 
 ```python
-def qlike_keyed(realized_var: Array, forecast_var: Array, *, keys: Sequence[str],
-                units: str = VARIANCE_UNITS) -> dict[str, Any]: ...
+def qlike_keyed(
+    realized_var: Array, forecast_var: Array, *, keys: Sequence[str], units: str = VARIANCE_UNITS
+) -> dict[str, Any]:
+    ...
     # matrices (n_keys, n_obs); Patton QLIKE; REQUIRES VARIANCE_UNITS
     # (volatility-unit input raises VolUnitsError — never silently squared)
     # returns {"score": "qlike", "units", "keys", "qlike_per_key": {key: float},
     #          "qlike_mean": float, "n_scored_per_key": {key: int}, "n_scored": int}
 
-def pinball_keyed(realized: Array, quantile_forecast: Array, taus: Sequence[float], *,
-                  keys: Sequence[str], units: str = VOLATILITY_UNITS) -> dict[str, Any]: ...
+
+def pinball_keyed(
+    realized: Array,
+    quantile_forecast: Array,
+    taus: Sequence[float],
+    *,
+    keys: Sequence[str],
+    units: str = VOLATILITY_UNITS,
+) -> dict[str, Any]:
+    ...
     # realized (n_keys, n_obs); quantile_forecast (n_keys, n_obs, n_levels), n_levels == len(taus)
     # returns {"score": "pinball", "units", "keys", "taus",
     #          "pinball_per_key": {key: {tau: float}}, "pinball_mean_per_tau": {tau: float},

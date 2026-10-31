@@ -4,9 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-
 from model import Kronos, KronosPredictor, KronosTokenizer
-
 
 TEST_DATA_ROOT = Path(__file__).parent
 INPUT_DATA_PATH = TEST_DATA_ROOT / "regression_input.csv"
@@ -40,18 +38,16 @@ def generate_output(ctx_len: int) -> None:
         )
 
     context_df = df.iloc[:ctx_len].copy()
-    future_timestamps = df["timestamps"].iloc[
-        ctx_len : ctx_len + PRED_LEN
-    ].reset_index(drop=True)
+    future_timestamps = df["timestamps"].iloc[ctx_len : ctx_len + PRED_LEN].reset_index(drop=True)
 
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base", revision=TOKENIZER_REVISION)
+    tokenizer = KronosTokenizer.from_pretrained(
+        "NeoQuasar/Kronos-Tokenizer-base", revision=TOKENIZER_REVISION
+    )
     model = Kronos.from_pretrained("NeoQuasar/Kronos-small", revision=MODEL_REVISION)
     tokenizer.eval()
     model.eval()
 
-    predictor = KronosPredictor(
-        model, tokenizer, device=DEVICE, max_context=MAX_CTX_LEN
-    )
+    predictor = KronosPredictor(model, tokenizer, device=DEVICE, max_context=MAX_CTX_LEN)
 
     with torch.no_grad():
         pred_df = predictor.predict(
@@ -78,7 +74,6 @@ def generate_output(ctx_len: int) -> None:
 
 if __name__ == "__main__":
     set_seed(SEED)
-
 
     df = pd.read_csv(INPUT_DATA_PATH, parse_dates=["timestamps"])
     if df.shape[0] < MAX_CTX_LEN + PRED_LEN:

@@ -275,10 +275,35 @@ def _loss_cs_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _changepoint_params(p: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """Knobs live under ``params``; pre-contract drills stored them beside the result.
+
+    The flat shape is accepted only when ``alpha``, ``window``, and ``min_left``
+    are all present, and those values are still range-checked. A body with
+    neither block fails ``missing_params``.
+    """
+    params = p.get("params")
+    if isinstance(params, Mapping):
+        return params
+    if all(field in p for field in ("alpha", "window", "min_left")):
+        return p
+    return None
+
+
+def _changepoint_result(p: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """Confidence-set fields, under ``result`` or (pre-contract) at the top level."""
+    result = p.get("result")
+    if isinstance(result, Mapping):
+        return result
+    if "tau_hat" in p or "cs_lo" in p or "n" in p:
+        return p
+    return None
+
+
 def _changepoint_localize_errors(p: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
-    params = p.get("params")
-    if not isinstance(params, Mapping):
+    params = _changepoint_params(p)
+    if params is None:
         return ["missing_params"]
     for field in ("alpha",):
         v = _num(params.get(field))
@@ -288,7 +313,7 @@ def _changepoint_localize_errors(p: Mapping[str, Any]) -> list[str]:
         v = params.get(field)
         if not isinstance(v, int) or isinstance(v, bool) or v < 1:
             errors.append(f"{field}_not_positive_int")
-    result = p.get("result")
+    result = _changepoint_result(p)
     if isinstance(result, Mapping):
         lo, hi = _num(result.get("cs_lo")), _num(result.get("cs_hi"))
         n = _num(result.get("n"))

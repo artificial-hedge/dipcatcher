@@ -1,9 +1,11 @@
 # Pre-trade risk engine
 
-Standalone shadow checks for orders a simulated broker or paper loop would
-send. The engine does not submit, cancel, or amend anything. It is not
-imported by `quant_fund.execution.simulated_broker` or `quant_fund.paper.loop`.
-Connecting it to a live route is a separate decision and is not implemented.
+Standalone checks for orders a simulated broker, a paper loop, the operator
+desk, or the broker gateway would send. The engine does not submit, cancel,
+or amend anything. It is not imported by `quant_fund.execution.simulated_broker`
+or `quant_fund.paper.loop`. `quant_fund.live` calls `decide` and routes only
+after that decision. See [LIVE_DESK.md](LIVE_DESK.md) and
+[LIVE_TRADING.md](LIVE_TRADING.md).
 
 This is an operational control. It is not a research score and it does not
 report P&L.
@@ -17,7 +19,7 @@ Every `PretradeEngine.check` call evaluates, in a fixed order:
 | Kill switch | Latched. New orders and replaces stay denied until manual reset. Cancels are still allowed unless the latch reason is an internal fault. |
 | Stale reference or account mark | Deny. The latch is not set; a fresh mark can clear it. |
 | Non-finite price, quantity, side, or account value | Deny. |
-| Session clock | Regular hours in the configured timezone, weekdays only. The close is exclusive. Weekends are closed. Exchange holidays are not modeled. |
+| Session clock | Regular hours in the configured timezone. The close is exclusive. Weekends are closed unless `session.weekends_open` is true. Exchange holidays are not modeled. The default pre-trade file leaves weekends closed. |
 | Halt | New orders and replaces denied. Cancels allowed. |
 | Max order quantity and notional | Inclusive ceiling. Notional uses the larger of the order price and the reference mark. |
 | Fat-finger collar | Limit price versus the reference, in basis points. Market orders are not collared. |
