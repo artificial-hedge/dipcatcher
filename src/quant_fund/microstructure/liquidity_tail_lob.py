@@ -67,8 +67,8 @@ theory selects (Thm. 5.1), never an ad-hoc linear extension.
 Honesty: every output is a SYNTHETIC correctness diagnostic, never market
 evidence. Spreads, impact slopes, crossover depths, tail exponents and
 posterior-consistency errors are equilibrium *diagnostics* of a simulated
-model; no profit-and-loss quantity exists anywhere in this module. All
-randomness flows
+model; no profit-and-loss quantity exists anywhere in this module, there is
+no broker connectivity and no live-trading claim. All randomness flows
 through seeded ``numpy.random.Generator`` streams; repeated calls are
 bit-identical.
 

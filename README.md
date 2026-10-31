@@ -11,7 +11,7 @@
 [![Redistribution: Prohibited](https://img.shields.io/badge/redistribution-prohibited-critical.svg)](LICENSE)
 [![Owner: Advaith Vaithianathan](https://img.shields.io/badge/owner-Advaith%20Vaithianathan-blueviolet.svg)](LICENSE)
 
-> **All rights reserved.** dipcatcher and the fx-1 harness (no released weights) are proprietary,
+> **All rights reserved.** dipcatcher and the fx-1 model line are proprietary,
 > closed research software owned exclusively by **Advaith Vaithianathan**,
 > founder of **Artificial Hedge**. This checkout is made visible for
 > authorized review only. No one may fork, copy, mirror, redistribute, or
@@ -30,19 +30,16 @@ a released model, and no fine-tuned fx-1 weights are published anywhere.** This
 block exists because a version string, a badge, and a `model` name are all easy
 to misread as a shipped artifact. Read it before the [fx-1](#fx-1) section.
 
-- **What exists.** `src/fx1` is **342 Python modules**, strictly typed, with
-  **86 `test_*.py` files** under `tests/fx1/` (91 `.py` files including
-  `conftest.py`). Counted 2026-10-20 with `find src/fx1 -name '*.py' | wc -l`,
-  `find tests/fx1 -name 'test_*.py' | wc -l`, and `find tests/fx1 -name '*.py' | wc -l`.
-  It is the corpus builder, the eval task bank, the training
+- **What exists.** `src/fx1` is **323 Python modules**, strictly typed, with
+  **73 `test_*.py` files** under `tests/fx1/` (78 `.py` files including
+  `conftest.py`). It is the corpus builder, the eval task bank, the training
   ladder and manifest gate, the ship gate, the model-card writer, the SBOM and
   attestation ladder, and the `fx1` CLI. It is the machinery *around* a model.
 - **What does not exist.** **No fine-tuned fx-1 checkpoint is published.** No
   fine-tuned weights, no downloadable artifact, no HF repo, no hosted endpoint.
   `docs/FX1_TRAINING.md` states it plainly: no training run has been launched
-  from the ladder. `LocalFx1Backend.complete()` delegates generation to a
-  configured OpenAI-compatible local engine (`src/fx1/serve/backends.py`), but
-  there are no released fx-1 weights for it to serve.
+  from the ladder. `LocalFx1Backend.complete()` raises `NotImplementedError`
+  (`src/fx1/serve/backends.py`), so local generation is not implemented either.
 - **`fx1.__version__ = "0.4.0"` tracks the harness API, not a model release.**
   It is the semver of the `fx1` package surface — see
   [`docs/FX1_API_STABILITY.md`](docs/FX1_API_STABILITY.md) — and `pyproject.toml`
@@ -159,43 +156,32 @@ position the honesty ledger already records, correctly.
 
 ## Overview
 
-**dipcatcher** is Artificial Hedge's harness for orchestrating research and
-the planned **fx1** and **fx1-lite** model interfaces
-([artificialhedge.co](https://artificialhedge.co)) from the command line.
-Neither model has verified public release weights or a deployed endpoint yet.
-The CLI is designed like Codex CLI: chat-first, with
+**dipcatcher** is Artificial Hedge's state-of-the-art harness for orchestrating
+its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
+from the command line. The CLI is designed like Codex CLI: chat-first, with
 about 99% of the interface being a conversation with the active model. The
 `/superpower` slash command plans and runs whichever of dipcatcher's research
 families fit the goal you typed, and explains what it used and why. Type
-`dipcatcher` in a terminal to open the chat. Sessions are journaled and
-resumable (`/sessions`, `/resume`), every run is budgeted and cancellable
-(Ctrl-C once cancels, twice exits), every result names its evidence class,
-and research-family selection is checked against the lab's read-only family
-catalog. The design, the implemented behaviour and the still-open production
-gates live in [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md) and
-[`docs/DIPCATCHER_PRODUCT_CONTRACT.md`](docs/DIPCATCHER_PRODUCT_CONTRACT.md).
+`dipcatcher` in a terminal to open the chat. The design and its current status
+(working tree, not yet a release) live in
+[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
 
 Underneath the chat, dipcatcher is receipt-bound quant research on US equities
 and crypto for a small Alpaca account. It is research and simulated paper
-trading only. Nothing in this document authorizes, promises, or implies
-otherwise.
+trading only — there is no live broker connectivity anywhere in this tree, and
+nothing in this document authorizes, promises, or implies otherwise.
 
 The dip question, in `fx1.bench.dip` and
 `receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
 drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
 an in-sample climatology baseline on 11 historical crypto series. Disclaimer
 from the file:
-
-> Research/backtest evidence on historical data, not live performance. The
-> climatology forecaster is an in-sample descriptive baseline; it is not a
-> tradeable signal and authorizes nothing.
-
 The distribution name on PyPI-style metadata is `fx-1`; the main console
 entry points installed by this project are `dipcatcher` (the chat-first CLI;
 explicit subcommands run the lab), `quant` (the lab CLI without the chat
 launcher), `fxi` (a compatible chat launcher), and `fx1` (the
 model-facing corpus/eval/training-manifest tooling). All live in one
-checkout, at version `0.4.0` (`fx1.__version__`), and all four are governed by
+checkout, at version `0.4.0` (`fx1.__version__`), and both are governed by
 the same receipt-and-verification discipline described throughout this
 document.
 
@@ -228,7 +214,8 @@ mind for everything that follows:
   latency numbers, NAV comparisons — comes from a committed receipt under
   [`receipts/`](receipts/) or [`docs/evidence/index.md`](docs/evidence/index.md),
   each of which is labeled `research_only: true` and, where relevant,
-  `live_pnl_claim: false`.
+  `live_pnl_claim: false`. None of it is live trading performance, because
+  there is no live trading in this repository.
 - **Nothing here is investment advice.** Nothing in this repository, this
   README included, is an offer, solicitation, or recommendation to buy or
   sell any security, token, or derivative. Past backtested or simulated
@@ -885,26 +872,26 @@ flowchart LR
 
 ### Repository composition
 
-Counted directly from `git ls-files` at commit `b5f1f6d11` (2026-10-19),
-excluding paths that start with `.`: **21,933** tracked, non-hidden files.
+Counted directly from `git ls-files` at commit `c2d360b` (2026-09-30),
+excluding dotfiles and dotdirectories: **3,012** tracked, non-hidden files.
 
 ```mermaid
 pie showData
-    title Tracked files by top-level area (21,933 total)
-    "tests" : 5797
-    "src" : 13524
-    "scripts" : 320
-    "docs" : 263
-    "web" : 457
-    "third_party" : 96
-    "receipts" : 406
-    "data" : 51
-    "configs" : 63
-    "artifacts" : 56
-    "other" : 900
+    title Tracked files by top-level area (3,012 total)
+    "tests" : 1271
+    "src" : 893
+    "scripts" : 192
+    "docs" : 182
+    "web" : 102
+    "third_party" : 93
+    "receipts" : 63
+    "data" : 30
+    "configs" : 30
+    "artifacts" : 30
+    "other (25 areas)" : 126
 ```
 
-`tests/` alone (5,797 files) is smaller than the `src/` tree (13,524
+`tests/` alone (1,271 files) is larger than the entire `src/` tree (893
 files) — a ratio that is itself a small piece of evidence for how seriously
 this repository takes verification over volume of production code. The
 "other" wedge folds together 25 smaller top-level areas, the largest of
@@ -933,7 +920,7 @@ The whole lab in one picture. The load-bearing edge is the one that does
 
 ```mermaid
 C4Context
-  title System context -- dipcatcher research lab
+  title System context -- dipcatcher research lab (no live-trading surface)
   Person(researcher, "Researcher", "Runs gated research; reviews sealed receipts")
   System(harness, "dipcatcher harness", "quant_fund: PIT data, forecasts, fusion, optimizer, risk gate, simulated paper")
   System(fx1, "fx-1 tooling", "corpus / eval / training manifests; no trained checkpoint in tree")
@@ -1150,15 +1137,14 @@ xychart-beta
 
 ### Receipt census
 
-404 committed JSON artifacts under [`receipts/`](receipts/) (397 at the
-top level, 7 legacy-unsealed kept for history), plus one README (full
-listing in the [Appendix](#receipts-census); parity checked in
-`tests/unit/frontdoor/test_pd8s_frontdoor.py`).
+63 committed JSON artifacts under [`receipts/`](receipts/): 55 sealed
+receipts at the top level, 7 legacy-unsealed receipts kept for history,
+plus one README (full listing in the [Appendix](#receipts-census)).
 
 ```mermaid
 pie showData
-  title Committed receipt JSON (404 @ HEAD)
-  "top-level receipts/" : 397
+  title Committed receipt files (62 JSON + 1 README @ e00ab310c)
+  "sealed receipts/" : 55
   "legacy-unsealed" : 7
 ```
 
@@ -1405,7 +1391,7 @@ For viewers without mermaid — the same architecture, in plain text:
 | `web/` | A read-only explorer UI over sealed receipts and evidence (102 files) — see [Web explorer and tooling](#web-explorer-and-tooling). |
 | `clients/typescript` | A generated TypeScript client (`openapi.json`, `client.ts`, `schema.d.ts`) for the FastAPI service's OpenAPI schema. |
 | `verifier/` | The repository's own acceptance-history ledger for its turnover into the fx-1 harness (`v1`…`v8`, 24 files) — see [Repository health](#repository-health). |
-| **Live orders** | Setting `runtime.allow_live: true` raises `allow_live is unsupported`. |
+| **Live orders** | **Refused.** Setting `runtime.allow_live: true` raises `allow_live is unsupported: no live broker adapter in this repository`. |
 
 Research scores that the lab will headline are proper scores: pinball,
 CRPS, PIT, QLIKE, Brier, ECE, Kupiec, and HMM likelihood — never Sharpe,
@@ -1453,7 +1439,7 @@ Sortino, Calmar, P&L, or NAV as a standalone result (see
 
 ## Repository layout
 
-File counts below are exact, from `git ls-files` at commit `b5f1f6d11`;
+File counts below are exact, from `git ls-files` at commit `c2d360b`;
 directories not shown here hold a single tracked file each (governance docs,
 lockfiles, and root configuration — 25 of them, folded into the "other"
 wedge of the [repository composition](#repository-composition) chart above).
@@ -1461,26 +1447,26 @@ wedge of the [repository composition](#repository-composition) chart above).
 ```text
 dipcatcher/
 ├── src/
-│   ├── quant_fund/  # 13,099 files -- the research harness (see Visual tour)
-│   └── fx1/         # 343 files -- corpus, eval, training-manifest tooling
-├── tests/           # 5,797 files -- 5,612 test_*.py across lanes + fixtures
-├── docs/            # 263 tracked files -- 202 top-level .md + subdirs
-├── scripts/         # 320 utility, generator, and CI-support scripts
-├── web/             # 457 files -- read-only receipt/evidence explorer UI
-├── third_party/     # 96 files -- vendored Kronos, MIT-licensed (see Acknowledgements)
-├── receipts/        # 406 tracked files (404 JSON: 397 top-level + 7 legacy-unsealed)
-├── configs/         # 63 YAML/JSON run presets (research, paper, backtest, ...)
-├── data/            # 51 tracked files; generated data/* subtrees are gitignored
-├── artifacts/       # 56 committed artifacts (equity parquets, champion JSON)
-├── verifier/        # 54 files -- acceptance-history ledger
-├── replay/          # 23 files -- deterministic replay + visualization tooling
-├── research/        # 87 files -- reality-filter trial ledgers
-├── rust/            # 13 files -- optional quant_core native extension (maturin)
-├── quality/         # 623 files -- mypy/audit ratchet baselines
-├── examples/        # 13 files -- runnable, offline examples gallery
-├── deploy/          # 10 files -- observability stack config (otel, prometheus, slo)
-├── clients/         # 15 files -- generated TypeScript API client
-├── spec/            # 7 files -- TLA+ formal specification (order lifecycle)
+│   ├── quant_fund/  # 823 files -- the research harness (see Visual tour)
+│   └── fx1/         # 70 files -- corpus, eval, training-manifest tooling
+├── tests/           # 1,271 files -- 1,168 test_*.py across 9 lanes + fixtures
+├── docs/            # 182 tracked files -- 111 top-level .md + 10 subdirs
+├── scripts/         # 192 utility, generator, and CI-support scripts
+├── web/             # 102 files -- read-only receipt/evidence explorer UI
+├── third_party/     # 93 files -- vendored Kronos, MIT-licensed (see Acknowledgements)
+├── receipts/        # 63 committed, hash-sealed research artifacts
+├── configs/         # 30 YAML/JSON run presets (research, paper, backtest, ...)
+├── data/            # 30 tracked files; generated data/* subtrees are gitignored
+├── artifacts/       # 30 committed artifacts (equity parquets, champion JSON)
+├── verifier/        # 24 files -- acceptance-history ledger (v1..v8)
+├── replay/          # 20 files -- deterministic replay + visualization tooling
+├── research/        # 18 files -- reality-filter trial ledgers
+├── rust/            # 10 files -- optional quant_core native extension (maturin)
+├── quality/         # 7 files -- mypy/audit ratchet baselines
+├── examples/        # 7 files -- runnable, offline examples gallery
+├── deploy/          # 7 files -- observability stack config (otel, prometheus, slo)
+├── clients/         # 5 files -- generated TypeScript API client
+├── spec/            # 3 files -- TLA+ formal specification (order lifecycle)
 ├── notebooks/       # placeholder (.gitkeep) -- reserved for interactive analysis
 ├── reports/         # generated markdown reports (e.g. cost calibration)
 ├── LICENSE          # proprietary, all-rights-reserved
@@ -1497,34 +1483,19 @@ the chat is the way in:
 
 ```bash
 make sync
-uv run dipcatcher           # terminal: chat. redirected: help, no stdin read
+uv run dipcatcher           # opens the chat in an interactive terminal
 # inside the chat:
 #   /keys set fx1           masked API key + endpoint URL (or /keys set fx1-lite)
 #   /use fx1-lite           switch model
 #   /superpower <goal>      plan and run the research families that fit
-#   /superpower --web ...   opt in before any public web search
 #   /help, /exit
-uv run dipcatcher exec "ping"          # one turn; exit 5 until an endpoint exists
-uv run dipcatcher models list          # presence only, not a liveness claim
-uv run dipcatcher models check         # offline; does not open a socket
-uv run dipcatcher models check --live  # one call per configured model; not a release claim
-uv run dipcatcher exec --data vol.csv "ping"  # ./data/vol.csv; same resolver as /data
 ```
 
 `dipcatcher chat --model fx1-lite` picks the starting model. Without an
-endpoint the chat still runs slash commands. Public web search does not run
-unless you pass `--web` or set `FX1_WEB_RESEARCH=1`. Redirected (non-terminal)
-`dipcatcher` prints help instead of opening the chat. Details and current status:
-[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
-
-`make sync` installs the full locked environment (every dependency group and
-extra), the same set CI uses. It is not a minimal chat install.
-
-The unbounded `dipcatcher research` command runs the full wired scorecard.
-The non-interactive smoke below is the bounded SYNTHETIC path: the example
-sets `DIPCATCHER_RESEARCH_REQUIRED_ONLY=1`, seals a required-family receipt,
-and verifies it. Typed subcommands are the non-interactive path for scripts
-and CI:
+endpoint the chat still runs slash commands and web research. Redirected
+(non-terminal) `dipcatcher` prints help instead of opening the chat. Details
+and current status: [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). The
+typed subcommands below are the non-interactive path, used by scripts and CI:
 
 ```bash
 uv run dipcatcher research --config configs/research.yaml
@@ -1591,17 +1562,18 @@ below are taken directly from each file's own header.
 ## Command line reference
 
 Both CLIs are [Typer](https://typer.tiangolo.com/) applications. The
-commands used in [Quick start](#quick-start) cover the common path; the
-tables below are the complete, source-derived reference for everything
-else. Every description is either quoted from the command's own Python
-docstring or, where a command has no docstring, written to match the
-generated diagrams in [Visual tour](#visual-tour).
+commands used in [Quick start](#quick-start) cover the common path. The
+tables below are a curated guide: every description is either quoted from
+the command's own Python docstring or, where a command has no docstring,
+written to match the generated diagrams in [Visual tour](#visual-tour).
+The [command index](#command-index) is the complete list and is checked
+against the registered commands.
 
 **The eleven commands you are most likely to reach for:**
 
 | Command | What it does |
 |---|---|
-| `uv run dipcatcher` | Terminal: chat with `fx1`/`fx1-lite`. Redirected: help, no stdin read. `fxi` opens the same chat. `dipcatcher exec` is the one-turn script path. `exec --data` attaches a file under `./data`. |
+| `uv run dipcatcher` | In a terminal, opens the chat: plain text talks to `fx1`/`fx1-lite`; `/superpower <goal>` runs the research families that fit. `fxi` opens the same chat. |
 | `uv run dipcatcher research --config <cfg>` | Builds a panel, runs the research pipeline, writes a sealed notebook. |
 | `uv run dipcatcher verify-research [path]` | Recomputes a notebook or run directory's receipt hash; fails closed. |
 | `uv run dipcatcher doctor --config <cfg>` | Environment/data/receipt readiness check; exit code is the answer. |
@@ -1614,11 +1586,11 @@ generated diagrams in [Visual tour](#visual-tour).
 | `uv run fx1 doctor` | fx-1 readiness status (presence flags only, never secret values). |
 
 <details>
-<summary><strong>Expand the full command-line reference — 66 dipcatcher actions + 22 fx1 actions, 88 total</strong></summary>
+<summary><strong>Expand the curated command-line guide</strong></summary>
 
 #### `dipcatcher` command reference
 
-50 top-level commands plus 13 nested command groups — **66** distinct CLI actions in total, defined across 15 files under [`src/quant_fund/cli/`](src/quant_fund/cli/). The tables below are grouped by source file and quote each command's own docstring; run `uv run dipcatcher --help` (or `--help` on any subcommand) for the authoritative, always-current listing.
+The tables below are grouped by source file and quote each command's own docstring. They are a guide, not the full inventory: nested groups and later commands are in the [command index](#command-index). Run `uv run dipcatcher --help` (or `--help` on any subcommand) for the authoritative listing. `uv run dipcatcher --version` and `-V` print `dipcatcher <version>` from any command. `uv run quant` is the same lab CLI without the chat launcher.
 
 **Data, ingest, and point-in-time layer** (`data_cmds.py`)
 
@@ -1774,6 +1746,483 @@ generated diagrams in [Visual tour](#visual-tour).
 | `doctor` | top-level | fx-1 readiness status (presence flags only — never secret values). |
 
 </details>
+
+## Command index
+
+This list is generated from the registered commands. `dipcatcher` and
+`quant` share it (`quant --version` prints `dipcatcher <version>`).
+Argparse tools are `verify-ledger`, `data-quality` (`python -m quant_fund.data.quality`),
+`parity` (`python -m quant_fund.parity`), `market-sim` (`python -m quant_fund.market_sim`),
+and `robustness` (`python -m quant_fund.robustness`). `--help` and `--version` / `-V`
+work on every command below. Exit `0` is success, exit `1` is an operational
+failure, and exit `2` is usage. A user mistake prints one `error:` line on
+stderr and does not print a traceback.
+
+<!-- cli-index:start -->
+
+### dipcatcher
+
+```text
+admit
+admit-batch
+allocation
+allocation compare
+allocation engines
+allocation verify-receipt
+allocation walk-forward
+anchor-timestamp
+api
+attest-release
+audit-record
+audit-trace
+backtest
+basis-carry
+book-panel
+build-features
+build-labels
+calibration-eval
+candle-book
+capacity
+checkpoint
+checkpoint-chain
+coherence
+collect
+compare
+concordance
+corpus
+corpus-absence
+corpus-consistency
+corpus-epoch
+corpus-proof
+cost-calibration
+crown-jewels
+custody
+doctor
+epoch-delta
+epoch-position
+evidence-export
+execution-sensitivity
+expert-mixture
+explain
+explain attach-sidecar
+explain demo
+explain report
+explain verify-sidecar
+fleet
+fleet-monitor
+forecast
+forward-shadow
+forward-shadow decide
+forward-shadow dump
+forward-shadow freeze
+forward-shadow miss
+forward-shadow plan
+forward-shadow reconcile
+forward-shadow settle
+fuzz-drill
+fuzz-receipts
+graph
+hmm
+hmm eisner
+hmm train
+ingest
+kronos-forecast
+kyle-ofi
+lab
+lake
+lake import
+lake quality
+lane-power
+lattice
+leakage
+leakage scan
+leakage watch
+lineage
+lineage show
+lineage verify
+live
+live arm
+live cancel
+live disarm
+live flatten
+live kill
+live mark
+live poll
+live reconcile
+live reset
+live status
+live submit
+ls
+ls book
+ls confirm
+ls demo
+ls hunt
+ls race
+ls specs
+mcs
+membership-coverage
+monitor
+multih-fleet
+net-tournament
+net-tournament prepare
+net-tournament run
+northset
+online-fdr
+optimize
+ots-stamp
+ots-upgrade
+pairs
+paper
+pit
+pit init
+pit restate
+pit stats
+pit verify
+promote-bars
+proof
+proof chain-head
+proof replay
+proof run
+proof verify
+proofcore
+proofcore chain-head
+proofcore export
+proofcore log
+proofcore query
+prospective-sota
+prospective-sota commitment
+prospective-sota forecast
+prospective-sota interrupt
+prospective-sota prepare
+prospective-sota settle
+prospective-sota verify
+qm
+qm bs-price
+qm gex-decide
+qm greeks
+qm hrp
+qm iv
+qm validate-greeks
+quorum-init
+quorum-rotate
+quorum-sign
+race
+ranker-probability
+ranker-probability run
+rankic
+real-benchmark
+real-benchmark prepare
+real-benchmark score
+reality
+reality ledger-gate
+reality preflight
+reality survivorship
+reality sweep
+reality trial-report
+regime-performance
+replay
+replay-all
+report
+research
+research100
+research100 benchmark
+research100 catalog
+research100 verify
+rotate-key
+serial-watch
+session-book
+sign-pins
+sim-live
+sota
+sota block-sensitivity
+sota effects
+sota run
+sota show
+sota validate-bars
+stress
+stress crises
+stress report
+suite-health
+tamper-drill
+tape-pin
+tape-verify
+tearsheet
+tombstone
+total-return
+trade
+train
+train alpha
+train calibration
+train covariance
+train distribution
+train liquidity
+train ranking
+train regime
+train reinforcement
+train tail
+train volatility
+validate
+vendor-book-map
+verdict
+verify-all
+verify-bundle
+verify-checkpoint
+verify-identities
+verify-ledger
+verify-receipt
+verify-release
+verify-repo
+verify-research
+verify-rotations
+verify-witness
+vol-bench
+witness-bundle
+witness-checkpoint
+witness-scan
+xvenue-basis
+```
+
+### fx1
+
+```text
+attestation
+backtest
+capability-eval
+contamination-audit
+corpus
+corpus build
+corpus build-full
+corpus ingest-source
+curriculum
+dipbench
+doctor
+dpo
+eval
+ext-bench-eval
+harness
+harness batch
+harness batch-cancel
+harness batch-output
+harness batch-run
+harness batch-status
+harness batch-submit
+harness batch-wait
+harness batches
+harness bench
+harness cancel
+harness capabilities
+harness chat-delete
+harness chat-get
+harness chat-list
+harness chat-messages
+harness chat-update
+harness check-text
+harness commands
+harness compat
+harness complete
+harness completion
+harness completions
+harness conv-create
+harness conv-delete
+harness conv-get
+harness conv-item
+harness conv-items
+harness conv-items-add
+harness conv-items-delete
+harness conv-update
+harness describe-operation
+harness doctor
+harness drain
+harness embed
+harness eval
+harness eval-cancel
+harness eval-diff
+harness eval-run
+harness eval-run-cancel
+harness eval-run-delete
+harness eval-run-get
+harness eval-run-items
+harness eval-run-list
+harness eval-spec-create
+harness eval-spec-delete
+harness eval-spec-get
+harness eval-spec-list
+harness eval-spec-update
+harness eval-status
+harness eval-wait
+harness evals
+harness execute-operation
+harness file-content
+harness file-delete
+harness file-upload
+harness files
+harness ft-cancel
+harness ft-checkpoints
+harness ft-create
+harness ft-events
+harness ft-jobs
+harness ft-pause
+harness ft-resume
+harness ft-status
+harness ft-wait
+harness health
+harness job
+harness jobs
+harness key-create
+harness key-get
+harness key-patch
+harness key-revoke
+harness key-rotate
+harness key-usage
+harness keys
+harness list
+harness message
+harness message-batch
+harness message-batch-cancel
+harness message-batch-delete
+harness message-batch-results
+harness message-batch-status
+harness message-batch-wait
+harness message-batches
+harness message-tokens
+harness metrics
+harness model
+harness model-delete
+harness models
+harness moderate
+harness operations
+harness probe
+harness ready
+harness receipt
+harness receipts
+harness respond
+harness response-cancel
+harness response-delete
+harness response-get
+harness response-input-items
+harness response-replay
+harness run
+harness score
+harness self
+harness selftest
+harness serve
+harness submit
+harness submit-batch
+harness text-completion
+harness upload
+harness upload-cancel
+harness usage
+harness verify
+harness version
+harness vs-batch-cancel
+harness vs-batch-create
+harness vs-batch-files
+harness vs-batch-get
+harness vs-create
+harness vs-delete
+harness vs-file-add
+harness vs-file-content
+harness vs-file-delete
+harness vs-file-get
+harness vs-files
+harness vs-get
+harness vs-list
+harness vs-search
+harness vs-update
+harness wait
+harness watch
+infer
+maskedaEval
+modelcard
+mrm
+options-reasoning-eval
+redteam
+sbom
+sign
+sources
+sources describe
+sources fetch
+sources list
+sources probe
+sources route
+sources scenarios
+train
+train manifest
+```
+
+### fxi
+
+```text
+chat
+doctor
+eval
+flash
+flash add
+flash list
+flash refresh
+flash remove
+flash search
+flash show
+harness
+harness describe
+harness list
+harness run
+keys
+keys list
+keys remove
+keys set
+research
+run
+setup
+shell
+superpower
+verify
+```
+
+### mc-engine
+
+```text
+bench
+help-interface
+resume
+run
+```
+
+### verify-ledger
+
+```text
+verify-ledger
+```
+
+### data-quality
+
+```text
+data-quality
+```
+
+### parity
+
+```text
+smoke
+```
+
+### market-sim
+
+```text
+bench
+report
+scenarios
+stress
+stylized
+```
+
+### robustness
+
+```text
+smoke
+```
+
+<!-- cli-index:end -->
 
 ## Data sources and point in time integrity
 
@@ -2210,7 +2659,7 @@ Why these and not Sharpe: a proper scoring rule is minimized in
 expectation by reporting the true predictive distribution, so a forecaster
 cannot game the headline by being lucky, overfit, or selectively honest.
 Sharpe-style ratios measure a *trading outcome* — which this repository
-has none of.
+has none of, because there is no live trading.
 
 ### Honesty enforcement map
 
@@ -2222,6 +2671,7 @@ harness/model boundary, and the check that keeps them honest.
 |---|---|---|---|
 | forbidden headline keys | `quant_fund.research.catalog.registry.FORBIDDEN_RESEARCH_METRIC_KEYS` | `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS` | `tests/fx1/test_honesty_inheritance.py` |
 | SYNTHETIC labeling | CLI prints `DATA_LABEL=SYNTHETIC` | notebook `data_source` field | CI smoke test |
+| no live trading | `runtime.allow_live: true` raises | `docs/INSTITUTIONAL_READINESS.md` five conditions | validation gates, fail-closed |
 | receipt integrity | `dipcatcher verify-research` | committed `receipts/` tree | `make receipts-reverify` |
 | analytics honesty | `validate_analytics_export` fails closed on `live_pnl_claim=true` | `hedge_lab*.yaml` scope comments | test suite + CI |
 | sealed failures kept | blocked receipts stay `valid: true`, `state: "blocked"` | `docs/RECEIPT_VERIFICATION.md` | receipt verifier rules |
@@ -2273,14 +2723,15 @@ README:
 
 ### Readiness tiers — which "production-ready" is meant
 
-The release target requires all three surfaces below. Each needs its own
-evidence before dipcatcher can be called production-ready as a whole.
+"Production-ready" is not one thing, and conflating the three is how a research
+repository accidentally implies that it trades. This repository targets **Tier
+A** and is honest about the distance to the other two.
 
 | Tier | What it means | Reachable by code? | Status here |
 |---|---|---|---|
-| **A — Research CLI** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Mostly** | Not cleared: current replay proofs and a same-SHA green release baseline remain open. See the CI status note below. |
-| **B — Public fx1 and fx1-lite** | Tier A plus evaluated and signed fine-tuned weights for both aliases, license rights, authenticated serving, signed release artifacts, and deployment acceptance. | **No** | Not reached: neither alias has verified public release weights or a deployed endpoint evidenced here. The tiny LM is a synthetic correctness fixture. |
-| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt, and written live authorization. | **No** | Blocked: no qualifying feed, live broker adapter, venue evidence, eligible forward record, or live authorization. |
+| **A — Research platform** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Yes** | Where this repo is working. Not yet *verified* — see the CI status note below. |
+| **B — Distributed platform** | Tier A plus signed releases, third-party security review, a real install path, and onboarding. | **Mostly** | Not reached. `git tag -l 'v*' | wc -l` → **0**: SBOM/Sigstore/SLSA are defined but never exercised. No published install route exists: `install.sh` defaults to the `v0.4.0` GitHub release asset, but no `v*` tag has been cut, so the clone-and-`uv` path in [Quick start](#quick-start) is the only working install. |
+| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt. | **No** | **Blocked, and it is not a code problem.** Conditions 1 and 2 require a purchased entitlement and a broker authorization. |
 
 Tier C is gated by the five minimum-evidence conditions in
 [`docs/INSTITUTIONAL_READINESS.md`](docs/INSTITUTIONAL_READINESS.md), reproduced
@@ -2290,7 +2741,7 @@ sentence that prevents most of the possible misreadings:
 > A working fail-closed adapter, a compiling module, or a passing SYNTHETIC
 > fixture is **not** evidence and never marks a condition ready.
 
-Code alone cannot close conditions 1 and 2. `quant_fund.data.qualifying`
+No amount of code closes conditions 1 and 2. `quant_fund.data.qualifying`
 enforces the condition-1 PIT rules and fails closed to `UNAVAILABLE` with **no
 synthetic substitution**; `quant_fund.execution.order_recon` and
 `quant_fund.paper.broker_adapter` are the condition-2 *reference shape* only,
@@ -2419,9 +2870,8 @@ post-hoc filter.
   and an on-record base-model eval are both present. It does **not**
   launch a training job.
 - `LocalFx1Backend` refuses a directory that lacks a model card cleared by
-  the ship gate. `complete()` delegates to a configured OpenAI-compatible
-  local engine; no fine-tuned fx-1 release checkpoint exists yet
-  (`src/fx1/serve/backends.py`).
+  the ship gate. `complete()` raises `NotImplementedError` until a
+  distilled student exists (`src/fx1/serve/backends.py`).
 - The **honesty contract inherits across the harness/model boundary by
   construction, not by convention**:
   `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS` mirrors
@@ -2506,6 +2956,10 @@ The FastAPI service (`dipcatcher api`, default host `127.0.0.1`):
   with a healthcheck, and CI builds the image and waits on that
   healthcheck before passing.
 
+The deploy, environment-configuration, and CI checklist lives in
+[`docs/PRODUCTION.md`](docs/PRODUCTION.md). Pin re-signing is not a
+contributor step: it needs `GATE_SIGNING_KEY` held by the key holder.
+
 Beyond the API surface, repository-wide security posture is CI-gated, not
 aspirational: a locked-dependency `pip-audit` report (`make audit`), a
 medium/high [Bandit](https://bandit.readthedocs.io/) static-analysis gate
@@ -2572,7 +3026,7 @@ third-party badge.
 | `make test-full` | Full offline lab suite, including slow tests |
 | `make parity-smoke` | SYNTHETIC backtest/shadow parity smoke (simulated broker only) |
 | `make coverage` | PR-gate tests + coverage (threshold in pyproject) |
-| `make lint` | Ruff check + format check on src/ and tests/ |
+| `make lint` | Ruff check + format check repo-wide, plus the mypy and McCabe ratchet scripts |
 | `make fmt` | Auto-fix lint + format |
 | `make typecheck` | mypy on the harness (public modules are strict; see pyproject) |
 | `make diffbacktest` | Differentiable backtest (optional JAX extra, CPU) |
@@ -2607,35 +3061,35 @@ third-party badge.
 | `make proof-verify` | Bundle hash, sidecar, signature, and metric verification tests; replay remains closed |
 | `make leakage-scan` | Leakage hunter — WARN MODE this wave (adjudicated: advisory only) |
 | `make reality-gate` | Reality-filter gate: score trials; absent DB or empty export skips |
-| `make receipts-reverify` | Strict suite-health audit: committed receipts must verify or match an exact quarantine pin |
+| `make receipts-reverify` | Fail-closed audit; schema-specific committed receipt verifiers pending |
 | `make evidence-audit` | CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact |
 | `make lattice-check` | CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts |
 | `make market-sim-test` | Matching engine and agent-market tests |
 
-Total: **45** self-documented targets — run `make help` for the live list.
+Total: **78** self-documented targets — the 45 most-used are listed here; run `make help` for the live list.
 </details>
 
 ### Continuous integration
 
-> **CI status — measured 2026-10-16: no production baseline yet.** The
-> October 8 zero-success census in
-> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) is a historical
-> snapshot. The [October 16 `main` run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454409) has reached real job verdicts, including
-> successful lint and packaging, but its evidence audit fails on stale quorum
-> signatures for two integrity pins. The [proofcore run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454422) also fails three
-> committed replay comparisons. The [fx1 run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454430) passed; the [full platform matrix](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454610)
-> was queued at the time of this check. The required green CI/matrix baseline
-> and signed release are still open. Check GitHub Actions runs for
-> the latest verdict before making a release claim.
+> **CI status — measured 2026-10-08: the pipeline is dark, not green.**
+> The badges at the top of this file are the workflow *definitions* rendering,
+> not a current verdict. As of 2026-10-08, `gh run list` shows **0 successful
+> runs in 400 consecutive attempts** (last 100: 85 `cancelled`, 15 `queued`, 0
+> success). Nothing in this repository has been verified by a returning CI
+> verdict in that window — including the 81% coverage floor, the strict-typing
+> claim, receipt verification, and the SBOM, all of which are *defined and
+> enforced in configuration* but have not been observed green.
 >
-> **Enforcement status — measured 2026-10-16:** `main` has no classic branch
-> protection (`GET /branches/main/protection/required_status_checks` returns
-> `404 Branch not protected`). The two active repository rulesets enforce only
-> branch creation/deletion restrictions. The `merge_group` workflow triggers
-> are prepared, but no required status checks or merge queue currently protect
-> `main`; an administrator must configure them before CI can block a merge.
-> The exact proposed contexts and queue settings are in
-> [the CI enforcement proposal](docs/CI_ENFORCEMENT_PROPOSAL.md).
+> The cause is orchestration, not flaky tests: ~80+ jobs per push across 22
+> workflow files, burst merge cadence, and `cancel-in-progress: true` on the
+> gate workflows, so each new push cancels the run in flight. Measured
+> findings, mechanism, and the remediation plan are in
+> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) (Phase 0).
+> Until that gate returns verdicts, treat every CI-enforced claim in this
+> README as *specified but unconfirmed*. Local `make lint` was green when
+> last checked (2026-10-31): `uv run ruff check .` reported "All checks
+> passed!" and `uv run ruff format --check .` reported every file
+> already formatted.
 
 **22** workflow files under [`.github/workflows/`](.github/workflows/).
 CI runs the PR-gate test matrix on Python **3.12 and 3.13**; the separate
@@ -2644,8 +3098,8 @@ schedule and on `workflow_dispatch`.
 
 | Workflow file | Declared name | Trigger | What it gates |
 |---|---|---|---|
-| `ci.yml` | CI | push to main, PR to main (+ legacy branch), merge queue, schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
-| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR, merge queue | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
+| `ci.yml` | CI | push to main, PR to main (+ legacy branch), schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
+| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
 | `codeql.yml` | CodeQL | push to main, PR, schedule | Static security analysis (CodeQL). |
 | `scorecard.yml` | Scorecard | branch_protection_rule change, weekly schedule, push to main | OpenSSF Scorecard supply-chain posture. |
 | `secret-scan.yml` | Secret scan | push to main, PR | Repository secret scanning. |
@@ -2653,10 +3107,10 @@ schedule and on `workflow_dispatch`.
 | `docs.yml` | docs | push to main, PR | Builds the MkDocs site in strict mode. |
 | `atlas.yml` | atlas | push to main, PR | Regenerates and diff-checks the architecture diagrams and atlas doc. |
 | `arch_guards.yml` | arch-guards | push to main, PR, manual | Enforces import-layer boundaries (`configs/arch_boundaries.toml`). |
-| `release.yml` | Release | push of tag `v*.*.*` | Checks the tag against the package version and requires same-commit CI and full matrix proof, then builds and smoke-tests the wheel, signs distributions, and attests/uploads artifacts; publishing is not configured. |
-| `matrix.yml` | Platform Matrix | nightly, manual | Extended OS x Python matrix: ubuntu/macos/windows x 3.12/3.13/3.14. |
+| `release.yml` | Release | push of tag `v*.*.*` | Release build/publish pipeline. |
+| `matrix.yml` | Platform Matrix | PR/push to main, manual | Extended OS x Python matrix: ubuntu/macos/windows x 3.12/3.13/3.14. |
 | `perf-baseline.yml` | Perf baseline gate | push to main, weekly schedule, PR | Compares hot-path timings against the stored baseline (1.5x gate). |
-| `proofcore.yml` | proofcore | push to main, PR, merge queue | PROOFCORE contracts, provenance DB, layering gate. |
+| `proofcore.yml` | proofcore | push to main, PR | PROOFCORE contracts, provenance DB, layering gate. |
 | `property-nightly.yml` | Adversarial properties (nightly) | daily schedule, manual | Nightly extended Hypothesis property run. |
 | `adversarial-properties.yml` | Adversarial properties | push to main, PR | Adversarial property-based tests (PR-sized). |
 | `simtest.yml` | Deterministic simulation | PR to main, manual (seed input) | Bounded deterministic-simulation swarm. |
@@ -2956,8 +3410,9 @@ atlas, and a terminal cheat-sheet.
 <details>
 <summary><strong>Is this a trading bot?</strong></summary>
 
-No. It is receipt-bound quant research and simulated paper trading. Setting
-`runtime.allow_live: true` raises. See
+No. It is receipt-bound quant research and simulated paper trading. There
+is no broker connectivity anywhere in the tree; setting
+`runtime.allow_live: true` raises by construction. See
 [Read this first](#read-this-first).
 
 </details>
@@ -2984,8 +3439,8 @@ see [Honesty enforcement map](#honesty-enforcement-map).
 <summary><strong>Where are the fx-1 model weights?</strong></summary>
 
 Nowhere in this tree. No training run has been launched from this
-repository. `LocalFx1Backend.complete()` can delegate to a configured local
-engine, but there are no released fx-1 weights to serve. See [fx-1](#fx-1).
+repository; `LocalFx1Backend.complete()` raises `NotImplementedError`
+until a distilled student exists. See [fx-1](#fx-1).
 
 </details>
 
@@ -3103,7 +3558,7 @@ into the second as training data.
 | next-open fill | backtest fills at the next bar's open, never the signal bar |
 | Almgren–Chriss / TWAP | execution benchmarks compared in simulation |
 | synthetic | generated data for correctness testing; always labeled |
-| `allow_live` | config flag that raises when set |
+| `allow_live` | config flag that raises when set — there is no live path |
 | `doctor` | readiness CLI: exit code is the answer |
 | `verify-research` | the authoritative, fail-closed receipt check |
 | corpus line | one JSONL training example for fx-1, receipt-backed |
@@ -3126,15 +3581,7 @@ From [`.env.example`](.env.example); secrets are never committed and
 | `MLFLOW_TRACKING_URI` | `./mlruns` | local tracking store |
 | `QUANT_VENDOR_API_KEY` | unset | licensed vendor adapter; unset means fail-closed |
 | `QUANT_API_KEY` | unset | required for non-loopback API access (`X-API-Key`) |
-| `MOONSHOT_API_KEY` | unset | shared chat key, and hosted Kimi K3 eval (`make fx1-eval`). A stored profile wins. |
-| `FX1_BASE_URL` | Moonshot chat-completions URL | shared completion URL when no stored or per-model URL is set |
-| `FX1_CONFIG_DIR` | `~/.fx1` | credentials, sessions, jobs, logs, runs, history |
-| `FX1_SESSION_DIR` | unset | chat sessions; else `$FX1_CONFIG_DIR/sessions` |
-| `DIPCATCHER_FX1_API_KEY` | unset | fx1 key when no profile is stored |
-| `DIPCATCHER_FX1_BASE_URL` | unset | fx1 completion URL; with a per-model key and no URL, `FX1_BASE_URL` is used |
-| `DIPCATCHER_FX1_LITE_API_KEY` | unset | fx1-lite key when no profile is stored |
-| `DIPCATCHER_FX1_LITE_BASE_URL` | unset | fx1-lite completion URL |
-| `DIPCATCHER_LOG` | `info` | local chat telemetry level: `off`, `error`, `info`, `debug` |
+| `MOONSHOT_API_KEY` | unset | hosted Kimi K3 eval (`make fx1-eval`) |
 | `FX1_SIGNING_KEY` | unset | checkpoint signature enforcement for local fx-1 serving |
 | `DIPCATCHER_OBSERVE` | unset | opt-in audit ledger / observability |
 | `DIPCATCHER_OTEL_ENDPOINT` | `http://127.0.0.1:4318/v1/traces` | OTLP traces endpoint |
@@ -3145,9 +3592,8 @@ From [`.env.example`](.env.example); secrets are never committed and
 
 ### Receipts census
 
-All 406 tracked files under [`receipts/`](receipts/) at `b5f1f6d11`
-(404 JSON: 397 top-level + 7 `legacy-unsealed`), generated from
-`git ls-files receipts`:
+All 63 tracked files under [`receipts/`](receipts/) at `e00ab310c`,
+generated from `git ls-files receipts`:
 
 <details>
 <summary><strong>Expand the full receipts listing — 55 sealed + 7 legacy-unsealed + 1 README</strong></summary>
@@ -3291,11 +3737,9 @@ flowchart TD
 
 ```text
 +---------------------------------------------------------------------+
-|  dipcatcher — common commands                                       |
+|  dipcatcher — the ten commands that matter                          |
 +---------------------------------------------------------------------+
 |  make sync                     frozen env from uv.lock              |
-|  uv run dipcatcher             terminal chat; redirected prints help|
-|  uv run dipcatcher exec "…"    one turn; exit codes in --help       |
 |  uv run dipcatcher research --config configs/research.yaml          |
 |  uv run dipcatcher verify-research                                  |
 |  uv run dipcatcher doctor --config configs/research.yaml            |
@@ -3303,7 +3747,6 @@ flowchart TD
 |  make demo-data                labeled offline dataset              |
 |  make lint && make typecheck && make test                           |
 |  make fx1-gate                 fx-1 lane: lint+types+tests+honesty  |
-|  make dipcatcher-gate          chat harness gate; gates P1-P7 stay open |
 |  make receipts-reverify        re-verify every committed receipt    |
 |  uv run fx1 corpus build --receipts-dir receipts --out <path>       |
 +---------------------------------------------------------------------+
@@ -3321,8 +3764,11 @@ performance-shaped number above is either a **correctness check** (the
 qlib parity NAV comparison) or a **proper score on labeled data**
 (pinball, CRPS, PIT, Brier, ECE), never a forbidden headline metric.
 SYNTHETIC-labeled results are correctness tests on generated data, always
-labeled as such, never market evidence. See
-[Institutional readiness](#institutional-readiness). This repository, in full, is the
+labeled as such, never market evidence. There is no broker connectivity,
+no order-placement path, and no live-trading claim anywhere in this
+repository — see [Institutional readiness](#institutional-readiness) for
+the five concrete conditions that would have to exist before that
+changed, none of which exist today. This repository, in full, is the
 proprietary property of Advaith Vaithianathan / Artificial Hedge under
 the [License](#license) above: **no forking, copying, or reuse without
 prior written permission.**

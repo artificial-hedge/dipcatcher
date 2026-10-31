@@ -3,6 +3,7 @@
 The grid, costs, and membership rule are frozen in
 ``research/reality/survivorship/preregistration.json``. This module does not
 edit reality-filter thresholds, round-1 ledger rows, or the round-1 receipt.
+No live-trading claim.
 """
 
 from __future__ import annotations
@@ -980,8 +981,8 @@ def write_results_markdown(path: Path, receipt: dict[str, Any]) -> None:
         "",
         "Research diagnostic. Annualized ratio means a Sharpe ratio:",
         "per-period mean over sample standard deviation, times the square",
-        "root of the periods-per-year count. It is not a promotion.",
-        "Reality-filter thresholds were not edited.",
+        "root of the periods-per-year count. It is not a promotion and not",
+        "a live-trading claim. Reality-filter thresholds were not edited.",
         "Round-1 ledger rows were not rewritten.",
         "",
         f"Verdict: `{gate['verdict']}`.",
@@ -1618,7 +1619,7 @@ def compare_return_bases(
         "study_id": spec["study_id"],
         "note": (
             "Paired quote-close vs cash-dividend total-return marks on one Yahoo "
-            "fetch. Does not append to the trial ledger."
+            "fetch. Does not append to the trial ledger. Not a live-trading claim."
         ),
         "preregistration_sha256": sha256_hex_bytes(spec_file.read_bytes()),
         "membership_sha256": member_hash,
@@ -1673,7 +1674,8 @@ def write_comparison_markdown(path: Path, receipt: dict[str, Any]) -> None:
         "`docs/REALITY_TRIAL_SURVIVORSHIP_2026.md`, scored twice on one Yahoo",
         "fetch: once on quote closes (default), once after cash-dividend",
         "reinvestment through `prepare_bars(..., actions)`. Reality-filter",
-        "thresholds and the sealed ledger were not edited.",
+        "thresholds and the sealed ledger were not edited. Not a live-trading",
+        "claim.",
         "",
         f"Comparison receipt sha256: `{receipt['receipt_sha256']}`.",
         f"Cash-dividend rows on the fetch: {receipt['n_cash_dividend_rows']}.",

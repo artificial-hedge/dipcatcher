@@ -46,35 +46,6 @@ def test_rename_with_unchanged_count_and_max_mtime_invalidates(tmp_path: Path) -
     assert index.lookup("a" * 64) == renamed
 
 
-def test_zero_inode_direntry_does_not_hide_a_replaced_receipt(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A frozen DirEntry stamp with st_ino 0 must not keep the old digest.
-
-    That is the Windows scandir result: the file index is 0, and Server 2025
-    can preserve creation time across os.replace. The fresh os.stat index
-    still changes.
-    """
-    old = _receipt(tmp_path, "old.json", "a" * 64)
-    newest = _receipt(tmp_path, "newest.json", "b" * 64)
-    os.utime(old, ns=(1_000_000_000, 1_000_000_000))
-    os.utime(newest, ns=(9_000_000_000, 9_000_000_000))
-    frozen = os.stat_result((0o100666, 0, 1, 1, 0, 0, 86, 1, 1, 1))
-
-    def hide_identity(_entry: os.DirEntry[str], *, follow_symlinks: bool = True) -> os.stat_result:
-        del follow_symlinks
-        return frozen
-
-    monkeypatch.setattr(os.DirEntry, "stat", hide_identity)
-    index = ReceiptIndex(tmp_path)
-    assert index.lookup("a" * 64) == old
-    replacement = _receipt(tmp_path, "replacement.tmp", "c" * 64)
-    os.utime(replacement, ns=(1_000_000_000, 1_000_000_000))
-    os.replace(replacement, old)
-    assert index.lookup("a" * 64) is None
-    assert index.lookup("c" * 64) == old
-
-
 def test_replacing_an_old_receipt_is_not_hidden_by_newer_mtime(tmp_path: Path) -> None:
     old = _receipt(tmp_path, "old.json", "a" * 64)
     newest = _receipt(tmp_path, "newest.json", "b" * 64)

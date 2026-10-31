@@ -2,7 +2,8 @@
 
 Fill probability as a function of queue position at submit, measured on the
 seeded SYNTHETIC ZI-LOB (iid + MarkovRegimeFlow arms). All results are
-labeled SYNTHETIC correctness diagnostics — never market evidence.
+labeled SYNTHETIC correctness diagnostics — never market evidence, no
+live-trading claim.
 """
 
 from __future__ import annotations

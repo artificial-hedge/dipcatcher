@@ -15,9 +15,8 @@ third-party dependency) and emits deterministic Mermaid artifacts:
 
 ``--check`` regenerates everything in memory and exits 1 when any committed
 artifact (``.mmd``, ``manifest.json``, or an embedded atlas block) is stale.
-Determinism contract: every emitted collection is sorted, files are written
-with LF newlines, and gitignored untracked sources are not modules.
-A local ``src/src`` nest must not change the graph a clean checkout scans.
+Determinism contract: every emitted collection is sorted, so byte-for-byte
+comparison is stable across runs and platforms.
 
 Curated diagrams (data flow, paper loop) declare every displayed node as an
 anchor key. Renderers print the symbol stored under that key, and
@@ -32,7 +31,6 @@ import argparse
 import ast
 import json
 import re
-import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -56,48 +54,12 @@ def repo_root() -> Path:
 # ---------------------------------------------------------------------------
 
 
-def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
-    """Repo-relative paths ``git check-ignore`` drops.
-
-    Tracked files are never ignored. Outside a worktree, or when git is
-    unavailable, nothing is ignored — fixture trees stay a directory listing.
-    Names are POSIX even when git prints backslashes.
-    """
-    if not rels:
-        return set()
-    try:
-        proc = subprocess.run(
-            ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
-            input="\0".join(rels) + "\0",
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return set()
-    # 0 = some ignored, 1 = none, anything else = not a worktree.
-    if proc.returncode not in (0, 1):
-        return set()
-    return {name.replace("\\", "/") for name in proc.stdout.split("\0") if name}
-
-
 def iter_source_modules(src: Path) -> list[tuple[str, Path, bool]]:
-    """Return sorted ``(dotted_module, path, is_package)``.
-
-    ``src`` is ``<repo>/src``. Gitignored untracked files under it are not
-    modules: a local ``src/src`` nest must not invent ``src.quant_fund.*``
-    nodes that a clean checkout does not have.
-    """
-    root = src.parent
-    paths = sorted(src.rglob("*.py"))
-    rels = [path.relative_to(root).as_posix() for path in paths]
-    ignored = _gitignored_relpaths(root, rels)
+    """Return sorted ``(dotted_module, repo-relative path, is_package)``."""
     out: list[tuple[str, Path, bool]] = []
-    for path, rel in zip(paths, rels, strict=True):
-        if rel in ignored:
-            continue
-        module_rel = path.relative_to(src).with_suffix("")
-        parts = list(module_rel.parts)
+    for path in sorted(src.rglob("*.py")):
+        rel = path.relative_to(src).with_suffix("")
+        parts = list(rel.parts)
         is_package = parts[-1] == "__init__"
         if is_package:
             parts = parts[:-1]
@@ -294,11 +256,11 @@ ANCHORS: dict[str, tuple[str, str]] = {
     "verify_research": ("src/quant_fund/research/verify.py", "verify_research_artifact"),
     "validate_candidate": ("src/quant_fund/validation/gates.py", "validate_candidate"),
     "sim_live": ("src/quant_fund/paper/sim_live.py", "run_sim_live"),
-    "fx1_cli": ("src/fx1/cli/_app.py", "app"),
+    "fx1_cli": ("src/fx1/cli.py", "app"),
     "fx1_corpus": ("src/fx1/data/corpus.py", "*"),
     "fx1_honesty": ("src/fx1/honesty.py", "FORBIDDEN_HEADLINE_TOKENS"),
     "catalog": (
-        "src/quant_fund/research/catalog/registry_blob_checks.py",
+        "src/quant_fund/research/catalog/registry.py",
         "FORBIDDEN_RESEARCH_METRIC_KEYS",
     ),
 }
@@ -676,12 +638,12 @@ def write_all(root: Path) -> list[str]:
     for rel, content in artifacts.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8", newline="\n")
+        path.write_text(content, encoding="utf-8")
         written.append(rel)
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         text = splice_blocks(atlas.read_text(encoding="utf-8"), generated_blocks(artifacts))
-        atlas.write_text(text, encoding="utf-8", newline="\n")
+        atlas.write_text(text, encoding="utf-8")
         written.append(_rel(ATLAS_DOC))
     return written
 
@@ -695,25 +657,16 @@ def stale_artifacts(root: Path) -> list[str]:
     stale: list[str] = []
     for rel, content in artifacts.items():
         path = root / rel
-        if not path.is_file():
-            stale.append(rel)
-            continue
-        try:
-            current = path.read_bytes().decode("utf-8")
-        except UnicodeDecodeError:
-            stale.append(rel)
-            continue
-        if current != content:
+        if not path.is_file() or path.read_text(encoding="utf-8") != content:
             stale.append(rel)
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         try:
-            current_atlas = atlas.read_bytes().decode("utf-8")
-            expected = splice_blocks(current_atlas, generated_blocks(artifacts))
-        except (UnicodeDecodeError, ValueError):
+            expected = splice_blocks(atlas.read_text(encoding="utf-8"), generated_blocks(artifacts))
+        except ValueError:
             stale.append(_rel(ATLAS_DOC))
         else:
-            if current_atlas != expected:
+            if atlas.read_text(encoding="utf-8") != expected:
                 stale.append(_rel(ATLAS_DOC))
     else:
         stale.append(_rel(ATLAS_DOC))
@@ -786,7 +739,6 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.bench.run_audit", "quant_fund.utils.reproducibility"),
         ("fx1.cli_audit", "quant_fund.utils.hashing"),
         ("fx1.cli_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.data.corpus", "quant_fund.utils.receipt"),
         ("fx1.data.corpus_audit", "quant_fund.utils.hashing"),
         ("fx1.data.corpus_audit", "quant_fund.utils.reproducibility"),
         ("fx1.data.ledger_audit", "quant_fund.utils.hashing"),
@@ -794,20 +746,13 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.data.quality", "quant_fund.utils.atomicio"),
         ("fx1.data.quality_audit", "quant_fund.utils.hashing"),
         ("fx1.data.quality_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.data.receipts", "quant_fund.utils.receipt"),
         ("fx1.data.receipts_audit", "quant_fund.utils.hashing"),
         ("fx1.data.receipts_audit", "quant_fund.utils.reproducibility"),
         ("fx1.data.sources.ds_audit", "quant_fund.utils.hashing"),
         ("fx1.data.sources.ds_audit", "quant_fund.utils.reproducibility"),
         ("fx1.data.sources_audit", "quant_fund.utils.hashing"),
         ("fx1.data.sources_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.doctor", "quant_fund.utils.distribution_lineage"),
-        ("fx1.doctor", "quant_fund.utils.hashing"),
         ("fx1.doctor_audit", "quant_fund.utils.hashing"),
-        ("fx1.interactive.surface_seal", "quant_fund.utils.hashing"),
-        # /superpower receipt roots: kernel_lineage.default_repo_root via the
-        # utils leaf so fx1 stays inside the harness-surface allowlist.
-        ("fx1.interactive.superpower", "quant_fund.utils.kernel_lineage"),
         ("fx1.doctor_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.bank_audit", "quant_fund.utils.hashing"),
         ("fx1.eval.bank_audit", "quant_fund.utils.reproducibility"),
@@ -819,7 +764,6 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.eval.contamination_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.core_audit", "quant_fund.utils.hashing"),
         ("fx1.eval.core_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.eval.evidence_contract", "quant_fund.utils.ed25519_public"),
         ("fx1.eval.masking_audit", "quant_fund.utils.hashing"),
         ("fx1.eval.masking_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.options_audit", "quant_fund.utils.hashing"),
@@ -831,7 +775,6 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.ext_bench_audit", "quant_fund.utils.hashing"),
         ("fx1.ext_bench_audit", "quant_fund.utils.reproducibility"),
         ("fx1.forecast.artifacts", "quant_fund.utils.hashing"),
-        ("fx1.forecast.core_audit", "quant_fund.utils.forbidden_research_keys"),
         ("fx1.forecast.core_audit", "quant_fund.utils.hashing"),
         ("fx1.forecast.core_audit", "quant_fund.utils.reproducibility"),
         ("fx1.forecast.data_audit", "quant_fund.utils.atomicio"),
@@ -846,9 +789,7 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.honesty_audit", "quant_fund.utils.reproducibility"),
         ("fx1.hypotheses_audit", "quant_fund.utils.hashing"),
         ("fx1.hypotheses_audit", "quant_fund.utils.reproducibility"),
-        # In-process receipt verification for the chat's evidence ledger: the
-        # harness leaf verifier is the only research-side module fx1 reads.
-        ("fx1.interactive.evidence_ledger", "quant_fund.schemas.receipt_v2_leaf"),
+        ("fx1.interactive.concierge", "quant_fund.validation.live_readiness"),
         ("fx1.modelcard_audit", "quant_fund.utils.hashing"),
         ("fx1.modelcard_audit", "quant_fund.utils.reproducibility"),
         ("fx1.mrm", "quant_fund.utils.atomicio"),
@@ -862,26 +803,26 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.rubric_audit", "quant_fund.utils.reproducibility"),
         ("fx1.sbom_audit", "quant_fund.utils.hashing"),
         ("fx1.sbom_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.sdk", "quant_fund.schemas.receipt_v2_leaf"),
-        ("fx1.sdk_audit", "quant_fund.schemas.receipt_v2_leaf"),
+        ("fx1.sdk", "quant_fund.schemas.receipt"),
+        ("fx1.sdk_audit", "quant_fund.schemas.receipt"),
         ("fx1.sdk_audit", "quant_fund.utils.hashing"),
         ("fx1.sdk_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.anthropic_sdk_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.anthropic_sdk_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.serve.api", "quant_fund.schemas.receipt_v2_leaf"),
-        ("fx1.serve.api_audit", "quant_fund.schemas.receipt_v2_leaf"),
+        ("fx1.serve.api", "quant_fund.schemas.receipt"),
+        ("fx1.serve.api_audit", "quant_fund.schemas.receipt"),
         ("fx1.serve.api_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.api_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.attestation_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.attestation_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.serve.cap_audit", "quant_fund.utils.hashing"),
-        ("fx1.serve.cap_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.auth_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.auth_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.batch_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.batch_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.byok_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.byok_audit", "quant_fund.utils.reproducibility"),
+        ("fx1.serve.cap_audit", "quant_fund.utils.hashing"),
+        ("fx1.serve.cap_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.client_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.client_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.contract_audit", "quant_fund.utils.hashing"),
@@ -891,7 +832,7 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.serve.drain_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.e2e_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.e2e_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.serve.eval_lifecycle_audit", "quant_fund.schemas.receipt_v2_leaf"),
+        ("fx1.serve.eval_lifecycle_audit", "quant_fund.schemas.receipt"),
         ("fx1.serve.eval_lifecycle_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.eval_lifecycle_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.fault_audit", "quant_fund.utils.hashing"),
@@ -904,7 +845,7 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.serve.header_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.idem_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.idem_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.serve.jobs_audit", "quant_fund.schemas.receipt_v2_leaf"),
+        ("fx1.serve.jobs_audit", "quant_fund.schemas.receipt"),
         ("fx1.serve.jobs_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.journal_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.journal_audit", "quant_fund.utils.reproducibility"),
@@ -918,7 +859,7 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.serve.ops_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.ops_receipt", "quant_fund.utils.hashing"),
         ("fx1.serve.ops_receipt", "quant_fund.utils.reproducibility"),
-        ("fx1.serve.parity_audit", "quant_fund.schemas.receipt_v2_leaf"),
+        ("fx1.serve.parity_audit", "quant_fund.schemas.receipt"),
         ("fx1.serve.parity_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.parity_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.perf_audit", "quant_fund.utils.hashing"),
@@ -933,7 +874,6 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.serve.retrieval_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.serve_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.serve_audit", "quant_fund.utils.reproducibility"),
-        ("fx1.serve.signing", "quant_fund.utils.ed25519_public"),
         ("fx1.serve.spec_audit", "quant_fund.utils.hashing"),
         ("fx1.serve.spec_audit", "quant_fund.utils.reproducibility"),
         ("fx1.serve.stream_audit", "quant_fund.utils.hashing"),

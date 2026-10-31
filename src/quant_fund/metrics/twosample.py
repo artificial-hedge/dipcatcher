@@ -19,7 +19,6 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.special import kolmogorov
 
-from quant_fund.utils.absdiff import mean_cross_abs, mean_pairwise_abs
 from quant_fund.utils.numeric import midrank
 
 Array = NDArray[np.float64]
@@ -49,8 +48,10 @@ def ks_two_sample(x: Array, y: Array) -> dict[str, float]:
 def energy_distance(x: Array, y: Array) -> float:
     """Szekely-Rizzo energy distance E = 2A - B - C (>= 0)."""
     xa, ya = _two(x, y)
-    distance = 2.0 * mean_cross_abs(xa, ya) - mean_pairwise_abs(xa) - mean_pairwise_abs(ya)
-    return max(distance, 0.0)
+    a = float(np.mean(np.abs(xa[:, None] - ya[None, :])))
+    b = float(np.mean(np.abs(xa[:, None] - xa[None, :])))
+    c = float(np.mean(np.abs(ya[:, None] - ya[None, :])))
+    return max(2.0 * a - b - c, 0.0)
 
 
 def permutation_test(

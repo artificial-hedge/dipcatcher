@@ -80,7 +80,6 @@ _ENV_KEYS = (
     "FX1_LOCAL_SERVE_CMD",
     "FX1_LOCAL_MODEL",
     "FX1_SIGNING_KEY",
-    "FX1_ALLOW_TEST_FIXTURE",
     "MOONSHOT_API_KEY",
 )
 # Model-weight artifact suffixes only — `.npz` is deliberately excluded
@@ -424,10 +423,7 @@ def _weights_direct_leg(legs: _Legs, ckpt_dir: Path | None, weight_hits: list[st
     try:
         from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
 
-        engine = LocalWeightsEngine(
-            ckpt_dir,
-            allow_synthetic_fixture=True,
-        )  # SYNTHETIC fixture; placeholder eval_delta is not ship-eligible
+        engine = LocalWeightsEngine(ckpt_dir)
         prompt = [{"role": "user", "content": "weights-direct-ping"}]
         first = engine.complete_messages(prompt)
         second = engine.complete_messages(prompt)
@@ -536,15 +532,7 @@ def run_goldenpath(
 
     # --- weights-direct leg: load the committed artifact in-process ------
     ckpt_dir = _committed_checkpoint()
-    previous_fixture_opt_in = os.environ.get("FX1_ALLOW_TEST_FIXTURE")
-    os.environ["FX1_ALLOW_TEST_FIXTURE"] = "1"
-    try:
-        weights_engine = _weights_direct_leg(legs, ckpt_dir, _all_weight_hits())
-    finally:
-        if previous_fixture_opt_in is None:
-            os.environ.pop("FX1_ALLOW_TEST_FIXTURE", None)
-        else:
-            os.environ["FX1_ALLOW_TEST_FIXTURE"] = previous_fixture_opt_in
+    weights_engine = _weights_direct_leg(legs, ckpt_dir, _all_weight_hits())
 
     # --- real stub engine (the closest-to-real in-repo OpenAI-compatible) ----
     from fx1.serve.e2e_audit import _StubChat  # noqa: PLC0415 — audit stub reuse
@@ -571,7 +559,6 @@ def run_goldenpath(
             "FX1_BYOK_MODEL": "stub-v0",
             "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
             "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
-            "FX1_ALLOW_TEST_FIXTURE": "1",
         }
     )
     engine_sock: socket.socket | None = None
@@ -587,10 +574,10 @@ def run_goldenpath(
         engine_sock.listen(1)
         engine_port = int(engine_sock.getsockname()[1])
         server_env["FX1_CHECKPOINT_DIR"] = str(ckpt_dir)
-        server_env["FX1_ALLOW_SYNTHETIC_FIXTURE"] = "SYNTHETIC"
         server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
         server_env["FX1_LOCAL_SERVE_CMD"] = (
-            f"$python -m fx1.serve.local_engine --port {engine_port}"
+            "$python -m fx1.serve.local_engine "
+            f"--checkpoint-dir $checkpoint_dir --port {engine_port}"
         )
 
     saved_local = {k: os.environ.get(k) for k in _ENV_KEYS}

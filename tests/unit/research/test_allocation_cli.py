@@ -34,16 +34,6 @@ def _plain(text: str) -> str:
 
 runner = CliRunner()
 
-_ANSI = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def _plain(text: str) -> str:
-    """Collapse rich errors so ANSI splits inside ``--flag`` still match."""
-    stripped = _ANSI.sub("", text)
-    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
-    return " ".join(stripped.split())
-
-
 _SMALL = ["--n-assets", "4", "--n-periods", "240", "--window", "60", "--step", "10"]
 
 

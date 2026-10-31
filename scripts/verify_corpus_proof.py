@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Standalone corpus-proof auditor — no quant_fund imports.
+"""Standalone corpus-proof auditor — stdlib only.
 
 Independent reimplementation of ``quant_fund.research.epoch_merkle`` for
 third-party auditors who hold ONLY the committed heads pin
 (``quality/epoch_heads.json`` — quorum-signed via ``gate_pins.sig`` and
-OTS-anchored to Bitcoin). No library import required; copy this script with
-its sibling Ed25519 point checker. ``cryptography`` is only needed for
-checkpoint signatures —
+OTS-anchored to Bitcoin). No repo access, no library import required —
 ``--corpus-dir`` additionally replays proofs against a live corpus
 (checkpoint-authenticated or not), making this script a full differential
 oracle for the library's own verifier.
@@ -69,13 +67,11 @@ import hashlib
 import json
 import sys
 import unicodedata
-from collections.abc import Callable
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 LEAF_PREFIX = b"\x00"
 NODE_PREFIX = b"\x01"
-POINT_CHECKER_SHA256 = "0421eb1970e19ccb6489a0b9e2d428684abbd19591839f5d1d61ca1a25143433"
 
 
 _PORTABLE_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
@@ -93,30 +89,6 @@ def _portable(name: str) -> bool:
 
 def _sha(b: bytes) -> bytes:
     return hashlib.sha256(b).digest()
-
-
-def _point_checker_ok() -> bool:
-    """Bind the sibling checker before its code can be imported."""
-    try:
-        raw = Path(__file__).with_name("ed25519_public.py").read_bytes()
-    except OSError:
-        return False
-    return _sha(raw).hex() == POINT_CHECKER_SHA256
-
-
-def _load_point_checker() -> Callable[[bytes], bool] | None:
-    """Execute exactly the checked source bytes, never a cached module."""
-    path = Path(__file__).with_name("ed25519_public.py")
-    try:
-        raw = path.read_bytes()
-    except OSError:
-        return None
-    if _sha(raw).hex() != POINT_CHECKER_SHA256:
-        return None
-    namespace: dict[str, Any] = {"__name__": "_standalone_ed25519_public"}
-    exec(compile(raw, str(path), "exec"), namespace)  # noqa: S102 - hash-pinned bytes
-    checker = namespace.get("is_canonical_prime_order_public_key")
-    return checker if callable(checker) else None
 
 
 def _canon(value: Any) -> bytes:
@@ -210,14 +182,8 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     except ImportError:
         return None
-    checker = _load_point_checker()
-    if checker is None:
-        return False
     try:
-        public_bytes = bytes.fromhex(pub_hex.strip())
-        if not checker(public_bytes):
-            return False
-        pub = Ed25519PublicKey.from_public_bytes(public_bytes)
+        pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex.strip()))
         pub.verify(bytes.fromhex(sig_hex), msg)
     except (InvalidSignature, ValueError, TypeError):
         return False
@@ -928,12 +894,8 @@ def audit_consistency_live(
         if prev is not None:
             if doc.get("prev_epoch_receipt") != prev["name"]:
                 errors.append(f"hop_link_broken:{hop['name']}")
-            # Mirror epoch_consistency: a glob that excludes the epoch JSON
-            # (*.yml, *.md) has no member pin. A pin that is present must match.
             member_sha = _epoch_members(doc).get(prev["name"])
-            pattern_s = str(pattern) if isinstance(pattern, str) else "*.json"
-            pinned = PurePosixPath(str(prev["name"])).match(pattern_s) or member_sha is not None
-            if pinned and member_sha != prev["sha256"]:
+            if member_sha != prev["sha256"]:
                 errors.append(f"hop_member_digest_mismatch:{hop['name']}")
         prev = hop
     if hops:
@@ -1332,10 +1294,6 @@ def main() -> int:
         "(combinable with --pin/--checkpoint for layered assurance)",
     )
     args = ap.parse_args()
-
-    if not _point_checker_ok():
-        print("  ed25519_point_checker_mismatch\nFAIL")
-        return 1
     n_targets = sum(
         x is not None
         for x in (

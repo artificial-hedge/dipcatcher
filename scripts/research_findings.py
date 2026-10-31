@@ -11,9 +11,6 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
-import os
-import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -115,57 +112,6 @@ def rel(root: Path, path: Path) -> str:
         return path.relative_to(root).as_posix()
     except ValueError:
         return path.as_posix()
-
-
-def _git_index_spelling(root: Path) -> dict[str, str]:
-    """Map a case-folded path to the spelling stored in the git index.
-
-    ``Path.glob('**/manifest.json')`` is case-insensitive on Windows and
-    can match ``MANIFEST.json`` on a case-insensitive macOS volume. Linux
-    does not. The note must use the index spelling so every checkout
-    renders the same page.
-    """
-    if not (root / ".git").exists():
-        return {}
-    git = shutil.which("git")
-    if git is None:
-        return {}
-    try:
-        raw = subprocess.run(
-            [git, "ls-files", "-z"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-            timeout=60,
-        ).stdout
-    except (OSError, subprocess.SubprocessError):
-        return {}
-    spelling: dict[str, str] = {}
-    for item in raw.split(b"\0"):
-        if not item:
-            continue
-        text = item.decode("utf-8")
-        spelling.setdefault(text.casefold(), text)
-    return spelling
-
-
-def _stable_rel(root: Path, path: Path, spelling: dict[str, str]) -> str:
-    raw = rel(root, path)
-    return spelling.get(raw.casefold(), raw)
-
-
-def _files_named(folder: Path, name: str) -> list[Path]:
-    """Every file under ``folder`` whose name case-folds to ``name``."""
-    wanted = name.casefold()
-    found: list[Path] = []
-    if not folder.is_dir():
-        return found
-    for dirpath, dirnames, filenames in os.walk(folder):
-        dirnames.sort()
-        for filename in filenames:
-            if filename.casefold() == wanted:
-                found.append(Path(dirpath) / filename)
-    return found
 
 
 def count_jsonl(path: Path) -> int | None:
@@ -638,19 +584,17 @@ def collect_batches(root: Path) -> tuple[list[BatchRow], list[str]]:
             rows.append(row)
             seen.add(rel(root, receipt_path))
 
-    spelling = _git_index_spelling(root)
     metadata = root / "data" / "metadata"
     if metadata.is_dir():
-        manifests = _files_named(metadata, "manifest.json")
-        manifests.sort(key=lambda path: _stable_rel(root, path, spelling))
-        for manifest_path in manifests:
-            shown = _stable_rel(root, manifest_path, spelling)
+        for manifest_path in sorted(metadata.glob("**/manifest.json")):
             row = tournament_row(root, manifest_path)
             if row is None:
-                notes.append(f"`{shown}`: no candidate_count and benchmark; not a trial batch")
+                notes.append(
+                    f"`{rel(root, manifest_path)}`: no candidate_count and benchmark; not a trial batch"
+                )
                 continue
             rows.append(row)
-            seen.add(shown)
+            seen.add(rel(root, manifest_path))
 
     receipts = root / "receipts"
     if receipts.is_dir():
@@ -687,7 +631,7 @@ def render(root: Path) -> str:
         "cited file has no such field. `null` means the field is present and",
         "empty. Numbers are copied from those files. Nothing here is estimated.",
         "",
-        "Research diagnostics only. Not a promotion.",
+        "Research diagnostics only. Not a live-trading claim and not a promotion.",
         "DSR and PBO are overfitting diagnostics. A bar copied from a",
         "preregistration is the bar already stored there.",
         "",

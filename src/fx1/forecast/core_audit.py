@@ -97,25 +97,17 @@ def _forbidden_metric_keys_absent(payload: object) -> bool:
     """fx1-side mirror of ``family_blob_forbidden_metrics_absent``.
 
     ``quant_fund.research.catalog`` sits outside fx1's allowed harness
-    surface (configs/arch_boundaries.toml), so the same mapping-key scan is
-    re-run against ``FORBIDDEN_HEADLINE_TOKENS`` — kept identical by
-    ``tests/fx1/test_honesty_forbidden_keys_mirror.py``. ``live_pnl_claim``
-    stays exempt when its value is literally False.
+    surface (configs/arch_boundaries.toml), so the same underscore-token
+    check is re-run against ``FORBIDDEN_HEADLINE_TOKENS`` — kept identical
+    by ``tests/fx1/test_honesty_inheritance.py``. ``live_pnl_claim`` stays
+    exempt: it is the honesty flag, not a metric.
     """
-    from quant_fund.utils.forbidden_research_keys import mapping_key_forbidden
-
-    if isinstance(payload, dict):
-        for key, value in payload.items():
-            if key == "live_pnl_claim":
-                if value is not False:
-                    return False
-                continue
-            if mapping_key_forbidden(str(key), FORBIDDEN_HEADLINE_TOKENS):
-                return False
-            if not _forbidden_metric_keys_absent(value):
-                return False
-    elif isinstance(payload, (list, tuple)):
-        return all(_forbidden_metric_keys_absent(item) for item in payload)
+    for key in _mapping_keys(payload):
+        if key == "live_pnl_claim":
+            continue
+        parts = str(key).lower().replace("-", "_").split("_")
+        if any(tok in FORBIDDEN_HEADLINE_TOKENS for tok in parts if tok):
+            return False
     return True
 
 

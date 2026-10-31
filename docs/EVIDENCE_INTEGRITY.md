@@ -26,15 +26,13 @@ detects, and the boundary where detection stops.
 | Checkpoint | `quality/checkpoint.json` (signed, anchored) | `dipcatcher verify-checkpoint` | Portable signed tree-head: an auditor needs only checkpoint + pubkey + its TSA token — signature verifies offline, pinned digests bind a clone. `current` flags staleness without invalidating authenticity |
 | Checkpoint spine | `quality/checkpoints/*.json` — every historical checkpoint, each carrying `prev_sha256` | `dipcatcher checkpoint-chain` | Pin-state history as a *chain*, not a point: deleting an archive record → `dangling_prev`, injecting a side-chain → `spine_fork`+`spine_orphan`, a re-signed record → `signature_invalid`, Rekor-witnessed digests that vanished → `witnessed_absent`. Terminus resolvable only in Rekor (pre-archive era) is a valid `witness` genesis |
 | Transparency log | `quality/witness/*.json` (Rekor hashedrekord entry) | `dipcatcher verify-witness` (offline), `verify-witness --online` (live consistency: committed tree is a prefix of Rekor's *current* signed head) | External non-repudiation: the checkpoint digest + our ECDSA witness sig sit in sigstore's public append-only log — a state *we* can't rewrite either. Proof self-verifies: RFC 6962 inclusion walk to Rekor's signed root + signed-entry-timestamp + checkpoint-note sig under the pinned Rekor pubkey. Proofs minted before the archive era bound `witnessed_absent` vs `grandfathered_witness` (pre-retention history) |
-| Auditor bundle | `auditor_bundle.v1` (one JSON doc) | `dipcatcher witness-bundle` / `verify-bundle <file>` | Zero-trust third-party audit: bundle carries checkpoint + pins + pubkeys + **every archived checkpoint and every committed witness proof** — the auditor replays the whole spine (links, signatures, forks, orphans, Rekor order), not just the head. The witness key is authenticated by the **log itself** — Rekor's entry body records the signer pubkey, which must equal the bundled `witness_signing.pub` byte-for-byte. `scripts/verify_auditor_bundle.py` and its adjacent `scripts/ed25519_public.py` helper form an independent second implementation (same verdict contract; members outside the pinned prefixes fail `unexpected_member`). Copy both files together for offline use; no repository checkout is required. The verifier checks the helper's embedded SHA-256 before importing it. The bundle also carries `auditor_self_sha256` — the sha256 of the main verifier script at build time — so an auditor can diff their local copy before trusting its verdict; a mutated script warns `auditor_self_mismatch` |
+| Auditor bundle | `auditor_bundle.v1` (one JSON doc) | `dipcatcher witness-bundle` / `verify-bundle <file>` | Zero-trust third-party audit: bundle carries checkpoint + pins + pubkeys + **every archived checkpoint and every committed witness proof** — the auditor replays the whole spine (links, signatures, forks, orphans, Rekor order), not just the head. The witness key is authenticated by the **log itself** — Rekor's entry body records the signer pubkey, which must equal the bundled `witness_signing.pub` byte-for-byte. `scripts/verify_auditor_bundle.py` is an independent second implementation (same verdict contract; members outside the pinned prefixes fail `unexpected_member`). No repo access, no trusted inputs beyond Rekor's own key. The bundle also carries `auditor_self_sha256` — the sha256 of the standalone script at build time — so an auditor can diff their local copy before trusting its verdict; a mutated script warns `auditor_self_mismatch` |
 | Tamper drill | `tamper_drill.v1` | `dipcatcher tamper-drill` | Self-adversarial: clones the real tree, lands every probe mutation (epoch/merkle/anchor/sig/checkpoint/spine/key classes), and requires `verify-repo` to flag **every** one — a verifier that went blind reports `missed:` instead of `ok` |
 | Fuzz drill | `fuzz_drill.v1` | `dipcatcher fuzz-drill --seed N` | Metamorphic two-sided fuzzing of the substrate itself: seeded byte flips/truncations/key-renames across corpus members, jewels, pins, spine records, witness proofs, and checkpoints — plus benign probes (`docs/` write) that must NOT alarm. Grades `escaped`/`false_positive`; a `baseline_dirty` verdict refuses to drill on an already-drifted tree. First campaign: 4 real escapes found and closed (spine extent, checkpoint-absent fail-open, unstamped injection, witness-proof delete/byte-drift) — 6 seeds × 17 mutations (incl. crafted pin-rollback / forged-epoch / removal-laundering / foreign-extension-drop policy attacks) now fully `calibrated` |
 | Receipt fuzz | `receipt_fuzz.v1` | `dipcatcher fuzz-receipts --seed N` | Forge-and-reseal: mutates one claim leaf inside each committed receipt, then re-seals *honestly* (sha256 seals are integrity, not authenticity — a self-consistent forgery is free to mint). Maps the verification boundary: escapes = claim fields that are seal-bound but not contract re-derived (mostly `*_real_drill` result fields whose source streams aren't committed — they are *attested*, not *verified*). Deliberately a measurement lane, not a gate — the `replay_proof` lane closes the gap by pinning inputs and re-executing |
 | Key rotation | `rotation_*.json` (`key_rotation.v1`) | `dipcatcher verify-rotations` | Key substitution without authorization: each link is dual-signed — the outgoing key proves *authorization*, the incoming proves *possession* — and the first link's `old_pubkey` must re-verify a real spine signature (`unanchored_genesis` otherwise). The spine walks a **keyring** — live key + every authorized retired key — so records verify under their era's key (`signature_key_unknown` for a never-authorized signer). Live `gate_signing.pub` must equal the chain terminus |
 | Custody | `custody_proof.v1` (one JSON doc) | `dipcatcher custody --member X --out bundle.json`; `custody --check bundle.json --member-file F`; `custody --member X --timeline` | Per-member provenance with **zero repo access**: the bundle embeds the member's earliest-chain pinning epoch (proof of first committed state), the epoch→head hop files raw (digests re-derived on verify), inclusion merkle path, signed pins, checkpoint, both witness pubkeys, every committed Rekor proof, and the RFC 3161 timestamp dir — materialized into a synthetic root so the existing file verifiers run unmodified. Eight layers: member→inclusion→chain→pins→signature→checkpoint→witness→timestamps. `--timeline` enumerates a member's committed digests across epochs (byte-evolution lineage for mutable corpora) |
-| Quarantine registry | `quality/legacy_quarantine.json` (`legacy_quarantine.v2`) | `suite-health --strict --quarantine …` | Retained receipts that cannot verify (pre-seal era, detached preregistration seals, contracts that postdate the bytes, unpinned tapes, absent honesty declarations). Each is pinned by path, bytes, exact `verify-receipt` error set, category and reason. One category, `admission_honesty_gap`, holds receipts that verify but entered the corpus without passing admission: its error set is admission's honesty codes, re-derived from the bytes on every check, and the entry fails closed (`quarantine_entry_admissible`) once nothing is missing. Base rule (`dipcatcher quarantine-gate`, run by `make admission-gate` on every pull request and every push to `main`, against the PR base or the pre-push tip): an entry the base registry did not hold must pin bytes the base already had (stamped by its head, or present under the same name), so a change can never add a receipt and register it in the same diff; an `admission_honesty_gap` entry must name an unstamped base file with identical bytes, so a stamped receipt cannot be selectively demoted. Such receipts are reported as `quarantined`. `suite-health` never counts them as verified or harvests them into pooled evidence, and admission never admits them. Known gap, pre-existing: `receipt_lattice` and `corpus_inference` still read claims from top-level quarantined receipts. An unregistered failure, registry drift, a stale entry, an entry that now verifies, or an unregistered file under `legacy-unsealed/` fails strict. Production gates and tests read the same registry. `schema_drift_acks` pins every member of a tag group whose two claim shapes are sealed history, so `schema_drift` reports that group as acknowledged drift instead of accepting a retag-and-reseal. Both the registry and the ledger below are crown jewels: changing either is a gate change |
-| Epoch acknowledgments | `quality/epoch_allowed_removals.json` (`epoch_acknowledgments.v1`) | `--epoch-acks` on `corpus-epoch --check`, `suite-health`, `admit`/`admit-batch`; loaded by `verify-repo` and the standalone auditors | An append-only chain can neither forget nor rewrite a recorded removal or mutation. Each entry explains exactly one transition already recorded in a sealed epoch: corpus key, member, `removed`/`mutated`, from/to digests, epoch and reason. Acknowledged incidents are printed on every check. An entry that matches nothing is `epoch_ack_unmatched`. Live drift (`head_member_missing_live`, `head_member_digest_drift`) is never acknowledgeable: stamp first, then explain. On append-only chains a name removed and later re-added with different bytes, under any case or Unicode-normalized spelling, is `member_resurrected` (a mutation spread over two epochs; acknowledgeable only as the exact `mutated` transition). Before it is stamped, the same re-add is `member_resurrected_live`, which is never acknowledgeable: new evidence takes a new name. Base rule (`dipcatcher epoch-ack-gate`, run by `make admission-gate` on every pull request and every push to `main`, against the PR base or the pre-push tip): every entry must name a chain in the corpus policy table (`epoch_ack_unknown_corpus` otherwise), and an entry the base ledger did not hold, for an append-only chain, must name an epoch of the base chain, authenticated by `chain_ancestry` against the base pin's `chain_root`. A base ledger that is absent or pre-v1 reads as empty |
-| Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict --quarantine … --heads-pin … --epoch-acks …` | A new receipt that breaks lattice/FDR on entry. The epoch check binds to the real merged corpus under the heads pin and ledger, not to the intermediate shadow. Registry-matched quarantined candidates are listed as retained and never admitted. Candidates whose bytes the *base* branch's pinned head epoch already stamped (`--base-heads-pin`, e.g. a receipt restored to its stamped bytes) are corpus members, so they are listed as already-stamped rather than re-admitted. Only the base pin can grant this, and it must authenticate its head epoch. With the base pin, every acknowledgment (removal or mutation) must name an epoch of the base chain, authenticated against the base pin's `chain_root` (`epoch_ack_postdates_base` otherwise), so one change can never both record a removal or rewrite of an append-only receipt and excuse it. When no candidate is gated, the merged corpus's chain is still checked once (`chain_errors`) |
+| Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict` | A new receipt that breaks lattice/FDR on entry |
 | Retraction | `receipt_tombstone.v1` (`tombstone_<sha16>.json`) | `dipcatcher tombstone <receipt> --reason ...` | The corpus is append-only — a wrong/superseded receipt can't be deleted (epoch flags removal, lattice flags drift), so it is retracted: a sealed record pinned to the target's bytes excludes its claims from the lattice (`retracted:` block), honors partial `scope` per claim path, and fails closed if the target drifts (`tombstone_target_drift`) or the tombstone is unsealed |
 | Release attestation | `release_attestation.v1` (one JSON doc) | `dipcatcher attest-release --artifact W [--witness]` / `verify-release A --artifact W` | Extends the proof to bytes that live *outside* the repo (wheels, sdists, exported bundles): an Ed25519-signed binding of each artifact's sha256+size to the live pin-state digests (`attestation_stale` when they've drifted — staleness ≠ forgery). With `--witness` the attestation is anchored in Rekor and the self-verifying proof travels **inside** the payload — both pubkeys embedded, the witness key authenticated by the logged entry itself — so the attestation alone convinces an auditor with no repo access |
 | Capstone | `repo_integrity.v1` | `dipcatcher verify-repo` | One sealed verdict over all of the above — contract-checked so the attestation can't claim `ok` while a gate lists errors, hide a gate entirely, or disagree with its own digest pins. `--evidence-only` verifies an exported evidence bundle (the five evidence dirs + `gate_pins.sig`, no `src/`): crown_jewels reports a skipped marker and the attestation records `mode=evidence_only`, so a partial verdict can never masquerade as a full-tree one. Coverage closure: every file under a corpus dir must match the declared member glob or a per-corpus exemption (`uncovered_member:<rel>` otherwise) — a `.yaml` workflow dropped beside `*.yml` members would still run on GitHub, and now surfaces |
@@ -54,11 +52,7 @@ set is pinned (root files sit above every corpus dir).
 
 - `receipts/*.json` — append-only, strict: any member digest change between
   epochs is `member_mutated` (tamper evidence). `legacy-unsealed/` is
-  quarantined with byte-pins + recorded verify-errors (`quality/legacy_quarantine.json`),
-  as are retained root-level receipts that cannot verify. A wrong receipt is
-  quarantined or tombstoned, never re-sealed or edited in place. A recorded
-  historical removal or mutation is explained in the epoch acknowledgment
-  ledger, never rewritten.
+  quarantined with byte-pins + recorded verify-errors (`quality/legacy_quarantine.json`).
 - `verifier/*.md` — append-only acceptance records, strict.
 - `quality/*.json` — mutable bookkeeping: `--allow-member-updates` gives ordered
   history attestation; a post-stamp edit still fails as `head_member_digest_drift`
@@ -87,17 +81,9 @@ set is pinned (root files sit above every corpus dir).
 
 After touching a covered file: `make stamp-epochs` (advances all chains +
 pin) and `dipcatcher crown-jewels --write` if a jewel changed. Both must land
-in the same commit as the change. If signing keys are provisioned,
+in the same commit as the change. If `GATE_SIGNING_KEY` is provisioned,
 finish with `make sign-pins` — the signature must cover the final pin bytes
-(sign last, since stamping updates `epoch_heads.json`). With
-`quality/gate_quorum.json` committed (as on `main`), `make sign-pins` runs
-`dipcatcher quorum-sign`, which reads `GATE_QUORUM_KEYS` (comma-separated
-`<priv_hex>:<pub_hex>` pairs, at least `threshold` registered signers; under
-the current 1-of-1 registry that is the `gate_signing.pub` key) and writes
-`gate_signatures.v2`; run directly it also takes one `--key-file` per signer.
-Bare `dipcatcher sign-pins` only writes lone-key `gate_signatures.v1`, which
-the verifier rejects under a registry (`quorum_sig_missing`); there it
-refuses with exit 2 and leaves `gate_pins.sig` untouched. Then
+(sign last, since stamping updates `epoch_heads.json`), then
 `make checkpoint` + `dipcatcher witness-checkpoint` to extend the spine and
 anchor the new pin-state in Rekor.
 
@@ -115,9 +101,7 @@ Receipt seals are sha256, not signatures — but the *pins* are: when
 file, re-pinning, and re-stamping still cannot produce a valid signature
 without the private key (held outside the repo). For unsigned trees the
 boundary is **git review**: pins and epochs are small, reviewable diffs in
-every commit (reviewed before merge on a pull request, but only after
-landing on a direct push to `main`; see the residual boundaries below), and
-`verify-repo` receipts pin the pin files' digests into the
+every PR, and `verify-repo` receipts pin the pin files' digests into the
 receipts corpus so their history is itself chained. Either way, silent
 tamper is impossible — any rewrite leaves a committed, hash-linked trail or
 a broken signature.
@@ -134,96 +118,6 @@ OTS-anchored. An auditor should therefore always pass `--pin` (or
 inside the Ed25519-signed checkpoint) — bare `--proof` mode authenticates
 shape, not custody.
 
-Residual boundaries, as of 2026-10-14 (measured on this repair merged
-with `main` at b0e48dd60, after stamping the receipts and quality chains;
-not assumed):
-
-- **`make evidence-audit` is red on inherited drift, and stops early.**
-  After the receipts and quality chains, it checks `.github/workflows`,
-  `configs`, `artifacts`, `data/metadata` and the code corpora (`src`,
-  `tests`, `scripts`, `docs`, ...). Those chains carry post-stamp drift
-  that predates this repair, and this repair's own edits to files in them
-  add to it until they are reviewed and restamped. Make stops at the
-  first failing command, so `crown-jewels --check`, `verify-witness`,
-  `verify-repo` and the drills after it do not run. The CI
-  `evidence-audit` job runs its later steps (bundle round-trip,
-  chain-consistency proofs, lattice, `admission-gate` with
-  `epoch-ack-gate` and `quarantine-gate`, replay sweep) with `!cancelled()`
-  after a successful sync, so those report on every pull request and every
-  push to `main` even while this step is red. The base-comparison steps
-  compare against the PR's base branch or, for a direct push, the tip
-  `main` had before the push (`github.event.before`). Replay sweep, as
-  of 2026-10-18 (measured on cb4f2c52f plus the corpus re-pin recorded
-  in `quality/evidence_migrations/evidence_migration_20261018.json`):
-  `make replay-sweep` (`--timeout 300`) gives 16 carriers pass=2 fail=0
-  skipped=14. The 14 skips are tape-backed lanes whose bars are not in
-  the checkout. The `mcs_vol` carrier needs about 140 s
-  (`independent_confirmation.elapsed_s` in the 2026-10-13 record), so it
-  fails at the 120 s CLI default. The corpus carrier
-  (`data/manifests/replay/corpus.json`) reproduces its artifact
-  byte-for-byte, but its `reproduces` entry is `claims_equal: false`
-  (`input_set_changed_with_contract_field_addition`): the committed
-  `receipts/corpus_real_drill.json` read six members under names `main`
-  later moved onto their seal prefix, and it lacks the `n_retracted`
-  fields. Before the re-pin the carrier still named those old files, so
-  it was skipped as `inputs_not_verified` and `--strict` passed without
-  running it. The sweep still treats a missing or drifted input tape as a
-  skip; the guard against a repeat is the unit test
-  `test_carrier_literal_pins_match_live_bytes_unless_git_ignored`, which
-  fails when a carrier pins a path git does not ignore and those bytes are
-  absent or differ. The skipped `cp` carrier also reports two
-  `reproduced_receipt_invalid` binding errors on its `cp_real_drill_*`
-  receipts; they predate the re-pin and are not addressed by it.
-- **Crown-jewel pins are current; the pin signature is not.** The admission
-  and auditor hardening changes four jewels (`Makefile`,
-  `scripts/verify_epoch_chain.py`, `src/quant_fund/research/admission.py`,
-  `src/quant_fund/research/corpus_epoch.py`), re-pinned with
-  `dipcatcher crown-jewels --write` in the same commit, so
-  `crown-jewels --check` reports no drift on this tree. The signature over
-  the pins (`gate_pins.sig`) is still stale: it was last signed on
-  2026-09-30, and `verify-repo`'s `pin_signatures` gate reports `pin_drift`
-  on `crown_jewels.json` and `epoch_heads.json`. This was already true on
-  `main` before this change. It cannot be refreshed without
-  `GATE_SIGNING_KEY`; until the key holder runs `make sign-pins` (then
-  `make checkpoint` and the witness/anchor steps), the pins are checked only
-  when `crown-jewels --check` or `verify-repo` is run directly, and
-  `evidence-audit`, `tamper-drill` and `fuzz-drill` stay red on
-  `baseline_dirty`.
-- **Admission's honesty bar covers arrivals, not stamped history.** The
-  receipts head (`corpus_epoch_588a35edec9d3f5b`) stamps 382 members that
-  verify and are not in the registry: 44 epoch receipts and 338 claim
-  receipts. Run through `honesty_stamp_errors`
-  (`quant_fund.research.legacy_unsealed`, the check admission uses), 170
-  of the 338 lack at least one stamp admission now requires, and 143 of
-  those lack only `live_pnl_claim: false`. They predate that bar and stay
-  stamped members.
-  `p0_evidence_inventory_v1.json` is quarantined not because its content
-  is worse but because it was never stamped or admitted.
-- **`data/metadata` epoch receipts are tracked via `!data/metadata/corpus_epoch_*.json`.**
-  An earlier pin named a gitignored head (`corpus_epoch_7dc5e67df8042167.json`)
-  and the only tracked ancestors were orphaned (`prev` never committed), so
-  `evidence-audit` could not pass. 2026-10-15 reset that corpus to a fresh
-  committed genesis of the live members and un-ignored `corpus_epoch_*.json`
-  so `make stamp-epochs` heads stay reviewable. `epoch-consistency` still
-  skips a chain only when the base tree does not commit the base pin's head;
-  deleting a head the base does commit still fails the proof. A base whose
-  heads pin is missing or unreadable fails the gate.
-- **A bad direct push to `main` is reported, not prevented.** Direct
-  commits to `main` are this repo's normal path, so `epoch-consistency`,
-  `epoch-ack-gate`, `quarantine-gate` and the admission diff also run on
-  `push` events, against the pre-push tip. They turn the run red after
-  the push has landed; nothing rejects the push unless branch protection
-  requires the check. If the pre-push tip cannot be fetched (for example
-  after a force-push), the base step fails and the run is red. Only a
-  push that creates `main` has no pre-push tip; the step says so and the
-  base steps are skipped. Scheduled and manual runs have no change to
-  compare and do not run them.
-- **`schema_drift` needs full history.** Its phantom-revision check
-  resolves `git_revision` fields through `refs/tags/attic/receipt-provenance/*`.
-  It runs on the real corpus in the CI `test` job, which checks out with
-  `fetch-depth: 0` and so fetches those tags. A shallow clone (such as the
-  `evidence-audit` job's default checkout) would report them as phantoms.
-
 Key lineage: when `GATE_SIGNING_KEY` rotates, `dipcatcher rotate-key`
 records a dual-signed `key_rotation.v1` link (old key authorizes, new key
 proves possession), then the operator installs the new pubkey in
@@ -237,8 +131,7 @@ holder never signed — i.e. never held authority — fails
 ## Operator quick reference
 
 ```bash
-make evidence-audit        # all gates (CI runs this): suite-health --strict with the
-                           # quarantine registry, heads pin + epoch ack ledger, every chain
+make evidence-audit        # all gates (CI runs this)
 make stamp-epochs          # re-stamp chains + heads pin after touching a corpus
 dipcatcher verify-repo     # compose every gate into one sealed verdict
 dipcatcher verify-repo --out quality/repo_integrity.json   # seal the attestation

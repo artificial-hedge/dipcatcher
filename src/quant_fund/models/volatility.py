@@ -9,7 +9,6 @@ from numpy.typing import NDArray
 from sklearn.linear_model import LinearRegression
 
 from quant_fund.compute.cache import FitCache
-from quant_fund.compute.numba_guard import call_kernel
 from quant_fund.models.base import JoblibMixin, ModelMeta
 from quant_fund.models.ranking import _finite
 from quant_fund.models.vol_scope import (
@@ -51,33 +50,20 @@ def _ewma_variance_nb(r: np.ndarray, lam: float) -> np.ndarray:
 _GARCH_FIT_CACHE = FitCache(max_entries=64)
 
 
-def _arch_fitter_id() -> int | None:
-    """Process-stable id of the real ``arch.arch_model``.
-
-    A ``unittest.mock`` stand-in is not cached. CPython reuses ``id()`` after
-    the mock is collected, and the next patched fit would replay the previous
-    fallback instead of the double it just installed.
-    """
-    try:
-        import arch
-    except ImportError:
-        return 0
-    fitter = arch.arch_model
-    if type(fitter).__module__.startswith("unittest.mock"):
-        return None
-    return id(fitter)
-
-
 def _garch_fit_cache_key(model: Any, raw: object) -> str | None:
     try:
         values = np.asarray(raw, dtype=float).reshape(-1)
     except (TypeError, ValueError):
         return None
     finite = np.ascontiguousarray(values[np.isfinite(values)], dtype=np.float64)
-    # The real fitter's identity stays in the key. Test doubles skip the cache.
-    fitter_id = _arch_fitter_id()
-    if fitter_id is None:
-        return None
+    # The fitter identity is part of the key so a patched ``arch.arch_model``
+    # cannot reuse a real fit, and a real fit cannot reuse a patched one.
+    try:
+        import arch
+
+        fitter_id = id(arch.arch_model)
+    except ImportError:
+        fitter_id = 0
     return _GARCH_FIT_CACHE.hash_key(
         (
             int(model.p),
@@ -159,7 +145,7 @@ def ewma_variance(log_returns: NDArray[np.float64], lam: float = 0.94) -> NDArra
     if r.size == 0:
         raise ValueError("log_returns must be non-empty")
     if _HAVE_NUMBA:
-        return np.asarray(call_kernel(_ewma_variance_nb, r, float(lam)), dtype=np.float64)
+        return np.asarray(_ewma_variance_nb(r, float(lam)), dtype=np.float64)
     var = np.empty_like(r)
     var[0] = r[0] ** 2
     for t in range(1, r.size):
@@ -239,7 +225,7 @@ class GARCHVol(JoblibMixin):
         min_obs: int = 50,
         mean: str = "Constant",
         power: float = 2.0,
-        series_scope: str = UNIVARIATE_RETURN_SERIES_SCOPE,
+        series_scope: str = "univariate_return_series",
     ) -> None:
         if (
             isinstance(p, bool)

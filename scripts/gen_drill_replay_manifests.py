@@ -139,22 +139,11 @@ def _claims_equal(committed: dict[str, Any], produced: dict[str, Any]) -> tuple[
     return not diff, diff
 
 
-def _input_names(body: dict[str, Any]) -> set[str]:
-    """Member names a corpus-audit receipt read (``params.input_labels`` keys)."""
-    params = body.get("params")
-    labels = params.get("input_labels") if isinstance(params, dict) else None
-    return set(labels) if isinstance(labels, dict) else set()
-
-
 def _drift_reason(committed: dict[str, Any], produced: dict[str, Any], diff: list[str]) -> str:
     """Classify why a produced artifact's claims differ from the committed one."""
     left, right = _norm(committed), _norm(produced)
     added = [k for k in diff if k not in left and k in right]
     dropped = [k for k in diff if k in left and k not in right]
-    # A corpus audit over different member files is not a contract change,
-    # even when the producer also gained fields since the committed seal.
-    if _input_names(committed) != _input_names(produced):
-        return "input_set_changed" + ("_with_contract_field_addition" if added else "")
     if added and not dropped:
         return "contract_field_addition"
     if set(diff) == {"n_models"} or any(k in diff for k in ("heads", "fleet_heads", "registry")):
@@ -178,12 +167,6 @@ def _reproduces_entry(receipt: str, committed_path: Path, produced_path: Path) -
     }
     if not equal:
         entry["drift_reason"] = _drift_reason(committed, produced, diff)
-        before, after = _input_names(committed), _input_names(produced)
-        if before != after:
-            entry["input_set_delta"] = {
-                "added": sorted(after - before),
-                "removed": sorted(before - after),
-            }
     return entry
 
 

@@ -5,11 +5,9 @@
 
 from __future__ import annotations
 
-import io
-import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import typer
 
@@ -18,8 +16,6 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
-from quant_fund.cli.capability_cmds import capabilities_app
-from quant_fund.cli.option_highlight import install_stable_option_highlighting
 
 # SOTA / forward-evidence operator surface. Restored on this branch after the
 # mount was found missing; independently re-added upstream by 8eb627ff2. Kept
@@ -45,12 +41,10 @@ from quant_fund.research.allocation_cli import allocation_app
 from quant_fund.research.explainability_cli import explainability_app
 from quant_fund.research.research100_cli import research100_app
 from quant_fund.stress.cli import stress_app
+from quant_fund.utils.cli_errors import DipcatcherTyperGroup
 
 if TYPE_CHECKING:
     from quant_fund.config.models import AppConfig
-
-# Before any command renders help. Typer's stock highlighter splits "--flag".
-install_stable_option_highlighting()
 
 
 def format_data_label(*, synthetic: bool, data_source: str) -> str:
@@ -81,34 +75,14 @@ def format_fdr_families(hypotheses: Sequence[object]) -> str:
     )
 
 
-class _ConsoleSafeTyper(typer.Typer):
-    """Keep help and diagnostics printable with narrow terminal encodings."""
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        # Rich emits mathematical symbols in the command help. Windows can
-        # expose cp1252 stdout even in a terminal; strict encoding otherwise
-        # raises UnicodeEncodeError before the operator sees any help. Preserve
-        # the stream's encoding and escape only characters it cannot express.
-        for stream in (sys.stdout, sys.stderr):
-            if isinstance(stream, io.TextIOWrapper):
-                stream.reconfigure(errors="backslashreplace")
-        return super().__call__(*args, **kwargs)
-
-
-app = _ConsoleSafeTyper(
-    help="Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is research, never live."
+app = typer.Typer(
+    cls=DipcatcherTyperGroup,
+    help=(
+        "Dipcatcher — Artificial Hedge's proprietary research lab. "
+        "Default mode is research, never live. "
+        "--version on any command prints the version and exits."
+    ),
 )
-
-
-def _version_callback(value: bool) -> None:
-    """Print the distribution version. The import is the package root only."""
-    if not value:
-        return
-    from quant_fund import __version__
-
-    typer.echo(__version__)
-    raise typer.Exit()
-
 
 # The fx-1 interactive front door is the `fxi` console script (pyproject.toml:
 # fxi = "fx1.interactive.app:main"; see docs/FXI.md). It is deliberately NOT
@@ -119,16 +93,25 @@ def _version_callback(value: bool) -> None:
 # src/quant_fund/__init__.py, which hatch reads for the distribution version.
 
 
+def _emit_version(value: bool) -> None:
+    if not value:
+        return
+    from quant_fund import __version__
+
+    typer.echo(f"dipcatcher {__version__}")
+    raise typer.Exit()
+
+
 @app.callback(invoke_without_command=True)
 def _bare_help(
     ctx: typer.Context,
-    version: bool = typer.Option(
+    _version: bool = typer.Option(
         False,
         "--version",
         "-V",
-        help="Show the package version and exit.",
-        callback=_version_callback,
+        help="Show the dipcatcher version and exit.",
         is_eager=True,
+        callback=_emit_version,
     ),
 ) -> None:
     """Bare ``dipcatcher`` prints help and exits 0.
@@ -136,8 +119,9 @@ def _bare_help(
     Click exits 2 when a root Typer app has only sub-typers and no direct
     commands, even with ``no_args_is_help=True``. This callback restores the
     expected help-and-zero behavior without importing any fx1 code.
+    ``--version`` is also accepted on every subcommand.
     """
-    del version
+    del _version
     if ctx.invoked_subcommand is None:
         ctx.get_help()
         raise typer.Exit()
@@ -163,35 +147,15 @@ app.add_typer(sota_app, name="sota")
 app.add_typer(real_benchmark_app, name="real-benchmark")
 app.add_typer(net_tournament_app, name="net-tournament")
 app.add_typer(ranker_probability_app, name="ranker-probability")
-app.add_typer(capabilities_app, name="capabilities")
-
-
-def _existing_config(config: Path) -> Path:
-    """Resolve a lab config, exiting 2 when neither cwd nor the bundle has it."""
-    from quant_fund.utils.bundled_configs import resolve_lab_config
-
-    resolved = resolve_lab_config(config)
-    if resolved.is_file():
-        return resolved
-    typer.echo(f"config not found: {resolved}", err=True)
-    raise typer.Exit(code=2)
-
-
-def _resolve_config_path(config: Path) -> Path:
-    from quant_fund.utils.lab_paths import resolve_config_path
-
-    return resolve_config_path(config)
 
 
 def _cfg(config: Path) -> AppConfig:
     from quant_fund.config import dump_resolved, load_config
-    from quant_fund.utils.lab_paths import resolve_data_root
     from quant_fund.utils.logging import configure_logging
 
-    cfg = load_config(_resolve_config_path(config))
+    cfg = load_config(config)
     configure_logging()
-    cfg.data.root = resolve_data_root(cfg.data.root)
-    dump_resolved(cfg, cfg.data.root / "metadata" / "resolved_config.json")
+    dump_resolved(cfg, Path(cfg.data.root) / "metadata" / "resolved_config.json")
     return cfg
 
 

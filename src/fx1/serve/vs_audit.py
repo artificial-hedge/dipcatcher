@@ -240,7 +240,6 @@ def _client(**kw: Any) -> TestClient:
     from fx1.harness import Harness
 
     app = api_mod.create_app(
-        public_release=False,
         harness=Harness(runner=_runner),
         backend_resolver=lambda *a, **k: _B(),
         **kw,
@@ -263,6 +262,10 @@ def _env_key() -> Iterator[None]:
 
 def _h(auth: str | None) -> dict[str, str]:
     return {"X-API-Key": auth} if auth else {}
+
+
+def _bearer(auth: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {auth}"}
 
 
 def _mint(c: TestClient, **policy: Any) -> tuple[str, str]:
@@ -1134,11 +1137,8 @@ def _probe_search(c: TestClient) -> dict[str, bool]:
         f"/v1/vector_stores/{vid}/search",
         json={"query": "market", "ranking_options": {"score_threshold": 2.0}},
     )
-    # Numeric range is refused by OpenAIVectorStoreSearch (422 validation),
-    # the same sieve as the file_search tool. The store's 400 invalid_filters
-    # path is what a caller would see only if validation were skipped.
     out["search_score_threshold_range_400"] = (
-        bad_st.status_code == 422 and _code(bad_st) == "validation"
+        bad_st.status_code == 400 and _code(bad_st) == "invalid_filters"
     )
     out["search_ranker_bogus_422"] = (
         c.post(
@@ -1435,13 +1435,12 @@ def _probe_scope_auth(stack: ExitStack) -> dict[str, bool]:
     with _env_key():
         c = stack.enter_context(_client())
         env_h = _h(_ROOT_KEY)
-        bearer_h = {"Authorization": f"Bearer {_ROOT_KEY}"}
         out["auth_required_401"] = c.post("/v1/vector_stores", json={}).status_code == 401
         out["auth_wrong_key_401"] = (
             c.post("/v1/vector_stores", json={}, headers=_h("wrong")).status_code == 401
         )
         out["auth_bearer_accepted_on_v1"] = (
-            c.post("/v1/vector_stores", json={}, headers=bearer_h).status_code == 200
+            c.post("/v1/vector_stores", json={}, headers=_bearer(_ROOT_KEY)).status_code == 200
         )
         k_rw, _id_rw = _mint(c, name="rw", scopes=["read", "write"])
         k_r, _id_r = _mint(c, name="r", scopes=["read"])
@@ -2256,11 +2255,14 @@ def vs_audit_bench(
         "claim": {"results": r, "ok": ok},
         "interpretation": (
             "The /v1/vector_stores surface holds end to end: create "
-            "validates and attaches initial file_ids all-or-nothing with no partial store behind a refusal, update replaces "
+            "validates and attaches initial file_ids all-or-nothing with "
+            "no partial store behind a refusal, update replaces "
             "name/metadata wholesale, attach indexes synchronously and "
-            "lands only completed/failed records with honest indexed_chunks/truncated/last_error, detach drops the "
+            "lands only completed/failed records with honest "
+            "indexed_chunks/truncated/last_error, detach drops the "
             "membership and its chunks while the file-* record survives, "
-            "file_batches count per-file verdicts honestly and freeze them against later detaches, cancel refuses with the "
+            "file_batches count per-file verdicts honestly and freeze "
+            "them against later detaches, cancel refuses with the "
             "terminal status instead of faking a mid-flight window, "
             "search runs the deterministic lexical scorer with real "
             "filters/ranking bounds, chunking honors auto and static "

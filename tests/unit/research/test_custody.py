@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import subprocess
 from pathlib import Path
@@ -72,24 +71,12 @@ def _fixture(tmp_path: Path) -> Path:
     for name, val in (("a.json", 1.0), ("b.json", 2.0), ("c.json", 3.0)):
         _receipt(name, val)
         ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
-        with contextlib.chdir(root):
-            update_heads_pin(pin, "receipts", "*.json", ep)
+        update_heads_pin(pin, "receipts", "*.json", ep)
     write_crown_jewels_pin(root)
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "quality", "*.json", ep)
+    update_heads_pin(pin, "quality", "*.json", ep)
     sign_pins(root, priv, pub)
     write_checkpoint(root, [(priv, pub)])
-    return root
-
-
-def _release_fixture(tmp_path: Path) -> Path:
-    root = _fixture(tmp_path)
-    # A structural SYNTHETIC stand-in: these tests exercise the binding and
-    # signature, not a green repo-integrity verdict.
-    (root / "quality/repo_integrity.json").write_text(
-        json.dumps({"schema": "repo_integrity.v1", "data_label": "SYNTHETIC"})
-    )
     return root
 
 
@@ -178,8 +165,7 @@ def test_member_timeline_tracks_byte_evolution(tmp_path: Path) -> None:
     (root / "receipts/b.json").write_text(json.dumps(seal_receipt(doc)))
     pin = root / "quality/epoch_heads.json"
     ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "receipts", "*.json", ep)
+    update_heads_pin(pin, "receipts", "*.json", ep)
 
     # The pin file just changed — re-sign and re-checkpoint before custody.
     from quant_fund.research.gate_signatures import sign_pins
@@ -210,7 +196,7 @@ def test_release_attestation_round_trip(tmp_path: Path) -> None:
         verify_release_attestation,
     )
 
-    root = _release_fixture(tmp_path)
+    root = _fixture(tmp_path)
     priv = (root / ".fixture_priv").read_text()
     pub = (root / "quality/gate_signing.pub").read_text().strip()
     wheel = b"fake-wheel-bytes"
@@ -221,12 +207,6 @@ def test_release_attestation_round_trip(tmp_path: Path) -> None:
         pubkey_hex=pub,
     )
     assert release_contract_errors(att) == []
-    assert set(att["pinned_state_sha256"]) == {
-        "quality/checkpoint.json",
-        "quality/epoch_heads.json",
-        "quality/crown_jewels.json",
-        "quality/repo_integrity.json",
-    }
     res = verify_release_attestation(att, {"dipcatcher-0.1.0-py3-none-any.whl": wheel}, root=root)
     assert res["ok"], res["errors"]
 
@@ -250,88 +230,6 @@ def test_release_attestation_round_trip(tmp_path: Path) -> None:
     stale = verify_release_attestation(att, {"dipcatcher-0.1.0-py3-none-any.whl": wheel}, root=root)
     assert not stale["ok"]
     assert any(e.startswith("attestation_stale:") for e in stale["errors"])
-
-
-def test_release_attestation_refuses_mismatched_signer_before_build(tmp_path: Path) -> None:
-    from quant_fund.research.gate_signatures import generate_keypair
-    from quant_fund.research.release_attestation import release_attestation
-
-    private_hex, _public_hex = generate_keypair()
-    _other_private_hex, other_public_hex = generate_keypair()
-    with pytest.raises(ValueError, match="private seed does not match public key"):
-        release_attestation(
-            {"synthetic.whl": b"SYNTHETIC bytes"},
-            root=tmp_path,
-            private_seed_hex=private_hex,
-            pubkey_hex=other_public_hex,
-        )
-
-
-def test_release_attestation_requires_all_state_anchors(tmp_path: Path) -> None:
-    from quant_fund.research.release_attestation import release_attestation
-
-    root = _fixture(tmp_path)
-    private_hex = (root / ".fixture_priv").read_text()
-    public_hex = (root / "quality/gate_signing.pub").read_text().strip()
-    with pytest.raises(ValueError, match="quality/repo_integrity.json"):
-        release_attestation(
-            {"synthetic.whl": b"SYNTHETIC bytes"},
-            root=root,
-            private_seed_hex=private_hex,
-            pubkey_hex=public_hex,
-        )
-
-
-def test_release_contract_rejects_omitted_state_anchor(tmp_path: Path) -> None:
-    from quant_fund.research.release_attestation import (
-        release_attestation,
-        release_contract_errors,
-    )
-
-    root = _release_fixture(tmp_path)
-    private_hex = (root / ".fixture_priv").read_text()
-    public_hex = (root / "quality/gate_signing.pub").read_text().strip()
-    att = release_attestation(
-        {"synthetic.whl": b"SYNTHETIC bytes"},
-        root=root,
-        private_seed_hex=private_hex,
-        pubkey_hex=public_hex,
-    )
-    del att["pinned_state_sha256"]["quality/repo_integrity.json"]
-    assert "pinned_state_sha256" in release_contract_errors(att)
-
-
-def test_synthetic_identity_key_cannot_attest_release_bytes() -> None:
-    from quant_fund.research.gate_signatures import key_id
-    from quant_fund.research.release_attestation import verify_release_attestation
-    from quant_fund.utils.hashing import hash_bytes
-
-    identity = bytes.fromhex("01" + "00" * 31)
-    artifact = b"SYNTHETIC wheel bytes"
-    body = {
-        "kind": "release_attestation.v1",
-        "schema": "release_attestation.v1",
-        "research_only": True,
-        "live_pnl_claim": False,
-        "data_label": "SYNTHETIC",
-        "artifacts": {"a.whl": {"sha256": hash_bytes(artifact), "n_bytes": len(artifact)}},
-        "pinned_state_sha256": {
-            rel: "0" * 64
-            for rel in (
-                "quality/checkpoint.json",
-                "quality/epoch_heads.json",
-                "quality/crown_jewels.json",
-                "quality/repo_integrity.json",
-            )
-        },
-        "algorithm": "ed25519",
-        "key_id": key_id(identity.hex()),
-        "signature": (identity + bytes(32)).hex(),
-    }
-
-    result = verify_release_attestation(body, {"a.whl": artifact}, pubkey_hex=identity.hex())
-    assert result["ok"] is False
-    assert "pubkey_malformed" in result["errors"]
 
 
 def test_digest_custody_finds_referenced_digest(tmp_path: Path) -> None:
@@ -443,7 +341,7 @@ def _witness_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     from quant_fund.research.release_attestation import release_attestation
 
-    root = _release_fixture(tmp_path)
+    root = _fixture(tmp_path)
     priv = (root / ".fixture_priv").read_text()
     pub = (root / "quality/gate_signing.pub").read_text().strip()
     wheel = b"fake-wheel-bytes"

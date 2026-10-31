@@ -38,21 +38,6 @@ FILE_NAME = "entries.jsonl"
 _NO_DIRECTORY_FD = -1
 _SUPPORTS_DIRECTORY_FD = os.open in os.supports_dir_fd and os.stat in os.supports_dir_fd
 
-
-def _fchmod(fd: int, mode: int) -> None:
-    """Set an fd mode when ``os.fchmod`` exists.
-
-    Some Windows builds support directory fds and still have no ``os.fchmod``.
-    A direct call raises AttributeError on every flash write there. The mode
-    argument of ``os.open`` is ignored on Windows, so skipping leaves the
-    default ACL instead of failing the store.
-    """
-    chmod = getattr(os, "fchmod", None)
-    if chmod is None:
-        return
-    chmod(fd, mode)
-
-
 Uncertainty = Literal["low", "medium", "high"]
 
 
@@ -110,15 +95,14 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
-def _flash_open_flags(write: bool) -> tuple[int, int]:
-    flags = os.O_RDONLY
-    mode = 0
-    if write:
-        flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
-        flags |= getattr(os, "O_NONBLOCK", 0)
-        mode = 0o600
-    flags |= getattr(os, "O_NOFOLLOW", 0)
-    return flags, mode
+def _nofollow_stat(path: Path, directory_fd: int) -> os.stat_result | None:
+    """Stat *path* without following a symlink. ``None`` when it does not exist."""
+    try:
+        if directory_fd == _NO_DIRECTORY_FD:
+            return path.lstat()
+        return os.stat(path.name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return None
 
 
 class FlashStore:
@@ -167,47 +151,38 @@ class FlashStore:
         flags |= getattr(os, "O_NOFOLLOW", 0)
         directory_fd = os.open(parent, flags)
         if create:
-            _fchmod(directory_fd, 0o700)
+            os.fchmod(directory_fd, 0o700)
         return directory_fd
-
-    def _stat_target(self, directory_fd: int) -> os.stat_result | None:
-        try:
-            if directory_fd == _NO_DIRECTORY_FD:
-                return self._path.lstat()
-            return os.stat(
-                self._path.name,
-                dir_fd=directory_fd,
-                follow_symlinks=False,
-            )
-        except FileNotFoundError:
-            return None
-
-    def _open_target(self, directory_fd: int, flags: int, mode: int) -> int | None:
-        try:
-            if directory_fd == _NO_DIRECTORY_FD:
-                return os.open(self._path, flags, mode)
-            return os.open(self._path.name, flags, mode, dir_fd=directory_fd)
-        except FileNotFoundError:
-            return None
 
     def _open_file(self, *, write: bool) -> int | None:
         directory_fd = self._open_parent(create=write)
         if directory_fd is None:
             return None
         try:
-            target_stat = self._stat_target(directory_fd)
+            target_stat = _nofollow_stat(self._path, directory_fd)
             if target_stat is not None and not stat.S_ISREG(target_stat.st_mode):
                 raise ValueError("flash store path must be a regular file")
-            flags, mode = _flash_open_flags(write)
-            file_fd = self._open_target(directory_fd, flags, mode)
-            if file_fd is None:
+
+            flags = os.O_RDONLY
+            mode = 0
+            if write:
+                flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
+                flags |= getattr(os, "O_NONBLOCK", 0)
+                mode = 0o600
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            try:
+                if directory_fd == _NO_DIRECTORY_FD:
+                    file_fd = os.open(self._path, flags, mode)
+                else:
+                    file_fd = os.open(self._path.name, flags, mode, dir_fd=directory_fd)
+            except FileNotFoundError:
                 return None
             opened_stat = os.fstat(file_fd)
             if not stat.S_ISREG(opened_stat.st_mode):
                 os.close(file_fd)
                 raise ValueError("flash store path must be a regular file")
             if write:
-                _fchmod(file_fd, 0o600)
+                os.fchmod(file_fd, 0o600)
             return file_fd
         finally:
             if directory_fd != _NO_DIRECTORY_FD:

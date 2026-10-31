@@ -13,7 +13,7 @@ analytic call-price target.
 
 All data here is SYNTHETIC (seeded Brownian simulations of PDEs with known
 solutions) — algorithmic correctness evidence, never market evidence; no
-Sharpe/P&L headline. Torch tests skip cleanly when
+Sharpe/P&L headline, no live-trading claims. Torch tests skip cleanly when
 the nn extra is absent; the numpy core (simulation, rollout, loss) is tested
 torch-free.
 """

@@ -75,7 +75,8 @@ PDEs with known analytic or semi-analytic solutions. Outputs are solver
 errors (|Y_0 - exact|), terminal-loss values (the Han-Long a posteriori error
 indicator -- an indicator with an unknown constant C, not a guarantee), and
 parameter counts: algorithmic correctness evidence, never market evidence.
-No Sharpe/Sortino/P&L headline (AGENTS.md honesty contract).
+No Sharpe/Sortino/P&L headline; no live-trading claims (AGENTS.md honesty
+contract).
 
 Conventions: torch is the optional ``nn`` extra and is imported lazily via
 :func:`_torch` (mirrors ``models/deep_hedging.py``), so this module imports
@@ -840,7 +841,7 @@ def validate_black_scholes_call(
     Trains :func:`black_scholes_call_problem` (linear BSDE, ``f = -r y``) and
     reports the solver error against :func:`black_scholes_call_price`. Metric
     keys are scorecard-ready. SYNTHETIC correctness comparison on simulated
-    Brownian paths -- never market evidence.
+    Brownian paths -- never market evidence, no live-trading claims.
     """
     prob = black_scholes_call_problem(
         s0=s0, strike=strike, r=r, sigma=sigma, horizon=horizon, n_steps=n_steps

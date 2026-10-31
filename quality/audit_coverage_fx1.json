@@ -5,9 +5,6 @@
       "n_modules": 5,
       "status": "audited"
     },
-    "cli": {
-      "status": "pending"
-    },
     "data": {
       "doc": "docs/AUDIT_LEDGER.md",
       "n_modules": 20,
@@ -15,14 +12,10 @@
     },
     "eval": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 29,
+      "n_modules": 28,
       "status": "audited"
     },
     "extensions": {
-      "status": "pending"
-    },
-    "flash": {
-      "n_modules": 4,
       "status": "pending"
     },
     "forecast": {
@@ -30,23 +23,27 @@
       "n_modules": 14,
       "status": "audited"
     },
-    "interactive": {
-      "n_modules": 18,
-      "status": "pending"
-    },
     "operations": {
       "status": "pending"
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 65,
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
-      "status": "partial"
+      "n_modules": 59,
+      "status": "partial",
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
     "train": {
       "doc": "docs/AUDIT_LEDGER.md",
       "n_modules": 14,
       "status": "audited"
+    },
+    "flash": {
+      "n_modules": 4,
+      "status": "pending"
+    },
+    "interactive": {
+      "n_modules": 10,
+      "status": "pending"
     },
     "webresearch": {
       "n_modules": 4,
@@ -68,25 +65,10 @@
     "cli_audit.py": {
       "status": "audited"
     },
-    "cli_common.py": {
+    "cli_errors.py": {
       "status": "pending"
     },
-    "cli_harness.py": {
-      "status": "pending"
-    },
-    "cli_harness_chat.py": {
-      "status": "pending"
-    },
-    "cli_harness_ft.py": {
-      "status": "pending"
-    },
-    "cli_harness_jobs.py": {
-      "status": "pending"
-    },
-    "cli_harness_ops.py": {
-      "status": "pending"
-    },
-    "cli_harness_vs.py": {
+    "cli_sources.py": {
       "status": "pending"
     },
     "doctor.py": {
@@ -95,9 +77,6 @@
     },
     "doctor_audit.py": {
       "status": "audited"
-    },
-    "eval/evidence_contract.py": {
-      "status": "pending"
     },
     "ext_bench_audit.py": {
       "status": "audited"
@@ -223,12 +202,6 @@
     "selftest.py": {
       "status": "pending"
     },
-    "serve/api_audit_finetune.py": {
-      "status": "pending"
-    },
-    "serve/api_metrics.py": {
-      "status": "pending"
-    },
     "serve/anthropic_compat.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
@@ -241,18 +214,9 @@
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
-    "serve/local_engine_process.py": {
-      "status": "pending"
-    },
     "serve/openai_compat.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
-    },
-    "serve/openai_request_options.py": {
-      "status": "pending"
-    },
-    "serve/release_gate.py": {
-      "status": "pending"
     },
     "tail_audit.py": {
       "status": "audited"

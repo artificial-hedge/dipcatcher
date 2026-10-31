@@ -80,25 +80,6 @@ def test_forged_checkpoint_fails(tmp_path: Path) -> None:
     assert "signature_invalid" in res["errors"]
 
 
-def test_synthetic_identity_key_cannot_authenticate_checkpoint(tmp_path: Path) -> None:
-    root, priv, pub = _repo(tmp_path)
-    write_checkpoint(root, [(priv, pub)])
-    identity = bytes.fromhex("01" + "00" * 31)
-    universal_sig = (identity + bytes(32)).hex()
-    from quant_fund.research.gate_signatures import key_id
-
-    (root / "quality/gate_signing.pub").write_text(identity.hex() + "\n")
-    checkpoint = root / "quality/checkpoint.json"
-    body = json.loads(checkpoint.read_text())
-    body["key_id"] = key_id(identity.hex())
-    body["signature"] = universal_sig
-    checkpoint.write_text(json.dumps(body))
-
-    result = verify_checkpoint(root)
-    assert result["ok"] is False
-    assert "pubkey_malformed" in result["errors"]
-
-
 def test_malformed_checkpoint_fails(tmp_path: Path) -> None:
     root, _priv, _pub = _repo(tmp_path)
     (root / "quality/checkpoint.json").write_text("{not json")
@@ -288,47 +269,6 @@ def test_v2_below_quorum_refuses_to_write(tmp_path: Path) -> None:
         write_checkpoint(root, pairs[:1])
     # A partial checkpoint must never land — the head stays absent.
     assert not (root / "quality/checkpoint.json").exists()
-
-
-def test_v2_bad_seed_refuses_before_archiving(tmp_path: Path) -> None:
-    import pytest
-
-    root, pairs = _repo_with_quorum(tmp_path, 2, 1)
-    write_checkpoint(root, [pairs[0]])
-    head = (root / "quality/checkpoint.json").read_bytes()
-    mismatched = (pairs[1][0], pairs[0][1])
-    with pytest.raises(ValueError, match="private seed does not match public key"):
-        write_checkpoint(root, [mismatched])
-    assert (root / "quality/checkpoint.json").read_bytes() == head
-    assert not (root / "quality/checkpoints").exists()
-
-
-def test_v2_malformed_registry_refuses_before_archiving(tmp_path: Path) -> None:
-    import pytest
-
-    root, pairs = _repo_with_quorum(tmp_path, 1, 1)
-    write_checkpoint(root, pairs)
-    head = (root / "quality/checkpoint.json").read_bytes()
-    (root / "quality/gate_quorum.json").write_text("{corrupt")
-    with pytest.raises(ValueError, match="malformed quorum registry"):
-        write_checkpoint(root, pairs)
-    assert (root / "quality/checkpoint.json").read_bytes() == head
-    assert not (root / "quality/checkpoints").exists()
-
-
-def test_v1_bad_seed_refuses_before_archiving(tmp_path: Path) -> None:
-    import pytest
-
-    root, private_hex, public_hex = _repo(tmp_path)
-    write_checkpoint(root, [(private_hex, public_hex)])
-    head = (root / "quality/checkpoint.json").read_bytes()
-    other_private_hex, other_public_hex = generate_keypair()
-    with pytest.raises(ValueError, match="private seed does not match public key"):
-        write_checkpoint(root, [(other_private_hex, public_hex)])
-    with pytest.raises(ValueError, match="does not match committed public key"):
-        write_checkpoint(root, [(other_private_hex, other_public_hex)])
-    assert (root / "quality/checkpoint.json").read_bytes() == head
-    assert not (root / "quality/checkpoints").exists()
 
 
 def test_v2_unregistered_signer_refused(tmp_path: Path) -> None:

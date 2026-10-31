@@ -303,7 +303,7 @@ def bench_rl_market_maker() -> dict[str, float]:
     (``rlmm_stationary_saturation_as == 0``). Honesty: the ``sim_internal_*``
     PnL keys stay OUT of the blob (only inventory / completion / config keys are
     emitted); SYNTHETIC simulator-internal diagnostics, never headline metrics,
-    never market evidence.
+    never market evidence, no live-trading claim.
     """
     try:
         # Local import: the RL-MM module needs torch only at call time, and the

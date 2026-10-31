@@ -31,7 +31,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --frozen --all-groups --all-extras
       - name: Hypothesis adversarial suite (bounded CI profile)
         env:
           HYPOTHESIS_PROFILE: ci

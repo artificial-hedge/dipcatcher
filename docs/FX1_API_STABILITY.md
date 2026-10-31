@@ -24,9 +24,8 @@ An auditor asks "what can I rely on?" This is the answer.
 ## Versioning
 
 `fx1.__version__` follows semver. A future checkpoint would be versioned
-independently as `fx-1.vX.Y` with a model card. No release checkpoint is in
-this repository. `artifacts/fx1_tiny_lm/` is a fixture, not that card.
-Every receipt, ledger entry, and dossier embeds the
+independently as `fx-1.vX.Y` with a model card. No trained checkpoint is in
+this repository. Every receipt, ledger entry, and dossier embeds the
 producing package version implicitly through its hashes.
 
 **`fx1.__version__` is the version of the harness API surface described in

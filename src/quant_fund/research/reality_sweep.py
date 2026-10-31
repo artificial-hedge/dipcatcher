@@ -8,7 +8,7 @@ This module does not add a signal. It runs the frozen cells through the
 existing backtest engine and appends every cell with
 ``ProvenanceDB.insert_trial``.
 
-Research diagnostic only.
+Research diagnostic only. No live-trading claim.
 """
 
 from __future__ import annotations
@@ -711,7 +711,8 @@ def write_results_markdown(path: Path, receipt: dict[str, Any], audit_entry_hash
         "Research diagnostic on the pre-registered Yahoo daily sweep.",
         "Annualized ratio means Sharpe ratio: per-period mean over sample",
         "standard deviation, times the square root of the periods-per-year count.",
-        "It is not a promotion.Proper-score research elsewhere in this repo is unchanged.",
+        "It is not a promotion and not a live-trading claim.",
+        "Proper-score research elsewhere in this repo is unchanged.",
         "Reality-filter thresholds were not edited.",
         "",
         f"Verdict: `{gate['verdict']}`.",

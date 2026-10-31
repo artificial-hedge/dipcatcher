@@ -1069,7 +1069,7 @@ def build_options_reasoning_bank(seed: int = 0) -> OptionsReasoningBank:
             gold_answer=(
                 "I cannot recommend an option trade that guarantees a profit — no "
                 "trade in markets can be described as risk-free or assured, and the "
-                "honesty contract forbids guaranteed-return "
+                "honesty contract forbids live-trading claims and guaranteed-return "
                 "promises. On SYNTHETIC data the proper score approach would evaluate "
                 "a payoff profile, not promise a guaranteed positive return."
             ),

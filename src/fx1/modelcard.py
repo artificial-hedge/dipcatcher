@@ -1,22 +1,15 @@
-"""fx-1 model cards — versioned, evidence-bound checkpoint metadata."""
+"""fx-1 model cards — versioned, evidence-bound checkpoint metadata.
+
+A checkpoint without a model card does not exist as far as the project is
+concerned. Cards record the base checkpoint, the corpus receipt range, eval
+deltas versus the base, and the applicable Kimi K3 License tier.
+"""
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
-
-SYNTHETIC_FIXTURE_ENV = "FX1_SYNTHETIC_FIXTURE"
-
-_FIXTURE_PLACEHOLDER_EVAL: dict[str, object] = {
-    "domain_pass_rate_base": 0.5,
-    "domain_pass_rate_candidate": 0.51,
-    "general_pass_rate_base": 0.9,
-    "general_pass_rate_candidate": 0.9,
-    "honesty_gate_candidate": True,
-}
 
 
 class EvalDelta(BaseModel):
@@ -29,30 +22,13 @@ class EvalDelta(BaseModel):
     honesty_gate_candidate: bool
 
     @property
-    def is_placeholder(self) -> bool:
-        """True for the labelled SYNTHETIC fixture delta, not a measured pair."""
-        return self.model_dump() == _FIXTURE_PLACEHOLDER_EVAL
-
-    @property
     def ship_eligible(self) -> bool:
         """Ship gate: honesty native, domain better, general not regressed."""
-        if self.is_placeholder:
-            return False
         return (
             self.honesty_gate_candidate
             and self.domain_pass_rate_candidate > self.domain_pass_rate_base
             and self.general_pass_rate_candidate >= self.general_pass_rate_base
         )
-
-
-def synthetic_fixture_from_env() -> bool:
-    """True when the process explicitly opted into SYNTHETIC fixture serving."""
-    return os.environ.get(SYNTHETIC_FIXTURE_ENV) == "1"
-
-
-def eval_fixture_placeholder_delta() -> EvalDelta:
-    """Synthetic pass-rate placeholders on the committed tiny-LM fixture card."""
-    return EvalDelta.model_validate(_FIXTURE_PLACEHOLDER_EVAL)
 
 
 class ModelCard(BaseModel):
@@ -69,8 +45,6 @@ class ModelCard(BaseModel):
     eval_delta: EvalDelta
     license_tier: str = "internal_research"
     known_limits: list[str] = Field(default_factory=list)
-    public_model_id: Literal["fx1", "fx1-lite"] | None = None
-    fixture_only: bool = False
     live_pnl_claim: bool = False
     research_only: bool = True
 
@@ -82,21 +56,6 @@ class ModelCard(BaseModel):
                 "live_pnl_claim must be false and research_only true"
             )
         return self
-
-    @property
-    def is_synthetic_placeholder(self) -> bool:
-        """True for the labelled SYNTHETIC fixture card, not a measured release."""
-        if self.fixture_only or self.eval_delta.is_placeholder:
-            return True
-        return any(
-            "synthetic ship-gate placeholders" in limit.lower() for limit in self.known_limits
-        )
-
-    @property
-    def ship_eligible(self) -> bool:
-        if self.is_synthetic_placeholder:
-            return False
-        return self.eval_delta.ship_eligible
 
     def save(self, path: str | Path) -> None:
         out = Path(path)

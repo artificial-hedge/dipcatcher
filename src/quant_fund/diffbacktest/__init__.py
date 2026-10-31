@@ -1,6 +1,6 @@
 """Differentiable research backtest. Optional JAX extra; NumPy core always imports.
 
-Research tooling only. Not a research-catalog score.
+Research tooling only. Not a live-trading path and not a research-catalog score.
 See ``docs/DIFFBACKTEST.md``.
 """
 

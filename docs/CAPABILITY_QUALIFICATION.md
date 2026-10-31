@@ -3,8 +3,8 @@
 The acceptance test for the "1,000,000 distinct, independently implemented
 capabilities usable by an AI through dipcatcher" requirement. This file is
 the standard; [FX1_CAPABILITY_PROGRESS.md](FX1_CAPABILITY_PROGRESS.md) is the
-ledger. Source accounting only — nothing here creates market evidence
-or a research receipt.
+ledger. Source accounting only — nothing here creates market evidence, a
+live-trading claim, or a research receipt.
 
 ## 1. What qualifies
 

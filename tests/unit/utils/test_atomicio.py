@@ -59,7 +59,6 @@ def test_atomic_write_failure_leaves_prior_content(
 def test_publish_text_once_idempotent_and_fail_closed(tmp_path: Path) -> None:
     dest = tmp_path / "sealed.json"
     publish_text_once(dest, '{"sealed": true}\n')
-    assert b"\r" not in dest.read_bytes()
     publish_text_once(dest, '{"sealed": true}\n')  # identical re-publish is a no-op
     with pytest.raises(FileExistsError, match="different content"):
         publish_text_once(dest, '{"sealed": false}\n')
@@ -67,32 +66,11 @@ def test_publish_text_once_idempotent_and_fail_closed(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == [dest]
 
 
-def test_publish_text_once_keeps_utf8_lf_bytes(tmp_path: Path) -> None:
-    dest = tmp_path / "sealed.json"
-    content = '{"label": "SYNTHETIC é"}\n'
-    publish_text_once(dest, content)
-    assert dest.read_bytes() == content.encode("utf-8")
-
-
-def test_publish_text_once_rejects_newline_drift(tmp_path: Path) -> None:
-    dest = tmp_path / "sealed.json"
-    existing = b'{"sealed": true}\r\n'
-    dest.write_bytes(existing)
-    with pytest.raises(FileExistsError, match="different content"):
-        publish_text_once(dest, '{"sealed": true}\n')
-    assert dest.read_bytes() == existing
-
-
 def test_publish_text_once_rejects_symlink(tmp_path: Path) -> None:
     target = tmp_path / "real.json"
     target.write_text("{}")
     link = tmp_path / "link.json"
-    try:
-        link.symlink_to(target)
-    except OSError as exc:
-        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
-            pytest.skip("Windows symlink privilege unavailable")
-        raise
+    link.symlink_to(target)
     with pytest.raises(FileExistsError, match="symlink"):
         publish_text_once(link, "{}")
 

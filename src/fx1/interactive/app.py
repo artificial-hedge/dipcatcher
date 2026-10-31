@@ -1,9 +1,9 @@
 """``fxi`` — the interactive front door for fx-1.
 
-fx-1 publishes no weights. The chat ids are ``fx1`` and ``fx1-lite``; each has
+fx-1 ships two hosted model names — ``fx1`` and ``fx1-lite`` — and each has
 one endpoint here: an API key plus a base URL, stored in
-``~/.fx1/credentials.json`` (mode 0600) and passed to hosted-model children as
-``MOONSHOT_API_KEY`` + ``FX1_BASE_URL`` (lab subprocesses stay scrubbed).
+``~/.fx1/credentials.json`` (mode 0600) and injected into the harness as
+``MOONSHOT_API_KEY`` + ``FX1_BASE_URL``.
 
 Bare ``fxi`` opens the interactive shell; every command is also available
 one-shot for scripting. First-time setup lives in ``fx1.interactive.wizard``
@@ -19,17 +19,18 @@ from typing import NoReturn
 import typer
 
 import fx1
+from fx1.cli_errors import FxiTyperGroup
 from fx1.interactive import actions, concierge, profiles, shell, wizard
-from fx1.interactive.approvals import ApprovalGate
-from fx1.serve.backends import HostedK3Backend
 
 app = typer.Typer(
+    cls=FxiTyperGroup,
     name="fxi",
     help=(
         "Interactive CLI for fx-1. Bare `fxi` opens the concierge — chat, "
         "/superpower orchestration, background web research, and flash "
-        "context. Configure fx1 / fx1-lite endpoints (API key + base URL) "
-        "for model turns; these identifiers do not imply released weights."
+        "context. Store fx1 / fx1-lite model endpoints (API key + base URL) "
+        "and use them across the dipcatcher harness. "
+        "--version on any command prints the version and exits."
     ),
     add_completion=False,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -49,9 +50,7 @@ state: dict[str, str] = {"model": profiles.DEFAULT_MODEL}
 
 def _version_callback(value: bool) -> None:
     if value:
-        typer.echo(
-            f"fxi {fx1.__version__} (fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
-        )
+        typer.echo(f"fxi {fx1.__version__}")
         raise typer.Exit()
 
 
@@ -68,7 +67,7 @@ def callback(
         "--model",
         "--profile",
         "-p",
-        help="Active model identifier: fx1 | fx1-lite (endpoint required for model turns).",
+        help="Active model for this invocation: fx1 | fx1-lite.",
     ),
     version: bool | None = typer.Option(
         None,
@@ -150,31 +149,6 @@ def keys_remove(model: str = typer.Argument(..., help="fx1 | fx1-lite")) -> None
     except KeyError as exc:
         raise typer.BadParameter(str(exc)) from None
     typer.echo(f"removed endpoint {model!r}" if removed else f"endpoint {model!r} was not stored")
-
-
-@keys_app.command("test")
-def keys_test(
-    model: str | None = typer.Argument(None, help="fx1 | fx1-lite (default: active model)"),
-) -> None:
-    """Authenticated identity probe: requested vs served model id, latency, failure class."""
-    from fx1.interactive.endpoint import probe_identity
-
-    target = model or state["model"]
-    try:
-        profiles.check_model(target)
-    except KeyError as exc:
-        raise typer.BadParameter(str(exc)) from None
-    try:
-        resolved = profiles.resolve_endpoint(target)
-    except ValueError as exc:
-        _fail(exc)
-    if not resolved:
-        _fail(RuntimeError(f"no endpoint for model {target!r}; run `fxi keys set {target}`"))
-    api_key, base_url = resolved
-    backend = HostedK3Backend(api_key=api_key, model=target, api_url=base_url)
-    report = probe_identity(backend, model=target, endpoint_host=profiles.host_of(base_url))
-    typer.echo(report.render())
-    raise typer.Exit(code=0 if report.ok else 1)
 
 
 @app.command("doctor")
@@ -271,23 +245,6 @@ def superpower_cmd(
     help_catalog: bool = typer.Option(
         False, "--capabilities", help="List the capabilities the planner may select."
     ),
-    approve_consequential: bool = typer.Option(
-        False,
-        "--approve-consequential",
-        help=(
-            "Scoped non-interactive policy: approve consequential harness commands "
-            "(train/optimize/paper) for this run. Default is deny — scripts never hang "
-            "waiting for approval."
-        ),
-    ),
-    web: bool = typer.Option(
-        False,
-        "--web",
-        help=(
-            "Opt in to sending the goal text to public web search (DuckDuckGo). "
-            "Also enabled when FX1_WEB_RESEARCH=1."
-        ),
-    ),
 ) -> None:
     """Plan, select, coordinate, and explain research capabilities for a goal."""
     from fx1.interactive.superpower import describe_capabilities
@@ -298,62 +255,9 @@ def superpower_cmd(
     if not goal:
         raise typer.BadParameter("a research goal is required (or use --capabilities)")
     goal_text = " ".join(goal)
-    gate = ApprovalGate(ask_fn=(lambda question: True) if approve_consequential else None)
-    operator = concierge.Concierge(model=state["model"], approvals=gate)
-    operator.start_superpower(goal_text, sync=sync, allow_web=web)
-    operator.join_job(timeout_s=operator.run_budget.max_wall_s + 60)
-    operator.close("one-shot")
-    job = operator.job
-    if job is not None and job.error:
-        raise typer.Exit(code=1)
-    result = job.result if job is not None else None
-    # PARTIAL includes failed capabilities. A sync script must not exit 0.
-    if sync and result is not None and getattr(result, "partial", False):
-        raise typer.Exit(code=1)
-
-
-@app.command("sessions")
-def sessions_cmd(
-    limit: int = typer.Option(10, "--limit", "-n", help="How many recent sessions to list."),
-) -> None:
-    """List recent chat sessions from the durable session journal."""
-    from fx1.interactive import session as session_mod
-
-    summaries = session_mod.list_sessions(limit=max(1, limit))
-    if not summaries:
-        typer.echo("(no recorded sessions)")
-        return
-    typer.echo(
-        actions.render_table(
-            [
-                {
-                    "session": s.session_id,
-                    "started": s.started_at[:19],
-                    "model": s.model,
-                    "turns": str(s.turns),
-                    "jobs": f"{s.jobs_total}" + (f" ({s.jobs_open} open)" if s.jobs_open else ""),
-                    "ended": (s.ended_at or "-")[:19],
-                }
-                for s in summaries
-            ]
-        )
-    )
-
-
-@app.command("resume")
-def resume_cmd(
-    session_id: str = typer.Argument(..., help="Session id or unique prefix."),
-) -> None:
-    """Print a prior session's transcript (read-only; nothing is re-executed)."""
-    from fx1.interactive import session as session_mod
-
-    try:
-        events = session_mod.load_session(session_id)
-    except ValueError as exc:
-        _fail(exc)
-    if events is None:
-        _fail(KeyError(f"no session matches {session_id!r}"))
-    typer.echo(session_mod.transcript(events))
+    operator = concierge.Concierge(model=state["model"])
+    operator._slash(f"/superpower {goal_text}{' --sync' if sync else ''}")  # noqa: SLF001
+    operator.join_job(timeout_s=3600)
 
 
 @app.command("research")
@@ -367,41 +271,15 @@ def research_cmd(
     sync: bool = typer.Option(False, "--sync", help="Run inline instead of in the background."),
 ) -> None:
     """Deep background web research: search, read, cross-check, report."""
-    if budget_s <= 0:
-        raise typer.BadParameter("must be positive", param_hint="--budget-s")
-    if max_sources <= 0:
-        raise typer.BadParameter("must be positive", param_hint="--max-sources")
+    goal_text = " ".join(goal)
+    extra = [f"--budget-s {budget_s}", f"--max-sources {max_sources}"]
+    if queries:
+        extra.append(f"--queries {queries}")
+    if sync:
+        extra.append("--sync")
     operator = concierge.Concierge(model=state["model"])
-    operator.start_research(
-        " ".join(goal),
-        budget_s=budget_s,
-        max_sources=max_sources,
-        queries=[query for query in queries.split("|") if query] if queries else None,
-        sync=sync,
-    )
-    job = _finish_one_shot(operator, timeout_s=min(budget_s, operator.run_budget.max_wall_s) + 30)
-    from fx1.webresearch.engine import ResearchReport
-
-    report = job.result
-    if not isinstance(report, ResearchReport) or report.cancelled or report.errors:
-        raise typer.Exit(code=1)
-
-
-def _finish_one_shot(operator: concierge.Concierge, *, timeout_s: float) -> concierge.BackgroundJob:
-    """Close a one-shot run and return only a settled, successful job."""
-    operator.join_job(timeout_s=timeout_s)
-    job = operator.job
-    if job is not None and job.running:
-        operator.shutdown(timeout_s=5)
-    else:
-        operator.close("one-shot")
-    if job is None:
-        _fail(RuntimeError("no job started"), code=1)
-    if job.running:
-        _fail(RuntimeError("job did not stop before the one-shot deadline"), code=1)
-    if job.error:
-        raise typer.Exit(code=1)
-    return job
+    operator._slash(f"/research {goal_text} {' '.join(extra)}")  # noqa: SLF001
+    operator.join_job(timeout_s=budget_s + 30)
 
 
 @flash_app.command("add")

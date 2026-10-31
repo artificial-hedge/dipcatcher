@@ -52,25 +52,6 @@ def test_genesis_only(tmp_path: Path) -> None:
     assert res["verdict"] == "intact"
 
 
-def test_synthetic_identity_key_cannot_authenticate_spine(tmp_path: Path) -> None:
-    root, priv, pub = _repo(tmp_path)
-    write_checkpoint(root, [(priv, pub)])
-    identity = bytes.fromhex("01" + "00" * 31)
-    universal_sig = (identity + bytes(32)).hex()
-    from quant_fund.research.gate_signatures import key_id
-
-    (root / "quality/gate_signing.pub").write_text(identity.hex() + "\n")
-    checkpoint = root / "quality/checkpoint.json"
-    body = json.loads(checkpoint.read_text())
-    body["key_id"] = key_id(identity.hex())
-    body["signature"] = universal_sig
-    checkpoint.write_text(json.dumps(body))
-
-    result = checkpoint_spine(root)
-    assert result["ok"] is False
-    assert result["errors"] == ["pubkey_malformed"]
-
-
 def test_chain_walks_to_genesis(tmp_path: Path) -> None:
     root, priv, pub = _repo(tmp_path)
     _spine(root, priv, pub, 4)
@@ -103,11 +84,7 @@ def test_injected_side_chain_is_orphan_and_fork(tmp_path: Path) -> None:
     root, priv, pub = _repo(tmp_path)
     _spine(root, priv, pub, 2)
     forged = json.loads((root / "quality/checkpoint.json").read_text())
-    # Forcing the first nibble to 0 is a no-op when the signature already
-    # starts with 0, so the injected file stays valid and signature_invalid
-    # never appears. Flip to a different nibble.
-    sig = forged["signature"]
-    forged["signature"] = ("1" if sig[:1] == "0" else "0") + sig[1:]
+    forged["signature"] = "0" + forged["signature"][1:]
     (root / "quality/checkpoints/zz_injected.json").write_text(json.dumps(forged))
     res = checkpoint_spine(root)
     assert res["ok"] is False

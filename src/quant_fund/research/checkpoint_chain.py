@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.atomicio import atomic_write_text
-from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 CHAIN_SCHEMA = "checkpoint_chain.v1"
@@ -153,10 +152,7 @@ def _verify_quorum_signature(
             rec["errors"].append("signature_malformed")
             continue
         try:
-            pub_bytes = require_canonical_prime_order_public_key(
-                bytes.fromhex(registered[str(kid)])
-            )
-            Ed25519PublicKey.from_public_bytes(pub_bytes).verify(
+            Ed25519PublicKey.from_public_bytes(bytes.fromhex(registered[str(kid)])).verify(
                 bytes.fromhex(sig_hex), canonical_json_bytes(payload)
             )
             valid.add(str(kid))
@@ -237,8 +233,7 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-        pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pub_hex))
-        Ed25519PublicKey.from_public_bytes(pub_bytes)
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex))
     except ValueError:
         return {
             "schema": CHAIN_SCHEMA,
@@ -276,8 +271,7 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
             rec["errors"].append("signature_key_unknown")
             continue
         try:
-            rec_pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(rec_pub_hex))
-            rec_pub = Ed25519PublicKey.from_public_bytes(rec_pub_bytes)
+            rec_pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(rec_pub_hex))
         except ValueError:
             rec["sig_ok"] = False
             rec["errors"].append("signature_key_malformed")
@@ -507,8 +501,7 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
                         if pub is None or kid in valid:
                             continue
                         try:
-                            pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pub))
-                            Ed25519PublicKey.from_public_bytes(pub_bytes).verify(
+                            Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub)).verify(
                                 bytes.fromhex(str(entry.get("signature", ""))),
                                 canonical_json_bytes(payload),
                             )

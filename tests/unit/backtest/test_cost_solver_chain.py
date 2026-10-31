@@ -1,7 +1,7 @@
 """Fail-closed solver-chain and conditioning checks on SYNTHETIC inputs.
 
 These tests verify numerical machinery only. They are correctness tests, never
-market evidence.
+market evidence, and they carry no live-trading or profitability claim.
 """
 
 from dataclasses import replace

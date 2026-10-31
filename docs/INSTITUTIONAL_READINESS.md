@@ -23,8 +23,8 @@ synthetic fixture passes.
 | Dependency and code security | Implemented as CI gates | Locked dependency `pip-audit` report, medium/high Bandit gate, and retained machine-readable audit artifact |
 | Container operations | CI-gated | Non-root runtime user, loopback default, healthcheck, immutable dependency sync, host-local optional MLflow binding; CI builds the image and waits for its healthcheck |
 | Vendor market data | **Blocked — procurement/authorization pending** | A fail-closed licensed-vendor adapter and a condition-1 `QUALIFYING` gate exist (`quant_fund.data.qualifying`), enforcing `event_time <= available_time <= ingested_time`, `available_time <= decision_time`, revision handling, and hashed PIT receipts, with an `UNAVAILABLE` path and **no synthetic substitution**. This is **not evidence**: no entitlement and no qualifying externally timestamped complete-universe feed are configured. The local retrospective snapshot does not qualify. See [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md). |
-| Live broker connectivity | **Not implemented — engineering and authorization pending** | No live orders, broker credentials, or live P&L claims are supported. The paper/simulated order/fill reconciliation surface (`quant_fund.execution.order_recon`, `quant_fund.paper.broker_adapter`) is the condition-2 reference shape only; configuring a live endpoint **raises** (`LiveEndpointRefused`). An authorized live adapter, authenticated drop-copy reconciliation, and live pre-trade enforcement still need implementation and validation against the approved broker and venue. See [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md). |
-| Live readiness | **Blocked by external evidence and engineering** | Requires authorized vendor data, a real broker adapter with authenticated reconciliation and pre-trade enforcement, venue measurements, a non-synthetic forward record, and independent verification of that record. The 2025 holdout is **SPENT**; the named forward window `forward_2026H2` is **NOT YET COLLECTED** (freeze externally anchored 2026-10-08; first eligible session = first market date after the 2026-10-07 freeze, not 2026-07-01). |
+| Live broker connectivity | **Live host refused — not condition 2** | The research runtime still has no live adapter: `runtime.allow_live` raises, and a live endpoint on the paper path raises `LiveEndpointRefused`. `dipcatcher trade session` (`quant_fund.paper.trading_session`) is a simulated book. `dipcatcher live` without a gateway config is the operator desk: shadow orders, an in-process loopback, or drop-folder tickets ([LIVE_DESK.md](LIVE_DESK.md)). A gateway config can submit to Alpaca paper after an explicit arm. The Alpaca live host `api.alpaca.markets` stays named in `quant_fund.live.brokers` and is refused in code by the honesty contract. Neither surface is condition-2 evidence or a live P&L claim. See [LIVE_TRADING.md](LIVE_TRADING.md) and [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md). |
+| Live readiness | **Blocked by missing external evidence** | Requires authorized vendor data, a real broker adapter with authenticated reconciliation, venue measurements, a non-synthetic forward record, and independently verified evidence. The 2025 holdout is **SPENT**; the named forward window `forward_2026H2` is **NOT YET COLLECTED** (freeze externally anchored 2026-10-08; first eligible session = first market date after the 2026-10-07 freeze, not 2026-07-01). |
 
 
 ## Dual honesty catalogs (research vs analytics export)
@@ -56,8 +56,10 @@ All of the following must be present and independently reviewable:
 5. A signed promotion receipt whose immutable verifier passes and whose live
    authorization is explicit.
 
-Until those conditions exist, Dipcatcher outputs are research, backtest, or
-simulated paper/shadow evidence only.
+Until those conditions exist, research, backtest, and simulated paper/shadow
+outputs are not a live-performance claim. `dipcatcher trade` stays on the
+simulated book. `dipcatcher live` can submit after an explicit arm; a fill
+there is broker accounting, not condition 2.
 
 ### Where each condition is anchored in this repo
 
@@ -69,16 +71,10 @@ artifacts *satisfies* a condition by itself.
 | # | Condition | Repo artifact / command | Status (2026-10-08) |
 |---|---|---|---|
 | 1 | Licensed PIT data with release + ingestion timestamps | `src/quant_fund/data/qualifying.py` (`quant_fund.data.qualifying`) — condition-1 `QUALIFYING` gate: `event_time <= available_time <= ingested_time`, `available_time <= decision_time`, revision handling, hashed PIT receipts, `UNAVAILABLE` path with `synthetic_substitution=false` | **BLOCKED — procurement.** No entitlement and no qualifying feed; acceptance tests EVIDENCE_PROCUREMENT §1c must pass on the real feed |
-| 2 | Broker adapter with authenticated order + fill reconciliation | `src/quant_fund/execution/order_recon.py` + `src/quant_fund/paper/broker_adapter.py` (condition-2 reference shape; a live endpoint raises `LiveEndpointRefused`); acceptance tests EVIDENCE_PROCUREMENT §2b | **BLOCKED — authorization.** No broker credentials exist |
-| 3 | Non-synthetic holdout + deployment-shaped forward/shadow record | Hash-sealed pre-registration ([REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md), `forward_2026H2`); `uv run dipcatcher forward-shadow freeze …`; `dipcatcher reality sweep` / `reality survivorship` fail closed (exit 4) instead of substituting synthetic data; admission referee `src/quant_fund/validation/agent_referee.py`; power rule [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) | **NOT YET COLLECTED.** 2025 holdout is SPENT; `forward_2026H2` was RFC 3161-anchored on 2026-10-08 and has no recorded close |
+| 2 | Broker adapter with authenticated order + fill reconciliation | `src/quant_fund/execution/order_recon.py` + `src/quant_fund/paper/broker_adapter.py` (condition-2 reference shape; a live endpoint raises `LiveEndpointRefused`). Operator paper book: `quant_fund.paper.trading_session` (`dipcatcher trade session`). `quant_fund.live` is the operator desk plus an Alpaca-paper gateway; the live host is refused. Acceptance tests EVIDENCE_PROCUREMENT §2b | **BLOCKED — authorization.** The desk and the paper gateway do not satisfy this condition |
+| 3 | Non-synthetic holdout + deployment-shaped forward/shadow record | Hash-sealed pre-registration ([REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md), `forward_2026H2`); `uv run dipcatcher forward-shadow freeze …`; `dipcatcher reality sweep` / `reality survivorship` fail closed (exit 4) instead of substituting synthetic data; admission referee `src/quant_fund/validation/agent_referee.py`; power rule [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) | **NOT YET COLLECTED.** 2025 holdout is SPENT; `forward_2026H2` must be externally timestamped before it runs |
 | 4 | Venue cost, liquidity, borrow, financing, failure-mode measurements | Measurement checklist EVIDENCE_PROCUREMENT §3 (dated, sourced, independently reviewed). Repo-side consumers are planning inputs only — `configs/backtest.yaml` modeled costs, `uv run dipcatcher execution-sensitivity` latency/impact grid, [STRESS.md](STRESS.md) failure-mode catalog | **BLOCKED — no venue measurements exist.** Modeled values are never venue evidence |
-| 5 | Signed live promotion receipt with passing immutable verifier + explicit live authorization | Signed pins and checkpoint (`make sign-pins`, `make checkpoint`) protect research evidence. Existing `promotion_receipt.v1` and `verify-research` accept **research-only** artifact promotion (`execution_claim=research_only`, `live_pnl_claim=false`); `promotion_dry_run` sets `would_promote_live=false`. A distinct live receipt and verifier must bind accepted conditions 1–4 and written capital authorization. | **BLOCKED — engineering and authorization.** The research receipt verifier is mutation-tested, but no live promotion schema/verifier or written capital authorization exists. |
-
-The frozen paper close protocol requires `available_time == event_time` for
-each close bar. If the approved real feed publishes a close after its event
-timestamp, it cannot be admitted under this protocol. A different decision
-cutoff would require a new predeclared protocol and external anchor before
-collection; the sealed rule cannot be loosened retrospectively.
+| 5 | Signed promotion receipt with passing immutable verifier + explicit live authorization | Signed pins + checkpoint (`make sign-pins`, `make checkpoint`, Ed25519 `GATE_SIGNING_KEY`); verifiers `uv run dipcatcher verify-research` / `verify-receipt`, `make receipts-reverify`, `make evidence-audit`, `make checkpoint-chain`, `make verify-rotations` (see [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md)); promotion fail-closed (`would_promote_live=false`, `live_pnl_claim=false`) | Verifier machinery exists and is mutation-tested; **explicit written live authorization does not exist** and is composed only after conditions 1–4 |
 
 A working fail-closed adapter, a compiling module, or a passing SYNTHETIC
 fixture is **not** evidence and never marks a condition ready. Conditions 1 and
@@ -113,10 +109,8 @@ What changed relative to the five conditions — and what did not:
   semantics (no optional-stopping inflation), and `capability_value`
   makes self-evolution claims falsifiable via Cap-swap accounting. No
   non-synthetic forward record exists yet.
-- **Condition 5 (signed promotion receipt / verifier)**: the existing
-  research-only immutable verifier is mutation-tested; it cannot authorize
-  live capital. A separate live receipt and verifier still need to bind
-  conditions 1–4 and written authorization. The precise history matters: the
+- **Condition 5 (signed promotion receipt / verifier)**: the immutable
+  verifier itself is now mutation-tested. The precise history matters: the
   often-quoted `research/verify.py` figure of 99.52% (209/210 killed) was
   measured against a 50-mutant seed-7 sample, **not** the full 210. The
   genuinely-full 210-mutant run first surfaced 15 survivors; 14 were closed

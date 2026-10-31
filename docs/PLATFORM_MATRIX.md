@@ -1,11 +1,7 @@
 # Platform matrix
 
 `.github/workflows/matrix.yml` runs the lab test suite
-(`tests/{unit,property,regression,end_to_end}`, `-m "not network"`) across
-the platforms below. It runs nightly at 22:37 UTC and on manual dispatch.
-The full 45-job matrix
-does not run for each PR, merge group, or push; run it manually against a
-candidate revision when recording a release baseline.
+(`tests/{unit,property,regression,end_to_end}`, `-m "not network"`) across:
 
 | OS | Python | Status |
 |---|---|---|

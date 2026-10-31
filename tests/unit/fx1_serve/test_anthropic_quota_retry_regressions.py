@@ -18,9 +18,7 @@ def quota_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     def unexpected_backend(*args: Any, **kwargs: Any) -> Any:
         raise AssertionError("key refusal must precede backend resolution")
 
-    with TestClient(
-        create_app(public_release=False, backend_resolver=unexpected_backend)
-    ) as client:
+    with TestClient(create_app(backend_resolver=unexpected_backend)) as client:
         yield client
 
 

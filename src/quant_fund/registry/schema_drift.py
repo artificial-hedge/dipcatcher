@@ -13,14 +13,7 @@ Two silent-erosion classes on the evidence corpus:
    ``git merge-base --is-ancestor``.
 
 Receipts missing a schema/kind tag are flagged ``missing_schema_tag``.
-Verdict ``ok`` iff zero unacknowledged drifts and zero phantom revisions.
-Drift inside sealed, epoch-pinned history cannot be fixed by retagging (that
-re-seal forges the receipt), so ``quality/legacy_quarantine.json``
-``schema_drift_acks`` may acknowledge one tag group: the entry pins every
-member file of the group by bytes plus a reason. Its drift rows are then
-reported under ``acknowledged_drift``, not flagged — and an entry that no
-longer matches the group exactly (member added/removed/rewritten, or the
-group no longer drifts) is flagged ``schema_drift_ack_stale``. Sealed
+Verdict ``ok`` iff zero drifts and zero phantom revisions. Sealed
 ``schema_drift.v1``.
 """
 
@@ -63,41 +56,6 @@ def _is_ancestor(rev: str, repo: Path) -> bool | None:
         capture_output=True,
     )
     return probe.returncode == 0
-
-
-def _apply_drift_acks(
-    receipts_dir: Path,
-    repo: Path,
-    groups: dict[str, list[tuple[str, tuple[str, ...]]]],
-    drifted: list[dict[str, Any]],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, str]]]:
-    """Split drift rows into (unacknowledged, acknowledged) and list stale acks.
-
-    The registry describes the repository's own ``receipts/`` corpus only —
-    it never excuses (or flags) groups in another directory being scanned.
-    An ack applies only when its pinned member map equals the group's live
-    ``{file: sha256}`` exactly.
-    """
-    from quant_fund.research.legacy_unsealed import (
-        DEFAULT_QUARANTINE_PATH,
-        load_quarantine_or_empty,
-    )
-
-    if receipts_dir.resolve() != (repo / "receipts").resolve():
-        return drifted, [], []
-    acks = load_quarantine_or_empty(repo / DEFAULT_QUARANTINE_PATH).schema_drift_acks
-    drifting = {row["tag"] for row in drifted}
-    matched = {
-        tag
-        for tag, ack in acks.items()
-        if tag in drifting
-        and {name: hash_bytes((receipts_dir / name).read_bytes()) for name, _ in groups[tag]}
-        == dict(ack.members)
-    }
-    stale = [{"tag": tag, "why": "schema_drift_ack_stale"} for tag in sorted(set(acks) - matched)]
-    kept = [row for row in drifted if row["tag"] not in matched]
-    acknowledged = [row for row in drifted if row["tag"] in matched]
-    return kept, acknowledged, stale
 
 
 def schema_drift(receipts_dir: Path | str = "receipts", repo: Path | str = ".") -> dict[str, Any]:
@@ -152,18 +110,15 @@ def schema_drift(receipts_dir: Path | str = "receipts", repo: Path | str = ".") 
                     extra = sorted(set(keys) - set(modal))
                     drifted.append({"file": fname, "tag": tag, "missing": missing, "extra": extra})
     hard_phantom = [p for p in phantom if p["why"] == "not_a_commit"]
-    drifted, acknowledged, stale = _apply_drift_acks(receipts_dir, repo, groups, drifted)
     return {
         "n_receipts": sum(g["n"] for g in group_stats.values()),
         "n_groups": len(group_stats),
         "groups_with_drift": sum(1 for g in group_stats.values() if g["n_keysets"] > 1),
         "group_stats": group_stats,
         "drifted": drifted,
-        "acknowledged_drift": acknowledged,
-        "stale_drift_acks": stale,
         "phantom_revisions": phantom,
         "untagged": untagged,
-        "n_flagged": len(drifted) + len(hard_phantom) + len(stale),
+        "n_flagged": len(drifted) + len(hard_phantom),
         "n_notes": len(phantom) - len(hard_phantom) + len(untagged),
     }
 
@@ -193,9 +148,6 @@ def schema_drift_bench(
                 1 for p in audit["phantom_revisions"] if p["why"] == "not_ancestor"
             ),
             "n_untagged": len(audit["untagged"]),
-            "n_drift_acknowledged": len(audit["acknowledged_drift"]),
-            "acknowledged_drift": audit["acknowledged_drift"][:20],
-            "stale_drift_acks": audit["stale_drift_acks"][:20],
             "drifted": audit["drifted"][:20],
             "phantom_revisions": audit["phantom_revisions"][:20],
             "untagged": audit["untagged"][:20],

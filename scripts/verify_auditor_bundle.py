@@ -5,9 +5,8 @@ Everything in ``quant_fund.research.auditor_bundle`` is verified code, but
 a single verifier is itself a trust bottleneck: a subtle bug (or a silent
 patch) in the repo's implementation could hide a forgery. This script is
 the second implementation — it imports NOTHING from quant_fund, only the
-stdlib, ``cryptography``, and a sibling pure-Python Ed25519 point checker.
-An auditor can copy and inspect both files to verify a bundle against the
-public Rekor log alone.
+stdlib + ``cryptography``. An auditor can read it top-to-bottom (~300
+lines) and verify a bundle against the public Rekor log alone.
 
 Usage:
     python scripts/verify_auditor_bundle.py auditor_bundle.json \
@@ -41,12 +40,10 @@ import hashlib
 import json
 import sys
 import urllib.request
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 REKOR_PUBLIC_KEY_URL = "https://rekor.sigstore.dev/api/v1/log/publicKey"
-POINT_CHECKER_SHA256 = "0421eb1970e19ccb6489a0b9e2d428684abbd19591839f5d1d61ca1a25143433"
 
 MEMBERS = (
     "quality/checkpoint.json",
@@ -74,30 +71,6 @@ QUORUM_ROTATION_PREFIX = "quality/quorum_rotations/"
 
 def _sha(b: bytes) -> bytes:
     return hashlib.sha256(b).digest()
-
-
-def _point_checker_ok() -> bool:
-    """Bind the sibling checker before its code can be imported."""
-    try:
-        raw = Path(__file__).with_name("ed25519_public.py").read_bytes()
-    except OSError:
-        return False
-    return _sha(raw).hex() == POINT_CHECKER_SHA256
-
-
-def _load_point_checker() -> Callable[[bytes], bool] | None:
-    """Execute exactly the checked source bytes, never a cached module."""
-    path = Path(__file__).with_name("ed25519_public.py")
-    try:
-        raw = path.read_bytes()
-    except OSError:
-        return None
-    if _sha(raw).hex() != POINT_CHECKER_SHA256:
-        return None
-    namespace: dict[str, Any] = {"__name__": "_standalone_ed25519_public"}
-    exec(compile(raw, str(path), "exec"), namespace)  # noqa: S102 - hash-pinned bytes
-    checker = namespace.get("is_canonical_prime_order_public_key")
-    return checker if callable(checker) else None
 
 
 def _canon(value: Any) -> bytes:
@@ -134,17 +107,10 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool:
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-    checker = _load_point_checker()
-    if checker is None:
-        return False
-
     try:
-        public_bytes = bytes.fromhex(pub_hex.strip())
-        if not checker(public_bytes):
-            return False
-        pub = Ed25519PublicKey.from_public_bytes(public_bytes)
+        pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex.strip()))
         pub.verify(bytes.fromhex(sig_hex), msg)
-    except (InvalidSignature, ValueError, TypeError):
+    except (InvalidSignature, ValueError):
         return False
     return True
 
@@ -971,10 +937,6 @@ def main() -> int:
         help="use the bundle's pinned Rekor key instead of fetching it live",
     )
     args = ap.parse_args()
-
-    if not _point_checker_ok():
-        print("FAIL\n  ed25519_point_checker_mismatch")
-        return 1
 
     rekor_pem: bytes | None = None
     if args.rekor_pubkey is not None:

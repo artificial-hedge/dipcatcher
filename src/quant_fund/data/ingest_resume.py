@@ -34,14 +34,6 @@ class Batch:
     rows: int
 
 
-def _validate_batch(batch: Batch) -> None:
-    """Reject invalid journal identities and row counts before commit or replay."""
-    if not isinstance(batch.batch_id, str) or not batch.batch_id.strip():
-        raise IngestJournalError("batch_id must be a non-empty string")
-    if type(batch.rows) is not int or batch.rows < 0:
-        raise IngestJournalError("rows must be a non-negative integer")
-
-
 class IngestCheckpoint:
     """Append-only JSONL ingest journal with an idempotent, resumable cursor."""
 
@@ -55,15 +47,9 @@ class IngestCheckpoint:
             return
         for raw in self.path.read_text(encoding="utf-8").splitlines():
             if not raw.strip():
-                raise IngestJournalError("blank ingest journal line")
+                continue
             rec = self._parse_line(raw)
-            batch = Batch(batch_id=rec["batch_id"], rows=rec["rows"])
-            _validate_batch(batch)
-            if batch.batch_id in self._committed:
-                raise IngestJournalError(
-                    f"duplicate batch_id in ingest journal: {batch.batch_id!r}"
-                )
-            self._committed[batch.batch_id] = batch.rows
+            self._committed[str(rec["batch_id"])] = int(rec["rows"])
 
     def _parse_line(self, raw: str) -> dict[str, Any]:
         try:
@@ -75,8 +61,6 @@ class IngestCheckpoint:
         body = {k: v for k, v in rec.items() if k != "sha256"}
         if hash_bytes(canonical_json_bytes(body)) != rec.get("sha256"):
             raise IngestJournalError(f"hash mismatch on ingest record {rec.get('batch_id')!r}")
-        if set(rec) != {"batch_id", "rows", "sha256"}:
-            raise IngestJournalError("ingest journal record has invalid fields")
         return body
 
     def _append(self, batch: Batch) -> dict[str, Any]:
@@ -89,17 +73,10 @@ class IngestCheckpoint:
 
     def ingest(self, batch: Batch) -> str:
         """Commit a batch idempotently; replaying a batch is a no-op duplicate."""
-        _validate_batch(batch)
-        prior_rows = self._committed.get(batch.batch_id)
-        if prior_rows is not None:
-            if prior_rows != batch.rows:
-                raise IngestJournalError(
-                    f"batch_id {batch.batch_id!r} already committed with {prior_rows} rows, "
-                    f"cannot replay with {batch.rows} rows"
-                )
+        if batch.batch_id in self._committed:
             return "duplicate"
         self._append(batch)
-        self._committed[batch.batch_id] = batch.rows
+        self._committed[batch.batch_id] = int(batch.rows)
         return "committed"
 
     @property

@@ -66,7 +66,7 @@ with exogenous parametrized flow. All money-like outputs are namespaced
 diagnostics, never headline metrics, never proper forecast scores, never
 market evidence. No Sharpe/Sortino/Calmar/P&L/NAV headline anywhere
 (``FORBIDDEN_RESEARCH_METRIC_KEYS`` in ``quant_fund.research.catalog``); no
-broker connectivity. ZI flow's mechanical response
+broker connectivity and no live-trading claim. ZI flow's mechanical response
 to our quotes does not establish endogenous strategic competitors, latency,
 hidden liquidity, financing or queue calibration.
 
@@ -525,7 +525,7 @@ class ZILobQuoteEnv:
     rewards telescope exactly onto the final mark-to-market:
     ``sum_t (reward_t / reward_scale + penalty_t) * tick == MTM_T``. Every term
     is a ``sim_internal_*`` learning signal for this synthetic engine — never a
-    headline metric, never market evidence. The mid used
+    headline metric, never market evidence, no live-trading claim. The mid used
     for accounting is the decision-time mid (cached; reading it never steps the
     event clock), which is what makes the identity exact.
 
@@ -1577,7 +1577,7 @@ def compare_c51_baselines(
     cap fixed. The trained agent is evaluated greedily (``act(..., greedy=True)``,
     no exploration, no learning). Metric keys are ``sim_internal_*``
     simulator-internal diagnostics on a SYNTHETIC engine — never headline
-    metrics, never market evidence.
+    metrics, never market evidence, no live-trading claim.
 
     ``classic_params`` overrides the closed-form reference calibration
     (``gamma``, ``sigma``, ``kappa``, ``a_fill``, ``tick``); the defaults give

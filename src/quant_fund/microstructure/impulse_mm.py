@@ -79,8 +79,8 @@ Deviations from the reference math (deliberate, documented):
 
 Honesty: every output is a SYNTHETIC correctness diagnostic on a synthetic
 engine, never market evidence. All P&L-like keys are namespaced
-``sim_internal_*`` and must never be headlined.
-Pure numpy — no torch anywhere in this module.
+``sim_internal_*`` and must never be headlined; no broker connectivity or
+live-trading claim anywhere. Pure numpy — no torch anywhere in this module.
 """
 
 from __future__ import annotations
@@ -1047,7 +1047,7 @@ def run_impulse_mm_session(
         "lam_plus_path": lam_p_path,
         "lam_minus_path": lam_m_path,
         # Simulator-internal mark-to-market accounting. Diagnostic only:
-        # never a headline metric, never market evidence.
+        # never a headline metric, never market evidence, no live-trading claim.
         "sim_internal_mtm_pnl_path": mtm_path,
         "sim_internal_mtm_pnl_final": float(final_mtm),
         "mean_queue_ahead_at_fill": float(np.mean(queue_ahead_fills))

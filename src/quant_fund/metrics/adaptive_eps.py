@@ -88,7 +88,8 @@ not cumulative regret.
 Honesty contract: everything empirical in this module runs on seeded
 SYNTHETIC planted worlds and reports proper discovery/calibration quantities
 only — FDR, FDP, TPR, discovery sample counts. These are correctness tests,
-never market evidence. No Sharpe/Sortino/Calmar/P&L/NAV content.
+never market evidence. No Sharpe/Sortino/Calmar/P&L/NAV content, no
+live-trading claims.
 """
 
 from __future__ import annotations

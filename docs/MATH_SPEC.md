@@ -110,10 +110,6 @@ Given draws \(X_1,\ldots,X_n\) from the predictive and a single observation \(y\
 \]
 
 Implemented as `crps_empirical` (research-only; empty / all-non-finite sample → NaN).
-The double sum is the order-statistic identity
-:math:`2\sum_{i=1}^{n}(2i-n-1)x_{(i)}` (1-based, diagonal included) — the same
-sum as the :math:`n\times n` expansion, evaluated in :math:`O(n\log n)` after a
-sort. `crps_ensemble` and the vintage ensemble audit use that identity too.
 
 ## Closed-form Student-t CRPS
 
@@ -136,10 +132,8 @@ Raftery CRPS). Let \(z=(y-\mu)/\sigma\) and \(f_\nu\)/\(F_\nu\) the standard-t p
 Lab helpers: `crps_student_t` (elementwise) / `mean_crps_student_t`. Contract:
 \(\nu\le 2\) or non-finite → honest NaN (stricter than the finite-mean \(\nu>1\)
 domain — fail-closed with finite variance); non-positive/non-finite \(\sigma\) → NaN;
-empty → []/NaN; length mismatch → ValueError. \(F_\nu\) is `scipy.special.stdtr`
-and \(f_\nu\) is the closed-form Student-t density (the same primitives
-`scipy.stats.t` uses). A constant \(\nu\) evaluates the beta ratio once.
-Research-diagnostic only — never a live capital claim.
+empty → []/NaN; length mismatch → ValueError. Research-diagnostic only — never a
+live capital claim.
 
 Distribution bench (`_distribution_horizon_scores`) reports research-only
 `crps_scaled_student_t_closed` **beside** quantile Riemann `crps_scaled_student_t`

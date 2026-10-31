@@ -8,7 +8,7 @@ potential-shaped Eq. 5 rewards (telescoping to Eq. 7), and the terminal Eq. 6
 liquidation — all running on the composed ``zi_lob_simulator`` FIFO engine.
 
 Everything is **labeled SYNTHETIC** correctness validation at TINY training
-budgets — never market evidence. Tests assert the
+budgets — never market evidence, no live-trading claim. Tests assert the
 plumbing, the paper's invariants (permutation invariance, simplex geometry,
 argmax-preserving shaping, reward telescoping), determinism, and fail-closed
 edges; they do NOT assert the trained policy beats GLFT (that comparison

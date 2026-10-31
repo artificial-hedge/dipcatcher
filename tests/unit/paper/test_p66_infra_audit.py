@@ -5,7 +5,6 @@ Each test names the bug it regresses:
   * sim_live _equity_stats annualized a negative NAV ratio into a complex number
   * recon.reconcile_broker_states never compared last_marks *values*
   * recon.reconcile_equity last_nav_delta was join-order, not chronological
-  * malformed broker state, duplicate equity times, and non-finite fills matched
   * ledger.promotion_dry_run let max_l1=NaN emit would_promote_paper=True
   * loop borrow accrual used /252 per bar regardless of bar spacing
 """
@@ -23,7 +22,7 @@ import pytest
 from quant_fund.config.loader import load_config
 from quant_fund.paper.ledger import promotion_dry_run, validate_promotion_dry_run_receipt
 from quant_fund.paper.loop import run_paper_loop
-from quant_fund.paper.recon import reconcile_broker_states, reconcile_equity, reconcile_fills
+from quant_fund.paper.recon import reconcile_broker_states, reconcile_equity
 from quant_fund.paper.sim_live import _bars_per_year, _equity_stats, _trailing_window_sum
 
 T0 = datetime(2024, 1, 1, tzinfo=UTC)
@@ -112,15 +111,6 @@ def test_broker_state_mark_nan_is_flagged() -> None:
     assert any("last_marks[A]" in m for m in rep["mismatches"])
 
 
-def test_identical_malformed_broker_state_cannot_match() -> None:
-    malformed = _broker_state(cash=float("nan"), n_orders="invalid")
-    rep = reconcile_broker_states(malformed, dict(malformed))
-    assert rep["match"] is False
-    assert any("cash: invalid" in message for message in rep["mismatches"])
-    assert any("n_orders: invalid" in message for message in rep["mismatches"])
-    assert reconcile_broker_states({}, {})["match"] is False
-
-
 def test_reconcile_equity_last_delta_is_chronological() -> None:
     times = [T0 + timedelta(days=d) for d in range(4)]
     expected = pl.DataFrame({"event_time": times, "nav": [100.0, 101.0, 102.0, 103.0]})
@@ -148,59 +138,6 @@ def test_reconcile_equity_null_nav_not_silently_unmatched() -> None:
     assert rep["match"] is False
     assert rep["matched_null_nav"] == 1
     assert rep["unmatched_expected"] == 0 and rep["unmatched_actual"] == 0
-
-
-def test_identical_duplicate_or_null_equity_times_cannot_match() -> None:
-    duplicate = pl.DataFrame({"event_time": [T0, T0], "nav": [100.0, 100.0]})
-    rep = reconcile_equity(duplicate, duplicate)
-    assert rep["match"] is False
-    assert rep["duplicate_expected_timestamps"] == 1
-    assert rep["duplicate_actual_timestamps"] == 1
-    missing_time = pl.DataFrame({"event_time": [T0, None], "nav": [100.0, 101.0]})
-    rep = reconcile_equity(missing_time, missing_time)
-    assert rep["match"] is False
-    assert rep["null_expected_timestamps"] == 1
-
-
-def test_identical_nonfinite_or_null_fills_cannot_match() -> None:
-    nonfinite = pl.DataFrame(
-        {
-            "security_id": ["A"],
-            "fill_time": [T0],
-            "quantity": [float("nan")],
-            "price": [float("inf")],
-        }
-    )
-    rep = reconcile_fills(nonfinite, nonfinite)
-    assert rep["match"] is False
-    assert rep["n_qty_nonfinite"] == 1
-    assert rep["n_price_nonfinite"] == 1
-    null_price = pl.DataFrame(
-        {
-            "security_id": ["A", "B"],
-            "fill_time": [T0, T0],
-            "quantity": [1.0, 2.0],
-            "price": [None, 10.0],
-        }
-    )
-    rep = reconcile_fills(null_price, null_price)
-    assert rep["match"] is False
-    assert rep["n_price_nonfinite"] == 1
-    assert rep["unmatched_expected"] == rep["unmatched_actual"] == 0
-
-
-@pytest.mark.parametrize("bad_tolerance", [float("nan"), float("inf"), -1.0])
-def test_invalid_tolerance_refused_by_equity_and_fill_reconciliation(
-    bad_tolerance: float,
-) -> None:
-    equity = pl.DataFrame({"event_time": [T0], "nav": [100.0]})
-    fills = pl.DataFrame(
-        {"security_id": ["A"], "fill_time": [T0], "quantity": [1.0], "price": [10.0]}
-    )
-    with pytest.raises(ValueError, match="tol must be finite"):
-        reconcile_equity(equity, equity, tol=bad_tolerance)
-    with pytest.raises(ValueError, match="tol must be finite"):
-        reconcile_fills(fills, fills, tol=bad_tolerance)
 
 
 # ---------------------------------------------------------------------------

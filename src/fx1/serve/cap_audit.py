@@ -302,17 +302,10 @@ class _CapUpstream(_StubUpstream):
             if body.get("stream") is True:
                 self._sse_start(h)
                 for delta in ("cap-", "upstream"):
-                    frame = {
-                        "model": self.resp_model,
-                        "choices": [{"index": 0, "delta": {"content": delta}}],
-                    }
+                    frame = {"choices": [{"index": 0, "delta": {"content": delta}}]}
                     if not self._sse_frame(h, f"data: {json.dumps(frame)}\n\n".encode()):
                         return
-                tail = {
-                    "model": self.resp_model,
-                    "choices": [{"index": 0, "delta": {}}],
-                    "usage": self.usage,
-                }
+                tail = {"choices": [{"index": 0, "delta": {}}], "usage": self.usage}
                 if not self._sse_frame(h, f"data: {json.dumps(tail)}\n\n".encode()):
                     return
                 self._sse_frame(h, b"data: [DONE]\n\n")
@@ -497,7 +490,7 @@ def _client(
         if ft_runner is not _PIPELINE:
             kwargs["ft_runner"] = ft_runner
         kwargs.update(app_kwargs)
-        app = api_mod.create_app(public_release=False, **kwargs)
+        app = api_mod.create_app(**kwargs)
         resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
         client = TestClient(app, raise_server_exceptions=False)
         resources.callback(client.close)
@@ -1473,8 +1466,6 @@ def _probe_local() -> _Probe:
 def _probe_hosted() -> _Probe:
     p = _Probe("hosted")
     upstream = _CapUpstream("ok")
-    # HostedK3Backend rejects a provider model ID different from its pin.
-    upstream.resp_model = "cap-k3"
     client, _api = _client(_hosted_resolver(upstream))
     _completion_surfaces(p, client, status=200, code=None, chain={"backend": _HOSTED})
     p.pin("upstream_saw_auth", f"Bearer {_KEY}" in upstream.auths)
@@ -1590,8 +1581,6 @@ def cap_audit() -> dict[str, Any]:
     """Every measured capability probe — flat ``config__surface__verdict``
     name → True map."""
     with _audit_context():
-        # Loopback stub upstream. Production BYOK stays public-only.
-        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         out, _matrix = _run()
     return out
 
@@ -1600,8 +1589,6 @@ def cap_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under cap_audit.v1, carrying the
     measured config × surface verdict matrix."""
     with _audit_context():
-        # Loopback stub upstream. Production BYOK stays public-only.
-        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         results, matrix = _run()
     ok = bool(results) and all(v is True for v in results.values())
     out: dict[str, Any] = {

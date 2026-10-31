@@ -1,20 +1,17 @@
 # dipcatcher production product contract
 
-**Date:** 2026-10-08, surfaces remeasured 2026-10-12. **Status:** release
-requirements plus the implemented engineering: the chat launcher, in-chat
-endpoint setup and identity probes, honesty checks on every model-authored
-surface, bounded planner refinement with a research-family eligibility gate,
-hard run budgets, cancellable subprocess execution, durable session journals
-with interrupted-job reconciliation, and the Ctrl-C/history console layer.
-Production acceptance (P1–P7) still requires the evidence listed below — code
-and tests do not substitute for it; see the dated
+**Date:** 2026-10-08. **Status:** release requirements plus an implemented first
+engineering slice: the chat launcher, in-chat endpoint setup, ordinary-chat
+honesty checks, and bounded planner refinement. Remaining orchestration and
+production acceptance are open. The requested 25% is a bounded work allocation,
+not a measured production-readiness percentage; see the concrete
 [handoff](CLAUDE_DIPCATCHER_HANDOFF.md).
 
 ## Product definition
 
-**dipcatcher is Artificial Hedge's research orchestration harness.** The
-chat ids are `fx1` and `fx1-lite`. No fine-tuned weights are published. The
-conversation in the terminal uses whatever endpoint the operator configured. The primary experience is chat. The
+**dipcatcher is Artificial Hedge's research orchestration harness, built to
+make artificialhedge.co's `fx1` and `fx1-lite` models useful through a
+conversation in the terminal.** The primary experience is chat. The
 `/superpower` command selects suitable research capabilities, executes them
 through the harness, and explains the verified evidence in the same chat.
 
@@ -44,16 +41,16 @@ Work on 2026-10-08 began at local `50f25b2ce` in a concurrently modified
 working tree. The table includes the implementation in this handoff; it is
 not hosted-model or full release certification.
 
-| Surface | Observed source (2026-10-12) | Gap to this contract |
+| Surface | Observed source | Gap to this contract |
 |---|---|---|
-| Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model` / `chat --resume`, `--version`, and forwards lab commands; `quant` retains its existing entry. | Cross-platform UX acceptance on real Windows/macOS terminals and release packaging approval. |
-| Existing conversation | `concierge.run_console` with a `LineReader` (POSIX select / Windows msvcrt / blocking), Ctrl-C cancel-then-exit policy, secret-filtered persistent history, `/keys set` in chat, startup endpoint status with failure guidance. | Multiline editing/paste and resize handling; the frozen journey suite and moderated trial. |
-| Models | `profiles.MODELS` holds `fx1` and `fx1-lite`; `/use` keeps the conversation and journals the switch; `/keys test` records requested vs served identity, latency and failure class; endpoint failures map to classes with next actions and bounded retries. | Real authenticated smoke runs against the service (P2) — mock tests do not close the gate. |
-| Research planning | `superpower.plan_goal` selects from `HARNESS_REGISTRY` plus memory/web/synthesis; the read-only `research-families` schema v2 names 23 required and six audit-justified optional families for the planner, with counts for the remaining exploratory and retired families. A bounded, goal-bound hash lookup identifies bare names from the omitted sets. Named-family goals cannot automatically launch an unconstrained research scorecard; missing or unsupported names and failed lookups close the gate, and the model cannot reinstate a blocked capability. Plain-chat model tools cannot start `research`; an operator can request its full scorecard explicitly. | The explicit `research` command still executes its configured scorecard; per-family execution, typed dataset/config arguments, and data-availability checks are not implemented. |
-| Planner limits | `max_harness` on both paths; `RunBudget`/`BudgetLedger` enforce wall, step, model-call, retry and web-source ceilings; the remaining wall budget becomes each subprocess deadline. | Token spend is capped only when configured; provider prices are unknown so no currency cap is claimed. |
-| Answer validation | Ordinary chat, tool preambles and synthesis pass the honesty validator; every capability result carries an evidence class; partial runs say partial; web content is framed as untrusted data. | Semantic claim/receipt verification; audit other expert/export surfaces. |
-| Jobs | `BackgroundJob` threads with cooperative cancellation; owned subprocesses receive SIGTERM → SIGKILL on cancel or deadline; the session journal records start/step/finish and marks work left open by a dead process as interrupted on the next start. | Automatic safe resume of idempotent steps; remote (fleet) cancellation acknowledgement. |
-| Documentation | [FXI](FXI.md) and [Concierge](DIP_CONCIERGE.md) describe the implemented behaviour and remaining gaps. | Reconcile README/root instructions when the release candidate is fixed. |
+| Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model`, and forwards lab commands; `quant` retains its existing entry. | Complete cross-platform UX acceptance and release packaging approval. |
+| Existing conversation | The launcher reuses `concierge.run_console`; `/keys set` configures key and endpoint in chat, with accurate startup endpoint status. | Durable session recovery, richer editing, and the complete journey suite remain open. |
+| Models | `fx1.interactive.profiles.MODELS` contains `fx1` and `fx1-lite`; profiles store endpoints. | Verify both real service identities and errors; make selection and any change visible. |
+| Research planning | `fx1.interactive.superpower` selects from `HARNESS_REGISTRY` plus memory/web/synthesis capabilities. | Command selection is not qualified research-family selection. Add explicit eligibility, data checks, and family-to-runner mapping. |
+| Planner limits | Both deterministic and refined plans now enforce `max_harness`; refined IDs and executed steps are deduplicated. | Add family eligibility and comprehensive resource budgets; registered reselection is allowed within the cap. |
+| Answer validation | Ordinary chat and tool preambles now use the same honesty validator as `/superpower` synthesis before display/history. | Add semantic claim/receipt verification and audit other expert/export surfaces; lexical checks alone are insufficient. |
+| Jobs | `concierge.BackgroundJob` is an in-process thread; cancellation is cooperative. | Bound cancellation of active work; record restart state and recover without duplicate work. |
+| Documentation | [FXI](FXI.md) and [Concierge](DIP_CONCIERGE.md) describe the new working-tree launcher and remaining gaps. | Finish broader naming/status reconciliation when the release candidate is fixed. |
 
 The repository-wide [production audit](ULTRA_PROD_READINESS.md) owns CI,
 history reconciliation, artifact integrity, catalog cleanup, and release
@@ -82,12 +79,10 @@ not a claim of feature parity or a requirement to duplicate another product.
    budget, evidence class, and cancellation state. Keep raw logs and full
    configuration available as optional details. A spinner is not progress.
 5. **Control:** provide discoverable model selection, help, status, cancel,
-   session resume, and evidence inspection. `/use`, `/model`, `/help`,
-   `/status`, `/cancel`, `/resume`, `/evidence`, `/runs`, `/data`, and
-   `/models check` exist. Keep multiline input, paste, history, keyboard
-   navigation, narrow terminals, `NO_COLOR`, and plain output usable. A
-   background job uses a cbreak line reader, so that line has no history
-   and no arrow keys.
+   session resume, and evidence inspection. Existing `/use`, `/model`, `/help`,
+   `/status`, and `/cancel` are starting points; resume and evidence inspection
+   still need a defined command/API. Keep multiline input, paste, history,
+   keyboard navigation, narrow terminals, `NO_COLOR`, and plain output usable.
 6. **Finish:** explain what was learned, what failed or remains uncertain,
    and link the verified receipt/artifacts. A partial run must say partial.
    Unconfigured models may return a clearly labeled deterministic status
@@ -196,12 +191,10 @@ incremental approach exists. Never trade the honesty gate for typing effects.
 
 ## Production acceptance gates
 
-All rows are **OPEN**. Numeric limits below are proposed initial release
-targets, not a service promise. The measurements in
-`DIPCATCHER_RELEASE_EVIDENCE.md` do not close
-any row. Freeze the supported OS/Python/terminal matrix and reference
-hardware before treating a number as the gate. Record sample sizes and
-failures.
+All rows are **OPEN / not verified by this document**. Numeric limits below
+are proposed initial release targets, not measured performance or a service
+promise. Freeze the supported OS/Python/terminal matrix and reference hardware
+before measuring; record sample sizes and failures.
 
 | Gate | Acceptance evidence |
 |---|---|
@@ -213,12 +206,9 @@ failures.
 | P6 — Bounded operation | Hard time, step, retry, token and spend ceilings cover planning through synthesis. Unknown price cannot imply a guaranteed spend cap. A 24-hour mixed-workload soak leaves no orphan local children or unaccounted jobs; injected failures remain recoverable. Redacted diagnostics correlate session/run/step and model/family identity. |
 | P7 — Repeatable release | Repository gates and required CI pass at the candidate revision; clean install/upgrade/uninstall, supported-platform smoke tests, dependency/security checks, signed artifacts, checksums, rollback drill, and support/runbooks are evidenced. Existing production-audit blockers are explicitly closed or the release remains blocked. |
 
-The release evidence table is
-`DIPCATCHER_RELEASE_EVIDENCE.md`. Columns are
-gate ID, owner, candidate SHA, exact command/scenario, platform, artifact
-path/hash, timestamp, result, and remaining blocker. Owner is unassigned
-in that table. Docs or a merged implementation never substitute for passing
-evidence.
+Maintain a release evidence table with gate ID, owner, candidate SHA, exact
+command/scenario, platform, artifact path/hash, timestamp, result, and remaining
+blocker. Docs or a merged implementation never substitute for passing evidence.
 Use the existing [Operations runbook](OPERATIONS_RUNBOOK.md) and
 [API stability contract](FX1_API_STABILITY.md) for release and recovery details.
 Model-release claims additionally require each model's own evaluation/card and

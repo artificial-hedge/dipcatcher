@@ -102,7 +102,6 @@ Sealed ``eval_lifecycle_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import html
-import itertools
 import json
 import os
 import tempfile
@@ -324,7 +323,6 @@ def _client(
             os.environ[_API_KEY_ENV] = api_key
         resolve = resolver or (lambda name, *a, **k: backend_map[name]())
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=resolve,
             **app_kw,
@@ -345,6 +343,20 @@ def _jobs_exec(client: TestClient) -> ThreadPoolExecutor:
 
     app = cast(FastAPI, client.app)
     return cast(ThreadPoolExecutor, app.state.jobs_executor)
+
+
+def _release_client(client: TestClient) -> None:
+    """Join job workers before their state directory is removed.
+
+    Pool threads are non-daemon and lifespan shutdown does not wait. A
+    worker still appending a journal recreates files under ``rmtree``, and
+    cleanup then fails with ``ENOTEMPTY``.
+    """
+    executor = _jobs_exec(client)
+    try:
+        client.close()
+    finally:
+        executor.shutdown(wait=True)
 
 
 def _mint(client: TestClient, root_h: dict[str, str], **policy: Any) -> tuple[str, str]:
@@ -816,20 +828,15 @@ def _store_probes() -> dict[str, Any]:
     out: dict[str, Any] = {}
     from fx1.serve.evals import EvalRecord, EvalStore
 
-    # time.time_ns() repeats inside one clock tick. A repeated eval_id
-    # makes put() replace the live record, so eviction is not stable.
-    seq = itertools.count()
-
     def _rec(status: str = "queued") -> EvalRecord:
-        n = next(seq)
         return EvalRecord.model_validate(
             {
-                "eval_id": f"ev-{status}-{n}",
+                "eval_id": f"ev-{status}-{time.time_ns()}",
                 "suite": "tooluse",
                 "backend": "byok",
                 "seed": 0,
                 "status": status,
-                "created_at": 1_700_000_000.0 + n,
+                "created_at": time.time(),
             }
         )
 
@@ -887,7 +894,7 @@ def _store_probes() -> dict[str, Any]:
 def _receipt_probes() -> dict[str, Any]:
     """Sealed fx1_eval_record.v1 export: verifies, tamper fails closed."""
     out: dict[str, Any] = {}
-    from quant_fund.schemas.receipt_v2_leaf import (  # noqa: PLC0415
+    from quant_fund.schemas.receipt import (  # noqa: PLC0415
         verify_receipt_file,
         verify_receipt_payload,
     )
@@ -1092,43 +1099,58 @@ def _durability_probes() -> dict[str, Any]:
     import tempfile  # noqa: PLC0415
 
     with tempfile.TemporaryDirectory() as td:
-        client1, _ = _client({"byok": lambda: _EvalBackend()}, state_dir=td)
-        sub = _submit(client1, key="durable-1", seed=3)
-        eval_id = sub.json()["eval_id"]
-        rec1 = _wait(client1, eval_id)
+        clients: list[TestClient] = []
+        try:
+            client1, _ = _client({"byok": lambda: _EvalBackend()}, state_dir=td)
+            clients.append(client1)
+            sub = _submit(client1, key="durable-1", seed=3)
+            eval_id = sub.json()["eval_id"]
+            rec1 = _wait(client1, eval_id)
 
-        # fresh process on the same dir answers the record verbatim
-        client2, _ = _client({"byok": lambda: _EvalBackend()}, state_dir=td)
-        rec2 = _record(client2, eval_id)
-        out["state_dir_record_survives_restart"] = rec2.status_code == 200 and rec2.json() == rec1
-        replay = _submit(client2, key="durable-1", seed=3)
-        out["state_dir_idem_key_survives"] = (
-            replay.status_code == 202
-            and replay.json()["replayed"] is True
-            and replay.json()["eval_id"] == eval_id
-        )
+            # fresh process on the same dir answers the record verbatim
+            client2, _ = _client({"byok": lambda: _EvalBackend()}, state_dir=td)
+            clients.append(client2)
+            rec2 = _record(client2, eval_id)
+            out["state_dir_record_survives_restart"] = (
+                rec2.status_code == 200 and rec2.json() == rec1
+            )
+            replay = _submit(client2, key="durable-1", seed=3)
+            out["state_dir_idem_key_survives"] = (
+                replay.status_code == 202
+                and replay.json()["replayed"] is True
+                and replay.json()["eval_id"] == eval_id
+            )
+        finally:
+            for client in reversed(clients):
+                _release_client(client)
 
     with tempfile.TemporaryDirectory() as td:
         gate = threading.Event()
-        blocked = _EvalBackend(gate=gate)
-        client3, _ = _client({"byok": lambda: blocked}, state_dir=td)
-        csub = _submit(client3)
-        cid = csub.json()["eval_id"]
-        _wait_running(client3, cid)
-        # simulate crash: fresh app on the same journal while it was running
-        client4, _ = _client({"byok": lambda: _EvalBackend()}, state_dir=td)
-        crashed = _record(client4, cid).json()
-        out["state_dir_crash_restart_fails"] = crashed["status"] == "failed" and "restarted" in (
-            crashed.get("error") or ""
-        )
-        resub = _submit(client4)
-        out["post_crash_submits_fine"] = resub.status_code == 202
-        _wait(client4, resub.json()["eval_id"])
-        gate.set()
-        # The blocked eval is still inside complete() until the gate opens.
-        # On Windows, leaving the temp dir while that thread journals
-        # evals.jsonl raises WinError 32. Wait until the write has finished.
-        _wait(client3, cid)
+        clients = []
+        try:
+            blocked = _EvalBackend(gate=gate)
+            client3, _ = _client({"byok": lambda: blocked}, state_dir=td)
+            clients.append(client3)
+            csub = _submit(client3)
+            cid = csub.json()["eval_id"]
+            _wait_running(client3, cid)
+            # simulate crash: fresh app on the same journal while it was running
+            client4, _ = _client({"byok": lambda: _EvalBackend()}, state_dir=td)
+            clients.append(client4)
+            crashed = _record(client4, cid).json()
+            out["state_dir_crash_restart_fails"] = crashed[
+                "status"
+            ] == "failed" and "restarted" in (crashed.get("error") or "")
+            resub = _submit(client4)
+            out["post_crash_submits_fine"] = resub.status_code == 202
+            _wait(client4, resub.json()["eval_id"])
+        finally:
+            # The blocked worker is still inside complete(); releasing the
+            # gate and joining it lets the journal append finish before the
+            # directory is removed.
+            gate.set()
+            for client in reversed(clients):
+                _release_client(client)
 
     # SDK twin binds the same journals
     with tempfile.TemporaryDirectory() as td:
@@ -1371,7 +1393,6 @@ def _cli_probes() -> dict[str, Any]:
             os.environ.pop(k, None)
         os.environ[_API_KEY_ENV] = _ROOT
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: _EvalBackend(),
         )
@@ -1428,7 +1449,7 @@ def _cli_probes() -> dict[str, Any]:
                 and wdocs[1]["schema"] == "fx1_eval_record.v1"
                 and wdocs[1]["record"]["eval_id"] == eval_id
             )
-            from quant_fund.schemas.receipt_v2_leaf import (  # noqa: PLC0415
+            from quant_fund.schemas.receipt import (  # noqa: PLC0415
                 verify_receipt_payload,
             )
 

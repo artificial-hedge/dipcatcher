@@ -1,14 +1,10 @@
 """Hypothesis stateful tests: broker cash versus the reference account."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
-from pathlib import Path
 
-import pytest
-from hypothesis import HealthCheck, settings
+from hypothesis import settings
 from hypothesis import strategies as st
-from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
+from hypothesis.stateful import RuleBasedStateMachine, invariant, rule, run_state_machine_as_test
 
 from quant_fund.config.loader import load_config
 from quant_fund.execution.simulated_broker import SimulatedBroker
@@ -17,18 +13,9 @@ from quant_fund.formal.order_lifecycle import check_trace
 from quant_fund.formal.traces import TraceSession
 from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-@pytest.fixture(autouse=True)
-def _determinism_locale(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep locale/TZ local to this module; do not leak into the suite."""
-    monkeypatch.setenv("TZ", "UTC")
-    monkeypatch.setenv("LC_ALL", "C")
-
 
 def _permissive(tmp_name: str = "stateful"):
-    cfg = load_config(_REPO_ROOT / "configs" / "paper.yaml")
+    cfg = load_config("configs/paper.yaml")
     cfg.costs.frictionless = False
     cfg.costs.commission_bps = 1.0
     cfg.costs.half_spread_bps = 2.0
@@ -218,19 +205,11 @@ class LifecycleMachine(RuleBasedStateMachine):
             assert order.filled <= order.qty + 1e-8
 
 
-class TestAccountingStateMachine(AccountingMachine.TestCase):
-    settings = settings(
-        max_examples=12,
-        stateful_step_count=8,
-        deadline=None,
-        suppress_health_check=[HealthCheck.too_slow],
-    )
-
-
-class TestLifecycleStateMachine(LifecycleMachine.TestCase):
-    settings = settings(
-        max_examples=10,
-        stateful_step_count=8,
-        deadline=None,
-        suppress_health_check=[HealthCheck.too_slow],
-    )
+test_accounting_state_machine = run_state_machine_as_test(
+    AccountingMachine,
+    settings=settings(max_examples=12, stateful_step_count=8, deadline=None),
+)
+test_lifecycle_state_machine = run_state_machine_as_test(
+    LifecycleMachine,
+    settings=settings(max_examples=10, stateful_step_count=8, deadline=None),
+)

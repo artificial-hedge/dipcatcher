@@ -108,6 +108,8 @@ _EXPECTED_KIND = {
 def test_lane_help(cmd: str) -> None:
     result = runner.invoke(app, [cmd, "--help"])
     assert result.exit_code == 0, result.output
+    # GitHub Actions sets CI, and rich then styles each character of the
+    # option name. Collapse ANSI before looking for the flag.
     assert "--out-dir" in _plain(result.output)
 
 

@@ -5,7 +5,7 @@ a half-open UTC interval ``[open_utc, close_utc)`` labeled by the
 exchange-local trading date. All timestamps are timezone-aware UTC; the
 exchange-local wall clock only enters when a calendar *constructs* sessions.
 
-Research/infrastructure only.
+Research/infrastructure only — no live broker or vendor paths.
 """
 
 from __future__ import annotations

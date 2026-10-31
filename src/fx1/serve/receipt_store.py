@@ -20,20 +20,6 @@ _FileStamp = tuple[int, int, int, int, int]
 _Snapshot = dict[Path, _FileStamp]
 
 
-def _entry_metadata(entry: os.DirEntry[str]) -> os.stat_result:
-    """Identity of one directory entry.
-
-    ``DirEntry.stat().st_ino`` is 0 on Windows, and a same-mtime replace can
-    keep the creation time that ``st_ctime`` reports there. The cached digest
-    then survives the replacement. ``os.stat`` reads the file index, which
-    changes when the name points at a different file.
-    """
-    metadata = entry.stat(follow_symlinks=False)
-    if metadata.st_ino == 0:
-        metadata = os.stat(entry.path, follow_symlinks=False)
-    return metadata
-
-
 def _receipt_sha(path: Path) -> str | None:
     """Read one regular file, ignoring invalid input but not programming errors."""
     try:
@@ -79,7 +65,7 @@ class ReceiptIndex:
             for entry in entries:
                 if not fnmatch.fnmatch(entry.name, "*.json"):
                     continue
-                metadata = _entry_metadata(entry)
+                metadata = entry.stat(follow_symlinks=False)
                 if not stat.S_ISREG(metadata.st_mode):
                     continue
                 stamp = (

@@ -74,8 +74,6 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize
 
-from quant_fund.compute.numba_guard import call_kernel
-
 try:
     from numba import njit
 
@@ -322,8 +320,7 @@ def _forward(
 ) -> tuple[float, Array, Array, Array]:
     """Thin typed wrapper over :func:`_forward_nb` (pure-Python if no numba)."""
     m = int(mu.shape[0])
-    out = call_kernel(
-        _forward_nb,
+    out = _forward_nb(
         np.ascontiguousarray(times, dtype=np.float64),
         np.ascontiguousarray(marks, dtype=np.int64),
         np.ascontiguousarray(mu, dtype=np.float64),

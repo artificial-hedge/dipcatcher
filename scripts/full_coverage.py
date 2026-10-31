@@ -43,117 +43,13 @@ class CoverageGateError(ValueError):
     """The evidence is missing, inconsistent, or insufficient for a full result."""
 
 
-def _posix_coverage_path(name: str) -> str:
-    """coverage.py rewrites combined paths to ``os.sep``. Git paths stay POSIX."""
-    return name.replace("\\", "/")
-
-
-def _merged_measurements(
-    data: Any,
-) -> tuple[
-    bool,
-    dict[str, set[tuple[int, int]]],
-    dict[str, set[int]],
-    dict[str, str],
-    set[str],
-]:
-    """Union separator-twins onto one POSIX path. Measurements are not contexts."""
-    has_arcs = bool(data.has_arcs())
-    arcs: dict[str, set[tuple[int, int]]] = {}
-    lines: dict[str, set[int]] = {}
-    tracers: dict[str, str] = {}
-    present: set[str] = set()
-    for name in data.measured_files():
-        posix = _posix_coverage_path(name)
-        present.add(posix)
-        tracer = data.file_tracer(name) or ""
-        if tracer:
-            previous = tracers.get(posix)
-            if previous is not None and previous != tracer:
-                raise CoverageGateError(
-                    f"conflicting file tracer for {posix}: {previous} vs {tracer}"
-                )
-            tracers[posix] = tracer
-        if has_arcs:
-            found = data.arcs(name) or ()
-            if found:
-                arcs.setdefault(posix, set()).update(found)
-            continue
-        found_lines = data.lines(name) or ()
-        if found_lines:
-            lines.setdefault(posix, set()).update(found_lines)
-    return has_arcs, arcs, lines, tracers, present
-
-
-def _write_posix_measurements(
-    data: Any,
-    *,
-    has_arcs: bool,
-    arcs: dict[str, set[tuple[int, int]]],
-    lines: dict[str, set[int]],
-    tracers: dict[str, str],
-    present: set[str],
-) -> None:
-    """Replace the database. ``purge_files`` leaves the empty twin row behind.
-
-    A fresh ``CoverageData`` writes the ``has_arcs`` meta row. Rewriting through
-    the erased object keeps the old in-memory flag and omits that row, so a
-    later process reads the arcs as statement data and reports 0%.
-    """
-    from coverage import CoverageData
-
-    filename = data.data_filename()
-    populated = arcs if has_arcs else lines
-    data.erase()
-    fresh = CoverageData(basename=filename)
-    if has_arcs:
-        fresh.add_arcs({name: list(pairs) for name, pairs in arcs.items()})
-    else:
-        fresh.add_lines({name: list(numbers) for name, numbers in lines.items()})
-    empty = [name for name in present if name not in populated]
-    if empty:
-        fresh.touch_files(empty)
-    if tracers:
-        fresh.add_file_tracers(tracers)
-    fresh.close()
-    data.read()
-
-
-def _rewrite_measured_paths_posix(data: Any) -> None:
-    """Count each source once.
-
-    On Windows ``combine`` stores ``src\\sample.py`` and ``touch_files`` stores
-    ``src/sample.py``. The report lists both, so a fully measured file looks
-    half covered and the floor fails closed. ``purge_files`` deletes arcs but
-    keeps the file row, which the report still shows at 0%.
-    """
-    measured = list(data.measured_files())
-    if not any("\\" in name for name in measured):
-        return
-    has_arcs, arcs, lines, tracers, present = _merged_measurements(data)
-    if (has_arcs and not arcs) or (not has_arcs and not lines):
-        return
-    _write_posix_measurements(
-        data,
-        has_arcs=has_arcs,
-        arcs=arcs,
-        lines=lines,
-        tracers=tracers,
-        present=present,
-    )
-
-
 def _sha256(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def _write_json(path: Path, value: object) -> None:
-    path.write_text(
-        json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    path.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n")
 
 
 def _project(root: Path) -> dict[str, Any]:
@@ -256,7 +152,7 @@ def run_lane(root: Path, output: Path, lane: str) -> int:
     # Refuse stale evidence rather than silently reusing a prior run's data.
     output.mkdir(parents=True, exist_ok=False)
     config = output / "coverage.ini"
-    config.write_text(coverage_config(root), encoding="utf-8", newline="\n")
+    config.write_text(coverage_config(root), encoding="utf-8")
     junit = output / "junit.xml"
     command = test_arguments(root, lane, config, junit)
     env = os.environ.copy()
@@ -375,7 +271,7 @@ def combine(root: Path, parts: Path, output: Path) -> int:
 
     output.mkdir(parents=True, exist_ok=False)
     config = output / "coverage.ini"
-    config.write_text(coverage_config(root), encoding="utf-8", newline="\n")
+    config.write_text(coverage_config(root), encoding="utf-8")
     summary_path = output / "summary.json"
     try:
         commit = revision(root)
@@ -388,28 +284,19 @@ def combine(root: Path, parts: Path, output: Path) -> int:
             os.chdir(root)
             cov = Coverage(config_file=str(config), data_file=str(output / ".coverage"))
             cov.combine(data_paths=[str(path) for path in inputs], strict=True, keep=True)
-            # touch_files can record the git path with the other separator.
-            # Collapse both forms after that call so the floor sees one file.
-            _rewrite_measured_paths_posix(cov.get_data())
+            # Explicit zero-hit entries keep never-imported tracked modules in
+            # the denominator even if a producer omitted discovery metadata.
             cov.get_data().touch_files(sorted(tracked_sources(root)))
-            _rewrite_measured_paths_posix(cov.get_data())
             cov.save()
             cov.json_report(outfile=str(output / "coverage.json"))
             cov.xml_report(outfile=str(output / "coverage.xml"))
             cov.html_report(directory=str(output / "html"))
             report = json.loads((output / "coverage.json").read_text(encoding="utf-8"))
-            if os.name == "nt":
-                files = report["files"]
-                portable = {name.replace("\\", "/"): entry for name, entry in files.items()}
-                if len(portable) != len(files):
-                    raise CoverageGateError("coverage paths collide after normalization")
-                report["files"] = portable
-                _write_json(output / "coverage.json", report)
         finally:
             if cov is not None:
                 cov.get_data().close()
             os.chdir(previous)
-        summary = summarize(parts, report, sources)
+        summary = summarize(parts, report, tracked_sources(root))
         # The CLI applies coverage.py's exact precision/100%-floor semantics.
         threshold = subprocess.run(
             [

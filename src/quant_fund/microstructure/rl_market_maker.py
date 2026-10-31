@@ -91,7 +91,7 @@ quoting, action offsets, RL rewards/transitions, and the flow filter.
 Honesty: every output is a SYNTHETIC correctness diagnostic on a synthetic
 engine, never market evidence. All P&L-like keys are namespaced
 ``sim_internal_*``, must never be headlined, and there is no broker
-connectivity anywhere in this module. Tiny-budget tests
+connectivity or live-trading claim anywhere in this module. Tiny-budget tests
 assert plumbing and bounded inventory, NOT that the trained policy beats
 GLFT; :func:`rl_mm_benchmark` is the documented-optional full comparison for
 the bench battery (long-running by design, excluded from the PR gate).
@@ -1054,7 +1054,7 @@ def run_rl_mm_session(
 
     Returns a SYNTHETIC diagnostic bundle; ``sim_internal_mtm_pnl_*`` is
     simulator-internal mark-to-market accounting, NEVER a headline metric and
-    never market evidence.
+    never market evidence. No live-trading claim.
     """
     if (agent is None) == (policy is None):
         raise ValueError("exactly one of agent / policy must be provided")
@@ -1415,7 +1415,7 @@ def run_rl_mm_session(
         "inventory_path": inv_path,
         "inventory_path_times": inv_times,
         # Simulator-internal accounting. Diagnostic only: never a headline
-        # metric, never market evidence.
+        # metric, never market evidence, no live-trading claim.
         "sim_internal_mtm_pnl_path": mtm_path,
         "sim_internal_mtm_pnl_final": float(final_mtm),
         "sim_internal_penalty_sum": float(penalty_sum),
@@ -1753,7 +1753,7 @@ def evaluate_rl_market_makers(
         "kind": "c51_vs_classic_evaluation",
         "note": (
             "simulator-internal synthetic policy comparison; never headline "
-            "metrics, never market evidence"
+            "metrics, never market evidence, no live-trading claim"
         ),
         "n_seeds": ns,
         "seed_base": int(seed_base),
@@ -1800,7 +1800,7 @@ def rl_mm_benchmark(
     B4-ii; at paper-scale budgets (101 atoms, hidden 256, buffer 1e5,
     thousands of episodes, horizon 3000 s) this runs for hours. All outputs
     are SYNTHETIC simulator-internal diagnostics, never headline metrics,
-    never market evidence.
+    never market evidence, no live-trading claim.
 
     Trains under regime-switching flow by default (auxiliary belief features
     on — the single-stage deviation documented in the module docstring), then

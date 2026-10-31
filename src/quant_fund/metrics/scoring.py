@@ -6,10 +6,10 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.special import betaln, erf, gammaln, stdtr
+from scipy.special import betaln, erf
+from scipy.stats import t as student_t
 
 from quant_fund.metrics.probability import pit_ks
-from quant_fund.utils.absdiff import ensemble_crps
 from quant_fund.utils.numeric import midrank
 from quant_fund.utils.series import as_named_1d, require_same_length
 
@@ -173,46 +173,6 @@ def mean_crps_gaussian(y: Array, mu: Array, sigma: Array) -> float:
     return float(np.mean(finite))
 
 
-def _standard_t_pdf(z: Array, nu: float | Array) -> Array:
-    """Standard Student-t density, same expression as ``scipy.stats.t.pdf``.
-
-    ``log f = log Γ((ν+1)/2) − log Γ(ν/2) − ½log(νπ) − ((ν+1)/2) log(1+z²/ν)``.
-    Vectorized over ``z`` and, when ``nu`` is an array, over degrees of freedom.
-    """
-    nu_a = np.asarray(nu, dtype=float)
-    log_c = gammaln((nu_a + 1.0) / 2.0) - gammaln(nu_a / 2.0) - 0.5 * np.log(nu_a * np.pi)
-    density = np.exp(log_c - ((nu_a + 1.0) / 2.0) * np.log1p(np.square(z) / nu_a))
-    return np.asarray(density, dtype=np.float64)
-
-
-def _student_t_beta_fraction(nu: float | Array) -> Array:
-    """``B(1/2, ν−1/2) / B(1/2, ν/2)²`` via ``betaln`` (scoringRules ``bfrac``)."""
-    nu_a = np.asarray(nu, dtype=float)
-    ratio = np.exp(betaln(0.5, nu_a - 0.5) - 2.0 * betaln(0.5, 0.5 * nu_a))
-    return np.asarray(ratio, dtype=np.float64)
-
-
-def _student_t_crps_unit(z: Array, nu: Array) -> Array:
-    """Unit-scale closed-form Student-t CRPS at standardized ``z``.
-
-    A constant ``ν`` evaluates the beta ratio once. Varying ``ν`` stays
-    elementwise. ``F_ν`` is ``stdtr``; ``f_ν`` is :func:`_standard_t_pdf`.
-    """
-    nu0 = float(nu[0])
-    same = float(np.min(nu)) == nu0 and float(np.max(nu)) == nu0
-    if same:
-        bfrac = float(_student_t_beta_fraction(nu0))
-        density = _standard_t_pdf(z, nu0)
-        cdf = np.asarray(stdtr(nu0, z), dtype=float)
-        tail = density * (nu0 + np.square(z)) - float(np.sqrt(nu0)) * bfrac
-        return z * (2.0 * cdf - 1.0) + (2.0 / (nu0 - 1.0)) * tail
-    bfrac_v = _student_t_beta_fraction(nu)
-    density_v = _standard_t_pdf(z, nu)
-    cdf_v = np.asarray(stdtr(nu, z), dtype=float)
-    tail_v = density_v * (nu + np.square(z)) - np.sqrt(nu) * bfrac_v
-    return z * (2.0 * cdf_v - 1.0) + (2.0 / (nu - 1.0)) * tail_v
-
-
 def crps_student_t(y: Array, mu: Array, sigma: Array, nu: float | Array) -> Array:
     r"""Elementwise closed-form CRPS for location-scale Student-t (research-only).
 
@@ -235,9 +195,7 @@ def crps_student_t(y: Array, mu: Array, sigma: Array, nu: float | Array) -> Arra
     Lab contract: ``nu<=2`` (or non-finite) → honest NaN (stricter than the
     finite-mean ``nu>1`` domain — fail-closed with finite variance). Non-positive
     / non-finite ``sigma`` → NaN. Empty → empty array. Length mismatch →
-    ValueError. ``F_ν`` is ``scipy.special.stdtr`` and ``f_ν`` is the closed-form
-    density (the same functions ``scipy.stats.t`` calls). A constant ``ν``
-    evaluates the beta ratio once. Not a live capital claim.
+    ValueError. Not a live capital claim.
     """
     y_arr = _as_1d("y", y)
     mu_arr = _as_1d("mu", mu)
@@ -262,7 +220,15 @@ def crps_student_t(y: Array, mu: Array, sigma: Array, nu: float | Array) -> Arra
     if not np.any(ok):
         return out
     z = (y_arr[ok] - mu_arr[ok]) / sig_arr[ok]
-    out[ok] = sig_arr[ok] * _student_t_crps_unit(z, nu_arr[ok])
+    nu_ok = nu_arr[ok]
+    # scoringRules bfrac = B(1/2, ν−1/2) / B(1/2, ν/2)^2  (stable via betaln)
+    bfrac = np.exp(betaln(0.5, nu_ok - 0.5) - 2.0 * betaln(0.5, 0.5 * nu_ok))
+    F = student_t.cdf(z, nu_ok)
+    f = student_t.pdf(z, nu_ok)
+    unit = z * (2.0 * F - 1.0) + (2.0 / (nu_ok - 1.0)) * (
+        f * (nu_ok + z * z) - np.sqrt(nu_ok) * bfrac
+    )
+    out[ok] = sig_arr[ok] * unit
     return out
 
 
@@ -445,9 +411,7 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
 
     ``y`` may be a scalar or length-1 array; ``sample`` must be 1d with n≥1.
     Empty / all-non-finite sample → NaN. Multi-row ``y`` → ValueError (use a
-    loop or extend later). The double sum is the order-statistic identity in
-    ``ensemble_crps`` — the same sum, not an :math:`n \times n` matrix.
-    Not a live capital claim.
+    loop or extend later). Not a live capital claim.
     """
     y_arr = np.asarray(y, dtype=float).reshape(-1)
     if y_arr.size != 1:
@@ -457,7 +421,11 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
     x = x[np.isfinite(x)]
     if x.size == 0 or not np.isfinite(y0):
         return float("nan")
-    return ensemble_crps(y0, x)
+    term1 = float(np.mean(np.abs(x - y0)))
+    # Pairwise |Xi-Xj| via broadcasting; O(n²) — fine for research ensembles
+    pairwise = np.abs(x[:, None] - x[None, :])
+    term2 = float(np.mean(pairwise)) / 2.0
+    return term1 - term2
 
 
 def qlike(realized_var: Array, forecast_var: Array, floor: float = 1e-12) -> float:

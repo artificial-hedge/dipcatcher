@@ -1,6 +1,6 @@
 """Bar alignment: grids, slot assignment, DST edges.
 
-Research/infrastructure only.
+Research/infrastructure only — no live broker / vendor MD.
 """
 
 from __future__ import annotations

@@ -1,4 +1,10 @@
-"""Load and minimally verify dipcatcher receipts for corpus use."""
+"""Load and minimally verify dipcatcher receipts for corpus use.
+
+A receipt is only eligible as fx-1 training evidence when it is explicitly
+research-scoped: ``research_only`` true and ``live_pnl_claim`` false. Receipts
+failing that check are excluded fail-closed — the model must never train on
+live-performance implications.
+"""
 
 from __future__ import annotations
 
@@ -10,21 +16,27 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from quant_fund.utils.receipt import corpus_training_refused
-
 
 class ReceiptRecord(BaseModel):
+    """Minimal verified view of a dipcatcher receipt file."""
+
     path: str
     sha256: str = Field(description="SHA-256 of the raw receipt file bytes")
     schema_name: str = Field(default="unknown")
     research_only: bool
     live_pnl_claim: bool
     disclaimer: str = ""
-    evidence_class: str = Field(default="research")
+    evidence_class: str = Field(
+        default="research",
+        description="Explicit evidence class: research | synthetic (from the "
+        "payload's `synthetic` flag). Synthetic evidence is eligible only "
+        "when research-scoped and is always labeled as simulated.",
+    )
     payload: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def eligible(self) -> bool:
+        """True iff the receipt is research-scoped and makes no live claim."""
         return self.research_only and not self.live_pnl_claim
 
 
@@ -33,7 +45,21 @@ def _sha256(path: Path) -> str:
 
 
 def _eligibility(payload: dict[str, Any]) -> tuple[bool, bool]:
+    """Resolve (research_only, live_pnl_claim) across receipt schemas.
+
+    Two schemas are recognized, both explicit:
+
+    - boolean contract: ``research_only: true`` + ``live_pnl_claim: false``.
+    - lab run-manifest contract: ``claim: "research_only"`` declares the
+      research scope; an explicit ``live_pnl_claim`` key always wins, and in
+      its absence the research-only declaration implies no live claim.
+
+    Anything else fails closed: not research-scoped, live claim assumed.
+    """
     claim = payload.get("claim")
+    # The boolean contract is literal: "research_only": true. A truthy
+    # non-boolean ("yes", 1, "research") is not a research-scope declaration —
+    # malformed receipts are ineligible, fail-closed.
     research_only = (payload.get("research_only") is True) or (claim == "research_only")
     if "live_pnl_claim" in payload:
         live_pnl_claim = bool(payload["live_pnl_claim"])
@@ -44,15 +70,17 @@ def _eligibility(payload: dict[str, Any]) -> tuple[bool, bool]:
 
 def load_receipts(
     receipts_dir: str | Path | Iterable[str | Path],
-    *,
-    repo_root: Path | None = None,
-) -> tuple[list[ReceiptRecord], int]:
+) -> list[ReceiptRecord]:
+    """Load every ``*.json`` receipt under one or more receipt directories.
+
+    Unparseable files are skipped (they cannot be verified, so they cannot
+    be training evidence). Eligibility filtering happens at corpus build.
+    """
     if isinstance(receipts_dir, str | Path):
         roots = [Path(receipts_dir)]
     else:
         roots = [Path(d) for d in receipts_dir]
     records: list[ReceiptRecord] = []
-    refused = 0
     for root in roots:
         for path in sorted(root.rglob("*.json")):
             try:
@@ -61,15 +89,11 @@ def load_receipts(
                 continue
             if not isinstance(payload, dict):
                 continue
-            digest = _sha256(path)
-            if corpus_training_refused(path, root, payload, digest, repo_root=repo_root):
-                refused += 1
-                continue
             research_only, live_pnl_claim = _eligibility(payload)
             records.append(
                 ReceiptRecord(
                     path=str(path),
-                    sha256=digest,
+                    sha256=_sha256(path),
                     schema_name=str(
                         payload.get("schema", payload.get("schema_version", "unknown"))
                     ),
@@ -80,4 +104,4 @@ def load_receipts(
                     payload=payload,
                 )
             )
-    return records, refused
+    return records

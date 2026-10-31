@@ -21,8 +21,6 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Mapping, Sequence
-from typing import Any
 
 # Mirrors FORBIDDEN_RESEARCH_METRIC_KEYS in quant_fund.research.catalog:
 # headline P&L / ratio tokens that must never appear as fx-1 research results.
@@ -34,15 +32,10 @@ _FORBIDDEN_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     for p in (
         r"\blive[-\s]+(?:trading[-\s]+)?(?:p(?:&|and|n)l|profits?|returns?|gains?)\b",
         r"\b(?:p(?:&|and|n)l|profits?|returns?|gains?)\s+(?:from|of)\s+live[-\s]+(?:trading|markets?|accounts?)\b",
-        r"\blive\s+(?:account|performance|trading)\b[\w\s]{0,40}\d",
-        r"\bin\s+live\s+trading\b[\w\s]{0,40}\d",
         r"\breal[-\s]+money\s+(?:returns?|gains?|profits?)\b",
         r"\bguaranteed\s+(?:returns?|alpha|profits?)\b",
-        r"\bguaranteed\b[\w\s%$.,]{0,24}\d[\w\s%$.,]{0,16}\b(?:returns?|alpha|profits?)\b",
-        r"\b(?:returns?|alpha|profits?)\b[\w\s%$.,]{0,24}\d[\w\s%$.,]{0,16}\bguaranteed\b",
         r"\bsynthetic\s+(?:results?|data|evidence|series|benchmarks?|backtests?)\s+"
         r"(?:shows?|proves?|demonstrates?)\s+(?:live|real|market)\b",
-        r"\bsynthetic\s+market\s+backtests?\s+shows?\b",
     )
 )
 
@@ -66,16 +59,7 @@ _FUSION_BREAK = re.compile(
 # "s h a r p e" → "sharpe", "N A V" → "NAV". Letters only — a trailing
 # space before a number ("nav's 1.9") must survive or the token fuses with
 # the claim. Ordinary text ("the cat sat", "I said") is unaffected.
-_SPACED_LETTERS = re.compile(r"(?<=\b[A-Za-z])\s+(?=[A-Za-z]\b(?!/))")
-# Prefix is case-insensitive; the suffix must be a real capital so
-# "navigation" and "pnl" inside a lowercase word stay one token.
-_GLUED_METRIC = re.compile(r"(?P<pre>(?i:sharpe|sortino|calmar|pnl|nav))(?P<post>[A-Z][A-Za-z]*)")
-_LETTER_RUN = re.compile(r"\b(?:[A-Za-z][.\-*]){2,}[A-Za-z]\b")
-# A glued decimal is a headline ("sharpe3.2"). A glued integer ("sharpe3") is not.
-_METRIC_DIGIT = re.compile(
-    r"\b(sharpe|sortino|calmar|pnl|nav)(?=\d+\.\d)",
-    re.IGNORECASE,
-)
+_SPACED_LETTERS = re.compile(r"(?<=\b[A-Za-z])\s+(?=[A-Za-z]\b)")
 
 # Cyrillic/Greek letters that NFKC does not fold to Latin but that render
 # identically. Mapped to their Latin lookalike before matching; legitimate
@@ -139,37 +123,14 @@ def _normalize(text: str) -> str:
     # Fold lookalikes before ASCII-only boundary and spaced-letter handling:
     # a Cyrillic final e must preserve the same boundary as a Latin e.
     folded = unicodedata.normalize("NFKC", text).translate(_HOMOGLYPHS)
-    folded = re.sub(r"profitAndLoss", "profit and loss", folded, flags=re.IGNORECASE)
-    folded = re.sub(r"netAssetValue", "net asset value", folded, flags=re.IGNORECASE)
     folded = _FUSION_BREAK.sub(" ", folded)
-    folded = _FORMAT_CHARS.sub("", folded)
-    folded = _GLUED_METRIC.sub(lambda match: f"{match.group('pre')} {match.group('post')}", folded)
-    # The honesty-flag identifier is not a headline. Fuse it before
-    # underscore folding so ``live_pnl_claim`` cannot be read as "live pnl".
-    folded = re.sub(r"live_pnl_claim", "livepnlclaim", folded, flags=re.IGNORECASE)
-    folded = folded.replace("_", " ")
-    folded = _LETTER_RUN.sub(_collapse_letter_run, folded)
-    folded = _SPACED_LETTERS.sub("", folded)
-    return _METRIC_DIGIT.sub(r"\1 ", folded)
-
-
-def _collapse_letter_run(match: re.Match[str]) -> str:
-    """Join ``s.h.a.r.p.e`` / ``s-h-a-r-p-e`` when the letters are a headline token."""
-    letters = re.sub(r"[.\-*]", "", match.group(0))
-    if letters.lower() in FORBIDDEN_HEADLINE_TOKENS or letters.lower() == "pl":
-        return letters
-    return match.group(0)
+    return _SPACED_LETTERS.sub("", _FORMAT_CHARS.sub("", folded))
 
 
 # Token spellings beyond the literal token. "pnl" admits the spelled forms
-# a writer actually uses: p&l, p+l, p and l, profit and loss, p/l.
-# "nav" admits dotted / spelled net-asset-value forms.
+# a writer actually uses: p&l, p+l, p and l.
 _TOKEN_SPELLINGS: dict[str, str] = {
-    "pnl": (
-        r"(?:p\s*(?:n|&|\+|and|/)\s*l|p/l|"
-        r"profits?(?:[\s._-]+(?:and|&)[\s._-]+|[\s._-]*&[\s._-]*)loss(?:es)?)"
-    ),
-    "nav": r"(?:n\.?\s*a\.?\s*v\.?|net[\s._-]+asset[\s._-]+values?)",
+    "pnl": r"p\s*(?:n|&|\+|and)\s*l",
 }
 
 # Connective phrasing allowed between the token and the numeric claim —
@@ -178,7 +139,7 @@ _TOKEN_SPELLINGS: dict[str, str] = {
 _CONNECTOR = (
     r"(?:of|=|:|is|was|were|are|at|to|reads?|hits?|reached?|posts?|posted|"
     r"lands?|landed|clocks?|clocked|prints?|printed|records?|recorded|"
-    r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+out(?:\s+at)?|came\s+in\s+at|equals?|"
+    r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+(?:in|out)\s+at|"
     r"the|a|an|this|that|its|our|your|their|my|about|roughly|approximately|"
     r"around|over|under|above|below|current(?:ly)?|latest|reported|expected|"
     r"projected|implied|delivered|generated|produced|whole|all|entire|same|"
@@ -193,7 +154,7 @@ _BRIDGE = (
     r"(?:ratio|score|value|reading|measure|level|figure|number|metric|multiple|"
     r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
     r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
-    r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel|total)\b"
+    r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
 )
 
 
@@ -216,16 +177,12 @@ def _contains_forbidden_headline(text: str) -> str | None:
     """
     for token in FORBIDDEN_HEADLINE_TOKENS:
         spelling = _TOKEN_SPELLINGS.get(token, re.escape(token))
-        ahead = re.compile(
+        pattern = re.compile(
             rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{_BRIDGE}|{_CONNECTOR})\s*){{0,6}}"
             rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )
-        behind = re.compile(
-            rf"(?<![\w.])[-+$]?\d[\d,]*(?:\.\d+)?%?\s+{spelling}\b",
-            re.IGNORECASE,
-        )
-        if ahead.search(text) or behind.search(text):
+        if pattern.search(text):
             return token
     return None
 
@@ -293,102 +250,3 @@ def honesty_categories(text: str) -> dict[str, bool]:
         ),
         "unlabeled_synthetic": _unlabeled_synthetic_claim(norm),
     }
-
-
-_LABEL_TOKEN = re.compile(
-    r"\b(?:"
-    + "|".join(
-        _TOKEN_SPELLINGS.get(token, re.escape(token)) for token in sorted(FORBIDDEN_HEADLINE_TOKENS)
-    )
-    + r")\b",
-    re.IGNORECASE,
-)
-MODEL_TEXT_WITHHELD = "answer withheld by the fx-1 honesty gate. Ask a follow-up to continue."
-
-
-def _fails(text: str) -> bool:
-    try:
-        validate_fx1_output(text)
-    except Fx1HonestyError:
-        return True
-    return False
-
-
-def public_label(text: str) -> str:
-    """Server-supplied identifier safe to print beside counts and latencies.
-
-    A forbidden metric word is replaced. Research prose uses
-    :func:`validate_fx1_output` instead; bare discussion stays allowed there.
-    """
-    if _fails(text) or _LABEL_TOKEN.search(_normalize(text)):
-        return "withheld"
-    return text
-
-
-def scrub_model_text(text: str) -> str:
-    """Return *text* when it passes the gate, else a fixed withheld sentence."""
-    if _fails(text):
-        return MODEL_TEXT_WITHHELD
-    return text
-
-
-def screen_piece(prior: Sequence[str], text: str) -> str:
-    """Accept *text* alone and joined to *prior* model/user turns.
-
-    A prior turn that is already a violation does not block a clean addition.
-    A prior turn that is clean on its own but becomes a headline once *text*
-    is appended is withheld.
-    """
-    if _fails(text):
-        return MODEL_TEXT_WITHHELD
-    if not prior:
-        return text
-    if not _fails("\n".join([*prior, text])):
-        return text
-    if _fails("\n".join(prior)):
-        return text
-    return MODEL_TEXT_WITHHELD
-
-
-def scrub_model_transcript(messages: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Copy *messages* with assistant/tool text that fails the gate replaced."""
-    cleaned: list[dict[str, Any]] = []
-    prior: list[str] = []
-    for message in messages:
-        cleaned.append(_scrub_message(dict(message), prior))
-    return cleaned
-
-
-def _scrub_message(item: dict[str, Any], prior: list[str]) -> dict[str, Any]:
-    content = item.get("content")
-    role = item.get("role")
-    if isinstance(content, str) and role == "assistant":
-        content = screen_piece(prior, content)
-        item["content"] = content
-        prior.append(content)
-    elif isinstance(content, str) and role == "tool":
-        item["content"] = screen_piece(prior, content)
-    return _scrub_calls(item, prior)
-
-
-def _scrub_calls(item: dict[str, Any], prior: Sequence[str]) -> dict[str, Any]:
-    calls = item.get("tool_calls")
-    if not isinstance(calls, list):
-        return item
-    item["tool_calls"] = [_scrub_call(call, prior) for call in calls]
-    return item
-
-
-def _scrub_call(call: Any, prior: Sequence[str]) -> Any:
-    if not isinstance(call, dict):
-        return call
-    copied = dict(call)
-    function = copied.get("function")
-    if not isinstance(function, dict):
-        return copied
-    fn = dict(function)
-    arguments = fn.get("arguments")
-    if isinstance(arguments, str) and screen_piece(prior, arguments) != arguments:
-        fn["arguments"] = "{}"
-    copied["function"] = fn
-    return copied

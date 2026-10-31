@@ -25,7 +25,7 @@ class _B:
 
 def _client(**kw: Any) -> TestClient:
     return TestClient(
-        create_app(public_release=False, backend_resolver=lambda *a, **k: _B(), **kw),
+        create_app(backend_resolver=lambda *a, **k: _B(), **kw),
         raise_server_exceptions=False,
     )
 

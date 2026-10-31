@@ -2,11 +2,9 @@
 
 ## What this is
 
-**fx-1** is the product program: a quant research LLM planned as a fine-tune
-of Kimi K3 open weights, with chat ids **fx1** and **fx1-lite**
-([artificialhedge.co](https://artificialhedge.co)). No fine-tuned weights
-are published, and `fx1.__version__` is the harness API, not a model
-release. **dipcatcher** is the
+**fx-1** is the product: a quant research LLM fine-tuned from Kimi K3 open
+weights, served as two models, **fx1** and **fx1-lite**
+([artificialhedge.co](https://artificialhedge.co)). **dipcatcher** is the
 state-of-the-art harness that orchestrates them from a chat-first,
 Codex-style CLI: plain text is a conversation with the active model, and
 `/superpower` plans and runs the research families that fit the goal (design
@@ -32,15 +30,12 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
 
 | Gate | Command |
 |---|---|
-| Lint | `make lint` (ruff check + format --check, mypy-strict allowlist, McCabe ratchet on `src`/`tests`) |
-| Types | `make typecheck` (mypy `src/quant_fund` + public API `--strict`); fx1: `uv run mypy src/fx1` |
-| Security | `make security` (bandit; the `ci.yml` `lint` job runs this too) |
-| Lab tests | `make test` (PR gate: not network, not slow, xdist). `make test-full` includes slow. CI shards `test` on 3.12/3.13. |
-| Local CI mirror | `make ci` — `lint` + `typecheck` + `security` + `coverage` (the `ci.yml` `lint` job + PR `test`/`coverage` gate) |
-| Other `ci.yml` jobs | `make audit`, `make mc-engine-smoke`, `make native-lint`, `make market-sim-test`, `make parity-smoke`, `make examples`, `make audit-obs`, `make diffbacktest`, `make robustness-smoke`, `make formal`, `make evidence-audit`, `make pretrade-bench`, `make stress-smoke`, `make test-durations`; GitHub-only: `package`, `container`, `test-inventory`, `perf`, `smoke`, `rust-accel`, `required-gate` (`ci-required` merge-queue check) |
-| fx1 suite | `make fx1-test` — separate lane (`fx1.yml`), ~300+ tests |
+| Lint | `make lint` (ruff check + format --check repo-wide) |
+| Types | `make typecheck` (mypy `src/quant_fund`); fx1: `uv run mypy src/fx1` |
+| Lab tests | `make test` (PR gate: not network, not slow, xdist). `make test-full` includes slow. |
+| fx1 suite | `make fx1-test` — separate lane, ~200 tests |
 | fx1 full gate | `make fx1-gate` — lint + types + tests + honesty + corpus smoke |
-| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen`. A `v*.*.*` tag does not sign unless the latest completed `CI` run on that SHA is green and its `evidence-audit` job succeeded (`scripts/require_release_gates.py`, `release.yml` preflight). |
+| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen` |
 
 ## Honesty contract (hard rules — do not weaken)
 
@@ -51,7 +46,9 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
    `tests/fx1/test_honesty_inheritance.py` blocks drift.
 2. SYNTHETIC results are correctness tests, always labeled, never market
    evidence.
-3. Receipts are immutable evidence (`receipts/`, `verify-research`). Every
+3. No live-trading claims — no broker connectivity; see
+   `docs/INSTITUTIONAL_READINESS.md` for the five minimum-evidence conditions.
+4. Receipts are immutable evidence (`receipts/`, `verify-research`). Every
    research claim should be reproducible from a receipt hash.
 
 ## Conventions
@@ -89,13 +86,12 @@ load-bearing — jobs break silently otherwise.
   The legacy `spawn_*.ps1` one-offs stay for reference; prefer the launcher.
 - **Durable paths.** Long-running artifacts live under `.dsh-24x7\` (gitignored,
   durable remotely); model weights under `data\models\`; bars under
-  `data\raw\sources\`. Do not write fleet state into temp dirs. **Caveat: 912
-  files under `.dsh-24x7/` are still tracked despite the ignore rule.** Some
-  are pinned evidence: the SOTA reproduction workflow reads committed `native/`
-  and `mega-arena/` inputs, and the integrity gate chains this directory as a
-  corpus. `.gitignore` only prevents new scratch from being added. Do not run a
-  blanket `git rm --cached`; first preserve the evidence bytes and references
-  through an explicit signed migration (`docs/ULTRA_PROD_READINESS.md`, Phase 2).
+  `data\raw\sources\`. Do not write fleet state into temp dirs. **Caveat: 911
+  files under `.dsh-24x7/` were committed before the ignore rule existed and are
+  still tracked.** `.gitignore` stops *re-adding* scratch; it does not untrack
+  what is already in the index. Untracking is an explicit
+  `git rm -r --cached .dsh-24x7` bundled into the history-reconciliation commit
+  (`docs/ULTRA_PROD_READINESS.md`, Phase 2) — do not do it piecemeal.
 - **Thread pinning.** Jobs set `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,
   `TOKENIZERS_PARALLELISM=false` in their `env` block — the manifest schema
   carries this; keep it when authoring new jobs.

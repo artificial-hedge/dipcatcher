@@ -5,7 +5,8 @@ This is a checklist of exactly what to buy or authorize, from which *class* of
 provider, and the pass/fail tests each item must clear before it counts as
 evidence for the five minimum-evidence conditions in
 [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md). Every row has an
-owner and an objective pass criterion.
+owner and an objective pass criterion. Nothing here is a live-trading claim;
+it is the evidence needed *before* any live claim could ever be considered.
 
 > **Honesty rule that governs this whole document.** A module existing, an
 > adapter compiling, or a SYNTHETIC fixture passing is **never** evidence. Only
@@ -167,32 +168,25 @@ measurement from the target venue, reviewed independently. Modeled values
 
 | # | Requirement | Owner | Pass criterion |
 |---|---|---|---|
-| 5.1 | A **signed live promotion receipt** whose immutable verifier passes | Quant + Independent reviewer | A dedicated live verifier binds accepted conditions 1–4, the exact evidence hashes, and the named written capital authorization; this schema and verifier still need implementation. Existing `promotion_receipt.v1` and `dipcatcher verify-research` are research-only and cannot pass this row. |
+| 5.1 | A **signed promotion receipt** whose immutable verifier passes | Quant + Independent reviewer | `dipcatcher verify-research` accepts it; the hash sidecar verifies |
 | 5.2 | **Explicit, written live authorization** naming who authorized live capital | Compliance + Principal | Signed authorization on file, distinct from the promotion receipt |
 
 Condition 5 is composed only after conditions 1–4 exist and a genuine
 non-synthetic forward/shadow record (condition 3) has been collected and
 admitted by the frozen referee. See
 [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) for the admission rule.
-The current paper `promotion_dry_run` always sets `would_promote_live=false`.
 
 ---
 
 ## 5. Condition 3 — non-synthetic forward/shadow record
 
 This is the one condition that is **collected over time** rather than bought.
-It cannot be shortcut: the `forward_2026H2` window (Section 0) was frozen and
-RFC 3161-anchored on 2026-10-08, before any close. It still has to be collected
-for at least the predeclared number of eligible paired sessions (see
+It cannot be shortcut: the `forward_2026H2` window (Section 0) must be frozen
+and externally timestamped **before** it runs, then collected for at least the
+predeclared number of eligible paired sessions (see
 [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) — 1,400 eligible paired
 sessions at the +5 bps/day planning effect). The 2025 window is **SPENT** and
 cannot serve as this record.
-
-The canonical paper close validator enforces `available_time == event_time`.
-If the approved licensed source releases a close later than its event time,
-the frozen zero-delay decision protocol cannot accept it. Establish a new
-decision cutoff, pre-register it, and anchor it externally **before** collecting
-against that source; do not alter the existing sealed protocol after the fact.
 
 ---
 
@@ -206,8 +200,8 @@ against that source; do not alter the existing sealed protocol after the fact.
 3. **Authorize** a broker account + API (Section 2a) for real order/fill
    reconciliation. Condition 2 stays blocked until then.
 4. **Measure** the target venue (Section 3) with dated, sourced numbers.
-5. **Collect** the `forward_2026H2` record. Its pre-registration was RFC
-   3161-anchored on 2026-10-08 (Section 0); 2026-07-01 is only the span label.
+5. **Freeze and externally timestamp** the `forward_2026H2` pre-registration
+   (Section 0) before 2026-07-01, then collect the forward record honestly.
 6. **Only then** compose a signed promotion receipt + explicit live
    authorization (Section 4).
 

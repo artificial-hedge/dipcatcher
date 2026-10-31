@@ -31,9 +31,9 @@ from quant_fund.pipeline.artifact_manifest import (
     identity_for_training,
     save_training_artifact,
 )
+from quant_fund.proof.promotion_receipt import compose_promotion_receipt
 from quant_fund.registry.mlflow_store import promotion_decision
 from quant_fund.reporting.report import write_evidence_report
-from quant_fund.research.promotion_receipt import compose_promotion_receipt
 from quant_fund.research.receipt_v2 import seal_receipt
 from quant_fund.research.verify import (
     verify_promotion_receipt,

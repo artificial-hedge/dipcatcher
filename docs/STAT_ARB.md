@@ -4,8 +4,8 @@
 pairs trading: cointegration screening, hedge-ratio estimation,
 Ornstein–Uhlenbeck spread diagnostics, and a z-score band signal. All
 outputs are labeled **SYNTHETIC** correctness evidence — detection truth
-and signal-alignment statistics only, never a P&L or Sharpe
-(repo honesty contract).
+and signal-alignment statistics only, never a P&L, Sharpe, or
+live-trading claim (repo honesty contract).
 
 ## Methods
 

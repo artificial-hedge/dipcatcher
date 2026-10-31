@@ -170,16 +170,15 @@ def test_joblib_load_rejects_wrong_model_family(tmp_path) -> None:
         RidgeRanker.load(path)
 
 
-def test_joblib_load_refuses_artifact_without_sidecar(tmp_path) -> None:
-    # joblib is pickle: with no pinned digest there is nothing to verify the
-    # bytes against, so a sidecar-less artifact is refused, not trusted.
+def test_joblib_load_accepts_legacy_artifact_without_sidecar(tmp_path) -> None:
     model = GARCHVol().fit_returns(_returns())
     path = tmp_path / "garch.joblib"
     model.save(path)
     path.with_name(f"{path.name}.sha256").unlink()
 
-    with pytest.raises(ValueError, match="checksum sidecar is missing"):
-        GARCHVol.load(path)
+    restored = GARCHVol.load(path)
+
+    assert restored.diagnostics() == model.diagnostics()
 
 
 def test_garch_forecast_is_deterministic_and_has_predictive_quantiles() -> None:

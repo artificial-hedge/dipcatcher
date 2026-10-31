@@ -1,7 +1,7 @@
 """Tests for validation/agent_referee.py — anytime-valid frozen referee.
 
 Seeded SYNTHETIC planted-world tests (Qu, Chen & Wang 2026, arXiv:2609.27051).
-All data is synthetic; no market evidence.
+All data is synthetic; no market evidence, no live-trading claims.
 """
 
 from __future__ import annotations

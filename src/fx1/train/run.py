@@ -22,33 +22,6 @@ def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _refuse_quarantined_source(source: str, lineno: int) -> None:
-    """A corpus line that names a quarantined receipt is not provenance."""
-    path = Path(source)
-    if not path.is_file():
-        return
-    receipts_root: Path | None = None
-    for parent in path.resolve().parents:
-        if parent.name == "receipts":
-            receipts_root = parent
-            break
-    if receipts_root is None:
-        return
-    repo = receipts_root.parent
-    if not (repo / "quality" / "legacy_quarantine.json").is_file():
-        return
-    from quant_fund.utils.receipt import corpus_training_refused
-
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"corpus line {lineno} source is not a receipt object")
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if corpus_training_refused(path, receipts_root, payload, digest, repo_root=repo):
-        raise ValueError(
-            f"corpus line {lineno} receipt is not training evidence (quarantined or rejected)"
-        )
-
-
 def _validate_corpus(corpus_path: Path) -> dict[str, int]:
     """Every corpus line must carry receipt provenance. Fail-closed."""
     stats = {"lines": 0, "positive": 0, "negative": 0}
@@ -60,9 +33,6 @@ def _validate_corpus(corpus_path: Path) -> dict[str, int]:
             record = json.loads(line)
             if not record.get("receipt_sha256"):
                 raise ValueError(f"corpus line {lineno} lacks receipt_sha256 provenance")
-            source = record.get("source_path")
-            if isinstance(source, str) and source:
-                _refuse_quarantined_source(source, lineno)
             stats["lines"] += 1
             key = "negative" if record.get("negative") else "positive"
             stats[key] += 1

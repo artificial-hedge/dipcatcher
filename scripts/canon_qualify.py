@@ -68,17 +68,6 @@ REASON_PARTIALLY_TEMPLATE = (
 )
 
 
-def _write_utf8_lf(path: Path, text: str) -> None:
-    """Write UTF-8 with LF newlines.
-
-    ``Path.write_text`` on Windows translates ``\\n`` to ``\\r\\n`` unless
-    ``newline`` is ``\\n``. Committed audit artifacts are LF. ``--check``
-    reads them back with universal newlines, so a CRLF write still looks
-    fresh and can be committed by accident.
-    """
-    path.write_text(text, encoding="utf-8", newline="\n")  # NOSONAR pythonsecurity:S2083
-
-
 def _summary_text(audit: dict[str, Any]) -> str:
     """Human-readable console echo of the headline counts."""
     counts = audit["counts"]
@@ -221,25 +210,12 @@ LAST_RECEIPT_SCHEMA_VERSION = {LAST_RECEIPT_SCHEMA_VERSION}
 
 def _emit_retired_families(summary_path: Path, out_path: Path) -> int:
     """Codegen the retirement mapping from the on-disk summary."""
-    repo = REPO_ROOT.resolve()
-    try:
-        summary_path = summary_path.resolve()
-        out_path = out_path.resolve()
-    except OSError as exc:
-        print(f"unresolvable path: {exc}", file=sys.stderr)
-        return 1
-    if not summary_path.is_relative_to(repo) or not out_path.is_relative_to(repo):
-        print(f"refusing path outside repo root {repo}", file=sys.stderr)
-        return 1
     if not summary_path.is_file():
         print(f"missing summary: {summary_path}", file=sys.stderr)
         return 1
-    # summary_path / out_path already resolved + is_relative_to(REPO_ROOT).
-    summary = json.loads(
-        summary_path.read_text(encoding="utf-8")  # NOSONAR pythonsecurity:S2083
-    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    _write_utf8_lf(out_path, _generated_module_text(summary))
+    out_path.write_text(_generated_module_text(summary), encoding="utf-8")
     print(f"wrote {out_path} ({len(summary['retired_families'])} retired families)")
     return 0
 
@@ -293,8 +269,8 @@ def main(argv: list[str] | None = None) -> int:
 
     dump_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    _write_utf8_lf(dump_path, dump_text)
-    _write_utf8_lf(summary_path, summary_text)
+    dump_path.write_text(dump_text, encoding="utf-8")
+    summary_path.write_text(summary_text, encoding="utf-8")
     print(f"wrote {dump_path} ({len(dump_text)} bytes)")
     print(f"wrote {summary_path} ({len(summary_text)} bytes)")
     print(_summary_text(audit))

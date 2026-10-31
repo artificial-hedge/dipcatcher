@@ -36,17 +36,6 @@ condition = "AND"
 paths = ['''(?:^|/)tests/fx1/test_sources\.py$''']
 regexes = ['''^sk-test-SECRET-123$''']
 
-# These CLI tests set a literal test-key and toggle a fixture flag in their
-# child env. generic-api-key captures the next env-var NAME across dictionary
-# entries. Exempt only these complete synthetic lines in this one test file.
-[[allowlists]]
-description = "Synthetic public-serve CLI fixture environment"
-targetRules = ["generic-api-key"]
-condition = "AND"
-paths = ['''(?:^|/)tests/fx1/test_bank_modelcard_serve\.py$''']
-regexTarget = "line"
-regexes = ['''^\s*env=\{"FX1_API_KEY": "test-key", "FX1_ALLOW_TEST_FIXTURE": "[01]"\},\s*$''']
-
 # .dsh-24x7 is a committed evidence directory: its JSON files pin data
 # files, model artifacts, and script contents by sha256 digest, under keys
 # as varied as model names ("kronos_small"), symbols ("BTCUSDT"), and file
@@ -148,14 +137,60 @@ paths = ['''(?:^|/)web/public/fixtures/index\.json$''']
 regexTarget = "secret"
 regexes = ['''^[0-9a-f]{64}$''']
 
-# A historical prereg timestamp verifier reads at most 64 KiB from its token
-# file. The generic-api-key heuristic captures the numeric size bound after
-# `token =`, although this line contains no credential. Match this one source
-# statement only; other token assignments remain scanned across full history.
+# Historical and current fx1 tests embed deterministic fake credentials for
+# redaction, honesty-gate, and serve smoke coverage. gitleaks scans full
+# history (including deleted paths), so bind each fixture file explicitly.
 [[allowlists]]
-description = "Prereg timestamp token input size bound (not a credential)"
+description = "fx1 test fixtures: synthetic credential strings (history + HEAD)"
+paths = [
+  '''(?:^|/)tests/fx1/test_kernel_redact\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence_ledger\.py$''',
+  '''(?:^|/)tests/fx1/test_model_smoke\.py$''',
+  '''(?:^|/)tests/fx1/test_orchestration_e2e\.py$''',
+  '''(?:^|/)tests/fx1/test_telemetry_live\.py$''',
+  '''(?:^|/)tests/fx1/journeys/textutil\.py$''',
+  '''(?:^|/)tests/fx1/test_bank_modelcard_serve\.py$''',
+  '''(?:^|/)tests/unit/cli/test_dipcatcher_latency\.py$''',
+]
+
+[[allowlists]]
+description = "Prereg timestamp test fixture (removed path; history scan only)"
+paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+
+[[allowlists]]
+description = "Interactive profile env-var constant names (not stored secrets)"
 targetRules = ["generic-api-key"]
 condition = "AND"
-paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+paths = ['''(?:^|/)src/fx1/interactive/profiles\.py$''']
 regexTarget = "line"
-regexes = ['''^\+?\s*token = _read_regular\(token_path, max_bytes=64 \* 1024\)\s*$''']
+regexes = ['''^\s*ENV_FX1_[A-Z0-9_]*KEY\s*=''']
+
+# Historical and current fx1 tests embed deterministic fake credentials for
+# redaction, honesty-gate, and serve smoke coverage. gitleaks scans full
+# history (including deleted paths), so bind each fixture file explicitly.
+[[allowlists]]
+description = "fx1 test fixtures: synthetic credential strings (history + HEAD)"
+paths = [
+  '''(?:^|/)tests/fx1/test_kernel_redact\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence\.py$''',
+  '''(?:^|/)tests/fx1/test_evidence_ledger\.py$''',
+  '''(?:^|/)tests/fx1/test_model_smoke\.py$''',
+  '''(?:^|/)tests/fx1/test_orchestration_e2e\.py$''',
+  '''(?:^|/)tests/fx1/test_telemetry_live\.py$''',
+  '''(?:^|/)tests/fx1/journeys/textutil\.py$''',
+  '''(?:^|/)tests/fx1/test_bank_modelcard_serve\.py$''',
+  '''(?:^|/)tests/unit/cli/test_dipcatcher_latency\.py$''',
+]
+
+[[allowlists]]
+description = "Prereg timestamp test fixture (removed path; history scan only)"
+paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+
+[[allowlists]]
+description = "Interactive profile env-var constant names (not stored secrets)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)src/fx1/interactive/profiles\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*ENV_FX1_[A-Z0-9_]*KEY\s*=''']

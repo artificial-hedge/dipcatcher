@@ -1,9 +1,10 @@
 """Interactive REPL for ``fxi`` — stdlib ``cmd.Cmd``, no new dependencies.
 
-Session state is just the active model: ``use fx1-lite`` selects that chat
-id's endpoint from the local store. Credentials are passed to the chat
-client only — lab harness subprocesses inherit a scrubbed environment. The
-prompt shows ``model @ host``; a static listening-orb banner opens the session.
+Session state is just the active model: ``use fx1-lite`` injects that
+model's endpoint (``MOONSHOT_API_KEY`` + ``FX1_BASE_URL``) into
+``os.environ``, so every harness command launched from the shell
+(directly or via ``run``/``!``) inherits the credential. The prompt shows
+``model @ host``; a static listening-orb banner opens the session.
 """
 
 from __future__ import annotations
@@ -12,7 +13,6 @@ import cmd
 import getpass
 import shlex
 import subprocess
-import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -26,7 +26,7 @@ _HELP = """\
 keys                              list model endpoints (presence-only)
 keys set <model>                  store an API key + base URL (prompted, not echoed)
 keys remove <model>               delete a stored endpoint
-use <model>                       activate a model (credentials for chat only)
+use <model>                       activate a model and inject its endpoint
 model                             show the active model and host
 doctor                            readiness: endpoints, store, API reachability
 eval [--out PATH]                 run the fx-1 eval bank via the active model
@@ -39,14 +39,6 @@ run <tool> <args...>              launch fx1 | dipcatcher | quant with the sessi
 !<shell command>                  run a raw shell command
 exit                              leave the shell
 """
-
-
-def _prompt_glyphs() -> tuple[str, str]:
-    from fx1.interactive.terminal import unicode_stdout
-
-    if unicode_stdout():
-        return " · ", " › "
-    return " | ", " > "
 
 
 def _endpoint_host(model: str) -> str:
@@ -67,8 +59,7 @@ class FxiShell(cmd.Cmd):
     # -- session ------------------------------------------------------------
 
     def _refresh_prompt(self) -> None:
-        sep, mark = _prompt_glyphs()
-        self.prompt = f"fxi{sep}{self.model}@{_endpoint_host(self.model)}{mark}"
+        self.prompt = f"fxi · {self.model}@{_endpoint_host(self.model)} › "
 
     def _say_error(self, exc: Exception) -> None:
         typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
@@ -144,22 +135,15 @@ class FxiShell(cmd.Cmd):
             self._say_error(ValueError("usage: use <model>"))
             return
         try:
-            profiles.check_model(model)
-        except KeyError as exc:
+            profiles.apply_profile(model)
+        except (KeyError, RuntimeError) as exc:
             self._say_error(exc)
-            return
-        if profiles.resolve_endpoint(model) is None:
-            self._say_error(
-                RuntimeError(
-                    f"no endpoint for model {model!r}; run `fxi setup` or `/keys set {model}`"
-                )
-            )
             return
         self.model = model
         self._refresh_prompt()
         typer.echo(
-            f"active model {model!r}; credentials are passed to the chat client only "
-            "(lab harness subprocesses do not inherit API keys)"
+            f"active model {model!r}; {profiles.ENV_API_KEY} + {profiles.ENV_BASE_URL} "
+            "injected into this session"
         )
 
     def complete_use(self, text: str, line: str, begidx: int, endidx: int) -> list[str]:
@@ -285,11 +269,6 @@ class FxiShell(cmd.Cmd):
     def do_shell(self, arg: str) -> None:
         if not arg.strip():
             self._say_error(ValueError("usage: !<shell command>"))
-            return
-        if not sys.stdin.isatty() or not sys.stdout.isatty():
-            self._say_error(
-                ValueError("! is an interactive operator hatch; refused on a redirected stream")
-            )
             return
         subprocess.run(arg, shell=True, check=False)  # noqa: S602  # nosec B602 — explicit operator escape hatch
 

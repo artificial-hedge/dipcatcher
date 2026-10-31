@@ -148,4 +148,4 @@ if the proper-score rule eventually passes. The `external_timestamp_authenticity
 flags remain false until a separate verifier authenticates the external archive
 and the model inference path. Trading costs, latency, capacity, and net results
 would require a separately frozen secondary study; this journal makes no
-economic claim.
+economic or live-trading claim.

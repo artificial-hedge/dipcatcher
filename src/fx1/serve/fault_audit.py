@@ -43,7 +43,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import subprocess
 import tempfile
 import threading
 import time
@@ -90,7 +89,7 @@ def _client(
     import fx1.serve.api as api_mod
 
     return TestClient(
-        api_mod.create_app(public_release=False, harness=Harness(runner=runner)),
+        api_mod.create_app(harness=Harness(runner=runner)),
         raise_server_exceptions=False,
     )
 
@@ -159,11 +158,10 @@ def _journal_file(root: str | Path, name: str) -> Path:
 
 def _corrupt_tail(root: str | Path, name: str) -> None:
     """Chop the last journal line mid-record (torn-write shape)."""
-    # _journal_file resolves + refuses paths whose parent is not *root*.
     path = _journal_file(root, name)
     data = path.read_bytes()
     cut = data.rindex(b"\n", 0, len(data) - 1)
-    path.write_bytes(data[: cut + 20])  # NOSONAR pythonsecurity:S2083 — path gated by _journal_file
+    path.write_bytes(data[: cut + 20])
 
 
 def _corrupt_line(root: str | Path, name: str, idx: int) -> None:
@@ -599,42 +597,6 @@ def _probe_drain() -> dict[str, bool]:
     return out
 
 
-def _windows_dir_user() -> str:
-    user = os.environ.get("USERNAME")
-    if user:
-        return user
-    return os.getlogin()
-
-
-def _deny_directory_write(path: Path) -> None:
-    """Stop new files in ``path``.
-
-    ``chmod(0o555)`` clears the Unix write bit. On Windows it only sets the
-    read-only attribute, which does not stop creating a file in a directory.
-    """
-    if os.name != "nt":
-        path.chmod(0o555)
-        return
-    user = _windows_dir_user()
-    subprocess.run(
-        ["icacls", os.fspath(path), "/inheritance:r", "/grant:r", f"{user}:(OI)(CI)(RX)"],
-        check=True,
-        capture_output=True,
-    )
-
-
-def _allow_directory_write(path: Path) -> None:
-    if os.name != "nt":
-        path.chmod(0o755)
-        return
-    user = _windows_dir_user()
-    subprocess.run(
-        ["icacls", os.fspath(path), "/grant:r", f"{user}:(OI)(CI)(F)"],
-        check=True,
-        capture_output=True,
-    )
-
-
 def _probe_state_dir() -> dict[str, bool]:
     """readonly/missing state dirs must fail loudly — never go in-memory."""
     out: dict[str, bool] = {}
@@ -644,12 +606,10 @@ def _probe_state_dir() -> dict[str, bool]:
     with tempfile.TemporaryDirectory() as td:
         ro = Path(td) / "ro"
         ro.mkdir()
-        _deny_directory_write(ro)
+        ro.chmod(0o555)
         try:
             try:
-                api_mod.create_app(
-                    public_release=False, harness=Harness(runner=_fast_runner), state_dir=ro
-                )
+                api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=ro)
                 out["state_dir_readonly_fails_loud"] = False
             except OSError:
                 out["state_dir_readonly_fails_loud"] = True
@@ -659,13 +619,11 @@ def _probe_state_dir() -> dict[str, bool]:
             except OSError:
                 out["sdk_readonly_state_dir_fails_loud"] = True
         finally:
-            _allow_directory_write(ro)
+            ro.chmod(0o755)
 
         missing = Path(td) / "no" / "such" / "dir"
         try:
-            api_mod.create_app(
-                public_release=False, harness=Harness(runner=_fast_runner), state_dir=missing
-            )
+            api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=missing)
             out["state_dir_missing_created"] = missing.exists()
         except OSError:
             out["state_dir_missing_created"] = False
@@ -673,20 +631,18 @@ def _probe_state_dir() -> dict[str, bool]:
         sd = Path(td) / "live"
         sd.mkdir()
         with _root_env():
-            app = api_mod.create_app(
-                public_release=False, harness=Harness(runner=_fast_runner), state_dir=sd
-            )
+            app = api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=sd)
             from fastapi.testclient import TestClient
 
             client = TestClient(app, raise_server_exceptions=False)
-            _deny_directory_write(sd)
+            sd.chmod(0o555)
             try:
                 r = client.post("/harness/keys", json={}, headers={"X-API-Key": _ROOT_KEY})
                 # a mint over a now-readonly journal must not report
                 # success while the record never persisted
                 out["mint_after_state_dir_readonly_fails_loud"] = r.status_code >= 500
             finally:
-                _allow_directory_write(sd)
+                sd.chmod(0o755)
     return out
 
 

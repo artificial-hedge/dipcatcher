@@ -1,16 +1,15 @@
 site_name: dipcatcher
-site_description: State-of-the-art harness for the fx1 and fx1-lite chat ids. No released weights. Chat-first CLI, research families via /superpower, receipt verification.
+site_description: State-of-the-art harness for orchestrating fx1 and fx1-lite. Chat-first CLI, research families via /superpower, receipt verification.
 site_url: https://artificial-hedge.github.io/dipcatcher/
 repo_url: https://github.com/artificial-hedge/dipcatcher
 repo_name: artificial-hedge/dipcatcher
 edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
-copyright: dipcatcher research documentation.
+copyright: dipcatcher research documentation. Live trading is not implemented.
 
-# Kept in the repo. Omitted from the published site. Listed from docs/archive.md.
-# The first block headlines Sharpe, holdout returns, or P&L.
-# The second block is prod-readiness parking-lot inventory, not a site section.
+# Kept in the repo. Omitted from the published site because they headline
+# Sharpe, holdout returns, or P&L. Listed from docs/archive.md.
 exclude_docs: |
   MEGAPLAN_SHARPE5.md
   CARRY_VS_MEGAPLAN.md
@@ -19,17 +18,6 @@ exclude_docs: |
   SIM_LIVE_PNL.md
   ULTRAPLAN_FRONTIER.md
   SOTA_GAP_ANALYSIS.md
-  D1_02_EPOCH_ACK_INVENTORY.md
-  D1_08_STAMPED_RECEIPTS_FAILING_ADMISSION.md
-  DIPCATCHER_JOURNEYS_PTY.md
-  DIPCATCHER_RELEASE_EVIDENCE.md
-  DIPCATCHER_RELEVANCE.md
-  EVIDENCE_MANIFESTS_PACKAGING_CHAIN.md
-  PROD_READINESS_STATUS.md
-  PROPOSED_EVIDENCE_CHAINS.md
-  PROPOSED_MANIFEST_PACKAGING_CHAIN.md
-  UNGATED_EPOCH_ACKS.md
-  UNGATED_EPOCH_ACKS_84d3d31b7.md
 
 validation:
   nav:
@@ -243,7 +231,6 @@ nav:
       - Runbook: OPERATIONS_RUNBOOK.md
       - Production checklist: PRODUCTION.md
       - Ultra plan — production readiness: ULTRA_PROD_READINESS.md
-      - Proposed main CI ruleset: CI_ENFORCEMENT_PROPOSAL.md
       - Audit ledger and observability: AUDIT_OBSERVABILITY.md
       - Paper and shadow: PAPER_SHADOW.md
       - Backtest-to-live parity: BACKTEST_LIVE_PARITY.md
@@ -261,7 +248,6 @@ nav:
       - Forecast harness: fx1_harness.md
       - Architecture: FX1_ARCHITECTURE.md
       - Training: FX1_TRAINING.md
-      - Public evaluation evidence: FX1_PUBLIC_EVAL_EVIDENCE.md
       - Data: FX1_DATA.md
       - Datasources: FX1_DATASOURCES.md
       - API stability: FX1_API_STABILITY.md

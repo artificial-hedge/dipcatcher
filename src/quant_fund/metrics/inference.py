@@ -13,7 +13,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import stats
 
-from quant_fund.utils.portable_fp import stable_dot
+from quant_fund.metrics._bootstrap_kernels import HAVE_NUMBA, fill_stationary_indices
 
 Array = NDArray[np.float64]
 
@@ -33,11 +33,11 @@ def newey_west_variance(x: Array, lags: int | None = None) -> float:
     if lags is None:
         lags = max(1, int(np.floor(1.5 * n ** (1.0 / 3.0))))
     lags = min(lags, n - 2)
-    gamma0 = stable_dot(xc, xc) / n
+    gamma0 = float(np.dot(xc, xc) / n)
     omega = gamma0
     for lag in range(1, lags + 1):
         weight = 1.0 - lag / (lags + 1.0)
-        gamma = stable_dot(xc[lag:], xc[:-lag]) / n
+        gamma = float(np.dot(xc[lag:], xc[:-lag]) / n)
         omega += 2.0 * weight * gamma
     # Clamp the kernel HAC estimate at 0 (it can be slightly negative with
     # negative autocovariances), but never floor it above 0: a constant series
@@ -428,12 +428,36 @@ def stationary_bootstrap_indices(
     # (successes of a Bernoulli process), with a fresh uniform start per block.
     new_block = rng.random((n_boot_i, n_i)) < p
     new_block[:, 0] = True
+    # One flat origin stream matches successive per-row ``integers`` draws
+    # (same Generator consumption order), then a numba fill replaces the
+    # Python row loop. Fall back to the original row loop without numba.
+    starts_counts = np.asarray(new_block.sum(axis=1), dtype=np.int64)
+    total_starts = int(starts_counts.sum())
+    origins_flat = rng.integers(0, n_i, size=total_starts)
+
+    if HAVE_NUMBA:
+        origin_offsets = np.empty(n_boot_i, dtype=np.int64)
+        origin_offsets[0] = 0
+        if n_boot_i > 1:
+            np.cumsum(starts_counts[:-1], out=origin_offsets[1:])
+        out_i64 = np.empty((n_boot_i, n_i), dtype=np.int64)
+        fill_stationary_indices(
+            out_i64,
+            np.ascontiguousarray(new_block),
+            np.ascontiguousarray(origins_flat, dtype=np.int64),
+            origin_offsets,
+            n_i,
+        )
+        return np.asarray(out_i64, dtype=np.intp)
     positions = np.arange(n_i)
     out = np.empty((n_boot_i, n_i), dtype=np.intp)
+    cursor = 0
     for b in range(n_boot_i):
         starts = np.nonzero(new_block[b])[0]
         block_id = np.cumsum(new_block[b]) - 1
-        origins = rng.integers(0, n_i, size=starts.size)
+        n_starts = int(starts_counts[b])
+        origins = origins_flat[cursor : cursor + n_starts]
+        cursor += n_starts
         out[b] = (origins[block_id] + positions - starts[block_id]) % n_i
     return out
 

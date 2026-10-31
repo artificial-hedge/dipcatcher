@@ -10,29 +10,6 @@ The version source is `fx1.__version__`.
 
 ### Added
 
-- **dipcatcher production chat harness** (`src/dipcatcher_cli`,
-  `src/fx1/interactive`, `src/fx1/harness.py`): durable session journal
-  (`$FX1_CONFIG_DIR/sessions/*.jsonl`, schema v1, redacted, 0600) with
-  `/sessions`, `/resume`, `dipcatcher chat --resume`, `fxi sessions|resume`
-  and interrupted-job reconciliation at startup; hard run budgets
-  (`RunBudget`/`BudgetLedger`, `FX1_BUDGET_*`, `/budget`) with
-  budget-exceeded steps and partial-run verdicts; cancellable,
-  deadline-bound harness subprocesses (`Harness.run(cancel_event=,
-  timeout_s=)`, SIGTERM → SIGKILL, output caps, fail-closed without the
-  executable); evidence classes on every `/superpower` capability result;
-  research-family eligibility gate backed by the new read-only
-  `dipcatcher research-families` lab command (retired/unknown families
-  fail closed; the model cannot reinstate a blocked capability; `/families`);
-  endpoint failure classes with next actions, bounded retries for transient
-  failures only, and `/keys test` / `fxi keys test` identity probes
-  (`HostedK3Backend.identity_probe`); `/use` keeps the conversation and
-  journals the switch; `/doctor`; untrusted framing for web content in
-  model context; Codex-style Ctrl-C (once cancels, twice exits), persistent
-  secret-filtered history, Windows console polling; `dipcatcher --version`;
-  `fxi superpower --approve-consequential` as the explicit non-interactive
-  approval policy (deny by default). Documented in `docs/DIP_CONCIERGE.md`;
-  remaining production gates in `docs/DIPCATCHER_PRODUCT_CONTRACT.md`.
-
 - **PROOFCORE wave 2 — causal proven runs + cryptographic replay + IO
   guard**: `quant_fund.proofcore.scheduler` (pure decision-window scheduler),
   `quant_fund.proof.runner.run_proven` (causal walk-forward over a declared

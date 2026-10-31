@@ -192,7 +192,6 @@ def _client(**kw: Any) -> TestClient:
     kw.setdefault("ft_dir", isolated / "fine_tuning")
     kw.setdefault("receipts_dir", receipts)
     app = api_mod.create_app(
-        public_release=False,
         harness=Harness(runner=_runner),
         backend_resolver=lambda *a, **k: _B(),
         **kw,

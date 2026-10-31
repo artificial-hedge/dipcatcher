@@ -8,7 +8,7 @@ strength of a green test suite; fleet evidence is claimed only where the
 receipt files named below actually exist in `.dsh-24x7/`.
 
 Honesty contract: all rows are research-only proper-score evidence
-(pinball/CRPS/PIT/QLIKE). Nothing in this file
+(pinball/CRPS/PIT/QLIKE); no live-trading or P&L claims. Nothing in this file
 was fabricated to fill a cell — where evidence is absent the row says so.
 
 A hash-pinned inventory of every evidence file cited here lives at

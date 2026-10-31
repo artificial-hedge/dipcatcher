@@ -125,7 +125,7 @@ if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
     from fx1.serve.backends import SamplingParams
-    from fx1.serve.client import HarnessClient, Transport
+    from fx1.serve.client import Transport
 
 __all__ = ["client_audit", "client_audit_bench"]
 
@@ -175,9 +175,19 @@ class _StubBackend:
     chunks, counts calls; ``sleep_s`` stretches the call for the
     inflight-saturation leg. ``entered`` flags a call in flight."""
 
-    def __init__(self, model: str = "stub-v0", *, sleep_s: float = 0.0) -> None:
+    def __init__(
+        self,
+        model: str = "stub-v0",
+        *,
+        sleep_s: float = 0.0,
+        release: threading.Event | None = None,
+    ) -> None:
         self._model = model
         self._sleep_s = sleep_s
+        # ``release`` holds the call until the probe says so. A wall-clock
+        # sleep loses that race when the suite is under coverage: the
+        # response completes before cancel is observed.
+        self._release = release
         self.calls = 0
         self.entered = threading.Event()
         self.done = threading.Event()
@@ -185,7 +195,10 @@ class _StubBackend:
     def _gate(self) -> None:
         self.calls += 1
         self.entered.set()
-        if self._sleep_s:
+        if self._release is not None:
+            self._release.wait(30.0)
+            self.done.set()
+        elif self._sleep_s:
             time.sleep(self._sleep_s)
             self.done.set()
 
@@ -330,7 +343,6 @@ def _client(
             return entry() if callable(entry) else entry
 
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=runner if runner is not None else fake_runner),
             backend_resolver=_resolve,
             **app_kw,
@@ -344,7 +356,7 @@ def _client(
                 os.environ[k] = v
 
 
-def _tc_transport(client: TestClient) -> Transport:
+def _tc_transport(client: TestClient) -> Any:
     """Adapt HarnessClient's transport contract to a TestClient."""
 
     def send(
@@ -378,7 +390,7 @@ def _remote(client: TestClient, api_key: str | None = None, **kw: Any) -> Any:
     return HarnessClient(_BASE, api_key=api_key, transport=_tc_transport(client), **kw)
 
 
-def _mk(transport: Transport, **kw: Any) -> HarnessClient:
+def _mk(transport: Any, **kw: Any) -> Any:
     """A HarnessClient on a scripted/fake transport."""
     from fx1.serve.client import HarnessClient
 
@@ -487,7 +499,7 @@ def _error_map_probes() -> dict[str, bool]:  # NOSONAR(S3776) — status table f
 
     def mapped(
         status: int, body: bytes = _ERR_BODY, headers: dict[str, str] | None = None
-    ) -> tuple[BaseException | None, list[tuple[str, str]]]:
+    ) -> tuple[BaseException | None, Any]:
         tr, calls = _scripted((status, headers or {}, body))
         exc = _exc(lambda: _mk(tr).commands())
         return exc, calls
@@ -621,9 +633,7 @@ def _retry_probes() -> dict[str, bool]:  # NOSONAR(S3776) — retry matrix fans 
     bare503: _Step = (503, {}, _ERR_BODY)
     fault = HarnessTransportError("dial failed")
 
-    def client_for(
-        *steps: _Step | BaseException, **kw: Any
-    ) -> tuple[HarnessClient, list[tuple[str, str]], list[float]]:
+    def client_for(*steps: Any, **kw: Any) -> tuple[Any, Any, list[float]]:
         tr, calls = _scripted(*steps)
         sleeps: list[float] = []
         c = _mk(tr, sleep=lambda s: sleeps.append(s), **kw)
@@ -885,16 +895,10 @@ def _transport_fault_probes() -> dict[str, bool]:  # NOSONAR(S3776)
 
     from fx1.serve.client import HarnessClient, _urllib_transport  # noqa: PLC0415
 
-    # The client may use its whole timeout before a refused port returns.
-    # The bound sits above that timeout so a full wait still counts, and
-    # a call that ignores the timeout still fails.
-    timeout_s = 2.0
     t0 = time.monotonic()
-    exc = _exc(
-        lambda: HarnessClient(f"http://127.0.0.1:{_closed_port()}", timeout_s=timeout_s).commands()
-    )
+    exc = _exc(lambda: HarnessClient(f"http://127.0.0.1:{_closed_port()}", timeout_s=5).commands())
     out["conn_refused_transport_error"] = (
-        type(exc).__name__ == "HarnessTransportError" and time.monotonic() - t0 < timeout_s + 2.0
+        type(exc).__name__ == "HarnessTransportError" and time.monotonic() - t0 < 5
     )
     with mock.patch("urllib.request.urlopen", side_effect=urllib.error.URLError("no dns")):
         exc = _exc(lambda: _urllib_transport("GET", "http://dead.invalid/x", None, {}, 1.0))
@@ -916,13 +920,13 @@ def _transport_fault_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     # a custom transport that raises a foreign (non-HarnessTransportError)
     # exception leaks it raw — the transport injection owns its own
     # taxonomy; pinned so callers know the seam's contract.
-    def oserror_send(  # NOSONAR(S1172)
+    def oserror_send(
         method: str,
         url: str,
-        payload: dict[str, Any] | bytes | None,
+        payload: Any,
         headers: dict[str, str],
         timeout_s: float,
-    ) -> tuple[int, Mapping[str, str], bytes]:
+    ) -> None:  # NOSONAR(S1172)
         raise OSError("foreign fault")
 
     exc = _exc(lambda: _mk(oserror_send, max_retries=2).commands())
@@ -1063,8 +1067,8 @@ def _stream_probes() -> dict[
     stub = _StubBackend()
     client, _ = _client({"hosted_k3": stub})
     remote = _remote(client)
-    streamed = remote.stream_complete(_MSGS, backend="hosted_k3")
-    out["e2e_stream_returns_list"] = isinstance(streamed, list) and streamed == ["tok-a", "tok-b"]
+    chunks = remote.stream_complete(_MSGS, backend="hosted_k3")
+    out["e2e_stream_returns_list"] = isinstance(chunks, list) and chunks == ["tok-a", "tok-b"]
 
     # keepalived post-commit failure → in-band error frame → mapped, code
     # intact (defect-fix pin).
@@ -1133,12 +1137,8 @@ def _idem_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     state = {"n": 0}
 
     def flaky(
-        method: str,
-        url: str,
-        payload: dict[str, Any] | bytes | None,
-        headers: dict[str, str],
-        timeout_s: float,
-    ) -> tuple[int, Mapping[str, str], bytes]:
+        method: str, url: str, payload: Any, headers: dict[str, str], timeout_s: float
+    ) -> Any:
         state["n"] += 1
         res = real_send(method, url, payload, headers, timeout_s)
         if state["n"] == 1:
@@ -1274,13 +1274,9 @@ def _cli_probes() -> dict[str, bool]:  # NOSONAR(S3776) — CLI legs each pin ex
     # unreachable remote → HarnessTransportError → same shape.
     import fx1.serve.client as _cm  # noqa: PLC0415
 
-    def _dial(  # NOSONAR(S1172)
-        method: str,
-        url: str,
-        payload: dict[str, Any] | bytes | None,
-        headers: dict[str, str],
-        timeout_s: float,
-    ) -> tuple[int, Mapping[str, str], bytes]:
+    def _dial(
+        method: str, url: str, payload: Any, headers: dict[str, str], timeout_s: float
+    ) -> Any:  # NOSONAR(S1172)
         raise _cm.HarnessTransportError("dial failed")
 
     dead_c = _mk(_dial)
@@ -1347,9 +1343,7 @@ def _parity_probes() -> dict[str, bool]:
             # the remote leg carries the root credential like any real caller.
             os.environ[_API_KEY_ENV] = _ROOT
             sdk = Fx1Harness(harness=Harness(runner=fake_runner), backend_resolver=resolver)
-            app = api_mod.create_app(
-                public_release=False, harness=Harness(runner=fake_runner), backend_resolver=resolver
-            )
+            app = api_mod.create_app(harness=Harness(runner=fake_runner), backend_resolver=resolver)
             remote = _remote(_TC(app, raise_server_exceptions=False), api_key=_ROOT)
         finally:
             for k, v in saved.items():
@@ -1416,38 +1410,50 @@ def _cancel_probes() -> dict[str, bool]:
     carry a cooperative cancel — it lands 'cancelled' mid-flight and
     refuses honestly once terminal."""
     out: dict[str, bool] = {}
+    # The worker claims the job (status running) and then calls the
+    # runner. A wall-clock sleep can finish in the gap between that
+    # observation and wait_run's first poll when the suite is under
+    # coverage, so the abandoned waiter sees success instead of a
+    # timeout. Hold the runner until those observations are recorded.
+    release_runner = threading.Event()
 
     def slow_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:  # NOSONAR(S1172)
-        time.sleep(1.5)
+        release_runner.wait(30.0)
         return 0, "ok", ""
 
-    client, _ = _client({"hosted_k3": _StubBackend()}, runner=slow_runner)
-    remote = _remote(client)
+    try:
+        client, _ = _client({"hosted_k3": _StubBackend()}, runner=slow_runner)
+        remote = _remote(client)
 
-    job_id = remote.submit_run("doctor")
-    # wait for the worker to claim it (bounded), then abandon the poll.
-    st = remote.job_status(job_id)
-    for _ in range(200):
-        if st["status"] != "queued":
-            break
-        time.sleep(0.01)
+        job_id = remote.submit_run("doctor")
+        # wait for the worker to claim it (bounded), then abandon the poll.
         st = remote.job_status(job_id)
-    out["job_reaches_running"] = st["status"] == "running"
-    exc = _exc(lambda: remote.wait_run(job_id, poll_s=0.05, timeout_s=0.2))
-    out["abandoned_poll_times_out"] = type(exc).__name__ == "HarnessTransportError"
-    st2 = remote.job_status(job_id)
-    out["abandoned_record_still_running"] = st2["status"] == "running" and st2["job_id"] == job_id
-    exc = _exc(lambda: remote.cancel_job(job_id))
-    out["cancel_running_409_mapped"] = type(
-        exc
-    ).__name__ == "HarnessTransportError" and "is running" in str(exc)
-    out["job_runs_to_end"] = remote.wait_run(job_id, poll_s=0.1, timeout_s=10).ok
-    exc = _exc(lambda: remote.cancel_job(job_id))
-    out["cancel_terminal_409_mapped"] = type(exc).__name__ == "HarnessTransportError"
-    rec = remote.job_receipt(job_id)
-    out["finished_job_receipt_sealed"] = isinstance(rec, dict) and isinstance(
-        rec.get("receipt_sha256"), str
-    )
+        for _ in range(200):
+            if st["status"] != "queued":
+                break
+            time.sleep(0.01)
+            st = remote.job_status(job_id)
+        out["job_reaches_running"] = st["status"] == "running"
+        exc = _exc(lambda: remote.wait_run(job_id, poll_s=0.05, timeout_s=0.2))
+        out["abandoned_poll_times_out"] = type(exc).__name__ == "HarnessTransportError"
+        st2 = remote.job_status(job_id)
+        out["abandoned_record_still_running"] = (
+            st2["status"] == "running" and st2["job_id"] == job_id
+        )
+        exc = _exc(lambda: remote.cancel_job(job_id))
+        out["cancel_running_409_mapped"] = type(
+            exc
+        ).__name__ == "HarnessTransportError" and "is running" in str(exc)
+        release_runner.set()
+        out["job_runs_to_end"] = remote.wait_run(job_id, poll_s=0.1, timeout_s=10).ok
+        exc = _exc(lambda: remote.cancel_job(job_id))
+        out["cancel_terminal_409_mapped"] = type(exc).__name__ == "HarnessTransportError"
+        rec = remote.job_receipt(job_id)
+        out["finished_job_receipt_sealed"] = isinstance(rec, dict) and isinstance(
+            rec.get("receipt_sha256"), str
+        )
+    finally:
+        release_runner.set()
 
     # a mid-stream abandonment: wait_run_stream on a job whose stream
     # ends pre-terminal errors honestly while the record runs.
@@ -1458,24 +1464,30 @@ def _cancel_probes() -> dict[str, bool]:
 
     # background response: create + abandon + cancel; the record reports
     # cancelled and the replay ends on a terminal cancelled frame.
-    slow2 = _StubBackend(sleep_s=0.6)
+    # Hold the model call until those reads land — a 0.6s sleep can
+    # finish first when the worker is scheduled ahead of the client.
+    release_bg = threading.Event()
+    slow2 = _StubBackend(release=release_bg)
     client2, _ = _client({"byok": slow2})
     remote2 = _remote(client2)
-    env, _cid3 = remote2.responses_create("hi", backend="byok", background=True)
-    rid = env["id"]
-    cancelled_r = remote2.cancel_response(rid)
-    rec2 = remote2.retrieve_response(rid)
-    out["bg_response_cancel_record"] = (
-        cancelled_r["status"] == "cancelled" and rec2["status"] == "cancelled"
-    )
-    exc = _exc(lambda: remote2.cancel_response(rid))
-    out["cancel_terminal_response_409"] = type(exc).__name__ == "HarnessTransportError"
-    evs, _cid = remote2.responses_replay(rid)
-    out["cancelled_replay_terminal_frame"] = evs[-1]["type"] in (
-        "response.cancelled",
-        "response.failed",
-        "response.completed",
-    )
+    try:
+        env, _cid3 = remote2.responses_create("hi", backend="byok", background=True)
+        rid = env["id"]
+        cancelled_r = remote2.cancel_response(rid)
+        rec2 = remote2.retrieve_response(rid)
+        out["bg_response_cancel_record"] = (
+            cancelled_r["status"] == "cancelled" and rec2["status"] == "cancelled"
+        )
+        exc = _exc(lambda: remote2.cancel_response(rid))
+        out["cancel_terminal_response_409"] = type(exc).__name__ == "HarnessTransportError"
+        evs, _cid = remote2.responses_replay(rid)
+        out["cancelled_replay_terminal_frame"] = evs[-1]["type"] in (
+            "response.cancelled",
+            "response.failed",
+            "response.completed",
+        )
+    finally:
+        release_bg.set()
     exc = _exc(lambda: remote2.cancel_response("resp_nope"))
     out["cancel_unknown_response_404"] = type(exc).__name__ == "KeyError"
     return out

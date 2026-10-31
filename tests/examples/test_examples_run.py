@@ -22,10 +22,7 @@ EXAMPLES = (
     "fx1_quickstart_http.py",
     "fx1_quickstart_sdk.py",
 )
-# Full synthetic research (01_receipt_round_trip) seals a multi-family
-# scorecard; CI runners have timed out at 120s under load. Cap stays tight
-# enough to catch hangs, loose enough for a cold scorecard path.
-TIMEOUT_SECONDS = 240
+TIMEOUT_SECONDS = 120
 BANNED_IMPORT_PREFIXES = (
     "quant_fund.paper",
     "quant_fund.execution",

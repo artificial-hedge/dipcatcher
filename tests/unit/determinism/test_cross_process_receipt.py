@@ -87,42 +87,17 @@ def _run_once(root: Path, hashseed: str) -> Path:
     return Path(out.stdout.decode().strip())
 
 
-def _scrub_root(value: object, root: Path) -> object:
-    """Replace a run root inside parsed JSON.
-
-    The receipt stores absolute paths. Replacing ``str(root)`` in the raw
-    file misses them on Windows: JSON escapes backslashes, so the literal
-    path never occurs in the text. Parse first, then scrub both the given
-    path and its resolved form.
-    """
-    needles = (str(root), str(root.resolve()))
-
-    def walk(item: object) -> object:
-        if isinstance(item, str):
-            out = item
-            for needle in needles:
-                out = out.replace(needle, "$ROOT")
-            return out
-        if isinstance(item, dict):
-            return {key: walk(child) for key, child in item.items()}
-        if isinstance(item, list):
-            return [walk(child) for child in item]
-        return item
-
-    return walk(value)
-
-
 def test_sim_live_receipt_is_byte_identical_across_hash_seeds(tmp_path: Path) -> None:
     root_a, root_b = tmp_path / "a", tmp_path / "b"
     path_a = _run_once(root_a, "1")
     path_b = _run_once(root_b, "2")
     # Normalizing the machine-local absolute paths (which legitimately differ
     # between run roots), the two runs must produce identical receipt content.
-    obj_a = _scrub_root(json.loads(path_a.read_text(encoding="utf-8")), root_a)
-    obj_b = _scrub_root(json.loads(path_b.read_text(encoding="utf-8")), root_b)
-    assert isinstance(obj_a, dict) and isinstance(obj_b, dict)
-    obj_a.pop("receipt_sha256", None)
-    obj_b.pop("receipt_sha256", None)
+    text_a = path_a.read_text(encoding="utf-8").replace(str(root_a), "$ROOT")
+    text_b = path_b.read_text(encoding="utf-8").replace(str(root_b), "$ROOT")
+    obj_a, obj_b = json.loads(text_a), json.loads(text_b)
+    for obj in (obj_a, obj_b):
+        obj.pop("receipt_sha256", None)
     assert obj_a == obj_b, (
         "sim_live receipt content differs across PYTHONHASHSEED values "
         "(hash-ordering leak into a receipt artifact)"

@@ -11,7 +11,7 @@ answers "which knob moves which stylized fact" inside the sim's parameter
 space so downstream lanes (market-making sessions, regime-flow experiments)
 know what to turn to hit a target regime. Every number is a labeled
 SYNTHETIC correctness diagnostic of ``microstructure.zi_lob_simulator``
-itself.
+itself; there is no broker connectivity or live-trading claim anywhere.
 
 Two flow arms per grid cell share one engine: ``iid`` (``flow=None``,
 stationary Poisson MO arrivals) and ``markov`` (a two-state

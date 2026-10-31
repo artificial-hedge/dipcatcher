@@ -80,7 +80,7 @@ market evidence — and is labeled ``synthetic_*`` in report/bench keys. All
 outputs are statistical diagnostics (kernel L2 recovery error, log-log
 exponent estimates, counting-process moments, changepoint locations); no
 PnL/Sharpe-family quantity exists anywhere in this module. There is no
-broker connectivity. Degenerate inputs raise:
+broker connectivity and no live-trading claim. Degenerate inputs raise:
 empty or non-increasing event times, single-event windows, non-finite or
 non-positive rates, non-{+1,-1} sign streams, zero-variance interarrivals,
 unattainable lags and saturated kernels all fail closed.

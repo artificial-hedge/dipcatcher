@@ -10,7 +10,7 @@ difference fails the audit and the seal.
 Probe surfaces:
 
 - golden exists, parses, and is itself normalized (sorted keys)
-- every golden path present in the live spec
+- every golden path present in the live spec, and no live path missing
   from the golden (additive drift is flagged, not silently accepted)
 - methods per path match exactly
 - parameter names + required flags match per operation
@@ -53,9 +53,7 @@ def normalized_surface(spec: dict[str, Any] | None = None) -> dict[str, Any]:
     if spec is None:
         from fx1.serve.api import create_app
 
-        spec = create_app(
-            public_release=False,
-        ).openapi()
+        spec = create_app().openapi()
     paths: dict[str, Any] = {}
     for path, ops in spec.get("paths", {}).items():
         paths[path] = {m: _operation_surface(ops[m]) for m in sorted(ops)}

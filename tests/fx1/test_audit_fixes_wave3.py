@@ -383,14 +383,16 @@ def _fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
 
 def test_extra_args_config_contained(tmp_path: Path, monkeypatch):
     harness = Harness(runner=_fake_runner)
-    repo = Path(__file__).resolve().parents[2]
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValueError, match="allowlist"):
         harness.run("doctor", extra_args=["--config", "/etc/passwd"])
     with pytest.raises(ValueError, match="allowlist"):
         harness.run("doctor", extra_args=["--config=/etc/passwd"])
-    monkeypatch.chdir(repo)
-    result = harness.run("doctor", extra_args=["--config", "configs/paper.yaml"])
+    configs = tmp_path / "configs"
+    configs.mkdir()
+    inside = configs / "ok.yaml"
+    inside.write_text("x: 1\n", encoding="utf-8")
+    result = harness.run("doctor", extra_args=["--config", "configs/ok.yaml"])
     assert result.ok
 
 
@@ -477,9 +479,7 @@ def test_hosted_backend_rejects_null_content(monkeypatch):
 
     class _Resp:
         def read(self):
-            return json.dumps(
-                {"model": "kimi-k3", "choices": [{"message": {"content": None}}]}
-            ).encode()
+            return json.dumps({"choices": [{"message": {"content": None}}]}).encode()
 
         def __enter__(self):
             return self

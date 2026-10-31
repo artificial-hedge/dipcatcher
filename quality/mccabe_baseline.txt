@@ -2,9 +2,9 @@
 # Format: <path>:<qualified_name> <max_complexity>
 # Soft threshold for unlisted functions: 10
 # Regenerate after reductions: uv run python scripts/check_mccabe_ratchet.py --write
+src/fx1/cli.py:harness_message 14
+src/fx1/cli.py:harness_respond 17
 src/fx1/cli_audit.py:cli_audit 182
-src/fx1/cli_harness_chat.py:harness_message 14
-src/fx1/cli_harness_chat.py:harness_respond 17
 src/fx1/data/sources/adapters.py:FinanceFetchAdapter.fetch 10
 src/fx1/data/sources/ds_audit.py:ds_audit 13
 src/fx1/eval/ext_bench.py:_run_fintoolbench_task 11
@@ -25,6 +25,8 @@ src/fx1/forecast/features.py:resample_ohlcv 15
 src/fx1/forecast/runner.py:_predict_walk_forward 10
 src/fx1/forecast/schema.py:validate_forecast_schema 17
 src/fx1/harness_bench.py:run_bench 14
+src/fx1/interactive/concierge.py:Concierge._execute_tool 10
+src/fx1/interactive/superpower.py:run_plan 19
 src/fx1/interactive/wizard.py:enter 10
 src/fx1/operations/audit_bar_integrity.py:execute 16
 src/fx1/operations/audit_cross_field_contracts.py:execute 15
@@ -77,19 +79,21 @@ src/fx1/serve/api.py:_mount_complete_routes.openai_completions 16
 src/fx1/serve/api.py:_mount_complete_routes.openai_responses 39
 src/fx1/serve/api.py:_mount_job_routes 22
 src/fx1/serve/api.py:_mount_key_lifecycle 23
-src/fx1/serve/api.py:_mount_receipt_routes 12
+src/fx1/serve/api.py:_mount_receipt_routes 16
 src/fx1/serve/api.py:_resolve_auth 12
 src/fx1/serve/api.py:_submit_job 14
-src/fx1/serve/api.py:create_app 70
-src/fx1/serve/api.py:create_app._resolve_request_backend 10
+src/fx1/serve/api.py:create_app 71
+src/fx1/serve/api.py:create_app._resolve_request_backend 11
 src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
-src/fx1/serve/api_audit_finetune.py:probe_finetune 46
+src/fx1/serve/api_audit.py:_probe_finetune 46
+src/fx1/serve/backends.py:LocalFx1Backend.__init__ 12
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
-src/fx1/serve/backends.py:_openai_chat_complete_tools 15
+src/fx1/serve/backends.py:_openai_chat_complete 10
+src/fx1/serve/backends.py:_openai_chat_complete_tools 19
+src/fx1/serve/backends.py:_openai_chat_stream 18
 src/fx1/serve/backends.py:_openai_embeddings_complete 12
 src/fx1/serve/backends.py:_openai_tokenize_count 10
-src/fx1/serve/backends.py:hosted_api_url_problem 10
 src/fx1/serve/byok_audit.py:_StubUpstream._respond 15
 src/fx1/serve/byok_audit.py:_backend_probes 18
 src/fx1/serve/byok_audit.py:_client 11
@@ -104,6 +108,7 @@ src/fx1/serve/files_audit.py:_probe_concurrency 10
 src/fx1/serve/finetune.py:FTJobStore.__init__ 16
 src/fx1/serve/finetune.py:default_ft_runner 23
 src/fx1/serve/finetune.py:default_ft_runner._runner 22
+src/fx1/serve/jobs_audit.py:_wait_stream_probes 11
 src/fx1/serve/journal_audit.py:journal_audit 13
 src/fx1/serve/keys.py:ApiKeyStore.update 12
 src/fx1/serve/models_audit.py:_probe_concurrency 18
@@ -117,7 +122,7 @@ src/fx1/serve/openai_compat.py:response_input_to_messages 31
 src/fx1/serve/parity_audit.py:parity_audit 82
 src/fx1/serve/retrieval_audit.py:_concurrent_read_probes 20
 src/fx1/serve/retrieval_audit.py:_stream_probes 16
-src/fx1/serve/serve_audit.py:_serve_audit_body 31
+src/fx1/serve/serve_audit.py:serve_audit 30
 src/fx1/serve/spec_audit.py:_check 10
 src/fx1/serve/uploads.py:UploadStore.__init__ 15
 src/fx1/serve/uploads.py:UploadStore.add_part 16
@@ -130,11 +135,9 @@ src/fx1/serve/vectorstores.py:validate_filters 14
 src/fx1/serve/webhooks.py:deliver_signed 13
 src/fx1/train/pipeline.py:Pipeline.run_eval_candidate 10
 src/fx1/webresearch/engine.py:Researcher._fetch_doc 11
-src/fx1/webresearch/engine.py:Researcher.run 10
-src/fx1/webresearch/engine.py:group_claims 10
+src/fx1/webresearch/engine.py:Researcher.run 14
 src/fx1/webresearch/fetch.py:_robots_disallowed 11
 src/fx1/webresearch/fetch.py:fetch_page 15
-src/fx1/webresearch/search.py:DuckDuckGoLiteSearcher.search 10
 src/quant_fund/api/app.py:api_auth_middleware 11
 src/quant_fund/api/app.py:drift 13
 src/quant_fund/api/app.py:get_backtest 15
@@ -150,7 +153,7 @@ src/quant_fund/audit/trace.py:trace_published_number 20
 src/quant_fund/audit/verify.py:_check_checkpoint 16
 src/quant_fund/audit/verify.py:verify_ledger 20
 src/quant_fund/backtest/adaptive_mix.py:trailing_nav_allocations 13
-src/quant_fund/backtest/carry_engine.py:run_carry_backtest 52
+src/quant_fund/backtest/carry_engine.py:run_carry_backtest 44
 src/quant_fund/backtest/engine.py:_run_backtest_event_loop 36
 src/quant_fund/backtest/event_sim/fills.py:advance_queue 10
 src/quant_fund/backtest/event_sim/sensitivity.py:execution_sensitivity 10
@@ -174,6 +177,7 @@ src/quant_fund/cli/micro_cmds.py:candle_book 11
 src/quant_fund/cli/micro_cmds.py:kyle_ofi 11
 src/quant_fund/cli/ops_cmds.py:monitor 10
 src/quant_fund/cli/ops_cmds.py:paper 23
+src/quant_fund/cli/ops_cmds.py:sim_live 10
 src/quant_fund/cli/research_cmds.py:basis_carry_cmd 26
 src/quant_fund/cli/research_cmds.py:corpus_absence_cmd 19
 src/quant_fund/cli/research_cmds.py:corpus_epoch 24
@@ -181,6 +185,8 @@ src/quant_fund/cli/research_cmds.py:custody_cmd 13
 src/quant_fund/cli/research_cmds.py:epoch_position_cmd 10
 src/quant_fund/cli/research_cmds.py:execution_sensitivity_cmd 10
 src/quant_fund/cli/research_cmds.py:online_fdr_cmd 12
+src/quant_fund/cli/research_cmds.py:research 16
+src/quant_fund/cli/research_cmds.py:suite_health_cmd 10
 src/quant_fund/cli/research_cmds.py:xvenue_basis_cmd 15
 src/quant_fund/config/models.py:KronosConfig.valid_kronos_settings 14
 src/quant_fund/config/models.py:NorthsetConfig.valid_northset_settings 25
@@ -242,10 +248,8 @@ src/quant_fund/labels/barriers.py:triple_barrier 13
 src/quant_fund/labels/engine.py:build_labels 12
 src/quant_fund/leakage/ast_scan.py:_check_lh003 12
 src/quant_fund/leakage/ast_scan.py:_check_lh009 10
-src/quant_fund/leakage/ast_scan.py:_check_lh011 10
 src/quant_fund/leakage/ast_scan.py:_check_lh014 10
 src/quant_fund/leakage/ast_scan.py:_fold_num 12
-src/quant_fund/leakage/ast_scan.py:_lh013_visit_node 11
 src/quant_fund/leakage/cli.py:scan_cmd 10
 src/quant_fund/lightspeed/momentum.py:momentum_target_weights 34
 src/quant_fund/lightspeed/rotation.py:_raw_sleeves 10
@@ -383,8 +387,7 @@ src/quant_fund/microstructure/zi_lob_simulator.py:RateRegimeSpec.__post_init__ 1
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobConfig.__post_init__ 37
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._cancel_event 35
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._hit_flee 10
-src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._lo_place_ref_anchored 36
-src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._lo_place_touch_anchored 31
+src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._limit_order_event 74
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._repost_level 12
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator.step 13
 src/quant_fund/microstructure/zi_lob_simulator.py:metaorder_impact_slope 11
@@ -712,9 +715,8 @@ src/quant_fund/paper/forward_shadow.py:_close_packet 15
 src/quant_fund/paper/forward_shadow.py:_open_packet 12
 src/quant_fund/paper/forward_shadow.py:_plan_close 11
 src/quant_fund/paper/forward_shadow.py:prepare 17
-src/quant_fund/paper/ledger.py:_validate_ledger_broker_state 23
-src/quant_fund/paper/ledger.py:_validate_ledger_meta 11
 src/quant_fund/paper/ledger.py:promotion_dry_run 20
+src/quant_fund/paper/ledger.py:validate_ledger_schema 74
 src/quant_fund/paper/ledger.py:validate_promotion_dry_run_receipt 28
 src/quant_fund/paper/quantile_signals.py:QuantilePolicy.__post_init__ 18
 src/quant_fund/paper/quantile_signals.py:load_deep_bars 10
@@ -727,7 +729,7 @@ src/quant_fund/parity/replay.py:_execute_pending 14
 src/quant_fund/parity/replay.py:replay_session 25
 src/quant_fund/parity_leak_audit.py:parity_leak_audit 24
 src/quant_fund/pipeline/dataset.py:panel 13
-src/quant_fund/pipeline/doctor.py:doctor 14
+src/quant_fund/pipeline/doctor.py:doctor 15
 src/quant_fund/pipeline/flat_audit.py:pipeline_flat_audit 14
 src/quant_fund/pipeline/forecast/artifacts.py:_load_probability_calibrator 12
 src/quant_fund/pipeline/forecast/conformal.py:conformal_sets_asof 12
@@ -757,11 +759,12 @@ src/quant_fund/portfolio/wasserstein_dro.py:solve_wasserstein_dro 13
 src/quant_fund/pretrade/kernel.py:hot_check 38
 src/quant_fund/proof/replay.py:replay_bundle 17
 src/quant_fund/proof/runner.py:_compute_feature 13
+src/quant_fund/proof/verify.py:_check_committed_sidecars 11
 src/quant_fund/proof/verify.py:verify_bundle 14
 src/quant_fund/public.py:_as_backtest_metrics 18
 src/quant_fund/public.py:_as_json 10
 src/quant_fund/realized/hf_rv.py:_detect_holes 10
-src/quant_fund/realized/hf_rv.py:compute_hf_rv 10
+src/quant_fund/realized/hf_rv.py:compute_hf_rv 14
 src/quant_fund/registry/artifact_store.py:ArtifactStore.verify 14
 src/quant_fund/registry/lineage_dag.py:lineage_dag 12
 src/quant_fund/registry/mlflow_store.py:promotion_decision 18
@@ -776,7 +779,6 @@ src/quant_fund/research/agent.py:_hypotheses_conformal_bounds 14
 src/quant_fund/research/agent.py:_hypotheses_northset 41
 src/quant_fund/research/agent.py:_hypotheses_rankers_and_rewards 16
 src/quant_fund/research/agent.py:_ranker_data_snooping 11
-src/quant_fund/research/agent.py:run_research 10
 src/quant_fund/research/allocation/engines.py:fit_weights 12
 src/quant_fund/research/allocation/engines.py:risk_parity_weights 12
 src/quant_fund/research/auditor_bundle.py:bundle_contract_errors 12
@@ -893,7 +895,7 @@ src/quant_fund/research/coherence.py:run_coherence 16
 src/quant_fund/research/compare.py:RunComparison.to_markdown 14
 src/quant_fund/research/concordance.py:concordance_consistency_errors 15
 src/quant_fund/research/concordance.py:run_concordance 23
-src/quant_fund/research/corpus_epoch.py:check_epoch_chain 37
+src/quant_fund/research/corpus_epoch.py:check_epoch_chain 42
 src/quant_fund/research/corpus_epoch.py:corpus_epoch 12
 src/quant_fund/research/corpus_epoch.py:epoch_contract_errors 34
 src/quant_fund/research/corpus_epoch.py:load_heads_pin 10
@@ -1014,14 +1016,17 @@ src/quant_fund/research/receipt_lattice.py:lattice_contract_errors 27
 src/quant_fund/research/receipt_lattice.py:receipt_lattice 29
 src/quant_fund/research/receipt_schema.py:overfitting_block_errors 21
 src/quant_fund/research/receipt_tombstone.py:tombstone_contract_errors 10
+src/quant_fund/research/receipt_v2.py:_verify_v1 18
 src/quant_fund/research/release_attestation.py:release_contract_errors 11
 src/quant_fund/research/release_attestation.py:verify_release_attestation 27
 src/quant_fund/research/replay_proof.py:_resolve_input_tapes 10
 src/quant_fund/research/replay_proof.py:replay_manifest_errors 15
 src/quant_fund/research/replay_proof.py:replay_proof_contract_errors 41
-src/quant_fund/research/replay_proof.py:run_replay 30
-src/quant_fund/research/repo_integrity.py:repo_integrity_contract_errors 20
-src/quant_fund/research/repo_integrity.py:verify_repo 32
+src/quant_fund/research/replay_proof.py:run_replay 31
+src/quant_fund/research/replay_sweep.py:replay_coverage_contract_errors 24
+src/quant_fund/research/replay_sweep.py:run_replay_sweep 10
+src/quant_fund/research/repo_integrity.py:repo_integrity_contract_errors 30
+src/quant_fund/research/repo_integrity.py:verify_repo 35
 src/quant_fund/research/script_receipts.py:band_search_contract_errors 11
 src/quant_fund/research/script_receipts.py:deps_hygiene_contract_errors 17
 src/quant_fund/research/script_receipts.py:dip_bench_contract_errors 13
@@ -1038,6 +1043,7 @@ src/quant_fund/research/tamper_drill.py:_probes 25
 src/quant_fund/research/tamper_drill.py:drill_contract_errors 11
 src/quant_fund/research/tape_registry.py:load_registry 13
 src/quant_fund/research/tape_registry.py:verify_manifest 20
+src/quant_fund/research/timestamp_anchor.py:extract_imprint 15
 src/quant_fund/research/timestamp_anchor.py:verify_timestamps 12
 src/quant_fund/research/total_return.py:_actions_for_adjustment 11
 src/quant_fund/research/verdict_run.py:verdict_streams 11
@@ -1061,7 +1067,6 @@ src/quant_fund/robustness/schema.py:_scorecard_errors 15
 src/quant_fund/robustness/schema.py:robustness_extension_errors 16
 src/quant_fund/robustness/smoke.py:run_smoke 10
 src/quant_fund/schemas/order_book.py:OrderBookSnapshot._validate_book 10
-src/quant_fund/schemas/receipt_v2_leaf.py:_verify_v1 19
 src/quant_fund/simtest/clock.py:SimClock.advance_to 12
 src/quant_fund/simtest/invariants.py:check_invariants 13
 src/quant_fund/simtest/session.py:_conservation_errors 13

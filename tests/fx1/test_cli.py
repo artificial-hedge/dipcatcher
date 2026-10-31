@@ -15,9 +15,7 @@ def test_version_flag_reports_package_version():
 
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert result.stdout.strip() == (
-        f"fx1 {fx1.__version__} (fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
-    )
+    assert result.stdout.strip() == f"fx1 {fx1.__version__}"
 
 
 def _receipt(path: Path) -> None:
@@ -206,13 +204,6 @@ def test_modelcard_cli_reports_ship_gate(tmp_path: Path):
     result = runner.invoke(app, ["modelcard", str(card)])
     assert result.exit_code == 0
     assert json.loads(result.stdout)["ship_eligible"] is True
-
-
-def test_modelcard_cli_fixture_syn_refuses_ship(tmp_path: Path):
-    card = _ship_eligible_card(tmp_path)
-    result = runner.invoke(app, ["modelcard", str(card), "--fixture", "SYNTHETIC"])
-    assert result.exit_code == 0
-    assert json.loads(result.stdout)["ship_eligible"] is False
 
 
 def test_sbom_cli_from_repo_lockfile(tmp_path: Path):

@@ -93,8 +93,6 @@ _EXCLUDED_LANE_MODULES = {
     "online_fdr": "operates on the receipt corpus, not a stream",
     "winner_curse": "batch correction, not sequential",
     "fleet_race": "head-elimination driver — uses LossEProcess internally",
-    "mean_eprocess": "bounded-mean e-process primitive — composed by loss_cs, not a direct lane",
-    "policy_eprocess": "paired-difference e-process primitive — composed by ULTRAPLAN, not a direct lane",
 }
 
 _LANE_SUFFIXES = ("_watch", "_eprocess", "_alarm", "_monitor", "_localize", "_cs")

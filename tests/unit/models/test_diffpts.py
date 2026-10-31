@@ -12,7 +12,7 @@ of Physical Systems"; CRPS-ensembles-vs-latent-diffusion honesty).
 
 All data here is SYNTHETIC (seeded AR(1) streams / hand-built parameter
 fixtures) — correctness evidence for the algorithm, never market evidence;
-Torch tests skip cleanly when the nn extra is
+no live-trading claims. Torch tests skip cleanly when the nn extra is
 absent; every sampler/scoring path is pure numpy and always runs.
 """
 

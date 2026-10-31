@@ -45,7 +45,8 @@ become true, not removed.
 2. The replay engine NEVER trusts original metrics or fills. It recomputes
    every quantity and compares hashes. `identical` means bit-exact on every
    compared field; anything else is `diverged` with a first-divergence record.
-3. A replay verdict is evidence about *re-executability*.
+3. A replay verdict is evidence about *re-executability*, not about live-trading
+   quality. No live-trading claims anywhere (AGENTS.md).
 4. Unknown environment → fail closed. Replay requires: same python tag, same
    platform, same quant_fund version fingerprint. Mismatch →
    `ReplayVerdict(status="unavailable", reason="env_mismatch")`.

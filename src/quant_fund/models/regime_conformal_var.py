@@ -52,8 +52,8 @@ over unweighted split conformal in the high-vol regime only insofar as the
 posteriors are informative and regime-conditional score distributions are
 stable between calibration and test. Every number produced by
 ``bench_regime_weighted_conformal_var`` is a SYNTHETIC oracle-regime
-correctness check — never market evidence.
-Lab scores are coverage and width. No Sharpe.
+correctness check — never market evidence — and nothing here is a
+live-trading claim. Lab scores are coverage and width. No Sharpe.
 """
 
 from __future__ import annotations

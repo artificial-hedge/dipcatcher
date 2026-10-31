@@ -4,7 +4,8 @@ Research diagnostic only. Same point-in-time S&P membership grid as
 `docs/REALITY_TRIAL_SURVIVORSHIP_2026.md`, scored twice on one Yahoo
 fetch: once on quote closes (default), once after cash-dividend
 reinvestment through `prepare_bars(..., actions)`. Reality-filter
-thresholds and the sealed ledger were not edited.
+thresholds and the sealed ledger were not edited. Not a live-trading
+claim.
 
 Comparison receipt sha256: `3669d2f6cf7e2049d54cdc3d292d58a3f1f29d060c1cea73d6ea7628c2fa82f3`.
 Cash-dividend rows on the fetch: 18166.

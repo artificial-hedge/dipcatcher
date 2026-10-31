@@ -166,9 +166,7 @@ def _sdk_client() -> Iterator[Any]:
     try:
         os.environ.pop("FX1_API_KEY", None)
         os.environ.pop("MOONSHOT_API_KEY", None)
-        app = api_mod.create_app(
-            public_release=False, backend_resolver=lambda *a, **k: _SdkBackend()
-        )
+        app = api_mod.create_app(backend_resolver=lambda *a, **k: _SdkBackend())
         transport = httpx2.ASGITransport(app=app)
         http = httpx2.AsyncClient(transport=transport, base_url="http://sdk-audit")
         yield openai.AsyncOpenAI(

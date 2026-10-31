@@ -76,7 +76,7 @@ import re
 import threading
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from fx1.serve.conv_audit import (
     _RESOURCES,
@@ -141,7 +141,6 @@ def _client(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: (backend_map or {})[name](),
             state_dir=state_dir if state_dir is not None else isolated / "state",
@@ -567,8 +566,8 @@ def _ordering_paging_probes() -> dict[str, bool]:
         f"/v1/conversations/{conv['id']}/items", params={"order": "desc"}, headers=_h()
     ).json()
 
-    def item_ids(body: dict[str, Any]) -> list[str]:
-        return [cast(str, item["id"]) for item in body["data"]]
+    def item_ids(body: dict[str, Any]) -> list[Any]:
+        return [i["id"] for i in body["data"]]
 
     out["conv_items_insertion_order_asc"] = item_ids(asc) == ids
     out["conv_items_order_desc_flips"] = item_ids(desc) == ids[::-1]
@@ -1211,14 +1210,19 @@ def _stream_probes() -> dict[str, bool]:
     jid = str(jb.json()["job_id"])
     frames: list[str] = []
     terminal_seen = False
+    # _WAIT_S, not a 3s slice: the access log stamps response start, and a
+    # loaded runner can still be queued when a short stream hits its deadline.
     with client.stream(
-        "GET", f"/harness/jobs/{jid}/events", params={"timeout_s": 3}, headers=_h()
+        "GET", f"/harness/jobs/{jid}/events", params={"timeout_s": _WAIT_S}, headers=_h()
     ) as s:
         assert s.status_code == 200, "job events stream refused"
         for chunk in s.iter_text():
             frames.append(chunk)
         # reaching here means the stream closed (terminal or deadline)
     joined = "".join(frames)
+    # SSE frames are blank-line separated in the concatenated body.
+    # iter_text chunks are a transport detail — gzip and the ASGI
+    # buffer split "\n\n" across yields — so they are not frames.
     snap_lines = [ln for ln in joined.split("\n") if ln.startswith("data: ")]
     for ln in snap_lines:
         try:
@@ -1227,9 +1231,12 @@ def _stream_probes() -> dict[str, bool]:
                 terminal_seen = True
         except json.JSONDecodeError:
             pass
-    # iter_text chunks are not SSE frames; only the joined stream is.
+    blocks = [b for b in joined.split("\n\n") if b.strip()]
     out["job_events_sse_frames_end_terminal"] = (
-        "event: job" in joined and terminal_seen and "\n\n" in joined
+        joined.endswith("\n\n")
+        and terminal_seen
+        and bool(blocks)
+        and all(b.lstrip().startswith(("event: job", ":")) for b in blocks)
     )
     # every frame body parses as the job snapshot — no partial lines
     out["job_events_frames_complete_json"] = (

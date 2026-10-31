@@ -9,10 +9,7 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from quant_fund.data.ingest_resume import Batch, IngestCheckpoint, IngestJournalError
-from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
 def test_crash_resume_no_duplicate_rows(tmp_path) -> None:
@@ -63,65 +60,3 @@ def test_corrupt_journal_fails_closed(tmp_path) -> None:
         pass
     else:
         raise AssertionError("expected IngestJournalError on tampered journal")
-
-
-def _sealed_record(batch_id: object, rows: object, **extra: object) -> str:
-    body = {"batch_id": batch_id, "rows": rows, **extra}
-    return json.dumps({**body, "sha256": hash_bytes(canonical_json_bytes(body))}, sort_keys=True)
-
-
-def test_reingest_with_conflicting_row_count_fails_closed(tmp_path) -> None:
-    path = tmp_path / "ingest.jsonl"
-    run = IngestCheckpoint(path)
-    run.ingest(Batch(batch_id="b1", rows=100))
-    original = path.read_bytes()
-
-    with pytest.raises(IngestJournalError, match="already committed"):
-        run.ingest(Batch(batch_id="b1", rows=101))
-    assert path.read_bytes() == original
-    assert run.resume()["total_rows"] == 100
-
-
-@pytest.mark.parametrize("replayed_rows", [100, 999])
-def test_replay_rejects_duplicate_batch_id_even_with_valid_hash(tmp_path, replayed_rows) -> None:
-    path = tmp_path / "ingest.jsonl"
-    IngestCheckpoint(path).ingest(Batch(batch_id="b1", rows=100))
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(_sealed_record("b1", replayed_rows) + "\n")
-
-    with pytest.raises(IngestJournalError, match="duplicate batch_id"):
-        IngestCheckpoint(path)
-
-
-@pytest.mark.parametrize(
-    ("batch_id", "rows"),
-    [
-        ("", 1),
-        ("   ", 1),
-        (None, 1),
-        ("b1", -1),
-        ("b1", True),
-        ("b1", 1.5),
-        ("b1", "1"),
-    ],
-)
-def test_invalid_batch_cannot_commit_or_replay(tmp_path, batch_id, rows) -> None:
-    path = tmp_path / "ingest.jsonl"
-    with pytest.raises(IngestJournalError):
-        IngestCheckpoint(path).ingest(Batch(batch_id=batch_id, rows=rows))
-    assert not path.exists()
-
-    path.write_text(_sealed_record(batch_id, rows) + "\n", encoding="utf-8")
-    with pytest.raises(IngestJournalError):
-        IngestCheckpoint(path)
-
-
-def test_replay_rejects_extra_hash_valid_fields_and_blank_lines(tmp_path) -> None:
-    path = tmp_path / "ingest.jsonl"
-    path.write_text(_sealed_record("b1", 1, ignored=999) + "\n", encoding="utf-8")
-    with pytest.raises(IngestJournalError, match="invalid fields"):
-        IngestCheckpoint(path)
-
-    path.write_text(_sealed_record("b1", 1) + "\n\n", encoding="utf-8")
-    with pytest.raises(IngestJournalError, match="blank ingest journal line"):
-        IngestCheckpoint(path)

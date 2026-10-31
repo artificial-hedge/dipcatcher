@@ -51,7 +51,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import itertools
 import json
 import os
 import threading
@@ -64,7 +63,7 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-from quant_fund.schemas.receipt_v2_leaf import verify_receipt_payload
+from quant_fund.schemas.receipt import verify_receipt_payload
 from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["jobs_audit", "jobs_audit_bench"]
@@ -160,7 +159,6 @@ def _make_app(
     from fx1.serve.conv_audit import _StubBackend  # noqa: PLC0415
 
     return api_mod.create_app(
-        public_release=False,
         harness=Harness(runner=runner or _fast_runner),
         backend_resolver=lambda *a, **k: _StubBackend(),
         state_dir=state_dir,
@@ -881,36 +879,6 @@ def _webhook_probes() -> dict[str, bool]:
 # ---------------------------------------------------------------------------
 
 
-def _sse_until_terminal(
-    client: TestClient, job_id: str, gate: threading.Event
-) -> list[dict[str, Any]]:
-    """Read the job SSE on this thread once the run has finished.
-
-    ``TestClient`` binds its portal to the thread that opened the client.
-    Streaming from a second thread can drop the body, and the probe then
-    records no frames. Reading on this thread before ``gate`` is set also
-    fails closed: ``iter_lines`` does not return until the handler stops,
-    and the handler waits out ``timeout_s`` while the runner is still
-    blocked. Release the runner, wait until the record is terminal, then
-    read. The handler emits the current snapshot on subscribe and closes
-    on a terminal status, so the body is the finished job.
-    """
-    gate.set()
-    finished = _wait(client, job_id)
-    events: list[dict[str, Any]] = []
-    if finished.get("status") not in _TERMINAL:
-        return events
-    with client.stream("GET", f"{_JOBS}/{job_id}/events?timeout_s=10") as resp:
-        for line in resp.iter_lines():
-            if not line.startswith("data:"):
-                continue
-            payload = json.loads(line[5:].strip())
-            events.append(payload)
-            if payload.get("status") in _TERMINAL:
-                break
-    return events
-
-
 def _wait_stream_probes() -> dict[str, bool]:
     out: dict[str, bool] = {}
     gate = threading.Event()
@@ -931,7 +899,28 @@ def _wait_stream_probes() -> dict[str, bool]:
     out["wait_s_param_inert"] = r_wait.status_code == 200 and elapsed < 2.0
     out["wait_s_returns_live_status"] = r_wait.json()["status"] == "running"
 
-    events = _sse_until_terminal(client, job_id, gate)
+    # SSE: frames stream transitions and the terminal frame ends it
+    events: list[dict[str, Any]] = []
+    done = threading.Event()
+
+    def consume() -> None:
+        try:
+            with client.stream("GET", f"{_JOBS}/{job_id}/events?timeout_s=10") as resp:
+                for line in resp.iter_lines():
+                    if line.startswith("data:"):
+                        events.append(json.loads(line[5:].strip()))
+                        if events[-1].get("status") in _TERMINAL:
+                            done.set()
+                            return
+        except Exception:  # noqa: BLE001 — stream close is expected
+            pass
+        done.set()
+
+    th = threading.Thread(target=consume, daemon=True)
+    th.start()
+    gate.set()
+    done.wait(timeout=_WAIT_S)
+    th.join(timeout=_WAIT_S)
     statuses = [str(e.get("status")) for e in events]
     out["sse_emits_terminal_frame"] = bool(statuses) and statuses[-1] == "succeeded"
     out["sse_frames_monotone"] = all(
@@ -1359,18 +1348,12 @@ def _store_probes() -> dict[str, bool]:
     out: dict[str, bool] = {}
     import fx1.serve.api as api_mod  # noqa: PLC0415
 
-    # time.time_ns() repeats inside one clock tick. put() treats a repeated
-    # id as the same record, so the eviction probe sometimes replaces the
-    # live job instead of dropping it and the sealed receipt moves.
-    seq = itertools.count()
-
     def _job(status: str = "queued") -> Any:
-        n = next(seq)
         return api_mod.JobStatusResponse.model_validate(
             {
-                "job_id": f"job-{status}-{n}",
+                "job_id": f"job-{status}-{time.time_ns()}",
                 "status": status,
-                "created_at": 1_700_000_000.0 + n,
+                "created_at": time.time(),
                 "finished_at": None,
                 "result": None,
                 "error": None,

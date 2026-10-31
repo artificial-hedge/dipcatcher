@@ -37,7 +37,5 @@ def _bfv_check(rng: np.random.RandomState, n: int = 8, q: int = 4093, t: int = 1
 
 def bench_bfv_fhe(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    ok = sum(
-        _bfv_check(np.random.RandomState(rng.randint(2**31, dtype=np.int64))) for _ in range(60)
-    )
+    ok = sum(_bfv_check(np.random.RandomState(rng.randint(2**31))) for _ in range(60))
     return {"synthetic_bfv_add_correct": ok / 60}

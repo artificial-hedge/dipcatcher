@@ -38,8 +38,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-import time
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -113,43 +111,6 @@ def _seq_children(body: bytes) -> list[tuple[int, bytes]]:
     return out
 
 
-def _encap_content_info(sd_wrap: bytes) -> bytes:
-    sd = _seq_children(sd_wrap)
-    eci = None
-    for t, v in sd:
-        if t == 0x30:
-            inner = _seq_children(v)
-            if inner and inner[0][0] == 0x06:
-                eci = inner
-                break
-    if eci is None or len(eci) < 2 or eci[1][0] != 0xA0:
-        raise DerError("encapContentInfo missing")
-    _t, octs, _ = _read_tlv(eci[1][1], 0)
-    if _t != 0x04:
-        raise DerError("eContent not octet string")
-    return octs
-
-
-def _tst_info_children(tsr: bytes) -> list[tuple[int, bytes]]:
-    tag, top, _ = _read_tlv(tsr, 0)
-    if tag != 0x30:
-        raise DerError("tsr not a sequence")
-    children = _seq_children(top)
-    if len(children) < 2:
-        raise DerError("no token")
-    tag, content = children[1]
-    if tag != 0x30:
-        raise DerError("contentInfo not a sequence")
-    ci = _seq_children(content)
-    if len(ci) < 2 or ci[1][0] != 0xA0:
-        raise DerError("signedData missing")
-    _t, sd_wrap, _ = _read_tlv(ci[1][1], 0)
-    if _t != 0x30:
-        raise DerError("signedData not a sequence")
-    octs = _encap_content_info(sd_wrap)
-    return _seq_children(_read_tlv(octs, 0)[1])
-
-
 def extract_imprint(tsr: bytes) -> bytes:
     """Pull the ``messageImprint`` digest out of a DER TimeStampResp.
 
@@ -158,7 +119,38 @@ def extract_imprint(tsr: bytes) -> bytes:
     OCTET STRING digest.
     """
     try:
-        tst = _tst_info_children(tsr)
+        tag, top, _ = _read_tlv(tsr, 0)
+        if tag != 0x30:
+            raise DerError("tsr not a sequence")
+        children = _seq_children(top)
+        if len(children) < 2:
+            raise DerError("no token")
+        tag, content = children[1]
+        if tag != 0x30:
+            raise DerError("contentInfo not a sequence")
+        ci = _seq_children(content)
+        # ci: OID, [0] signedData
+        if len(ci) < 2 or ci[1][0] != 0xA0:
+            raise DerError("signedData missing")
+        _t, sd_wrap, _ = _read_tlv(ci[1][1], 0)
+        if _t != 0x30:
+            raise DerError("signedData not a sequence")
+        sd = _seq_children(sd_wrap)
+        # sd: version, digestAlgs SET, encapContentInfo SEQ, ...
+        eci = None
+        for t, v in sd:
+            if t == 0x30:
+                inner = _seq_children(v)
+                if inner and inner[0][0] == 0x06:  # starts with OID
+                    eci = inner
+                    break
+        if eci is None or len(eci) < 2 or eci[1][0] != 0xA0:
+            raise DerError("encapContentInfo missing")
+        _t, octs, _ = _read_tlv(eci[1][1], 0)
+        if _t != 0x04:
+            raise DerError("eContent not octet string")
+        tst = _seq_children(_read_tlv(octs, 0)[1])
+        # TSTInfo: version INT, policy OID, messageImprint SEQ
         for t, v in tst:
             if t == 0x30:
                 mi = _seq_children(v)
@@ -167,29 +159,6 @@ def extract_imprint(tsr: bytes) -> bytes:
         raise DerError("messageImprint not found")
     except (IndexError, DerError) as exc:
         raise DerError(f"malformed tsr: {exc}") from exc
-
-
-def _parse_generalized_time_utc(data: bytes) -> int:
-    text = data.decode("ascii")
-    if text.endswith("Z"):
-        text = text[:-1]
-    if "." in text:
-        base, frac = text.split(".", 1)
-        dt = datetime.strptime(base, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
-        micro = int(frac.ljust(6, "0")[:6])
-        return int((dt + timedelta(microseconds=micro)).timestamp())
-    dt = datetime.strptime(text, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
-    return int(dt.timestamp())
-
-
-def extract_gen_time_unix(tsr: bytes) -> int | None:
-    try:
-        for tag, value in _tst_info_children(tsr):
-            if tag == 0x18:
-                return _parse_generalized_time_utc(value)
-    except (DerError, ValueError, UnicodeError):
-        return None
-    return None
 
 
 def load_anchors(ts_dir: Path) -> dict[str, dict[str, str]]:
@@ -260,7 +229,6 @@ def verify_timestamps(
     root: str | Path,
     *,
     ts_dir: Path = TIMESTAMPS_DIR,
-    now: int | None = None,
 ) -> dict[str, Any]:
     """Verify committed timestamp anchors.
 
@@ -286,9 +254,7 @@ def verify_timestamps(
         }
     errors: list[str] = []
     fresh: dict[str, bool] = {}
-    staleness: dict[str, dict[str, Any]] = {}
     chain: dict[str, str] = {}
-    clock = int(now) if now is not None else int(time.time())
     cacert = tdir / CACERT_NAME
     tsa_cert = tdir / TSA_CERT_NAME
     openssl_ok = _openssl_available() and cacert.is_file()
@@ -303,9 +269,8 @@ def verify_timestamps(
         if not token_path.is_file():
             errors.append(f"tsr_missing:{name}")
             continue
-        token_bytes = token_path.read_bytes()
         try:
-            imprint = extract_imprint(token_bytes).hex()
+            imprint = extract_imprint(token_path.read_bytes()).hex()
         except DerError:
             errors.append(f"tsr_malformed:{name}")
             continue
@@ -316,12 +281,7 @@ def verify_timestamps(
         if not target.is_file():
             errors.append(f"anchor_target_missing:{label}")
             continue
-        is_fresh = hash_bytes(target.read_bytes()) == declared
-        fresh[label] = is_fresh
-        gen_unix = extract_gen_time_unix(token_bytes)
-        age_s = (clock - gen_unix) if gen_unix is not None else None
-        age_days = (age_s // 86400) if isinstance(age_s, int) and age_s >= 0 else None
-        staleness[label] = {"stale": not is_fresh, "age_s": age_s, "age_days": age_days}
+        fresh[label] = hash_bytes(target.read_bytes()) == declared
         if openssl_ok:
             cmd = [
                 "openssl",
@@ -346,7 +306,6 @@ def verify_timestamps(
         "ok": not errors,
         "anchored": True,
         "fresh": fresh,
-        "staleness": staleness,
         "chain": chain,
         "errors": sorted(errors),
     }

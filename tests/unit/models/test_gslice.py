@@ -8,8 +8,8 @@ al. (2023, OT-CFM); Kollovieh et al. (2023, TSFlow grid version); Gneiting
 Lyons (1998) / Chevyrev & Kormilitzin (2016, signature features).
 
 All data here is SYNTHETIC (GP priors, regime-switching increments) —
-correctness evidence for the algorithm, never market evidence.
-Torch tests skip cleanly when the nn extra is absent.
+correctness evidence for the algorithm, never market evidence; no
+live-trading claims. Torch tests skip cleanly when the nn extra is absent.
 """
 
 from __future__ import annotations

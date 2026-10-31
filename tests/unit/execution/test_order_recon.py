@@ -9,7 +9,6 @@ raises). Asserts ``live_pnl_claim=False`` and no live-connectivity claim.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from math import inf, nan
 
 import pytest
 
@@ -212,64 +211,70 @@ def test_reconcile_flags_all_honesty() -> None:
     assert report["live_pnl_claim"] is False
 
 
-@pytest.mark.parametrize("value", [0.0, -1.0, nan, inf])
-def test_invalid_order_quantity_is_refused_without_mutating_ledger(value: float) -> None:
-    led = _ledger()
-    with pytest.raises(OrderLedgerError):
-        led.submit(_order(qty=value))
-    assert led.reconcile()["n_orders"] == 0
-
-
-@pytest.mark.parametrize(
-    "field,value", [("qty", 0.0), ("qty", nan), ("price", -1.0), ("price", inf)]
-)
-def test_invalid_fill_is_refused_without_mutating_ledger(field: str, value: float) -> None:
-    led = _ledger()
-    led.submit(_order())
-    fill = _fill(**{field: value})
-    with pytest.raises(OrderLedgerError):
-        led.record_fill(fill)
-    assert led.reconcile()["n_fills"] == 0
-
-
-def test_cross_security_and_overfill_are_refused() -> None:
+def test_overfill_is_not_applied() -> None:
     led = _ledger(starting_cash=1000.0)
     led.submit(_order(qty=10.0))
-    with pytest.raises(OrderLedgerError, match="security_id"):
-        led.record_fill(_fill(sec="SEC_B"))
-    led.record_fill(_fill(fid="f1", qty=6.0))
-    with pytest.raises(OrderLedgerError, match="exceed"):
-        led.record_fill(_fill(fid="f2", qty=5.0))
-    assert led.reconcile()["n_fills"] == 1
-    assert led.reconcile()["computed_cash"] == 940.0
+    assert led.record_fill(_fill(fid="f1", qty=6.0, price=10.0)) == "accepted"
+    assert led.record_fill(_fill(fid="f2", qty=5.0, price=10.0, t=T1, seq=2)) == "overfill"
+    report = led.reconcile()
+    assert report["counters"]["overfills"] == 1
+    assert report["computed_positions"]["SEC_A"] == 6.0
+    assert report["computed_cash"] == 940.0
+    assert report["ok"] is False
+    assert report["orders"][0]["status"] == "partial"
 
 
-def test_conflicting_replay_ids_are_refused() -> None:
+def test_security_mismatch_is_not_applied() -> None:
+    led = _ledger(starting_cash=1000.0)
+    led.submit(_order(qty=10.0))
+    mismatch = Fill(
+        fill_id="f1",
+        order_id="o1",
+        security_id="OTHER",
+        quantity=10.0,
+        price=10.0,
+        fill_time=T0,
+        seq=1,
+    )
+    assert led.record_fill(mismatch) == "security_mismatch"
+    report = led.reconcile()
+    assert report["computed_positions"] == {}
+    assert report["computed_cash"] == 1000.0
+    assert report["counters"]["security_mismatches"] == 1
+    assert report["ok"] is False
+
+
+def test_cancel_then_late_fill_is_not_applied() -> None:
+    led = _ledger(starting_cash=1000.0)
+    led.submit(_order(qty=10.0))
+    led.trip_kill("halt")
+    assert led.cancel("o1") == "cancelled"
+    assert led.record_fill(_fill(qty=10.0, price=10.0)) == "fill_after_cancel"
+    report = led.reconcile()
+    assert report["computed_positions"] == {}
+    assert report["missing_fills"] == []
+    assert report["orders"][0]["status"] == "cancelled"
+    assert report["counters"]["fills_after_cancel"] == 1
+    assert report["ok"] is False
+
+
+def test_cancel_rejects_unknown_duplicate_and_filled() -> None:
+    led = _ledger()
+    assert led.cancel("missing") == "unknown_order"
+    led.submit(_order(qty=10.0))
+    assert led.cancel("o1") == "cancelled"
+    assert led.cancel("o1") == "duplicate_cancel"
+    led.submit(_order(oid="o2", qty=4.0))
+    led.record_fill(_fill(fid="f2", oid="o2", qty=4.0))
+    assert led.cancel("o2") == "already_filled"
+
+
+def test_nonpositive_fill_is_rejected() -> None:
     led = _ledger()
     led.submit(_order())
-    with pytest.raises(OrderLedgerError, match="conflicting replay"):
-        led.submit(_order(qty=9.0))
-    led.record_fill(_fill())
-    with pytest.raises(OrderLedgerError, match="conflicting replay"):
-        led.record_fill(_fill(price=11.0))
-    assert led.reconcile()["n_orders"] == 1
-    assert led.reconcile()["n_fills"] == 1
-
-
-def test_nonfinite_broker_statement_cannot_hide_drift() -> None:
-    led = _ledger()
     with pytest.raises(OrderLedgerError):
-        led.declare_state(cash=nan, positions={})
+        led.record_fill(_fill(qty=0.0))
     with pytest.raises(OrderLedgerError):
-        led.declare_state(cash=0.0, positions={"SEC_A": inf})
-    assert led.reconcile()["drift"]["declared"] is False
-
-
-def test_fill_that_would_overflow_position_is_refused() -> None:
-    led = _ledger()
-    led.submit(_order(oid="o1", qty=1e308))
-    led.submit(_order(oid="o2", qty=1e308))
-    led.record_fill(_fill(fid="f1", oid="o1", qty=1e308, price=1e-308))
-    with pytest.raises(OrderLedgerError, match="computed position"):
-        led.record_fill(_fill(fid="f2", oid="o2", qty=1e308, price=1e-308))
-    assert led.reconcile()["n_fills"] == 1
+        led.record_fill(_fill(fid="f-neg", qty=-1.0))
+    with pytest.raises(OrderLedgerError):
+        led.record_fill(_fill(fid="f-price", price=0.0))

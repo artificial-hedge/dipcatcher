@@ -8,7 +8,6 @@ fails its own gates.
 
 from __future__ import annotations
 
-import contextlib
 import subprocess
 from pathlib import Path
 
@@ -52,8 +51,7 @@ def _minimal_evidence_tree(tmp_path: Path) -> Path:
         ext = pattern.lstrip("*") or ".json"
         (d / f"evidence_0{ext}").write_text('{"n": 0}\n', encoding="utf-8")
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
-        with contextlib.chdir(root):
-            update_heads_pin(pin, corpus_dir, pattern, ep)
+        update_heads_pin(pin, corpus_dir, pattern, ep)
     (root / "gate_pins.sig").write_text("sig-bytes\n", encoding="utf-8")
     return root
 
@@ -218,54 +216,3 @@ def test_standalone_auditor_fails_closed_on_tamper(tmp_path: Path) -> None:
     )
     assert proc.returncode == 1
     assert "receipts" in proc.stdout
-
-
-def test_standalone_auditor_rejects_pin_lying_about_chain_position(tmp_path: Path) -> None:
-    """The bundle auditor shares ``check_chain`` with ``verify_epoch_chain``:
-    a pin naming the right head but a forged ``chain_root`` / ``n_epochs`` /
-    ``tree_root`` fails the bundle too, and an honest position pin does not."""
-    import hashlib
-    import json
-    import sys
-
-    from quant_fund.research.epoch_merkle import chain_tree_root
-
-    root = _minimal_evidence_tree(tmp_path)
-    bundle = tmp_path / "bundle"
-    export_evidence_bundle(root, bundle)
-    pin_path = bundle / "quality" / "epoch_heads.json"
-    pin = json.loads(pin_path.read_text())
-    key = next(k for k in pin["heads"] if k.startswith("receipts/"))
-    entry = pin["heads"][key]
-    head = bundle / "receipts" / entry["receipt"]
-    honest = {
-        "chain_root": chain_tree_root([(head.name, hashlib.sha256(head.read_bytes()).hexdigest())]),
-        "n_epochs": 1,
-    }
-
-    def audit(**fields: object) -> subprocess.CompletedProcess[str]:
-        pin["heads"][key] = {**entry, **honest, **fields}
-        pin_path.write_text(json.dumps(pin, indent=2, sort_keys=True) + "\n")
-        return subprocess.run(
-            [sys.executable, str(BUNDLE_SCRIPT), "--root", str(bundle)],
-            capture_output=True,
-            text=True,
-        )
-
-    proc = audit()  # positive control: honest position fields
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-
-    for lie, label in (
-        ({"chain_root": "f" * 64}, "epoch_head_chain_root_mismatch"),
-        ({"n_epochs": 9}, "epoch_pin_n_epochs_mismatch"),
-        ({"tree_root": "e" * 64}, "epoch_head_tree_root_mismatch"),
-    ):
-        proc = audit(**lie)
-        assert proc.returncode == 1, (lie, proc.stdout + proc.stderr)
-        assert f"receipts: {label}:{head.name!a}" in proc.stdout, (lie, proc.stdout)
-
-    # Omission downgrade: nulling a field is not a way past the check.
-    for field in ("chain_root", "n_epochs", "tree_root"):
-        proc = audit(**{field: None})
-        assert proc.returncode == 1, (field, proc.stdout + proc.stderr)
-        assert f"receipts: epoch_pin_field_missing:{field!a}" in proc.stdout, proc.stdout

@@ -32,7 +32,7 @@ Composition / differentiation (nothing here modifies the siblings):
 
 Honesty: sim cells are SYNTHETIC correctness probes on a zero-
 intelligence model; the tape half is one LOBSTER day. Nothing here is a
-market-impact forecast.
+market-impact forecast or a live-trading claim.
 
 Receipts: ``closure_fit.v1`` — sealed, MIXED label (real tape targets +
 SYNTHETIC cells), research-only.

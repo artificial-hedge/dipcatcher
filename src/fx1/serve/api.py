@@ -15,16 +15,10 @@ Routes (all POST bodies are ``extra="forbid"`` — no silent arguments):
 - ``POST /harness/runs`` — execute a registered command through
   :class:`~fx1.harness.Harness`; unknown names 404, ``configs/`` escapes
   422, and the command's own timeout bounds the call.
-- ``POST /harness/complete`` — chat completion through
-  ``get_backend(backend)`` wrapped by ``cited_complete`` (the honesty gate
-  runs server-side, in production, on every response). Backend config
-  failures 503, unknown backends 404, honesty violations 502 — the model's
-  output contract is enforced before bytes leave.
-- ``POST /harness/complete/batch`` — many gated completions over one shared
-  backend instance; per-item ok/error verdicts, never a 5xx per item.
-- ``POST /receipts/verify`` — verify an arbitrary receipt object with
-  ``verify_receipt_payload``; callers never need filesystem access to the
-  evidence store.
+- ``POST /harness/complete`` and ``/complete/batch`` — gated chat through
+  ``cited_complete``. Config failures 503, unknown backends 404, honesty
+  violations 502. Batch items return per-item verdicts.
+- ``POST /receipts/verify`` — ``verify_receipt_payload`` with no filesystem.
 
 Auth posture mirrors ``quant_fund.api.research_api``: ``/health`` is the
 only unauthenticated route; when ``FX1_API_KEY`` is set every other route
@@ -38,6 +32,7 @@ import contextvars
 import hashlib
 import hmac
 import inspect
+import io
 import json
 import logging
 import math
@@ -111,23 +106,13 @@ from fx1.serve.anthropic_compat import (
     anthropic_sse,
     anthropic_to_openai,
 )
-from fx1.serve.api_metrics import BackendCompletionStats as BackendCompletionStats
-from fx1.serve.api_metrics import MetricsResponse, _Metrics
-from fx1.serve.api_request_ingress import (
-    MAX_BODY_BYTES as _MAX_BODY_BYTES,
-)
-from fx1.serve.api_request_ingress import (
-    buffer_request_body as _buffer_request_body,  # noqa: F401 — stable test imports
-)
-from fx1.serve.api_request_ingress import (
-    request_ingress_refusal as _request_ingress_refusal,
-)
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
     BYOK_MODEL_ENV,
     LOCAL_SERVE_CMD_ENV,
     LOCAL_SERVE_URL_ENV,
+    BackendNotConfiguredError,
     EmbeddingBackend,
     SamplingParams,
     StreamingBackend,
@@ -135,9 +120,6 @@ from fx1.serve.backends import (
     TokenCountUnavailableError,
     get_backend,
     truncate_chunks,
-)
-from fx1.serve.backends import (
-    BackendNotConfiguredError as BackendNotConfiguredError,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
 from fx1.serve.contract import API_VERSION as API_VERSION
@@ -182,7 +164,6 @@ from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
     OPENAI_RESPONSE_TERMINAL,
-    PUBLIC_MODEL_IDS,
     ByokOverride,
     OpenAIBatchRequest,
     OpenAIChatRequest,
@@ -207,7 +188,8 @@ from fx1.serve.openai_compat import (
     OpenAIVectorStoreFileCreate,
     OpenAIVectorStoreSearch,
     OpenAIVectorStoreUpdate,
-    _resolve_public_release_link,
+    _resolve_openai_link,
+    _resolve_timeout,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -243,7 +225,6 @@ from fx1.serve.openai_compat import (
     validate_openai_output,
     validate_response_format,
 )
-from fx1.serve.openai_request_options import resolve_timeout as _resolve_timeout
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.uploads import (
@@ -260,7 +241,7 @@ from fx1.serve.vectorstores import (
     VectorStoreStore,
 )
 from fx1.serve.webhooks import check_callback_url, deliver_signed
-from quant_fund.schemas.receipt_v2_leaf import verify_receipt_bytes, verify_receipt_payload
+from quant_fund.schemas.receipt import verify_receipt_bytes, verify_receipt_payload
 
 _OBJ_CHAT_COMPLETION = "chat.completion"
 _EV_JOB_CANCELLED = "job cancelled"
@@ -521,7 +502,125 @@ def _v1_error_body(path: str, message: str, status: int, code: str) -> dict[str,
     return openai_error_body(message, status, code)
 
 
+def _bad_content_length_body(path: str) -> dict[str, Any]:
+    """The unparseable ``Content-Length`` refusal body in the path's own
+    grammar — ``{error}`` under ``/v1``, flat ``{detail, code}`` on the
+    ``/harness`` dialect."""
+    if is_openai_path(path):
+        return _v1_error_body(path, "invalid content-length", 400, "bad_request")
+    return {"detail": "invalid content-length", "code": "bad_request"}
+
+
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
+_MAX_BODY_BYTES = 1 << 20
+_SINGLETON_REQUEST_HEADERS = frozenset(
+    {
+        b"authorization",
+        b"content-length",
+        b"content-type",
+        b"host",
+        b"idempotency-key",
+        b"last-event-id",
+        b"transfer-encoding",
+        b"x-api-key",
+        b"x-request-id",
+        b"anthropic-version",
+    }
+)
+
+
+def _ambiguous_request_headers(request: Request) -> str | None:
+    """Reject security-sensitive duplicates before any API collapses them.
+
+    Starlette's ``Headers.get`` selects the first duplicate while the
+    OpenAI translator's dict comprehension selects the last.  Accepting
+    both creates a proxy/application interpretation gap.  These headers
+    are singletons in this API; list-valued standard headers remain
+    untouched.
+    """
+    seen: set[bytes] = set()
+    for raw_name, _raw_value in request.scope.get("headers", []):
+        name = bytes(raw_name).lower()
+        singleton = name in _SINGLETON_REQUEST_HEADERS or name.startswith(b"x-fx1-")
+        if singleton and name in seen:
+            return f"duplicate {name.decode('latin-1')} header"
+        seen.add(name)
+    if b"content-length" in seen and b"transfer-encoding" in seen:
+        return "content-length and transfer-encoding must not be combined"
+    if b"authorization" in seen and b"x-api-key" in seen:
+        return "send exactly one authentication header"
+    return None
+
+
+def _request_header_error_body(path: str, message: str) -> dict[str, Any]:
+    if is_openai_path(path):
+        return _v1_error_body(path, message, 400, "bad_request")
+    return {"detail": message, "code": "bad_request"}
+
+
+async def _buffer_request_body(request: Request) -> tuple[int, bytes]:
+    """Read the ASGI entity once without buffering beyond the body cap.
+
+    ``Request.stream()`` can yield arbitrarily small chunks.  Keeping each
+    chunk in a list therefore lets a one-megabyte request consume tens of
+    megabytes of Python object overhead.  A bounded in-memory stream keeps the
+    allocation proportional to the advertised cap, and an over-cap entity
+    is refused as soon as the first excess bytes arrive instead of draining
+    an attacker-controlled stream before answering.
+    """
+    size = 0
+    body = io.BytesIO()
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > _MAX_BODY_BYTES:
+            request._body = b""  # noqa: SLF001 — no downstream consumer on refusal
+            return size, b""
+        body.write(chunk)
+    buffered = body.getvalue()
+    request._body = buffered  # noqa: SLF001 — preserve entity for downstream parsing
+    return size, buffered
+
+
+def _too_large_body(path: str) -> dict[str, Any]:
+    detail = f"body exceeds {_MAX_BODY_BYTES}-byte cap"
+    if is_openai_path(path):
+        return _v1_error_body(path, detail, 413, "too_large")
+    return {"detail": detail, "code": "too_large"}
+
+
+async def _request_ingress_refusal(request: Request) -> JSONResponse | None:
+    """Validate singleton/framing headers and cap the actual ASGI entity."""
+    ambiguous = _ambiguous_request_headers(request)
+    if ambiguous is not None:
+        return JSONResponse(
+            status_code=400,
+            content=_request_header_error_body(request.url.path, ambiguous),
+        )
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+    declared = request.headers.get("content-length")
+    length: int | None = None
+    if declared is not None:
+        if re.fullmatch(r"[0-9]+", declared) is None:
+            return JSONResponse(
+                status_code=400,
+                content=_bad_content_length_body(request.url.path),
+            )
+        length = int(declared)
+        if length > _MAX_BODY_BYTES:
+            return JSONResponse(status_code=413, content=_too_large_body(request.url.path))
+    actual_length, _body = await _buffer_request_body(request)
+    if actual_length > _MAX_BODY_BYTES:
+        return JSONResponse(status_code=413, content=_too_large_body(request.url.path))
+    if length is not None and actual_length != length:
+        return JSONResponse(
+            status_code=400,
+            content=_request_header_error_body(
+                request.url.path, "content-length does not match request body"
+            ),
+        )
+    return None
+
 
 # Async job results persist in the store until eviction — stdout/stderr
 # are capped per field so one chatty command can't pin unbounded memory.
@@ -1056,7 +1155,6 @@ class EvalSubmitRequest(_Model):
     # ``callback_secret`` HMAC-signs the delivery and is never echoed.
     callback_url: str | None = None
     callback_secret: str | None = None
-    _served_model: str | None = PrivateAttr(default=None)
 
     @field_validator("callback_url")
     @classmethod
@@ -1633,6 +1731,39 @@ class ReceiptVerifyBatchResponse(_Model):
     results: list[ReceiptVerifyBatchItem]
 
 
+class BackendCompletionStats(_Model):
+    """Per-backend completion accounting: outcome counts, a cumulative
+    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
+    backend-reported token sums. ``usage_calls`` counts calls that carried
+    a usage dict — a silent provider shows zero tokens AND zero calls."""
+
+    ok: int = 0
+    error: int = 0
+    latency_count: int = 0
+    latency_sum_ms: float = 0.0
+    latency_buckets: dict[str, int] = {}
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    usage_calls: int = 0
+
+
+class MetricsResponse(_Model):
+    """Point-in-time ops snapshot: totals since process start."""
+
+    uptime_s: float
+    requests_total: int
+    errors_total: int
+    by_status: dict[str, int]
+    inflight: int
+    inflight_watermark: int
+    max_inflight: int
+    draining: bool
+    rate_limited_total: int = 0
+    # completion calls only — per backend name as requested on the wire
+    complete: dict[str, BackendCompletionStats] = {}
+
+
 class DrainResponse(_Model):
     """Result of latching drain mode: state + live in-flight count."""
 
@@ -1719,6 +1850,142 @@ class JobStatusResponse(_Model):
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
     callback_error: str | None = None
     callback_attempts: int = 0
+
+
+_LAT_BUCKETS_MS = (100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0, 30000.0, 60000.0)
+
+
+class _Metrics:
+    """Request counters + inflight gauge + per-backend completion
+    histograms, shared via app.state."""
+
+    def __init__(self, max_inflight: int) -> None:
+        self.started = time.monotonic()
+        self.max_inflight = max_inflight
+        self._cond = threading.Condition()
+        self._requests_total = 0
+        self._errors_total = 0
+        self._by_status: dict[int, int] = {}
+        self._inflight = 0
+        self._watermark = 0
+        self._rate_limited_total = 0
+        # backend -> {"ok","error","count","sum","buckets" (cumulative),
+        #              "*_tokens","usage_calls"}
+        self._complete: dict[str, dict[str, Any]] = {}
+        self.draining = threading.Event()
+
+    def record_complete(
+        self,
+        backend: str,
+        ok: bool,
+        latency_ms: float,
+        usage: dict[str, int] | None = None,
+    ) -> None:
+        """One attempted model call: outcome + latency into the backend's
+        cumulative histogram, plus backend-reported token sums when the
+        endpoint supplies them. Called only when the backend was invoked —
+        breaker rejections and pre-call validation aren't model work.
+        ``usage_calls`` counts calls that reported usage at all, so a
+        silent provider is distinguishable from a zero bill."""
+        with self._cond:
+            st = self._complete.setdefault(
+                backend,
+                {
+                    "ok": 0,
+                    "error": 0,
+                    "count": 0,
+                    "sum": 0.0,
+                    # one entry per edge + a final +Inf slot
+                    "buckets": [0] * (len(_LAT_BUCKETS_MS) + 1),
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                    "usage_calls": 0,
+                },
+            )
+            st["ok" if ok else "error"] += 1
+            st["count"] += 1
+            st["sum"] += latency_ms
+            for i, edge in enumerate(_LAT_BUCKETS_MS):
+                if latency_ms <= edge:
+                    st["buckets"][i] += 1
+            st["buckets"][-1] += 1
+            if usage:
+                st["usage_calls"] += 1
+                for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                    v = usage.get(k)
+                    if isinstance(v, int) and not isinstance(v, bool):
+                        st[k] += v
+
+    def record_rate_limited(self) -> None:
+        with self._cond:
+            self._rate_limited_total += 1
+
+    def record(self, status: int) -> None:
+        with self._cond:
+            self._requests_total += 1
+            self._by_status[status] = self._by_status.get(status, 0) + 1
+            if status >= 400:
+                self._errors_total += 1
+
+    def acquire(self) -> None:
+        with self._cond:
+            self._inflight += 1
+            self._watermark = max(self._watermark, self._inflight)
+
+    def release(self) -> None:
+        with self._cond:
+            self._inflight -= 1
+            self._cond.notify_all()
+
+    def wait_idle(self, timeout_s: float) -> bool:
+        """Block until inflight reaches zero or the timeout lapses — the
+        drain-lifecycle wait channel. True when the pool actually emptied."""
+        deadline = time.monotonic() + timeout_s
+        with self._cond:
+            while self._inflight > 0:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return False
+                self._cond.wait(remaining)
+            return True
+
+    def snapshot(self) -> MetricsResponse:
+        with self._cond:
+            return MetricsResponse(
+                uptime_s=round(time.monotonic() - self.started, 3),
+                requests_total=self._requests_total,
+                errors_total=self._errors_total,
+                by_status={str(k): v for k, v in sorted(self._by_status.items())},
+                inflight=self._inflight,
+                inflight_watermark=self._watermark,
+                max_inflight=self.max_inflight,
+                draining=self.draining.is_set(),
+                rate_limited_total=self._rate_limited_total,
+                complete={
+                    b: BackendCompletionStats(
+                        ok=st["ok"],
+                        error=st["error"],
+                        latency_count=st["count"],
+                        latency_sum_ms=round(st["sum"], 3),
+                        latency_buckets={
+                            **_lat_bucket_labels(st["buckets"]),
+                        },
+                        prompt_tokens=st["prompt_tokens"],
+                        completion_tokens=st["completion_tokens"],
+                        total_tokens=st["total_tokens"],
+                        usage_calls=st["usage_calls"],
+                    )
+                    for b, st in sorted(self._complete.items())
+                },
+            )
+
+
+def _lat_bucket_labels(counts: list[int]) -> dict[str, int]:
+    """Cumulative bucket counts keyed by le-label, ``+Inf`` last — the
+    Prometheus histogram convention, kept identical on the JSON snapshot."""
+    labels = [f"{edge:g}" for edge in _LAT_BUCKETS_MS] + ["+Inf"]
+    return dict(zip(labels, counts, strict=True))
 
 
 def _env_int_bound(name: str, default: int, given: int | None) -> int:
@@ -2471,47 +2738,13 @@ def _make_lifespan(
     return _lifespan
 
 
-def _receipt_body_matches_digest(body: bytes, sha256: str) -> bool:
-    """True when the sealed body's own digest equals the requested hash."""
+def _stored_receipt_matches(body: bytes, sha256: str) -> bool:
+    """True when the sealed JSON's ``receipt_sha256`` equals *sha256*."""
     try:
         stored_sha = json.loads(body).get("receipt_sha256")
     except (AttributeError, TypeError, ValueError):
-        return False
+        stored_sha = None
     return isinstance(stored_sha, str) and hmac.compare_digest(stored_sha, sha256)
-
-
-def _reject_bad_receipt_sha(sha256: str) -> None:
-    if not _SHA256_HEX.fullmatch(sha256):
-        raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
-
-
-def _receipt_verify_fields(receipt: Mapping[str, Any]) -> dict[str, Any]:
-    """Shared verify-route fields for one receipt."""
-    try:
-        result = verify_receipt_payload(receipt, path=Path("<api>"))
-    except Exception as exc:  # verifier must fail closed, never 500
-        return {
-            "valid": False,
-            "path": "<api>",
-            "schema_tag": "",
-            "kind": None,
-            "verdict": None,
-            "digest_convention": None,
-            "errors": [str(exc)],
-            "warnings": [],
-        }
-    kind = result["kind"]
-    verdict = result["verdict"]
-    return {
-        "valid": result["valid"],
-        "path": result["path"],
-        "schema_tag": result["schema"],
-        "kind": kind if isinstance(kind, str) else None,
-        "verdict": verdict if isinstance(verdict, str) else None,
-        "digest_convention": result["digest_convention"],
-        "errors": list(result["errors"]),
-        "warnings": list(result["warnings"]),
-    }
 
 
 def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
@@ -2524,7 +2757,29 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipt",
     )
     def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
-        return ReceiptVerifyResponse(**_receipt_verify_fields(body.receipt))
+        try:
+            result = verify_receipt_payload(body.receipt, path=Path("<api>"))
+        except Exception as exc:  # verifier must fail closed, never 500
+            return ReceiptVerifyResponse(
+                valid=False,
+                path="<api>",
+                schema_tag="",
+                kind=None,
+                verdict=None,
+                digest_convention=None,
+                errors=[str(exc)],
+                warnings=[],
+            )
+        return ReceiptVerifyResponse(
+            valid=result["valid"],
+            path=result["path"],
+            schema_tag=result["schema"],
+            kind=result["kind"] if isinstance(result["kind"], str) else None,
+            verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
+            digest_convention=result["digest_convention"],
+            errors=list(result["errors"]),
+            warnings=list(result["warnings"]),
+        )
 
     @app.post(
         "/receipts/verify/batch",
@@ -2532,10 +2787,38 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipts_batch",
     )
     def verify_receipts_batch(body: ReceiptVerifyBatchRequest) -> ReceiptVerifyBatchResponse:
-        items = [
-            ReceiptVerifyBatchItem(index=i, **_receipt_verify_fields(receipt))
-            for i, receipt in enumerate(body.receipts)
-        ]
+        items: list[ReceiptVerifyBatchItem] = []
+        for i, receipt in enumerate(body.receipts):
+            try:
+                result = verify_receipt_payload(receipt, path=Path("<api>"))
+            except Exception as exc:  # verifier must fail item-local, never 500
+                items.append(
+                    ReceiptVerifyBatchItem(
+                        index=i,
+                        valid=False,
+                        path="<api>",
+                        schema_tag="",
+                        kind=None,
+                        verdict=None,
+                        digest_convention=None,
+                        errors=[str(exc)],
+                        warnings=[],
+                    )
+                )
+                continue
+            items.append(
+                ReceiptVerifyBatchItem(
+                    index=i,
+                    valid=result["valid"],
+                    path=result["path"],
+                    schema_tag=result["schema"],
+                    kind=result["kind"] if isinstance(result["kind"], str) else None,
+                    verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
+                    digest_convention=result["digest_convention"],
+                    errors=list(result["errors"]),
+                    warnings=list(result["warnings"]),
+                )
+            )
         verified = sum(1 for it in items if it.valid)
         return ReceiptVerifyBatchResponse(
             verified=verified,
@@ -2573,7 +2856,8 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         verifier is reported on ``X-Fx1-Receipt-Valid`` so a caller learns
         the receipt it fetched still verifies without a second round trip.
         """
-        _reject_bad_receipt_sha(sha256)
+        if not _SHA256_HEX.fullmatch(sha256):
+            raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
         if not receipt_index.available():
             raise ApiError(503, "receipts store unavailable", code="receipts_unavailable")
         path = receipt_index.lookup(sha256)
@@ -2590,7 +2874,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
                 "stored receipt failed integrity verification",
                 code="receipt_integrity_failed",
             )
-        if not _receipt_body_matches_digest(body, sha256):
+        if not _stored_receipt_matches(body, sha256):
             raise ApiError(
                 409,
                 "stored receipt does not match requested digest",
@@ -2806,8 +3090,8 @@ def _mount_job_routes(
                 if snap != last:
                     last = snap
                     yield f"event: job\ndata: {snap}\n\n"
-                now, emitted = time.monotonic(), json.loads(snap).get("status")
-                if emitted in _TERMINAL_JOB_STATUS or now >= deadline:
+                now = time.monotonic()
+                if cur.status in _TERMINAL_JOB_STATUS or now >= deadline:
                     return
                 if now >= next_keep:
                     yield ": keepalive\n\n"
@@ -3901,10 +4185,9 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
 
 
 class _RateLimiter:
-    """Per-client-host token bucket: ``rps`` refill with one second of
-    burst capacity, LRU-bounded so a spray of source addresses can't grow
-    the map without limit. `allow` returns 0.0 when the request may
-    proceed, else the seconds until a token refills."""
+    """Per-client-host token bucket: ``rps`` refill, one-second burst, LRU cap."""
+
+    _clock_box: dict[str, float] | None = None
 
     def __init__(self, rps: float, max_keys: int = _RATE_LIMIT_KEYS_MAX) -> None:
         self.rps = rps
@@ -3912,12 +4195,12 @@ class _RateLimiter:
         self.max_keys = max_keys
         self._lock = threading.Lock()
         self._buckets: OrderedDict[str, tuple[float, float]] = OrderedDict()
+        box = type(self)._clock_box
+        self._clock = time.monotonic if box is None else (lambda: float(box["t"]))
 
     def allow(self, identity: str) -> tuple[float, float]:
-        """Consume one token: returns ``(wait, remaining)`` — seconds until a
-        token refills (0.0 when the request may proceed) and the post-consume
-        token count for the `X-RateLimit-Remaining` header."""
-        now = time.monotonic()
+        """Return ``(wait, remaining)`` after consuming one token."""
+        now = self._clock()
         with self._lock:
             entry = self._buckets.pop(identity, None)
             tokens, ts = entry if entry is not None else (self.capacity, now)
@@ -4145,10 +4428,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     app: FastAPI,
     *,
     slot: Callable[..., Iterator[None]],
-    resolve_backend: Callable[
-        [str, str | None, dict[str, str] | None, float | None, str | None], Any
-    ],
-    public_release: bool,
+    resolve_backend: Callable[[str, str | None, dict[str, str] | None, float | None], Any],
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
@@ -4185,14 +4465,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     extracted from ``create_app`` to keep its branch complexity under the
     ruff cap. Evals share the complete chain resolution and the jobs
     executor's slot contract."""
-
-    def _listed_model_ids() -> tuple[str, ...]:
-        if not public_release:
-            return OPENAI_MODEL_IDS
-        from fx1.serve.release_gate import configured_public_models
-
-        links = tuple(model for model in OPENAI_MODEL_IDS if model not in PUBLIC_MODEL_IDS)
-        return (*links, *configured_public_models())
 
     # Idempotency-Key claims: the dep holds the store's per-key mutex for
     # the whole handler span — lookup, model spend, and replay-record
@@ -4283,11 +4555,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             body.checkpoint_dir if name == "local_fx1" else None,
             body.byok.model_dump() if name == "byok" and body.byok is not None else None,
             body.timeout_s,
-            body._served_model
-            if public_release
-            and isinstance(body, (CompleteRequest, EvalSubmitRequest))
-            and body._served_model in PUBLIC_MODEL_IDS
-            else None,
         )
 
     def _resolve_chain(
@@ -4424,7 +4691,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             else None
                         ),
                         body.timeout_s,
-                        None,
                     )
                     judge = metered_model(
                         judge_obj,
@@ -4615,7 +4881,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         model-card registry to its checkpoint (unregistered fails closed)."""
         if model in ("hosted_k3", "local_fx1", "byok"):
             return cast(Literal["hosted_k3", "local_fx1", "byok"], model), None
-        if model in PUBLIC_MODEL_IDS:
+        if model == "fx1":
             return "local_fx1", None
         if model.startswith("ft:"):
             ckpt = ft_store.checkpoint_for(model)
@@ -4732,12 +4998,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     422, f"data_source.source failed validation: {exc.errors()[0].get('msg')}"
                 ) from exc
         backend, ckpt = _run_model_backend(body.model)
-        if (
-            public_release
-            and body.model in PUBLIC_MODEL_IDS
-            and (schema.checkpoint_dir is not None or schema.fallbacks or body.byok is not None)
-        ):
-            raise ApiError(422, "public eval model refuses checkpoint, fallback, or BYOK overrides")
         if body.judge_byok is not None and schema.judge_backend != "byok":
             raise ApiError(422, "judge_byok applies only when judge_backend='byok'")
         sub = _request_or_422(
@@ -4756,8 +5016,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "callback_secret": body.callback_secret,
             },
         )
-        if public_release and body.model in PUBLIC_MODEL_IDS:
-            sub._served_model = body.model
         # The run's dedupe namespace is scoped to the spec — the same
         # Idempotency-Key under a different eval is a different run.
         scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
@@ -5421,12 +5679,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         translation or post-validation failures (callers map it to the
         wire shape)."""
         creq = _complete_request_from_kwargs(
-            openai_to_kwargs(
-                body,
-                headers,
-                ft_resolver=ft_store.checkpoint_for,
-                public_release=public_release,
-            )
+            openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
         )
         # n>1 fans out into n gated calls — each completion gets its own
         # honesty-gate pass, format check, and completion-log record; usage
@@ -5633,12 +5886,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
         search_items, eff_body = _file_search_turn(body, eff_body)
         creq = _complete_request_from_kwargs(
-            response_to_kwargs(
-                eff_body,
-                headers,
-                ft_resolver=ft_store.checkpoint_for,
-                public_release=public_release,
-            )
+            response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
         )
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
@@ -5722,12 +5970,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         Returns ``(envelope, completion_id)``."""
         ereq = _request_or_422(
             EmbedRequest,
-            embeddings_to_kwargs(
-                body,
-                headers,
-                ft_resolver=ft_store.checkpoint_for,
-                public_release=public_release,
-            ),
+            embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for),
         )
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
@@ -5893,9 +6136,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``client.models.list()`` works unmodified. Without the header the
         OpenAI ``{object: \"list\"}`` shape answers; the cursor params
         are Anthropic's and ignored on the OpenAI branch."""
-        refs = [] if public_release else ft_store.models()
+        refs = ft_store.models()
         stamps = {str(r["id"]): int(r["created"]) for r in refs}
-        ids = [m for m in (*_listed_model_ids(), *(r["id"] for r in refs))]
+        ids = [m for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in refs))]
         if "anthropic-version" not in request.headers:
             return JSONResponse(
                 OpenAIModelList(
@@ -5940,14 +6183,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         stock SDK's ``client.models.retrieve``), with unknown ids in the
         ``not_found_error`` grammar."""
         anthropic = "anthropic-version" in request.headers
-        refs = [] if public_release else ft_store.models()
+        refs = ft_store.models()
         try:
             card = openai_model(
                 model,
                 created=_openai_created,
                 extra_ids=(r["id"] for r in refs),
                 created_by_id={str(r["id"]): int(r["created"]) for r in refs},
-                model_ids=_listed_model_ids(),
             )
         except OpenAICompatError as exc:
             if anthropic:
@@ -5971,7 +6213,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ids are permanent (400) and unknown names fail closed 404 — a
         delete verdict is never fabricated for a model that isn't real.
         The tombstone journals, so a restart can't resurrect it."""
-        if model in _listed_model_ids():
+        if model in OPENAI_MODEL_IDS:
             raise ApiError(
                 400,
                 f"the built-in link '{model}' is not deletable",
@@ -6089,7 +6331,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 model=env_chat["model"],
                 usage=env_chat["usage"],
                 cid=cid,
-                created=env_chat["created"],
             )
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
@@ -6758,13 +6999,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         hdrs = {str(k).lower(): str(v) for k, v in request.headers.items()}
         try:
-            backend_name, _fb, checkpoint_dir, byok, served_model = _resolve_public_release_link(
+            backend_name, _fb, checkpoint_dir, byok, _sv = _resolve_openai_link(
                 body.model,
                 body.fx1,
                 hdrs,
                 ft_resolver=ft_store.checkpoint_for,
                 require_known_model=True,
-                public_release=public_release,
             )
             timeout_s = _resolve_timeout(body.fx1.timeout_s if body.fx1 is not None else None, hdrs)
         except OpenAICompatError as exc:
@@ -6774,7 +7014,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             checkpoint_dir,
             byok.model_dump() if byok is not None else None,
             timeout_s,
-            served_model if public_release and served_model in PUBLIC_MODEL_IDS else None,
         )
         if not isinstance(backend, TokenCountingBackend):
             raise ApiError(
@@ -7922,26 +8161,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         cosine floor."""
         query = body.query if isinstance(body.query, str) else " ".join(str(q) for q in body.query)
         ro = body.ranking_options or {}
-        # Out-of-range score_threshold is checked here (not in the
-        # pydantic model) so the wire response is the 400 +
-        # ``invalid_filters`` contract the SYNTHETIC audit pins (see
-        # test_vs_audit.py ``search_score_threshold_range_400``).
-        # Pydantic's RequestValidationError lands 422 + ``validation``,
-        # which is the wrong code for a filter-range rejection.
-        st = ro.get("score_threshold")
-        if st is not None and not 0.0 <= float(st) <= 1.0:
-            raise _vs_err(
-                VectorStoreError(
-                    400, "score_threshold must be a number in [0, 1]", "invalid_filters"
-                )
-            )
         try:
             hits = vs_store.search(
                 [vector_store_id],
                 query,
                 max_results=body.max_num_results or 10,
                 filters=body.filters,
-                score_threshold=st,
+                score_threshold=ro.get("score_threshold"),
             )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
@@ -9126,7 +9352,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 req.checkpoint_dir,
                 req.byok.model_dump() if req.byok is not None else None,
                 req.timeout_s if req.timeout_s is not None else 30.0,
-                None,
             )
         except ApiError as exc:
             # An unconfigured/unreachable backend is a verdict, not an
@@ -10136,8 +10361,6 @@ def _resolve_auth(
     request: Request,
     api_key: str | None,
     key_store: ApiKeyStore,
-    *,
-    public_release: bool = False,
 ) -> tuple[str | None, bool, frozenset[str] | None] | JSONResponse:
     """Resolve the request's credential → ``(key_id, admin, scopes)``, or
     the refusal response. ``scopes`` is the minted key's declared set;
@@ -10155,7 +10378,7 @@ def _resolve_auth(
     """
     if request.url.path in _PUBLIC_PATHS:
         return (None, False, None)
-    if api_key or key_store.has_keys or public_release:
+    if api_key or key_store.has_keys:
         provided = request.headers.get("X-API-Key")
         # OpenAI-shape clients authenticate with Authorization: Bearer
         # — accept it on /v1 so stock SDKs work unmodified.
@@ -10220,41 +10443,6 @@ def _resolve_auth(
     return (None, True, None)
 
 
-def _local_checkpoint_kwargs(
-    checkpoint_dir: str | None, *, public_release: bool, requested_model: str | None
-) -> dict[str, str]:
-    """Resolve a public alias from its operator path, never a caller path."""
-    if public_release and checkpoint_dir is not None:
-        raise ApiError(422, "public local_fx1 refuses caller-selected checkpoint_dir")
-    if public_release and requested_model in PUBLIC_MODEL_IDS:
-        from fx1.serve.release_gate import public_checkpoint_env
-
-        checkpoint = os.environ.get(public_checkpoint_env(requested_model))
-        if not checkpoint:
-            raise ApiError(
-                503, f"public model {requested_model!r} has no signed checkpoint configured"
-            )
-        return {"checkpoint_dir": checkpoint, "model": requested_model}
-    checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
-    if not checkpoint:
-        raise ApiError(
-            422,
-            "local_fx1 needs a checkpoint_dir in the request or FX1_CHECKPOINT_DIR on the server",
-        )
-    return {"checkpoint_dir": checkpoint}
-
-
-def _public_release_mode(
-    requested: bool | None, harness: Harness | None, backend_resolver: Any | None
-) -> bool:
-    """No-argument ASGI factory launches default to the public policy."""
-    if requested is not None:
-        return requested
-    if harness is not None or backend_resolver is not None:
-        raise ValueError("injected harness/backend requires explicit public_release mode")
-    return True
-
-
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -10277,17 +10465,10 @@ def create_app(
     ft_runner: FTJobRunner | None = None,
     ft_dir: str | os.PathLike[str] | None = None,
     state_dir: str | os.PathLike[str] | None = None,
-    public_release: bool | None = None,
 ) -> FastAPI:
-    public_release = _public_release_mode(public_release, harness, backend_resolver)
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
-    from fx1.serve.release_gate import public_release_resolver, require_public_runtime_env
-
-    require_public_runtime_env(public_release)
-    resolve_backend = public_release_resolver(
-        backend_resolver or get_backend, enabled=public_release
-    )
+    resolve_backend = backend_resolver or get_backend
     max_inflight = _env_int_bound(_MAX_INFLIGHT_ENV, 16, max_inflight)
     idem_max = _env_int_bound(_IDEM_MAX_ENV, 1024, idem_max)
     job_max = _env_int_bound(_JOB_MAX_ENV, 1024, job_max)
@@ -10583,7 +10764,7 @@ def create_app(
         request.state.key_id = None
         request.state.admin = False
         try:
-            auth = _resolve_auth(request, api_key, key_store, public_release=public_release)
+            auth = _resolve_auth(request, api_key, key_store)
         except KeyStoreError as exc:
             # a managed key past its declared rpm/budget refuses 429 —
             # same fail-closed shape as the global limiter, keyed to the
@@ -11034,7 +11215,6 @@ def create_app(
         checkpoint_dir: str | None,
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
-        requested_model: str | None = None,
     ) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""
         kwargs: dict[str, Any] = {}
@@ -11052,13 +11232,14 @@ def create_app(
                 )
             kwargs.update(byok)
         if backend_name == "local_fx1":
-            kwargs.update(
-                _local_checkpoint_kwargs(
-                    checkpoint_dir,
-                    public_release=public_release,
-                    requested_model=requested_model,
+            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
+            if not checkpoint:
+                raise ApiError(
+                    422,
+                    "local_fx1 needs a checkpoint_dir in the request or "
+                    "FX1_CHECKPOINT_DIR on the server",
                 )
-            )
+            kwargs["checkpoint_dir"] = checkpoint
         elif checkpoint_dir is not None:
             raise ApiError(422, "checkpoint_dir applies only to the local_fx1 backend")
         try:
@@ -11076,7 +11257,6 @@ def create_app(
         app,
         slot=_slot,
         resolve_backend=_resolve_request_backend,
-        public_release=public_release,
         sse_keepalive_s=sse_keepalive_s,
         complete_idem_store=complete_idem_store,
         complete_batch_idem_store=complete_batch_idem_store,
@@ -11135,12 +11315,17 @@ def create_app(
     return app
 
 
-# Direct ASGI loading has no reliable bind-host signal. Keep that exported app
-# on the public policy; host-aware launchers construct their own app instead.
-app = create_app(public_release=True)
+app = create_app()
+
 
 if __name__ == "__main__":
-    # `python -m fx1.serve.api` — loopback guard lives in `_api_cli`.
-    from fx1.serve._api_cli import main
+    # `python -m fx1.serve.api` — loopback guard matches the research API.
+    import uvicorn
 
-    raise SystemExit(main())
+    host = os.environ.get("FX1_API_HOST", "127.0.0.1")
+    port = int(os.environ.get("FX1_API_PORT", "8011"))
+    if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get(_API_KEY_ENV):
+        raise SystemExit(
+            "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure"
+        )
+    uvicorn.run(app, host=host, port=port, reload=False, server_header=False)

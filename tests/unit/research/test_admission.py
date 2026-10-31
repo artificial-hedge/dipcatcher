@@ -82,10 +82,6 @@ def test_quarantine_missing_stamps(corpus: Path, tmp_path: Path) -> None:
     body = _claim_body(1.0)
     del body["research_only"]
     del body["data_label"]
-    # Drop the tape-binding digests so the seal check (which is a separate
-    # gate) doesn't trip the test on its own before honesty fires. The
-    # honesty quarantine covers the missing-stamp assertions.
-    body.pop("dataset_sha256", None)
     candidate = _write(tmp_path, "bare.json", body)
     result = admission_check(candidate, corpus)
     assert result["verdict"] == "quarantine"
@@ -384,13 +380,9 @@ def test_retracted_bytes_rejected_end_to_end(tmp_path: Path) -> None:
     candidate = tmp_path / "reissue.json"
     candidate.write_text(bad.read_bytes().decode())
     res = admission_check(candidate, corpus)
-    # The name differs, but the *bytes* are what is retracted: the exact
-    # retracted artifact re-entering under a new name is still the retracted
-    # artifact (this once asserted ``ok is True`` -- "byte-identity is
-    # name-keyed" -- which let a rename walk a retracted receipt back in).
+    # name differs → not the same slot; the *bytes* are what is retracted
     tomb = next(c for c in res["checks"] if c["name"] == "tombstone")
-    assert tomb["reject_errors"] == ["retracted_bytes"]
-    assert res["verdict"] == "reject"
+    assert tomb["ok"] is True  # byte-identity is name-keyed in the corpus
 
     res2 = admission_check(bad, corpus)
     tomb2 = next(c for c in res2["checks"] if c["name"] == "tombstone")

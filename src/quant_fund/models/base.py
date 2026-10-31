@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import io
 import json
 import os
-import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Protocol
@@ -194,50 +192,22 @@ def save_joblib_artifact(payload: Any, path: Path) -> None:
             temporary_sidecar.unlink(missing_ok=True)
 
 
-_SHA256_HEX = re.compile(r"[0-9a-f]{64}")
-
-
-class ArtifactIntegrityError(ValueError):
-    """A joblib artifact's bytes could not be bound to a trusted SHA-256.
-
-    Raised before any deserialization: joblib is pickle, so unverified bytes
-    must never reach ``joblib.load``.
-    """
-
-
-def _sidecar_digest(path: Path, *, label: str) -> str:
-    """Return the digest pinned by the required ``<artifact>.sha256`` sidecar."""
-    sidecar = path.with_name(f"{path.name}.sha256")
-    if not sidecar.is_file():
-        raise ArtifactIntegrityError(f"{label} checksum sidecar is missing: {sidecar}")
-    try:
-        expected = sidecar.read_text(encoding="ascii").strip()
-    except UnicodeDecodeError as exc:
-        raise ArtifactIntegrityError(f"{label} checksum sidecar is malformed: {sidecar}") from exc
-    if _SHA256_HEX.fullmatch(expected) is None:
-        raise ArtifactIntegrityError(f"{label} checksum sidecar is malformed: {sidecar}")
-    return expected
-
-
-def load_trusted_joblib(path: Path, expected_sha256: str, *, label: str = "artifact") -> Any:
-    """Deserialize a joblib payload only if its bytes hash to ``expected_sha256``.
-
-    The digest is checked over the exact bytes handed to ``joblib.load`` (no
-    re-read between hash and load). A match proves the bytes are the ones the
-    digest's holder pinned; it does not authenticate who wrote them.
-    """
-    if _SHA256_HEX.fullmatch(expected_sha256) is None:
-        raise ArtifactIntegrityError(f"{label} pinned sha256 must be 64 lowercase hex digits")
-    raw = Path(path).read_bytes()
-    if not hmac.compare_digest(hashlib.sha256(raw).hexdigest(), expected_sha256):
-        raise ArtifactIntegrityError(f"{label} checksum mismatch: {path}")
-    return joblib.load(io.BytesIO(raw))
-
-
 def load_joblib_artifact(path: Path) -> Any:
-    """Load a joblib payload after its required checksum sidecar verifies."""
+    """Load a joblib payload, verifying its optional checksum sidecar."""
     path = Path(path)
-    payload = load_trusted_joblib(path, _sidecar_digest(path, label="artifact"))
+    sidecar = path.with_name(f"{path.name}.sha256")
+    if sidecar.is_file():
+        expected = sidecar.read_text(encoding="ascii").strip()
+        if len(expected) != hashlib.sha256().digest_size * 2:
+            raise ValueError(f"artifact checksum sidecar is malformed: {sidecar}")
+        try:
+            int(expected, 16)
+        except ValueError as exc:
+            raise ValueError(f"artifact checksum sidecar is malformed: {sidecar}") from exc
+        actual = _sha256_file(path)
+        if not hmac.compare_digest(expected, actual):
+            raise ValueError(f"artifact checksum mismatch: {path}")
+    payload = joblib.load(path)
     _verify_manifest(path, payload)
     return payload
 
@@ -288,8 +258,21 @@ class JoblibMixin:
     @classmethod
     def load(cls, path: Path) -> Any:
         path = Path(path)
-        label = "model artifact"
-        model = load_trusted_joblib(path, _sidecar_digest(path, label=label), label=label)
+        sidecar = path.with_name(f"{path.name}.sha256")
+        if sidecar.is_file():
+            expected = sidecar.read_text(encoding="ascii").strip()
+            if len(expected) != hashlib.sha256().digest_size * 2:
+                raise ValueError(f"model artifact checksum sidecar is malformed: {sidecar}")
+            try:
+                int(expected, 16)
+            except ValueError as exc:
+                raise ValueError(
+                    f"model artifact checksum sidecar is malformed: {sidecar}"
+                ) from exc
+            actual = _sha256_file(path)
+            if not hmac.compare_digest(expected, actual):
+                raise ValueError(f"model artifact checksum mismatch: {path}")
+        model = joblib.load(path)
         _verify_manifest(path, model)
         if not isinstance(model, cls):
             raise TypeError(

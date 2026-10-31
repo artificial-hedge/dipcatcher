@@ -1,7 +1,7 @@
 """Wave 37: universe membership / ADV / assert_universe_not_from_future edges.
 
 Complements test_data_pit.test_universe_does_not_use_future_bars (happy path).
-Research/infrastructure only.
+Research/infrastructure only — no live broker / vendor MD.
 """
 
 from __future__ import annotations

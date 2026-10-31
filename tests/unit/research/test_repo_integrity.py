@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import json
 from pathlib import Path
 
@@ -36,14 +35,6 @@ def _git_repo(tmp_path: Path) -> Path:
         p = root / jewel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(f"# {jewel}\n")
-    # The evidence-policy jewels are parsed by the gates, which fail closed on
-    # a malformed policy file — the fixture carries well-formed empty ones.
-    (root / "quality" / "epoch_allowed_removals.json").write_text(
-        json.dumps({"schema": "epoch_acknowledgments.v1", "acks": []})
-    )
-    (root / "quality" / "legacy_quarantine.json").write_text(
-        json.dumps({"schema": "legacy_quarantine.v2", "files": {}})
-    )
     pin = root / "quality" / HEADS_PIN_BASENAME
     pin.parent.mkdir(parents=True, exist_ok=True)
     pin.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {}}))
@@ -55,13 +46,11 @@ def _git_repo(tmp_path: Path) -> Path:
         body = json.dumps({"kind": "seed.v1"}) if corpus_dir == "receipts" else "seed"
         (d / seed).write_text(body)
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
-        with contextlib.chdir(root):
-            update_heads_pin(pin, corpus_dir, pattern, ep)
+        update_heads_pin(pin, corpus_dir, pattern, ep)
     write_crown_jewels_pin(root)
     # Re-stamp quality: the pin and jewels file now exist as members.
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "quality", "*.json", ep)
+    update_heads_pin(pin, "quality", "*.json", ep)
     # The committed pubkey is a crown jewel — sign the pins for real so the
     # gate isn't testing a stub. Priv key is test-local only.
     from quant_fund.research.gate_signatures import generate_keypair, sign_pins
@@ -70,8 +59,7 @@ def _git_repo(tmp_path: Path) -> Path:
     sign_pins(root, priv, pub)
     write_crown_jewels_pin(root)
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "quality", "*.json", ep)
+    update_heads_pin(pin, "quality", "*.json", ep)
     sign_pins(root, priv, pub)
     return root
 
@@ -110,7 +98,6 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
         "key_rotation",
         "quorum_rotations",
         "lattice",
-        "coverage_closure",
         *(f"epoch:{c[0]}" for c in CORPORA),
     }
 
@@ -283,15 +270,13 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Tool-local state with no security surface — deliberately NOT corpora.
 # data/ is absent from this list only because data/metadata IS a corpus.
-NON_CORPUS_TOP_DIRS = frozenset(
-    {
-        ".freebuff",
-        ".mavis",  # local Mavis plan-run scratch (tool state, not evidence)
-        ".serena",
-        "attic",  # archived notes only (README); not part of any corpus chain
-        "packaging",  # homebrew formula templates; distributed via tap, not runtime
-    }
-)
+# .mavis: agent plan-run notes, same class as .serena / .freebuff.
+# attic: quarantine of non-qualifying template copies. attic/README.md
+# states nothing there is imported, tested, packaged, or evidence.
+# packaging: homebrew tap stub (sha256 FILL_AT_RELEASE). It is not an
+# install path this repo executes; docker/ and deploy/ remain the
+# supply-chain corpora.
+NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena", ".mavis", "attic", "packaging"})
 
 # The pinned set of tracked root-level files. Root files sit above every
 # corpus dir, so the epoch chains can't see them — a new root file lands
@@ -313,8 +298,9 @@ ROOT_FILES = frozenset(
         "CITATION.cff",
         "CODE_OF_CONDUCT.md",
         "CONTRIBUTING.md",
-        "Executive Summary.pdf",
         "Dockerfile",
+        "Executive Summary.pdf",
+        "FULL_COVERAGE.md",
         "HONESTY_RATING.md",
         "INFLIGHT",
         "LICENSE",
@@ -324,13 +310,12 @@ ROOT_FILES = frozenset(
         "RESEARCH_REFERENCES.md",
         "SECURITY.md",
         "conftest.py",
-        "sonar-project.properties",
         "day_grind_progress.md",
         "docker-compose.yml",
-        "FULL_COVERAGE.md",
         "fx1_seed_corpus.jsonl",
-        "gate_pins.sig",
         "install.sh",
+        "p",
+        "gate_pins.sig",
         "mkdocs.yml",
         "pyproject.toml",
         "uv.lock",

@@ -8,7 +8,7 @@ stacking/pseudo-BMA, confidence sequences, sliced Wasserstein, score
 decomposition, regime-weighted conformal VaR, fx-1 ext-bench ports, mutation
 testing). Ranked by difficulty × leverage × repo-fit. All items must obey the
 honesty contract: proper scores only, SYNTHETIC-labeled correctness tests,
-and receipts for anything promotable.
+no live-trading claims, receipts for anything promotable.
 
 ## Tier A — hardest theory (statistical core; numpy/scipy; heaviest proofs to port)
 
@@ -203,8 +203,9 @@ and receipts for anything promotable.
 - Why hard: requires building a ZI-LOB simulator first (the repo has
   `execution/impact.py` + `models/market_making.py` but no event-level LOB);
   distributional RL (C51) training loops; regime-switching flow calibration.
-  All SYNTHETIC. PnL here is simulator-internal diagnostics, never a
-  headline.
+  All SYNTHETIC — and the honesty contract demands it stay that way (no
+  live-trading claims; PnL here is simulator-internal diagnostics, never a
+  headline).
 - Repo fit: `models/deep_rl.py`, `bandits.py`, `changepoint.py` (BOCPD
   already in tree — the paper's flow filter can reuse it verbatim).
 - Scope: staged — (i) `execution/lob_simulator.py` (ZI-LOB, seeded,

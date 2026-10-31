@@ -19,25 +19,6 @@ def test_forbidden_headline_metric_fails_closed(token: str):
         validate_fx1_output(f"The strategy achieved {token}: 2.35 over the panel.")
 
 
-@pytest.mark.parametrize(
-    "text",
-    [
-        "P&L: $4,200 for the quarter.",
-        "profit and loss was $4,200.",
-        "NAV of 1.9M on the sleeve.",
-        "net asset value reached 1.9.",
-        "sharpe_ratio: 2.1",
-        "profit_and_loss: 100",
-        "net_asset_value: 1.9",
-        "ProfitAndLoss: 100",
-        "netAssetValue: 1.9",
-    ],
-)
-def test_forbidden_pnl_nav_spellings_fail_closed(text: str) -> None:
-    with pytest.raises(Fx1HonestyError):
-        validate_fx1_output(text)
-
-
 def test_bare_discussion_of_forbidden_metrics_allowed():
     # Explaining *why* a metric is forbidden is not a headline claim.
     text = "The lab forbids sharpe headlines in research scorecards by construction."

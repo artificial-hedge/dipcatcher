@@ -26,7 +26,7 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[TestClie
     def no_backend(*args: Any, **kwargs: Any) -> Any:
         raise AssertionError("list/validation requests must not resolve a model backend")
 
-    app = create_app(public_release=False, backend_resolver=no_backend, receipts_dir=tmp_path)
+    app = create_app(backend_resolver=no_backend, receipts_dir=tmp_path)
     for index in range(7):
         app.state.abatch_store.put(
             _AnthropicBatchRecord(

@@ -319,7 +319,6 @@ def _atomic_write(path: Path, body: bytes) -> None:
     temporary = Path(temporary_name)
     try:
         with os.fdopen(fd, "wb") as handle:
-            fd = -1
             handle.write(body)
             handle.flush()
             os.fsync(handle.fileno())
@@ -331,8 +330,6 @@ def _atomic_write(path: Path, body: bytes) -> None:
                     f"immutable lake record {path.name} already exists with different bytes"
                 ) from exc
     finally:
-        if fd >= 0:
-            os.close(fd)
         temporary.unlink(missing_ok=True)
 
 

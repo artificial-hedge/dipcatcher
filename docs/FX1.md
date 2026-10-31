@@ -2,11 +2,9 @@
 
 **fx-1** (always lowercase, package `src/fx1`) is an in-tree sub-project. It
 contains the corpus builder, the eval bank, and training plumbing, plus a
-training plan. No release checkpoint is in this repository. The only tracked
-weights are the fixture at `artifacts/fx1_tiny_lm/` (see shipped status).
-Local completion attaches to an external OpenAI-compatible engine; fx-1 has
-no in-process generator. The declared base constant is `moonshotai/Kimi-K3`
-(2.8T total / 104B active MoE, Kimi K3 License).
+training plan. No trained checkpoint is in this repository. Local generation
+is unimplemented. The declared base constant is `moonshotai/Kimi-K3` (2.8T
+total / 104B active MoE, Kimi K3 License).
 
 fx-1 is addressed under two model names, **fx1** and **fx1-lite**
 ([artificialhedge.co](https://artificialhedge.co)). dipcatcher orchestrates
@@ -20,8 +18,8 @@ the shipped status below.
 Three facts, because each of them is routinely misread in the other direction:
 
 - **fx-1 is a harness, an eval program, and a training pipeline. No fine-tuned
-  fx-1 weights are published.** As of 2026-10-19, `src/fx1` is 342 Python
-  modules with 86 `test_*.py` files under `tests/fx1/`.
+  fx-1 weights are published.** `src/fx1` is 323 Python modules with 73
+  `test_*.py` files under `tests/fx1/`.
 - **`fx1.__version__` (`0.4.0`) tracks the harness API, not a model release.**
   See [FX1_API_STABILITY.md](FX1_API_STABILITY.md). `git tag -l 'v*' | wc -l`
   → **0**: no release tag has ever been cut, so the version names an API
@@ -73,10 +71,8 @@ Backends (the model side of `complete`/eval lanes):
 - `local_fx1` — weights-direct: attaches to a running engine
   (`FX1_LOCAL_SERVE_URL`) or spawns one (`FX1_LOCAL_SERVE_CMD`, with
   `$checkpoint_dir`/`$python` template vars); a card'd checkpoint dir
-  (`--checkpoint-dir` on the harness CLI or `FX1_CHECKPOINT_DIR`) is required
-  and signature-gated before any spawn. The in-repo local weights engine
-  receives that verified directory only through `FX1_CHECKPOINT_DIR`; it
-  does not accept a CLI path override.
+  (`--checkpoint-dir` or `FX1_CHECKPOINT_DIR`) is required and
+  signature-gated before any spawn.
 - `byok` — bring-your-own-key to any OpenAI-compatible endpoint:
   `FX1_BYOK_BASE_URL` + `FX1_BYOK_API_KEY` + `FX1_BYOK_MODEL` (kwargs
   beat env). Construction fails closed on missing credentials; the URL

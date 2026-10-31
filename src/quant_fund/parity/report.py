@@ -165,7 +165,7 @@ def render_markdown(report: Mapping[str, Any]) -> str:
     return f"""# Backtest / shadow parity report
 
 Simulated broker replay. `live_pnl_claim` is false. `would_promote_live` is false.
-This file is not a research scorecard.
+This file does not authorize live orders and it is not a research scorecard.
 
 How to read it: `docs/BACKTEST_LIVE_PARITY.md`.
 

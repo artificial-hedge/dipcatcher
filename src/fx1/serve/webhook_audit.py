@@ -53,8 +53,7 @@ import socket
 import tempfile
 import threading
 import time
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -78,30 +77,6 @@ if TYPE_CHECKING:
 __all__ = ["webhook_audit", "webhook_audit_bench"]
 
 _SECRET = "whsec-audit"  # NOSONAR — loopback-only test key, not a real credential
-_WALL_CLOCK: Callable[[], float] = time.time
-
-
-def _wall_time() -> float:
-    return _WALL_CLOCK()
-
-
-@contextmanager
-def _bound_clock(clock: Callable[[], float] | None) -> Iterator[None]:
-    """Bind the audit wall clock and delivery timestamps to ``clock``."""
-    global _WALL_CLOCK
-    from fx1.serve import webhooks as wh  # noqa: PLC0415
-
-    prev_w, prev_d = _WALL_CLOCK, wh._DELIVERY_CLOCK
-    if clock is not None:
-        _WALL_CLOCK = clock
-        wh._DELIVERY_CLOCK = clock
-    try:
-        yield
-    finally:
-        _WALL_CLOCK = prev_w
-        wh._DELIVERY_CLOCK = prev_d
-
-
 _JOB_TERMINAL = ("succeeded", "failed", "cancelled")
 _WAIT_S = 15.0
 
@@ -245,7 +220,6 @@ def _app(
     import fx1.serve.api as api_mod  # noqa: PLC0415
 
     return api_mod.create_app(
-        public_release=False,
         harness=Harness(runner=runner),
         backend_resolver=lambda *a, **k: _StubBackend(),
         ft_runner=_ft_runner,
@@ -455,32 +429,31 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
 
     out["sig_header_shape"] = isinstance(sig, str) and sig.startswith("sha256=")
     out["sig_timestamp_present_fresh"] = (
-        isinstance(ts, str) and ts.isdigit() and abs(_wall_time() - float(ts)) < 60
+        isinstance(ts, str) and ts.isdigit() and abs(time.time() - float(ts)) < 60
     )
     recomputed = sign_webhook(_SECRET, ts or "", hit.body)
     out["sig_recomputed_matches"] = bool(sig) and hmac_mod.compare_digest(recomputed, sig or "")
-    now = _wall_time()
-    out["sig_verifies_at_sink"] = verify_webhook(_SECRET, ts, sig, hit.body, now=now)
-    out["sig_wrong_secret_fails"] = not verify_webhook("whsec-other", ts, sig, hit.body, now=now)
-    out["sig_covers_body"] = not verify_webhook(_SECRET, ts, sig, hit.body + b" ", now=now)
+    out["sig_verifies_at_sink"] = verify_webhook(_SECRET, ts, sig, hit.body)
+    out["sig_wrong_secret_fails"] = not verify_webhook("whsec-other", ts, sig, hit.body)
+    out["sig_covers_body"] = not verify_webhook(_SECRET, ts, sig, hit.body + b" ")
     out["sig_covers_timestamp"] = not verify_webhook(
-        _SECRET, str(int(ts or "0") + 1) if ts else None, sig, hit.body, now=now
+        _SECRET, str(int(ts or "0") + 1) if ts else None, sig, hit.body
     )
     out["sig_replay_stale_refused"] = not verify_webhook(
         _SECRET,
         ts,
         sig,
         hit.body,
-        now=now + 600.0,  # 10 min past delivery > 300s tolerance
+        now=time.time() + 600.0,  # 10 min past delivery > 300s tolerance
     )
     out["sig_freshness_explicit_disable"] = verify_webhook(
-        _SECRET, ts, sig, hit.body, tolerance_s=-1.0, now=now + 10**9
+        _SECRET, ts, sig, hit.body, tolerance_s=-1.0, now=time.time() + 10**9
     )
     out["sig_malformed_inputs_fail"] = (
-        not verify_webhook(_SECRET, ts, "nonsense", hit.body, now=now)
-        and not verify_webhook(_SECRET, ts, None, hit.body, now=now)
-        and not verify_webhook(_SECRET, None, sig, hit.body, now=now)
-        and not verify_webhook("", ts, sig, hit.body, now=now)
+        not verify_webhook(_SECRET, ts, "nonsense", hit.body)
+        and not verify_webhook(_SECRET, ts, None, hit.body)
+        and not verify_webhook(_SECRET, None, sig, hit.body)
+        and not verify_webhook("", ts, sig, hit.body)
     )
     out["content_type_json"] = hit.headers.get("Content-Type") == "application/json"
     return out
@@ -703,13 +676,16 @@ def _probe_retry(ctx: _Ctx) -> dict[str, bool]:
     # sink that accepts then stalls past the read timeout: unit-level
     # deliver_signed with a short timeout — retried, bounded, loud error
     sink.stall_s = 1.0
+    t0 = time.monotonic()
     ok, err, attempts = deliver_signed(
         sink.url("/stall"), None, b"{}", timeout_s=0.2, backoff_s=0.01
     )
+    elapsed = time.monotonic() - t0
     out["retry_timeout_retried_loud"] = (
         ok is False
         and attempts == WEBHOOK_MAX_ATTEMPTS
         and bool(err)
+        and elapsed < 10.0
         and sink.path_n.get("/stall", 0) == WEBHOOK_MAX_ATTEMPTS
     )
     sink.stall_s = 0.0
@@ -744,6 +720,7 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         body.get("job_id") == jid
         and body.get("status") in _JOB_TERMINAL
         and body.get("callback_url") == sink.url("/pj")
+        and body.get("result", {}).get("ok") is True
     )
     out["payload_job_finished_at_set"] = body.get("finished_at") is not None
     out["payload_terminal_consistent"] = body.get("status") == st.get("status")
@@ -969,6 +946,7 @@ def _probe_security(ctx: _Ctx) -> dict[str, bool]:
 
     # unresolvable host: the *request path* must not hang — submit returns
     # 202 promptly and the record lands a loud 'failed' verdict
+    t0 = time.monotonic()
     r = client.post(
         "/harness/jobs",
         json={
@@ -976,10 +954,12 @@ def _probe_security(ctx: _Ctx) -> dict[str, bool]:
             "callback_url": _URL_NXHOST,
         },
     )
+    submit_s = time.monotonic() - t0
     jid = r.json()["job_id"]
     st = _wait_job(client, jid, timeout=45.0)
     out["security_unresolvable_no_hang"] = (
         r.status_code == 202
+        and submit_s < 5.0
         and st.get("callback_status") == "failed"
         and bool(st.get("callback_error"))
     )
@@ -1005,13 +985,8 @@ def _probe_security(ctx: _Ctx) -> dict[str, bool]:
     return out
 
 
-def webhook_audit(*, clock: Callable[[], float] | None = None) -> dict[str, Any]:
+def webhook_audit() -> dict[str, Any]:
     """Run every probe against a real loopback sink; literal bools out."""
-    with _bound_clock(clock):
-        return _run_webhook_audit()
-
-
-def _run_webhook_audit() -> dict[str, Any]:
     saved = {k: os.environ.get(k) for k in _ENV_KEYS}
     for k in _ENV_KEYS:
         os.environ.pop(k, None)
@@ -1041,12 +1016,12 @@ def _run_webhook_audit() -> dict[str, Any]:
     return out
 
 
-def webhook_audit_bench(*, clock: Callable[[], float] | None = None) -> dict[str, Any]:
+def webhook_audit_bench() -> dict[str, Any]:
     """Sealed receipt: contract probes True, divergences named."""
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
     from quant_fund.utils.reproducibility import git_revision
 
-    r = webhook_audit(clock=clock)
+    r = webhook_audit()
     ok = all(v is True for v in r.values())
     defects = sorted(k for k, v in r.items() if v is not True)
     out: dict[str, Any] = {

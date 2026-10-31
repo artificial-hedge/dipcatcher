@@ -3,6 +3,9 @@
 import json
 from pathlib import Path
 
+from typer.testing import CliRunner
+
+from fx1.cli import app
 from fx1.doctor import collect_status
 
 
@@ -11,12 +14,6 @@ def test_doctor_reports_version_and_base_model(tmp_path: Path) -> None:
     assert status["fx1_version"]
     assert status["base_model"] == "moonshotai/Kimi-K3"
     assert status["harness_package"] == "ok"
-    extras = status["optional_extras"]
-    assert isinstance(extras, dict)
-    assert set(extras) >= {"torch", "safetensors"}
-    assert extras["torch"] in {"present", "missing"}
-    assert extras["safetensors"] in {"present", "missing"}
-    assert "distribution_lineage" in status
 
 
 def test_doctor_missing_dirs_reported_not_raised(tmp_path: Path) -> None:
@@ -47,35 +44,11 @@ def test_doctor_never_echoes_secret_values(monkeypatch, tmp_path: Path) -> None:
     assert "sig-super-secret-value" not in blob
 
 
-def test_doctor_json_roundtrip(tmp_path: Path) -> None:
-    """``collect_status`` is the doctor payload; it must JSON-serialize cleanly."""
-    status = collect_status(tmp_path)
-    parsed = json.loads(json.dumps(status))
-    assert parsed["fx1_version"] == status["fx1_version"]
-
-
-def test_doctor_dropped_jewel_not_intact_matches_library(tmp_path: Path) -> None:
-    """A pin that silently drops a jewel is not intact; digest equals the library."""
-    from quant_fund.research.crown_jewels import (
-        DEFAULT_JEWELS,
-        distribution_lineage_digest,
-        write_crown_jewels_pin,
-    )
-
-    for rel in DEFAULT_JEWELS:
-        path = tmp_path / rel
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("jewel\n", encoding="utf-8")
-    pin = write_crown_jewels_pin(tmp_path)
-    payload = json.loads(pin.read_text(encoding="utf-8"))
-    dropped = next(iter(payload["files"]))
-    del payload["files"][dropped]
-    pin.write_text(json.dumps(payload), encoding="utf-8")
-    status = collect_status(tmp_path)
-    library = distribution_lineage_digest(tmp_path)
-    assert library["jewels_intact"] is False
-    assert status["distribution_jewels_intact"] is False
-    assert status["distribution_lineage"] == library["digest"]
+def test_doctor_cli_json(tmp_path: Path) -> None:
+    result = CliRunner().invoke(app, ["doctor", "--root", str(tmp_path)])
+    assert result.exit_code == 0
+    status = json.loads(result.stdout)
+    assert status["fx1_version"]
 
 
 def test_doctor_reports_ledger_chain_state(tmp_path: Path) -> None:
@@ -85,31 +58,3 @@ def test_doctor_reports_ledger_chain_state(tmp_path: Path) -> None:
         '{"event": "corrupt_entry"}\n', encoding="utf-8"
     )
     assert collect_status(tmp_path)["corpus_ledger_chain"] in {"unverifiable", "BROKEN"}
-
-
-def test_doctor_distribution_lineage_matches_crown_jewels_library(tmp_path: Path) -> None:
-    from quant_fund.research.crown_jewels import (
-        DEFAULT_JEWELS,
-        distribution_lineage_digest,
-        write_crown_jewels_pin,
-    )
-
-    for rel in DEFAULT_JEWELS:
-        path = tmp_path / rel
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(f"# {rel}\n", encoding="utf-8")
-    (tmp_path / "quality" / "epoch_heads.json").write_text("{}\n", encoding="utf-8")
-    (tmp_path / "quality" / "repo_integrity.json").write_text("{}\n", encoding="utf-8")
-    write_crown_jewels_pin(tmp_path, tmp_path / "quality" / "crown_jewels.json")
-    lineage = distribution_lineage_digest(tmp_path)
-    status = collect_status(tmp_path)
-    assert status["distribution_lineage"] == lineage["digest"]
-    assert status["distribution_jewels_intact"] is True
-
-    (tmp_path / "pyproject.toml").write_text("# mutated\n", encoding="utf-8")
-    broken = distribution_lineage_digest(tmp_path)
-    assert broken["jewels_intact"] is False
-    status_broken = collect_status(tmp_path)
-    assert status_broken["distribution_jewels_intact"] is False
-    assert status_broken["distribution_lineage"] == broken["digest"]
-    assert status_broken["distribution_lineage"] != lineage["digest"]

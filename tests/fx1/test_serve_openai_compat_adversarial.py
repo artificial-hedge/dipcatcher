@@ -960,13 +960,6 @@ def test_conversation_models_bound_metadata_and_refuse_item_ids() -> None:
 def test_vector_store_search_bounds_and_threshold_sieve() -> None:
     OpenAIVectorStoreSearch.model_validate({"query": "x"})
     OpenAIVectorStoreSearch.model_validate({"query": ["a", "b"], "max_num_results": 50})
-    # Body-layer rejections: shape, known-keys, and the score_threshold *type*
-    # check (a bool is not a threshold, a non-numeric is not a threshold). The
-    # *range* check ([0, 1]) is intentionally deferred to the search route so
-    # the wire response lands 400 + ``invalid_filters`` instead of pydantic's
-    # 422 + ``validation`` — see test_vs_audit.py's
-    # ``search_score_threshold_range_400`` probe and the comment block in
-    # ``OpenAIVectorStoreSearch._valid``.
     for bad_ro in (
         {"ranker": "bm25"},
         {"bogus": 1},
@@ -975,13 +968,19 @@ def test_vector_store_search_bounds_and_threshold_sieve() -> None:
     ):
         with pytest.raises(ValidationError):
             OpenAIVectorStoreSearch.model_validate({"query": "x", "ranking_options": bad_ro})
-    # Range values stay valid at the body layer and are rejected at the route.
-    OpenAIVectorStoreSearch.model_validate(
-        {"query": "x", "ranking_options": {"score_threshold": 1.5}}
-    )
-    OpenAIVectorStoreSearch.model_validate(
-        {"query": "x", "ranking_options": {"score_threshold": -0.1}}
-    )
+    # Numeric out-of-range thresholds pass the body model so VectorStore.search
+    # can answer 400 invalid_filters. Rejecting them here becomes a 422 first.
+    from fx1.serve.vectorstores import VectorStoreError, VectorStoreStore
+
+    store = VectorStoreStore.__new__(VectorStoreStore)
+    for threshold in (1.5, -0.1):
+        body = OpenAIVectorStoreSearch.model_validate(
+            {"query": "x", "ranking_options": {"score_threshold": threshold}}
+        )
+        assert body.ranking_options is not None
+        with pytest.raises(VectorStoreError) as exc:
+            store.search(["vs_1"], "x", score_threshold=float(threshold))
+        assert exc.value.status == 400 and exc.value.code == "invalid_filters"
     with pytest.raises(ValidationError):
         OpenAIVectorStoreSearch.model_validate({"query": "x", "rewrite_query": True})
     with pytest.raises(ValidationError):

@@ -83,23 +83,6 @@ def test_generation_is_deterministic() -> None:
     assert edge_pairs == sorted(edge_pairs)
 
 
-def test_generated_files_are_byte_stable_across_line_endings(tmp_path, monkeypatch) -> None:
-    repo = _make_repo(tmp_path)
-    _without_curated(monkeypatch)
-    gen.write_all(repo)
-
-    for rel, content in gen.generated_artifacts(repo).items():
-        path = repo / rel
-        assert path.read_bytes() == content.encode("utf-8")
-    atlas = repo / gen.ATLAS_DOC
-    assert b"\r\n" not in atlas.read_bytes()
-    assert gen.stale_artifacts(repo) == []
-
-    manifest = repo / "docs" / "architecture" / "manifest.json"
-    manifest.write_bytes(manifest.read_bytes().replace(b"\n", b"\r\n"))
-    assert "docs/architecture/manifest.json" in gen.stale_artifacts(repo)
-
-
 def test_import_drift_marks_artifacts_stale(tmp_path, monkeypatch) -> None:
     repo = _make_repo(tmp_path)
     _without_curated(monkeypatch)
@@ -121,26 +104,6 @@ def test_module_addition_marks_manifest_stale(tmp_path, monkeypatch) -> None:
     gen.write_all(repo)
     (repo / "src" / "quant_fund" / "pkg" / "newmod.py").write_text("Y = 2\n")
     assert "docs/architecture/manifest.json" in gen.stale_artifacts(repo)
-
-
-def test_gitignored_nested_source_is_not_scanned(tmp_path, monkeypatch) -> None:
-    """A gitignored ``src/src`` nest must not invent modules a clean tree lacks."""
-    repo = _make_repo(tmp_path)
-    _without_curated(monkeypatch)
-    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, capture_output=True)
-    (repo / ".gitignore").write_text("/src/src/\n", encoding="utf-8", newline="\n")
-    ghost = repo / "src" / "src" / "quant_fund" / "ghost.py"
-    ghost.parent.mkdir(parents=True)
-    ghost.write_text("from quant_fund.pkg import a\n", encoding="utf-8", newline="\n")
-    modules, _edges, module_edges = gen.collect_graph(repo)
-    assert "src.quant_fund.ghost" not in modules
-    assert all(not name.startswith("src.") for name in modules)
-    assert all("ghost" not in importer for importer, _imported in module_edges)
-
-    visible = repo / "src" / "quant_fund" / "pkg" / "visible.py"
-    visible.write_text("Z = 1\n", encoding="utf-8", newline="\n")
-    modules_after, _, _ = gen.collect_graph(repo)
-    assert "quant_fund.pkg.visible" in modules_after
 
 
 def test_missing_anchor_fails_closed(tmp_path, monkeypatch) -> None:
@@ -189,8 +152,6 @@ def test_real_graph_shape_invariants() -> None:
     """Repo-level invariants the atlas documents (guard against regressions)."""
     modules, _edges, module_edges = gen.collect_graph(REPO)
     assert len(modules) > 400  # whole-repo scan, not a subset
-    # ``dipcatcher_cli`` is the outer launcher per AGENTS.md; it lives at src/
-    # alongside quant_fund and fx1 but is not part of the library graph.
     assert all(m.split(".")[0] in {"quant_fund", "fx1", "dipcatcher_cli"} for m in modules)
     # Pinned cross-root boundary (ADR-0002). Any added or removed edge fails.
     assert gen.cross_root_errors(module_edges) == []

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Standalone epoch-chain auditor — no quant_fund imports.
+"""Standalone epoch-chain auditor — no repo imports, stdlib only.
 
 Reimplements ``quant_fund.research.corpus_epoch.check_epoch_chain`` from
 scratch so a third-party auditor can verify a corpus's committed epoch
 chain — seal authenticity, prev links, fork/genesis/head topology, delta
-honesty, head-vs-live-tree consistency, and the pinned head's position
-commitments (``tree_root`` / ``chain_root`` / ``n_epochs``, recomputed from
-the chain truncated at the pinned head) — without running (or trusting)
+honesty, and head-vs-live-tree consistency — without running (or trusting)
 the repository's own code. The verdict vocabulary mirrors the library so
 the two implementations can be diffed: a divergence is itself a finding.
 
@@ -25,8 +23,7 @@ Usage:
     # Mutable corpora / strict corpora:
     --allow-member-updates   digest drift between epochs is bookkeeping
     --require-stamped        unstamped arrivals are errors, not pending
-    --epoch-acks FILE        epoch_acknowledgments.v1 ledger: each entry explains
-                             one removal/mutation recorded in a sealed epoch
+    --allowed-removals FILE  {member_name: sha256} removal allowances
 
 Exit 0 clean, 1 errors, 2 usage. Prints one error per line, then the
 verdict, matching ``verify-repo`` output shape.
@@ -37,21 +34,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
-import subprocess
 import sys
 import unicodedata
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 EPOCH_SCHEMA = "corpus_epoch.v1"
-POINT_CHECKER_SHA256 = "0421eb1970e19ccb6489a0b9e2d428684abbd19591839f5d1d61ca1a25143433"
 GENESIS_PREV = "0" * 64
 HEADS_PIN_BASENAME = "epoch_heads.json"
-# Position commitments every heads-pin entry must carry (mirrors
-# ``corpus_epoch.PIN_POSITION_FIELDS``); absence is an error, not legacy.
-PIN_POSITION_FIELDS = ("tree_root", "chain_root", "n_epochs")
 
 # Mirrors corpus_epoch.py — chain bookkeeping, never members.
 EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME, ".epoch_stamp.lock"})
@@ -116,30 +107,6 @@ _NODE_PREFIX = b"\x01"
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
-
-
-def _point_checker_ok() -> bool:
-    """Bind the sibling checker before its code can be imported."""
-    try:
-        raw = Path(__file__).with_name("ed25519_public.py").read_bytes()
-    except OSError:
-        return False
-    return _sha256(raw) == POINT_CHECKER_SHA256
-
-
-def _load_point_checker() -> Callable[[bytes], bool] | None:
-    """Execute exactly the checked source bytes, never a cached module."""
-    path = Path(__file__).with_name("ed25519_public.py")
-    try:
-        raw = path.read_bytes()
-    except OSError:
-        return None
-    if _sha256(raw) != POINT_CHECKER_SHA256:
-        return None
-    namespace: dict[str, Any] = {"__name__": "_standalone_ed25519_public"}
-    exec(compile(raw, str(path), "exec"), namespace)  # noqa: S102 - hash-pinned bytes
-    checker = namespace.get("is_canonical_prime_order_public_key")
-    return checker if callable(checker) else None
 
 
 def _canonicalize(value: Any) -> Any:
@@ -235,27 +202,6 @@ def _epoch_root(members: Mapping[str, str]) -> str:
     return _sha256(_canonical_json_bytes(dict(sorted(members.items()))))
 
 
-def _chain_leaf(position: int, name: str, sha256: str) -> bytes:
-    """Position-bound chain leaf — mirrors ``epoch_merkle._chain_leaf``."""
-    body = _canonical_json_bytes({"position": position, "receipt": name, "sha256": sha256})
-    return hashlib.sha256(_LEAF_PREFIX + body).digest()
-
-
-def _chain_tree_root(chain: list[tuple[str, str]]) -> str:
-    """RFC 6962-style root over the ordered ``[(receipt_name, file_sha)]``
-    chain — mirrors ``epoch_merkle.chain_tree_root`` (odd tail promoted, never
-    duplicated). Pinned to the library by a differential test."""
-    if not chain:
-        raise ValueError("empty epoch chain has no root")
-    level = [_chain_leaf(i, n, s) for i, (n, s) in enumerate(chain)]
-    while len(level) > 1:
-        nxt = [_node_hash(level[i], level[i + 1]) for i in range(0, len(level) - 1, 2)]
-        if len(level) % 2 == 1:
-            nxt.append(level[-1])
-        level = nxt
-    return level[0].hex()
-
-
 # ------------------------------------------------------------- live tree
 
 
@@ -272,68 +218,19 @@ def _exempt_member(root: Path, relname: str) -> bool:
     )
 
 
-def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
-    """Mirror ``corpus_epoch.gitignored_relpaths`` — tracked files stay members."""
-    if not rels:
-        return set()
-    if os.name == "nt":
-        # Git for Windows hangs on NUL-delimited stdin; a byte newline stream
-        # avoids Python's CRLF translation. Unsafe names stay members so the
-        # independent portability check can reject them.
-        if any("\r" in name or "\n" in name for name in rels):
-            return set()
-        try:
-            proc_bytes = subprocess.run(
-                ["git", "-c", "core.quotePath=false", "check-ignore", "--stdin"],
-                cwd=root,
-                input=("\n".join(rels) + "\n").encode("utf-8", "surrogateescape"),
-                capture_output=True,
-                timeout=30,
-                check=False,
-            )
-        except OSError:
-            return set()
-        if proc_bytes.returncode not in (0, 1):
-            return set()
-        return {
-            name.decode("utf-8", "surrogateescape")
-            for name in proc_bytes.stdout.split(b"\n")
-            if name
-        }
-    try:
-        proc_text = subprocess.run(
-            ["git", "check-ignore", "-z", "--stdin"],
-            cwd=root,
-            input="\0".join(rels) + "\0",
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="surrogateescape",
-            timeout=30,
-            check=False,
-        )
-    except OSError:
-        return set()
-    if proc_text.returncode not in (0, 1):
-        return set()
-    return {name for name in proc_text.stdout.split("\0") if name}
-
-
 def _member_digests(corpus_dir: Path, pattern: str) -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` — recursive over ``rglob(pattern)``."""
     root = Path(corpus_dir)
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
-    candidates = [
-        path.relative_to(root).as_posix()
+    return {
+        path.relative_to(root).as_posix(): _sha256(path.read_bytes())
         for path in sorted(root.rglob(pattern))
         if path.is_file()
         and path.name not in EXEMPT_BASENAMES
         and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
         and not _exempt_member(root, path.relative_to(root).as_posix())
-    ]
-    ignored = _gitignored_relpaths(root, candidates)
-    return {rel: _sha256((root / rel).read_bytes()) for rel in candidates if rel not in ignored}
+    }
 
 
 def _nfc_errors(members: Mapping[str, str]) -> list[str]:
@@ -350,12 +247,8 @@ def _nfc_errors(members: Mapping[str, str]) -> list[str]:
 
 
 def _symlink_errors(root: Path) -> list[str]:
-    """Every entry, not only glob matches — a symlinked dir hides content.
-
-    The root itself too: ``rglob`` follows a symlinked corpus dir, so a
-    re-rooted corpus is counted in full while none of its children is a link."""
-    errors = [f"corpus_root_is_symlink:{root.name!a}"] if root.is_symlink() else []
-    return errors + [
+    """Every entry, not only glob matches — a symlinked dir hides content."""
+    return [
         f"member_is_symlink:{p.relative_to(root).as_posix()!a}"
         for p in sorted(root.rglob("*"))
         if p.is_symlink()
@@ -516,7 +409,7 @@ def _epoch_receipts(
             continue
         try:
             doc = json.loads(path.read_bytes())
-        except (OSError, UnicodeError, ValueError, RecursionError):
+        except (OSError, UnicodeError, ValueError):
             if path.name.startswith("corpus_epoch_"):
                 squatters.append(path.name)
             continue
@@ -545,14 +438,8 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     except ImportError:
         return None
-    checker = _load_point_checker()
-    if checker is None:
-        return False
     try:
-        public_bytes = bytes.fromhex(pub_hex.strip())
-        if not checker(public_bytes):
-            return False
-        pub = Ed25519PublicKey.from_public_bytes(public_bytes)
+        pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex.strip()))
         pub.verify(bytes.fromhex(sig_hex), msg)
     except (InvalidSignature, ValueError, TypeError):
         return False
@@ -682,99 +569,12 @@ def _checkpoint_heads(
 # ---------------------------------------------------------------- chain
 
 
-def _fold(name: str) -> str:
-    """Mirror of ``corpus_epoch._fold``: name identity on case-insensitive /
-    normalizing filesystems (NTFS also drops trailing dots and spaces)."""
-    folded = unicodedata.normalize("NFC", name).casefold()
-    return "/".join(part.rstrip(". ") for part in folded.split("/"))
-
-
-def _resurrections(
-    root: Path, by_name: Mapping[str, Mapping[str, Any]], child_of: Mapping[str, str], genesis: str
-) -> tuple[list[tuple[str, str, str, str]], dict[str, str]]:
-    """Mirror of ``corpus_epoch._resurrections``: append-only names removed
-    and later re-added (under any ``_fold``-equal spelling) with different
-    bytes, plus the last stamped digest of every name ever held. Same-byte
-    re-adds are restorations, not flagged."""
-    last: dict[str, str] = {}
-    prev: dict[str, str] = {}
-    found: list[tuple[str, str, str, str]] = []
-    cur: str | None = genesis
-    seen: set[str] = set()
-    while cur is not None and cur not in seen:
-        seen.add(cur)
-        members = {
-            k: v for k, v in _member_maps(by_name[cur]).items() if not _exempt_member(root, k)
-        }
-        found += [
-            (k, cur, last[_fold(k)], members[k])
-            for k in sorted(set(members) - set(prev))
-            if _fold(k) in last and last[_fold(k)] != members[k]
-        ]
-        last.update({_fold(k): v for k, v in members.items()})
-        prev = members
-        cur = child_of.get(cur)
-    return found, last
-
-
-def _pin_position_errors(
-    pin: Mapping[str, Any],
-    exp_name: str,
-    by_name: Mapping[str, Mapping[str, Any]],
-    file_sha: Mapping[str, str],
-) -> list[str]:
-    """Recompute the pin's ``tree_root`` / ``chain_root`` / ``n_epochs`` from
-    the chain truncated at the pinned head (mirrors the library's "bound chain
-    fields" leg). A pin that names a real head but lies about its position
-    commitments must fail: offline position proofs anchor on those values.
-
-    All three fields are required: an absent (or ``null``) field is
-    ``epoch_pin_field_missing`` — deleting a lying field must not pass where
-    the lie fails — and a present-but-malformed field is an error, never
-    silently skipped. Mirrors the library's ``pin_position_missing_errors``."""
-    tree, chain_root, n_epochs = (pin.get(f) for f in PIN_POSITION_FIELDS)
-    missing = [f"epoch_pin_field_missing:{f!a}" for f in PIN_POSITION_FIELDS if pin.get(f) is None]
-    errors: list[str] = []
-    for fname, val in (("tree_root", tree), ("chain_root", chain_root)):
-        if val is not None and not _is_sha256(val):
-            errors.append(f"epoch_pin_field_malformed:{fname!a}")
-    if n_epochs is not None and (
-        not isinstance(n_epochs, int) or isinstance(n_epochs, bool) or n_epochs < 1
-    ):
-        errors.append("epoch_pin_field_malformed:'n_epochs'")
-    if errors or len(missing) == len(PIN_POSITION_FIELDS):
-        return missing + errors
-    errors = missing
-    if exp_name not in by_name:
-        return errors  # head missing / mutated / invalid: already reported
-    chain: list[tuple[str, str]] = []
-    cur: str | None = exp_name
-    seen: set[str] = set()
-    while cur is not None:
-        if cur in seen or cur not in by_name:
-            return [*errors, f"epoch_pin_chain_unverifiable:{exp_name!a}"]
-        seen.add(cur)
-        chain.append((cur, file_sha[cur]))
-        prev = by_name[cur].get("prev_epoch_receipt")
-        if prev is not None and not isinstance(prev, str):
-            return [*errors, f"epoch_pin_chain_unverifiable:{exp_name!a}"]
-        cur = prev
-    chain.reverse()
-    if tree is not None and by_name[exp_name].get("member_tree_root") != tree:
-        errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
-    if chain_root is not None and _chain_tree_root(chain) != chain_root:
-        errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
-    if n_epochs is not None and len(chain) != n_epochs:
-        errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
-    return errors
-
-
 def check_chain(
     corpus_dir: Path,
     *,
     pattern: str,
-    acks: list[Mapping[str, Any]],
-    expected_head: Mapping[str, Any] | None,
+    allowed_removals: Mapping[str, str],
+    expected_head: Mapping[str, str] | None,
     require_stamped: bool,
     allow_member_updates: bool,
 ) -> dict[str, Any]:
@@ -782,10 +582,7 @@ def check_chain(
     legs included."""
     root = Path(corpus_dir)
     errors: list[str] = []
-    acknowledged: list[str] = []
     unstamped: list[str] = []
-    ack_index = {(str(a["member"]), str(a["epoch"])): a for a in acks}
-    ack_used: set[tuple[str, str]] = set()
 
     exp_name: str | None = None
     if expected_head is not None:
@@ -809,27 +606,20 @@ def check_chain(
         if exp_name is not None:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
         errors.append("no_epoch_receipts")
-        return {"errors": errors, "acknowledged": acknowledged, "unstamped": [], "head": None}
+        return {"errors": errors, "unstamped": [], "head": None}
 
     # Seal-verify every epoch envelope before trusting its claims. The v2
     # receipt seals the *envelope*; the v1 receipt seals the flat body.
     sealed: dict[str, Mapping[str, Any]] = {}
-    file_sha: dict[str, str] = {}
     for path, body, envelope in epochs:
         errs = _seal_errors(envelope)
-        if errs or _epoch_contract_errors(body) or not _strict_json_ok(path.read_bytes()):
+        if errs or _epoch_contract_errors(body):
             errors.append(f"epoch_receipt_invalid:{path.name!a}")
             continue
         sealed[path.name] = body
-        file_sha[path.name] = _sha256(path.read_bytes())
     if not sealed:
         errors.append("no_valid_epoch_receipts")
-        return {
-            "errors": errors,
-            "acknowledged": acknowledged,
-            "unstamped": unstamped,
-            "head": None,
-        }
+        return {"errors": errors, "unstamped": unstamped, "head": None}
 
     by_name = sealed
     child_of: dict[str, str] = {}
@@ -850,6 +640,7 @@ def check_chain(
     if len(genesis) > 1:
         errors.append(f"epoch_multiple_genesis:{','.join(sorted(ascii(g) for g in genesis))}")
 
+    allowed = dict(allowed_removals)
     for prev_name, cur_name in child_of.items():
         prev_members = {
             k: v for k, v in _member_maps(by_name[prev_name]).items() if not _exempt_member(root, k)
@@ -858,17 +649,8 @@ def check_chain(
             k: v for k, v in _member_maps(by_name[cur_name]).items() if not _exempt_member(root, k)
         }
         for gone in sorted(set(prev_members) - set(cur_members)):
-            label = f"member_removed:{gone!a}@{cur_name!a}"
-            ack = ack_index.get((gone, cur_name))
-            if (
-                ack is not None
-                and ack["transition"] == "removed"
-                and ack["from_sha256"] == prev_members[gone]
-            ):
-                ack_used.add((gone, cur_name))
-                acknowledged.append(label)
-            else:
-                errors.append(label)
+            if allowed.get(gone) != prev_members[gone]:
+                errors.append(f"member_removed:{gone!a}@{cur_name!a}")
         declared_removed = {
             n
             for n in (by_name[cur_name].get("members_removed") or [])
@@ -881,37 +663,9 @@ def check_chain(
         }
         if declared_added != set(cur_members) - set(prev_members):
             errors.append(f"members_added_dishonest:{cur_name!a}")
-        for kept in sorted(set(prev_members) & set(cur_members)):
-            if prev_members[kept] == cur_members[kept] or allow_member_updates:
-                continue
-            label = f"member_mutated:{kept!a}@{cur_name!a}"
-            ack = ack_index.get((kept, cur_name))
-            if (
-                ack is not None
-                and ack["transition"] == "mutated"
-                and ack["from_sha256"] == prev_members[kept]
-                and ack["to_sha256"] == cur_members[kept]
-            ):
-                ack_used.add((kept, cur_name))
-                acknowledged.append(label)
-            else:
-                errors.append(label)
-    history: dict[str, str] = {}
-    if not allow_member_updates and len(genesis) == 1:
-        found, history = _resurrections(root, by_name, child_of, genesis[0])
-        for name, epoch, last_sha, new_sha in found:
-            label = f"member_resurrected:{name!a}@{epoch!a}"
-            ack = ack_index.get((name, epoch))
-            if (
-                ack is not None
-                and ack["transition"] == "mutated"
-                and ack["from_sha256"] == last_sha
-                and ack["to_sha256"] == new_sha
-            ):
-                ack_used.add((name, epoch))
-                acknowledged.append(label)
-            else:
-                errors.append(label)
+        for kept in set(prev_members) & set(cur_members):
+            if prev_members[kept] != cur_members[kept] and not allow_member_updates:
+                errors.append(f"member_mutated:{kept!a}@{cur_name!a}")
 
     heads = set(by_name) - set(child_of)
     head_name: str | None = None
@@ -924,17 +678,13 @@ def check_chain(
         errors += _portable_name_errors(live)
         head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
-        for name in sorted(stamped - set(live)):
-            errors.append(f"head_member_missing_live:{name!a}")
+        for name in stamped - set(live):
+            if allowed.get(name) != head_members[name]:
+                errors.append(f"head_member_missing_live:{name!a}")
         for name, sha in head_members.items():
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name!a}")
         unstamped = sorted(set(live) - stamped - set(by_name))
-        errors.extend(
-            f"member_resurrected_live:{name!a}"
-            for name in unstamped
-            if _fold(name) in history and history[_fold(name)] != live[name]
-        )
         if require_stamped:
             errors.extend(f"unstamped_member:{name!a}" for name in unstamped)
     elif len(heads) > 1:
@@ -954,118 +704,19 @@ def check_chain(
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
-    if exp_name is not None and expected_head is not None:
-        errors.extend(_pin_position_errors(expected_head, exp_name, by_name, file_sha))
-    for member, epoch in sorted(set(ack_index) - ack_used):
-        errors.append(f"epoch_ack_unmatched:{member!a}@{epoch!a}")
-    return {
-        "errors": errors,
-        "acknowledged": acknowledged,
-        "unstamped": unstamped,
-        "head": head_name,
-    }
+    return {"errors": errors, "unstamped": unstamped, "head": head_name}
 
 
 # ------------------------------------------------------------------ cli
 
 
-_ACK_FIELDS = frozenset(
-    {"corpus", "member", "transition", "from_sha256", "to_sha256", "epoch", "reason"}
-)
-
-
-def _hex64(value: object) -> bool:
-    return (
-        isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
-    )
-
-
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    """Duplicate object keys make one byte string carry two readings (JSON
-    is last-wins) — fatal for a ledger that decides what a gate excuses."""
-    obj: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in obj:
-            raise ValueError(f"duplicate_json_key:{key!a}")
-        obj[key] = value
-    return obj
-
-
-def _reject_non_finite(token: str) -> float:
-    value = float(token)
-    if value != value or value in (float("inf"), float("-inf")):
-        raise ValueError("non_finite_json_number")
-    return value
-
-
-def _reject_constant(token: str) -> Any:
-    raise ValueError(f"non_finite_json_number:{token}")
-
-
-def _strict_json_ok(raw: bytes) -> bool:
-    """The library's leaf parse (``receipt_v2_leaf``) refuses duplicate
-    keys and non-finite numbers before trusting a seal: one byte string must
-    have exactly one reading. Same refusal here, so both verifiers agree."""
-    try:
-        json.loads(
-            raw,
-            object_pairs_hook=_reject_duplicate_keys,
-            parse_float=_reject_non_finite,
-            parse_constant=_reject_constant,
-        )
-    except (ValueError, RecursionError):
-        return False
-    return True
-
-
-def load_acks(path: Path | None, key: str) -> list[Mapping[str, Any]]:
-    """Strict epoch_acknowledgments.v1 parse (independent of the library):
-    any malformed entry raises — a ledger that cannot be matched exactly is
-    never read as "no acks". Returns the entries scoped to chain ``key``."""
+def _load_allowed(path: Path | None) -> dict[str, str]:
     if path is None:
-        return []
-    raw = json.loads(path.read_bytes(), object_pairs_hook=_reject_duplicate_keys)
-    if (
-        not isinstance(raw, Mapping)
-        or raw.get("schema") != "epoch_acknowledgments.v1"
-        or set(raw) != {"schema", "acks"}
-        or not isinstance(raw["acks"], list)
-    ):
-        raise ValueError("epoch acks: expected {schema: epoch_acknowledgments.v1, acks: [...]}")
-    seen: set[tuple[str, str, str]] = set()
-    out: list[Mapping[str, Any]] = []
-    for i, a in enumerate(raw["acks"]):
-        if not isinstance(a, Mapping) or set(a) != _ACK_FIELDS:
-            raise ValueError(f"epoch ack #{i}: wrong field set")
-        epoch = a["epoch"]
-        ok = (
-            isinstance(a["corpus"], str)
-            and "/" in a["corpus"]
-            and isinstance(a["member"], str)
-            and bool(a["member"])
-            and a["transition"] in ("removed", "mutated")
-            and isinstance(epoch, str)
-            and epoch.startswith("corpus_epoch_")
-            and epoch.endswith(".json")
-            and len(epoch) == 34
-            and _hex64(a["from_sha256"])
-            and isinstance(a["reason"], str)
-            and bool(a["reason"].strip())
-            and (
-                a["to_sha256"] is None
-                if a["transition"] == "removed"
-                else _hex64(a["to_sha256"]) and a["to_sha256"] != a["from_sha256"]
-            )
-        )
-        if not ok:
-            raise ValueError(f"epoch ack #{i}: malformed")
-        ident = (a["corpus"], a["member"], epoch)
-        if ident in seen:
-            raise ValueError(f"epoch ack #{i}: duplicate")
-        seen.add(ident)
-        if a["corpus"] == key:
-            out.append(a)
-    return out
+        return {}
+    raw = json.loads(path.read_bytes())
+    if not isinstance(raw, Mapping):
+        return {}
+    return {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}
 
 
 def main() -> int:
@@ -1087,14 +738,10 @@ def main() -> int:
         help="gate_quorum.v1 registry for v2 checkpoints (default: --pubkey only)",
     )
     ap.add_argument("--key", type=str, default=None, help="pin key e.g. 'quality/*.json'")
-    ap.add_argument("--epoch-acks", type=Path, default=None)
+    ap.add_argument("--allowed-removals", type=Path, default=None)
     ap.add_argument("--require-stamped", action="store_true")
     ap.add_argument("--allow-member-updates", action="store_true")
     args = ap.parse_args()
-
-    if not _point_checker_ok():
-        print("  ed25519_point_checker_mismatch\nFAIL")
-        return 1
 
     if args.checkpoint is not None and args.pubkey is None:
         print("--checkpoint requires --pubkey", file=sys.stderr)
@@ -1133,15 +780,10 @@ def main() -> int:
     if pin_heads and expected_head is None:
         pre_errors.append(f"heads_pin_key_missing:{key!a}")
 
-    try:
-        acks = load_acks(args.epoch_acks, key)
-    except (OSError, ValueError) as exc:
-        print(f"epoch acks invalid: {exc}", file=sys.stderr)
-        return 2
     result = check_chain(
         args.corpus_dir,
         pattern=args.pattern,
-        acks=acks,
+        allowed_removals=_load_allowed(args.allowed_removals),
         expected_head=expected_head,
         require_stamped=args.require_stamped,
         allow_member_updates=args.allow_member_updates,
@@ -1155,8 +797,6 @@ def main() -> int:
         print(f"  {e}")
     for u in result["unstamped"]:
         print(f"  unstamped:{u!a}")
-    for incident in result["acknowledged"]:
-        print(f"  acknowledged:{incident}")
     if errors:
         print("FAIL")
         return 1

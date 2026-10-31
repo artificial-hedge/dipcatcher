@@ -3,7 +3,7 @@
 Research diagnostic on the pre-registered Yahoo daily sweep.
 Annualized ratio means Sharpe ratio: per-period mean over sample
 standard deviation, times the square root of the periods-per-year count.
-It is not a promotion.
+It is not a promotion and not a live-trading claim.
 Proper-score research elsewhere in this repo is unchanged.
 Reality-filter thresholds were not edited.
 

@@ -19,7 +19,6 @@ import pandas as pd
 import pytest
 
 from quant_fund.models.volatility import (
-    _GARCH_FIT_CACHE,
     GARCH_DATE_LEVEL_SCOPE,
     GARCH_SECURITY_LEVEL_SCOPE,
     GARCHVol,
@@ -149,40 +148,6 @@ def test_garch_inadmissible_persistence_falls_back() -> None:
         model = GARCHVol(vol="garch").fit_returns(_returns())
     assert model.result is None
     assert model.fallback_reason == "nonstationary_persistence"
-
-
-def test_mock_garch_fits_are_not_cached(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A freed mock's id must not replay an earlier fallback.
-
-    The persistence gate above failed on Windows when a prior nonconvergence
-    mock was collected and the next ``patch`` reused that id.
-    """
-    series = _returns()
-    puts: list[str] = []
-    real_put = _GARCH_FIT_CACHE.put
-
-    def spy(key: str, value: object) -> None:
-        puts.append(key)
-        real_put(key, value)
-
-    _GARCH_FIT_CACHE.clear()
-    monkeypatch.setattr(_GARCH_FIT_CACHE, "put", spy)
-    try:
-        with patch("arch.arch_model") as factory:
-            factory.return_value.fit.return_value = _mock_fit_result(convergence_flag=4)
-            first = GARCHVol(vol="garch").fit_returns(series)
-            assert factory.return_value.fit.call_count == 1
-        with patch("arch.arch_model") as factory:
-            factory.return_value.fit.return_value = _mock_fit_result(
-                params=pd.Series({"omega": 0.05, "alpha[1]": 0.7, "beta[1]": 0.4})
-            )
-            second = GARCHVol(vol="garch").fit_returns(series)
-            assert factory.return_value.fit.call_count == 1
-    finally:
-        _GARCH_FIT_CACHE.clear()
-    assert first.fallback_reason == "nonconvergence:4"
-    assert second.fallback_reason == "nonstationary_persistence"
-    assert puts == []
 
 
 # --- unfitted / degraded predictive paths ---

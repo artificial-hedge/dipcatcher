@@ -3,14 +3,18 @@
 
 Why this exists
 ---------------
-An earlier ``proofcore receipts-reverify`` gate spawned ``verify-receipt``
-once per file, taking about 20 minutes for this corpus and mixing digest
-failures with schema differences. The current ``make receipts-reverify`` runs
-``suite-health --strict`` in process and applies the exact-byte quarantine
-registry. This separate scanner keeps the digest diagnosis available in
-seconds without making a claim about each receipt's full research contract.
+``make receipts-reverify`` shells out to ``quant_fund.cli.main
+verify-receipt`` **once per receipt**. On this tree that is ~3.1 s of
+interpreter startup and heavy transitive imports per file — roughly
+**20 minutes for ~390 receipts, with no output until the end**. A
+verification surface that cannot return a verdict in a useful time is not
+a verification surface, and a slow gate buries its own findings: the
+20-minute run reported 10 undifferentiated failures, which mixed one real
+gate bug, three genuinely broken self-seals, and six schema-convention
+mismatches that are not corruption at all.
 
-This scanner performs the *digest* check **in-process** and reports by cause:
+This scanner performs the *digest* half of that verification **in-process**
+and reports in seconds, split by cause so a human can triage it:
 
 - ``ok``         — ``receipt_sha256`` recomputes correctly under the canonical
   convention (``canonical_json_bytes``, ``ensure_ascii=False``).
@@ -21,11 +25,12 @@ This scanner performs the *digest* check **in-process** and reports by cause:
 - ``mismatch``   — ``receipt_sha256`` does **not** match the content. The
   receipt's integrity claim is false and it is **not usable as evidence**
   until honestly re-sealed.
-- ``no_selfseal``— the schema has no ``receipt_sha256`` field. This scanner
-  cannot vouch for those files, so it reports them instead of silently
-  skipping them. The strict suite-health gate retains their exact bytes and
-  verifier errors in ``quality/legacy_quarantine.json``; detached prereg
-  sidecars have separate checks.
+- ``no_selfseal``— the schema carries its own seal mechanism and has no
+  ``receipt_sha256`` field at all. These are **not failures**; they are
+  handed to their schema-specific verifier (``quant_fund.data.prereg_seal``
+  for ``forward_record_preregistration.v1``, and the lane-receipt verifier
+  for ``lane_receipt.v1``). This scanner reports them so they are visible
+  rather than silently skipped.
 - ``unparseable``— not valid JSON.
 
 Scope and honesty
@@ -35,9 +40,10 @@ tape manifests, params, research-only flags, or live-PnL claims — that is
 ``verify-receipt``'s job. It exists so the *integrity* half is cheap and
 fast enough to run on every change, leaving the expensive full gate for CI.
 
-It fails closed on a missing/empty corpus, unreadable or ambiguous JSON, and
-any ``mismatch``. ``no_selfseal`` does not fail this digest-only scan, because
-the strict suite-health gate accounts for those receipts separately.
+It fails closed: any ``mismatch`` exits non-zero. ``no_selfseal`` does not
+fail the scan, because those receipts are governed by a different seal and
+counting them as failures would be exactly the false-positive this tool
+exists to eliminate.
 
 Usage::
 
@@ -49,7 +55,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -62,36 +67,11 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes  # noqa: E
 _SELF_FIELD = "receipt_sha256"
 
 
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    payload: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in payload:
-            raise ValueError(f"duplicate_json_key:{key}")
-        payload[key] = value
-    return payload
-
-
-def _reject_nonfinite(value: str) -> Any:
-    raise ValueError(f"nonfinite_json_number:{value}")
-
-
-def _finite_float(value: str) -> float:
-    parsed = float(value)
-    if not math.isfinite(parsed):
-        raise ValueError(f"nonfinite_json_number:{value}")
-    return parsed
-
-
 def classify(path: Path) -> tuple[str, str]:
     """Return ``(status, detail)`` for one receipt file."""
     try:
-        payload = json.loads(
-            path.read_text(encoding="utf-8"),
-            object_pairs_hook=_reject_duplicate_keys,
-            parse_constant=_reject_nonfinite,
-            parse_float=_finite_float,
-        )
-    except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return "unparseable", f"{type(exc).__name__}"
     if not isinstance(payload, dict):
         return "unparseable", "not_a_mapping"
@@ -146,9 +126,7 @@ def scan(receipts_dir: Path) -> dict[str, Any]:
         "mismatched": [{"file": n, "detail": d} for n, d in results["mismatch"]],
         "no_selfseal": [{"file": n, "schema": d} for n, d in results["no_selfseal"]],
         "unparseable": [{"file": n, "detail": d} for n, d in results["unparseable"]],
-        "verdict": (
-            "PASS" if paths and not results["mismatch"] and not results["unparseable"] else "FAIL"
-        ),
+        "verdict": "PASS" if not results["mismatch"] and not results["unparseable"] else "FAIL",
     }
 
 

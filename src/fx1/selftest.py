@@ -181,10 +181,7 @@ def run_selftest(
     server2: Any = None
     checks = report.checks
     try:
-        app_kwargs: dict[str, Any] = {
-            "harness": Harness(runner=fake_runner),
-            "public_release": False,
-        }
+        app_kwargs: dict[str, Any] = {"harness": Harness(runner=fake_runner)}
         if state_dir is not None:
             app_kwargs["state_dir"] = state_dir
         app = api_mod.create_app(**app_kwargs)

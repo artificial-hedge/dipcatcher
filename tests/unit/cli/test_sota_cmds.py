@@ -15,7 +15,6 @@ CLI calls the same library functions, so the two surfaces cannot drift.
 from __future__ import annotations
 
 import json
-import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -29,16 +28,6 @@ from quant_fund.research import forward_shadow as shadow
 from quant_fund.research import prospective_sota as journal
 
 runner = CliRunner()
-
-_ANSI = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def _plain(text: str) -> str:
-    """Collapse rich errors so ANSI splits inside ``--flag`` still match."""
-    stripped = _ANSI.sub("", text)
-    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
-    return " ".join(stripped.split())
-
 
 _HEX_A = "a" * 64
 _HEX_B = "b" * 64
@@ -642,4 +631,4 @@ def test_sota_block_sensitivity_rejects_bad_blocks(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code != 0
-    assert "--blocks must be positive" in _plain(result.output)
+    assert "--blocks must be positive" in result.output

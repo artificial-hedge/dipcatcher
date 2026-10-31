@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import copy
 import json
-import os
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -453,38 +452,6 @@ class TestCli:
         assert "events" not in rep and "state" not in rep
         assert rep["completed_sessions"] == 1
         assert json.loads(out_path.read_text())["completed_sessions"] == 1
-
-    def test_cli_reconcile_export_is_immutable(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        result = {"completed_sessions": 1, "events": [], "state": {}}
-        monkeypatch.setattr(shadow, "report", lambda *_args, **_kwargs: result)
-        out_path = tmp_path / "report.json"
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            ["x", "reconcile", "--run", str(tmp_path / "run.sqlite"), "--output", str(out_path)],
-        )
-
-        shadow.main()
-        expected = json.dumps(result, indent=2, allow_nan=False).encode("utf-8")
-        assert out_path.read_bytes() == expected
-
-        os.utime(out_path, ns=(1_600_000_000_000_000_000, 1_600_000_000_000_000_000))
-        published_mtime = out_path.stat().st_mtime_ns
-        shadow.main()
-        assert out_path.read_bytes() == expected
-        assert out_path.stat().st_mtime_ns == published_mtime
-
-        existing = b'{"prior": true}\n'
-        out_path.write_bytes(existing)
-        os.utime(out_path, ns=(1_600_000_000_000_000_000, 1_600_000_000_000_000_000))
-        existing_mtime = out_path.stat().st_mtime_ns
-        with pytest.raises(SystemExit) as exc:
-            shadow.main()
-        assert exc.value.code == 2
-        assert out_path.read_bytes() == existing
-        assert out_path.stat().st_mtime_ns == existing_mtime
 
     def test_cli_error_maps_to_system_exit(self, env, monkeypatch, tmp_path) -> None:
         spec, bars, current, path = env

@@ -102,7 +102,8 @@ dependence family — they guarantee nothing); the log-ACF decay estimate is
 attenuation-robust in rate but biased on short or near-white streams, where
 it fails closed rather than fabricate a memory scale. All results here come
 from seeded SYNTHETIC streams and are correctness tests, never market
-evidence; only coverage / proper-score diagnostics are exposed.
+evidence; only coverage / proper-score diagnostics are exposed; no
+live-trading claims.
 
 Conventions: numpy core, fail-closed edges (ValueError), deterministic given
 the residual stream (the controller holds no RNG). τ = 1 reproduces the

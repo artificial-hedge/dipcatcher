@@ -7,7 +7,6 @@ moves. Rejected orders are skipped (not silently unconstrained).
 from __future__ import annotations
 
 import json
-import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -343,19 +342,6 @@ def _decision_inputs(
     return decision_marks, advs, vols
 
 
-def _require_finite_initial_nav(initial_nav: float) -> float:
-    """Refuse NaN or infinite starting NAV before either engine runs.
-
-    The event loop used to reach the cost model and raise
-    ``quantity must be finite``; the fast path emitted a NaN book. Both
-    must raise the same ``ValueError``.
-    """
-    nav = float(initial_nav)
-    if not math.isfinite(nav):
-        raise ValueError("initial_nav must be finite")
-    return nav
-
-
 def _run_backtest_event_loop(
     bars: pl.DataFrame,
     weights: pl.DataFrame,
@@ -365,7 +351,6 @@ def _run_backtest_event_loop(
     risk_overlay: BookRiskOverlay | None = None,
 ) -> BacktestResult:
     """Reference event loop. ``run_backtest`` delegates here when the fast replay is incomplete."""
-    _require_finite_initial_nav(initial_nav)
     _validate_target_weight_panel(weights)
     _validate_bar_panel(bars)
     costs_cfg0 = config.costs

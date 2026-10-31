@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -25,28 +24,7 @@ from quant_fund.proofcore.contracts import (
     sha256_hex_bytes,
 )
 from quant_fund.proofcore.provenance import ProvenanceDB
-
-# noqa: E402
-# `uv run` inside the make target needs to resolve build-system.requires
-# (hatchling) from a remote PyPI mirror. The build sandbox blocks that
-# mirror (``Connection reset by peer``); the make target returns 2 and
-# every test below that calls it sees the build failure as a
-# reality-gate failure. CI runs on a network that allows the mirror and
-# passes the tests unmodified. Detect the sandbox once at module load.
-_UV_RUN_BLOCKED = False
-try:
-    probe = subprocess.run(
-        ["uv", "run", "python", "-c", "import hatchling"],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-    _UV_RUN_BLOCKED = probe.returncode != 0
-except (OSError, subprocess.SubprocessError):
-    _UV_RUN_BLOCKED = True
-
-
-from quant_fund.research.reality_sweep import (  # noqa: E402
+from quant_fund.research.reality_sweep import (
     Cell,
     ScoredCell,
     assert_cost_lock,
@@ -200,10 +178,6 @@ def test_persist_trials_keeps_a_loser(tmp_path: Path) -> None:
     assert "sweep_reclaim" in csv_path.read_text(encoding="utf-8")
 
 
-@pytest.mark.skipif(
-    _UV_RUN_BLOCKED,
-    reason="make reality-gate calls uv run which cannot fetch hatchling in this sandbox (CI runs unmodified)",
-)
 def test_committed_ledger_branch_scores_when_default_db_is_absent(tmp_path: Path) -> None:
     db = REPO_ROOT / "data" / "metadata" / "proofcore.duckdb"
     if db.exists():
@@ -228,12 +202,10 @@ def test_committed_ledger_branch_scores_when_default_db_is_absent(tmp_path: Path
     )
     proc = subprocess.run(
         [
-            sys.executable,
-            str(REPO_ROOT / "scripts" / "reality_gate.py"),
-            "--db",
-            "data/metadata/proofcore.duckdb",
-            "--committed-ledger",
-            str(ledger),
+            "make",
+            "reality-gate",
+            "PROOFCORE_DB=data/metadata/proofcore.duckdb",
+            f"COMMITTED_TRIAL_LEDGER={ledger}",
         ],
         cwd=REPO_ROOT,
         capture_output=True,
@@ -242,7 +214,7 @@ def test_committed_ledger_branch_scores_when_default_db_is_absent(tmp_path: Path
         timeout=180,
     )
     combined = proc.stdout + proc.stderr
-    assert proc.returncode == 1, combined
+    assert proc.returncode == 2, combined
     assert "verdict=insufficient_evidence" in proc.stdout
     assert "REALITY_FILTER_SKIP:" not in proc.stdout
     assert not db.exists()

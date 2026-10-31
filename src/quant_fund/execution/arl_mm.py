@@ -129,7 +129,8 @@ Honesty: every output is a SYNTHETIC correctness diagnostic on a synthetic
 environment, never market evidence. All mark-to-market accounting stays
 inside episode results under ``sim_internal_*`` names and never enters the
 bench blob; the bench reports left-tail *distribution* diagnostics under
-``synthetic_*`` keys. No Sharpe/Sortino/Calmar/P&L/NAV headline.
+``synthetic_*`` keys. No Sharpe/Sortino/Calmar/P&L/NAV headline; no broker
+connectivity or live-trading claim anywhere in this module.
 
 Conventions: torch is the optional ``nn`` extra, imported lazily via
 :func:`_torch`, so this module imports cleanly without torch and every torch
@@ -1439,7 +1440,7 @@ def arl_mm_bench(
     keys (``label``/``dgp``/``claim``/``kind``/``data_source``). All values
     are SYNTHETIC correctness diagnostics on a synthetic environment —
     ``sim_internal_*`` accounting never enters this blob; no headline
-    P&L-family metrics, no market evidence.
+    P&L-family metrics, no market evidence, no live-trading claim.
     """
     torch = _torch()  # fail closed with install guidance when nn extra absent
     _seed_int(seed)

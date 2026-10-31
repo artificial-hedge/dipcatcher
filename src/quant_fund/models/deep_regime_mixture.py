@@ -64,8 +64,8 @@ dominance of the true generator's NLPD over perturbed variants. Tails
 ``Theta(|y|^{-(nu_eff + 1)})`` with ``nu_eff = min_r nu_r``.
 
 Honesty: everything runs on SYNTHETIC simulated streams. Outputs are proper
-scores (NLPD / log score) only — no Sharpe/Sortino/P&L headline
-(AGENTS.md honesty contract).
+scores (NLPD / log score) only — no Sharpe/Sortino/P&L headline, no
+live-trading claims (AGENTS.md honesty contract).
 
 Conventions: torch is the optional ``nn`` extra, imported lazily via
 :func:`_torch` (mirrors ``deep_hedging.py``), so this module imports cleanly

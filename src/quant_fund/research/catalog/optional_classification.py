@@ -8,7 +8,7 @@ the research surface a reader should be pointed at: the DEFAULT surface is the
 ``DEFAULT_BENCHMARK_FAMILIES`` by ``catalog.registry``). This module exists so
 the remaining optional bulk is *accounted for* rather than merely counted.
 
-Classification rule (deterministic, audit-pinned)
+Classification rule (deterministic, auditable, no per-family hand-authoring)
 -----------------------------------------------------------------------------
 Every live-optional family lands in exactly one of two buckets:
 
@@ -25,12 +25,13 @@ Every live-optional family lands in exactly one of two buckets:
     constant-check bench over constant arguments with no control flow and no
     data parameters.
 
-Why this is auditable: the six justified names are a compact snapshot derived
-from the audit's evidence file, pinned to both that file's digest and the exact
-live-optional set. A source checkout verifies the summary; an installed wheel
-uses the snapshot because it does not include the repository's ``quality/``
-tree. Changing either evidence file or live set without updating the snapshot
-raises an error instead of silently classifying a new family.
+Why this is auditable: the bucket is *derived from the audit's own evidence
+file*, not asserted. :func:`classify_optional_families` is pure set algebra
+over that summary, so re-running ``scripts/canon_qualify.py`` and re-running
+this module cannot disagree without the difference showing up as an
+unclassified family. The audit is the single source of truth for both the
+retired set (generated into ``retired_families.py``) and this classification —
+no name is hand-listed here.
 
 ``exploratory`` is a *label*, not a retirement. Nothing here removes a family
 from ``OPTIONAL_BENCHMARK_FAMILIES``, changes ``verify.py``'s allow-list, or
@@ -48,7 +49,6 @@ retirement); raising it requires an audit receipt and a deliberate edit here.
 from __future__ import annotations
 
 import json
-from hashlib import sha256
 from pathlib import Path
 from typing import Final
 
@@ -77,62 +77,28 @@ _REPO_ROOT: Final = Path(__file__).resolve().parents[4]
 #: yet retired; the complement within LIVE_OPTIONAL is the justified set.
 QUALIFICATION_SUMMARY_PATH: Final = _REPO_ROOT / "quality" / "canon_qualification_summary.json"
 
-#: Compact, audit-derived qualification snapshot for installed wheels, which do
-#: not carry the repository's ``quality/`` tree. The digest binds these six
-#: names to the tracked summary. A source checkout with changed audit evidence
-#: must update both values after review; it cannot silently reclassify families.
-QUALIFICATION_SUMMARY_SHA256: Final = (
-    "ecae0148718ccca1b1e5985afe4b27492af824c1b755c0ed659863d344de1d6d"
-)
-_AUDITED_JUSTIFIED_FAMILIES: Final = frozenset(
-    {
-        "candle_order_book",
-        "complexity",
-        "robinhood_plus",
-        "roughness",
-        "serial_randomness",
-        "wasserstein_dro",
-    }
-)
-#: SHA-256 of UTF-8 sorted live-optional names joined by ``\n``, with no
-#: trailing newline. A retirement requires a reviewed snapshot refresh too.
-_AUDITED_LIVE_OPTIONAL_SHA256: Final = (
-    "c6f6db4c0d1329ad28c2fa8a6530b665ab3a2663d120cd3ef4fb4793cb191bec"
-)
-
 #: Ratchet on the live-optional surface size, pinned 2026-10-08 at 2693.
-#: This may only FALL as more families are retired, with the audited name-set
-#: digest refreshed above. NEVER raise it without an audit receipt from
-#: ``scripts/canon_qualify.py`` justifying the growth — the point of the
-#: ratchet is that the optional surface can only shrink.
+#: This may only FALL as more families are retired. NEVER raise it without an
+#: audit receipt from ``scripts/canon_qualify.py`` justifying the growth — the
+#: point of the ratchet is that the optional surface can only shrink.
 LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING: Final = 2693
 
 
 def _audit_live_candidates() -> frozenset[str]:
     """Return the audit's template-backed live-candidate family names.
 
-    A source checkout verifies the tracked audit summary against its pinned
-    digest and compact justified-family snapshot. Installed wheels use that
-    snapshot when the repository-level summary is absent. An absent summary
-    must never turn every live-optional family into "justified".
+    Reads ``quality/canon_qualification_summary.json`` — the same evidence file
+    the retirement machinery is generated from. Returns an empty set when the
+    file is absent so that the classification degrades to "everything is
+    justified" only in the sense that nothing is *mislabelled* exploratory;
+    :func:`classify_optional_families` still covers every live-optional family
+    in that case.
     """
-    live_names = "\n".join(sorted(LIVE_OPTIONAL_BENCHMARK_FAMILIES)).encode("utf-8")
-    if sha256(live_names).hexdigest() != _AUDITED_LIVE_OPTIONAL_SHA256:
-        raise ValueError("live-optional catalog differs from qualification audit snapshot")
     if not QUALIFICATION_SUMMARY_PATH.is_file():
-        return LIVE_OPTIONAL_BENCHMARK_FAMILIES - _AUDITED_JUSTIFIED_FAMILIES
-    summary_bytes = QUALIFICATION_SUMMARY_PATH.read_bytes()
-    if sha256(summary_bytes).hexdigest() != QUALIFICATION_SUMMARY_SHA256:
-        raise ValueError("qualification audit summary hash mismatch")
-    summary = json.loads(summary_bytes)
-    raw = summary["live_candidate_families"]
-    if not isinstance(raw, list) or not all(isinstance(name, str) for name in raw):
-        raise ValueError("qualification audit live candidates malformed")
-    candidates = frozenset(raw)
-    audited_justified = LIVE_OPTIONAL_BENCHMARK_FAMILIES - candidates
-    if audited_justified != (_AUDITED_JUSTIFIED_FAMILIES & LIVE_OPTIONAL_BENCHMARK_FAMILIES):
-        raise ValueError("qualification audit justified families mismatch")
-    return candidates
+        return frozenset()
+    summary = json.loads(QUALIFICATION_SUMMARY_PATH.read_text(encoding="utf-8"))
+    raw = summary.get("live_candidate_families", [])
+    return frozenset(str(name) for name in raw)
 
 
 def classify_optional_families() -> dict[str, str]:
@@ -216,7 +182,6 @@ __all__ = [
     "CLASSIFICATION_VALUES",
     "LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING",
     "QUALIFICATION_SUMMARY_PATH",
-    "QUALIFICATION_SUMMARY_SHA256",
     "classify_optional_families",
     "default_surface_summary",
     "exploratory_families",

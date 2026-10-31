@@ -102,7 +102,7 @@ Honesty (AGENTS.md contract): every result here is SYNTHETIC — simulated
 SDE paths with KNOWN transition laws (OU, log-GBM, regime-switch drift),
 used for correctness evidence only, never market evidence. Scores are
 proper (CRPS — empirical and exact mixture forms — PIT, coverage/width);
-no Sharpe/Sortino/Calmar/P&L headline.
+no Sharpe/Sortino/Calmar/P&L headline; no live-trading claims.
 
 Conventions: torch is the optional ``nn`` extra, imported lazily via
 :func:`_torch`, so this module imports cleanly without it; every training

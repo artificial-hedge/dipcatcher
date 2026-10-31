@@ -324,7 +324,6 @@ def _client(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: backend or _OkBackend(),
             state_dir=state_dir if state_dir is not None else isolated / "state",
@@ -869,24 +868,17 @@ def _ordering_probes() -> dict[str, Any]:
 
 def _expiry_probes() -> dict[str, Any]:
     out: dict[str, Any] = {}
-    # The store binds time.time at construction. A 300 ms wall ttl can
-    # expire during the admitting call, so this app uses a manual clock.
-    from fx1.serve.quota2_audit import _bound_store_clock, _ManualClock  # noqa: PLC0415
-
-    clock = _ManualClock()
-    with _bound_store_clock(clock):
-        client, _ = _client()
-        root_h = {_H_KEY: _ROOT}
-        t_raw, _ = _mint(client, root_h, ttl_s=0.3)
-        t_h = {_H_KEY: t_raw}
-        admitted = _models(client, t_h).status_code
-        clock.advance(0.4)
-        expired = _models(client, t_h)
-    out["ttl_expired_wire_401"] = admitted == 200 and expired.status_code == 401
-    out["expired_is_unauthorized_code"] = _code(expired) == "unauthorized"
-
     client, _ = _client()
     root_h = {_H_KEY: _ROOT}
+
+    # minted ttl — the wire refuses once the second turns
+    t_raw, _ = _mint(client, root_h, ttl_s=0.3)
+    t_h = {_H_KEY: t_raw}
+    admitted = _models(client, t_h).status_code
+    time.sleep(0.4)
+    expired = _models(client, t_h)
+    out["ttl_expired_wire_401"] = admitted == 200 and expired.status_code == 401
+    out["expired_is_unauthorized_code"] = _code(expired) == "unauthorized"
 
     # a PATCHed expiry takes effect on the next call — and on the
     # control plane too (401, not a scope denial)

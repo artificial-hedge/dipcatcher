@@ -55,24 +55,17 @@ if TYPE_CHECKING:
 __all__ = ["serve_audit", "serve_audit_bench"]
 
 
+def _counting_popen(seen: dict[str, int], real: Any) -> Any:
+    """Count Popen calls without a nested def inside ``serve_audit``."""
+
+    def tracking(*args: Any, **kwargs: Any) -> Any:
+        seen["n"] += 1
+        return real(*args, **kwargs)
+
+    return tracking
+
+
 def serve_audit() -> dict[str, Any]:
-    """Run the serve probes with ``FX1_SIGNING_KEY`` isolated to this call.
-
-    A prior probe that raised after setting the key must not make the
-    unsigned-default check look like a signed release. The caller's key,
-    if any, is restored on the way out — including when a probe raises.
-    """
-    saved_signing_key = os.environ.pop("FX1_SIGNING_KEY", None)
-    try:
-        return _serve_audit_body()
-    finally:
-        if saved_signing_key is None:
-            os.environ.pop("FX1_SIGNING_KEY", None)
-        else:
-            os.environ["FX1_SIGNING_KEY"] = saved_signing_key
-
-
-def _serve_audit_body() -> dict[str, Any]:
     import json
     import tempfile
     from pathlib import Path
@@ -114,9 +107,7 @@ def _serve_audit_body() -> dict[str, Any]:
 
         class _Resp:
             def read(self) -> bytes:
-                return json.dumps(
-                    {"model": "kimi-k3", "choices": [{"message": {"content": "answer"}}]}
-                ).encode()
+                return json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
 
             def __enter__(self) -> _Resp:
                 return self
@@ -209,9 +200,7 @@ def _serve_audit_body() -> dict[str, Any]:
 
             class _Resp2:
                 def read(self) -> bytes:
-                    return json.dumps(
-                        {"model": "fx-1.v0.1", "choices": [{"message": {"content": "answer"}}]}
-                    ).encode()
+                    return json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
 
                 def __enter__(self) -> _Resp2:
                     return self
@@ -311,6 +300,9 @@ def _serve_audit_body() -> dict[str, Any]:
                     == "RuntimeError"
                 )
             out["local_is_streaming_backend"] = isinstance(attached, StreamingBackend)
+            import subprocess  # noqa: PLC0415
+            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
             spawned = LocalFx1Backend(
                 root,
                 require_signature=True,
@@ -318,30 +310,24 @@ def _serve_audit_body() -> dict[str, Any]:
                 serve_cmd='${python} -c "import time; time.sleep(30)"',
             )
             captured2["urls"] = []
-            import subprocess  # noqa: PLC0415
-
-            spawned_n = [0]
-            real_popen = subprocess.Popen
-
-            def marking_popen(*a: Any, **kw: Any) -> Any:
-                # Count the spawn itself. ``_proc`` stays unpublished until
-                # ``_wait_for_engine`` returns, so a fake keyed off ``_proc``
-                # never reports the engine up and the sleeper exits 0.
-                spawned_n[0] += 1
-                return real_popen(*a, **kw)
-
-            _models_seen: list[bool] = []
+            # _ensure_engine publishes _proc only after the models probe
+            # succeeds, so the cold fake cannot key off that attribute —
+            # it would refuse the probe forever and the sleeper would exit.
+            spawn_seen = {"n": 0}
+            real_popen_cold = subprocess.Popen
+            tracking_popen = _counting_popen(spawn_seen, real_popen_cold)
 
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
-                # Down until Popen runs, so both pre-spawn probes still miss
-                # and the lock's re-check cannot skip the spawn.
+                # The engine reads as down only until the spawn template has
+                # run. Keying off ``_proc`` never works: that attribute is
+                # published after this probe succeeds.
                 url = req.full_url if hasattr(req, "full_url") else str(req)
-                if url.endswith("/v1/models") and spawned_n[0] == 0:
+                if url.endswith("/v1/models") and spawn_seen["n"] == 0:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
             with (
-                patch.object(subprocess, "Popen", marking_popen),
+                patch.object(subprocess, "Popen", tracking_popen),
                 patch.object(urllib.request, "urlopen", fake_urlopen_cold),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold),
             ):
@@ -366,9 +352,6 @@ def _serve_audit_body() -> dict[str, Any]:
 
             # Concurrency: N threads sharing one backend must spawn exactly
             # once — the engine lock makes the check-spawn sequence atomic.
-            import subprocess  # noqa: PLC0415
-            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
-
             real_popen = subprocess.Popen
             spawn_count = [0]
 

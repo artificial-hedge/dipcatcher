@@ -43,7 +43,7 @@ business cycle", Econometrica 57(2), 357–384.
 
 Honesty: everything here runs on SYNTHETIC simulated paths. Outputs are risk
 measures of simulated hedged P&L — algorithmic correctness evidence, never
-market evidence. No Sharpe/Sortino/P&L headline
+market evidence. No Sharpe/Sortino/P&L headline; no live-trading claims
 (AGENTS.md honesty contract). Comparisons on the training batch are
 in-sample; pass ``eval_paths`` to :func:`compare_hedges` for a clean
 train/eval split.

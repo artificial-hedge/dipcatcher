@@ -3329,7 +3329,7 @@
     "tests/unit/microstructure/test_session_receipt_keys.py::test_session_receipt_keys_frozenset_nonempty": 0.0006433640003251639,
     "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_cli_echo_frozenset_matches_receipt_keys": 0.0006098619999193033,
     "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_northset_cli_echoes_every_session_receipt_key": 0.050127515999975,
-    "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_research_cli_echoes_every_session_receipt_key": 45.12,
+    "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_research_cli_echoes_every_session_receipt_key": 62.38652453199961,
     "tests/unit/microstructure/test_session_reconstructs_daily_rate_soft_verify.py::test_session_reconstructs_daily_bad": 0.0006413490000340971,
     "tests/unit/microstructure/test_session_reconstructs_daily_rate_soft_verify.py::test_session_reconstructs_daily_ok": 0.0005863139999746636,
     "tests/unit/microstructure/test_session_spread_bps_soft_verify.py::test_close_spread_bps_nonnegative_allows_zero": 0.00056392000010419,
@@ -6839,7 +6839,7 @@
     "tests/unit/research/test_research_agent.py::test_provenance_changes_when_materialized_data_changes": 0.09177676199988127,
     "tests/unit/research/test_research_agent.py::test_provenance_hashes_external_northset_book_contents": 0.089672199000006,
     "tests/unit/research/test_research_agent.py::test_research_receipt_records_runtime_fingerprint": 6.718028014999959,
-    "tests/unit/research/test_research_agent.py::test_research_recovers_synthetic_oracle": 24.3,
+    "tests/unit/research/test_research_agent.py::test_research_recovers_synthetic_oracle": 68.93472120499996,
     "tests/unit/research/test_research_agent.py::test_worktree_fingerprint_is_a_real_sha256": 0.02358899900002598,
     "tests/unit/research/test_research_findings.py::test_band_search_does_not_copy_forbidden_headline_fields": 0.002063280000015766,
     "tests/unit/research/test_research_findings.py::test_committed_page_matches_the_generator_and_the_reality_receipt": 2.705889771999864,
@@ -8070,7 +8070,5 @@
     "tests/unit/web_explorer/test_export_fixtures.py::test_index_shape_and_references": 0.0009278700000550089,
     "tests/unit/web_explorer/test_export_fixtures.py::test_receipt_fixtures_are_byte_identical_to_sealed_sources": 0.0007649560000118072,
     "tests/unit/web_explorer/test_export_fixtures.py::test_receipts_declare_research_only_flags": 0.0011215839999749733,
-    "tests/unit/web_explorer/test_export_fixtures.py::test_strategies_keep_honesty_flags": 0.0007134189999078444,
-    "tests/unit/research/test_research_agent.py::test_research_recovers_synthetic_oracle_full_catalog": 68.93472120499996,
-    "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_research_cli_echoes_every_session_receipt_key_full_catalog": 62.38652453199961
+    "tests/unit/web_explorer/test_export_fixtures.py::test_strategies_keep_honesty_flags": 0.0007134189999078444
 }

@@ -49,11 +49,6 @@ def test_all_probes_hold(results: dict[str, object]) -> None:
     assert len(results) >= 90, "the battery must stay deep — do not thin it out"
     assert results, "audit returned no probes"
     failures = {k: v for k, v in results.items() if v is not True}
-    if failures:
-        # Matrix shards have flipped a single counter (coverage.complete.once)
-        # under suite load. A fresh app must hold every probe.
-        fresh = idem_audit()
-        failures = {k: v for k, v in fresh.items() if v is not True}
     assert not failures, f"probes that must hold: {sorted(failures)}"
 
 
@@ -62,36 +57,15 @@ def test_former_defects_now_hold(results: dict[str, object]) -> None:
         assert results.get(name) is True, f"{name} regressed — the former defect is back"
 
 
-def _idem_audit_bench_ok() -> dict[str, object]:
-    """Run ``idem_audit_bench``; retry once if a probe flipped under suite load.
-
-    The CI shard runs this battery beside the rest of the suite. A single
-    probe can come back false (stream frames, claim races) and pass on a
-    fresh app. The contract stays all-probes-must-hold.
-    """
-    blob = idem_audit_bench()
-    claim = blob["claim"]
-    if isinstance(claim, dict) and claim.get("ok") is True:
-        return blob
-    return idem_audit_bench()
-
-
 def test_receipt_verifies() -> None:
-    bench = _idem_audit_bench_ok()
-    claim = bench["claim"]
-    assert isinstance(claim, dict)
-    bad = {k: v for k, v in claim["results"].items() if v is not True}
-    assert not bad, f"idem_audit probes failed: {sorted(bad)}"
+    bench = idem_audit_bench()
     res = verify_receipt_payload(bench)
     assert res["valid"], res
-    assert claim["ok"] is True
-    assert claim["defects"] == []
+    assert bench["claim"]["ok"] is True
+    assert bench["claim"]["defects"] == []
 
 
 def test_receipt_deterministic() -> None:
-    a = _idem_audit_bench_ok()
-    b = _idem_audit_bench_ok()
-    if a != b:
-        a = _idem_audit_bench_ok()
-        b = _idem_audit_bench_ok()
+    a = idem_audit_bench()
+    b = idem_audit_bench()
     assert a == b, "the sealed receipt must be byte-deterministic"

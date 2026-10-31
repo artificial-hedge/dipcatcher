@@ -42,7 +42,7 @@ Solved problems (paper Secs. 3 and 6):
 Honesty: this is a *model* of execution costs, not market evidence.  All
 Monte-Carlo diagnostics are SYNTHETIC correctness checks over seeded paths
 and every returned metric is namespaced ``sim_internal_*``; nothing here is
-a Sharpe/P&L headline. Deterministic:
+a Sharpe/P&L headline and no live-trading capability exists.  Deterministic:
 all randomness flows through ``numpy.random.Generator`` and identical seeds
 produce bit-identical paths.
 

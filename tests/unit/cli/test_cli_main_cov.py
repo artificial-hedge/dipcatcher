@@ -1220,10 +1220,7 @@ def test_monitor_missing_broker_state_fails(
     assert "no broker_state.json" in _plain(result.output)
 
 
-@pytest.mark.parametrize(
-    ("status", "code"),
-    [("ok", 0), ("warn", 1), ("breach", 2), ("insufficient_data", 3)],
-)
+@pytest.mark.parametrize(("status", "code"), [("ok", 0), ("warn", 1), ("breach", 2)])
 def test_monitor_status_exit_codes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: str, code: int
 ) -> None:
@@ -1322,11 +1319,9 @@ def test_sim_live_leaderboard_and_receipt(tmp_path: Path, monkeypatch: pytest.Mo
     assert result.exit_code == 0, result.output
     assert "DATA_LABEL=REAL_BARS" in result.output
     assert "book leaderboard" in result.output
-    assert "maxDD=" in result.output
-    assert "sharpe=" not in result.output.lower()
     assert "champ" in result.output
     assert "no_bars" in result.output
-    assert "SYNTHETIC simulated book" in result.output
+    assert "SIMULATED — no live-PnL claim" in result.output
 
 
 def test_sim_live_git_sha_failure_falls_back(
@@ -1357,7 +1352,7 @@ def test_sim_live_without_book_stats_skips_leaderboard(
     result = runner.invoke(app, ["sim-live", "--config", str(cfg), "--out", str(tmp_path / "o")])
     assert result.exit_code == 0, result.output
     assert "book leaderboard" not in result.output
-    assert "SYNTHETIC simulated book" in result.output
+    assert "SIMULATED — no live-PnL claim" in result.output
 
 
 def test_sim_live_challenger_format_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

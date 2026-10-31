@@ -1,35 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
-
-/** Rows the static app renders: one per receipt in the served fixture index. */
-async function publishedReceiptRows(page: Page): Promise<number> {
-  const response = await page.request.get("/fixtures/index.json");
-  expect(response.ok()).toBeTruthy();
-  const index = (await response.json()) as { receipts?: unknown[] };
-  const rows = index.receipts?.length ?? 0;
-  expect(rows).toBeGreaterThan(0);
-  return rows;
-}
-
-const fixtureIndex = JSON.parse(
-  readFileSync(join(import.meta.dirname, "..", "public", "fixtures", "index.json"), "utf8"),
-) as {
-  receipts: { id: string; n_hash_matches: number; n_hashes: number }[];
-  hash_matches: Record<string, string>;
-};
-const receiptCount = fixtureIndex.receipts.length;
-const fastReplayReceipt = JSON.parse(
-  readFileSync(
-    join(
-      import.meta.dirname,
-      "..",
-      "public",
-      "fixtures",
-      "receipts",
-      "fast_replay_p42_conformance_20260928.json",
-    ),
-    "utf8",
-  ),
-) as { code_sha256: Record<string, string> };
+import { expect, test } from "@playwright/test";
 
 test.describe("research explorer", () => {
   test("loads the overview with strategies and receipts", async ({ page }) => {
@@ -43,7 +12,7 @@ test.describe("research explorer", () => {
     await expect(table.locator("tbody tr")).toHaveCount(9);
     await expect(
       page.getByTestId("receipt-summary-table").locator("tbody tr"),
-    ).toHaveCount(await publishedReceiptRows(page));
+    ).toHaveCount(396);
   });
 
   test("navigates to a strategy detail and renders charts", async ({
@@ -87,9 +56,7 @@ test.describe("research explorer", () => {
   test("receipt list and verification panel render", async ({ page }) => {
     await page.goto("/#/receipts");
     const table = page.getByTestId("receipt-table");
-    await expect(table.locator("tbody tr")).toHaveCount(
-      await publishedReceiptRows(page),
-    );
+    await expect(table.locator("tbody tr")).toHaveCount(396);
     await table
       .getByRole("link", { name: "corpus_epoch_d479e96760271bba" })
       .click();
@@ -109,15 +76,13 @@ test.describe("research explorer", () => {
     );
     const hashPanel = page.getByTestId("hash-panel");
     await expect(hashPanel).toContainText("epoch_root_sha256");
-    // 20260928 sealed public.py bytes that are not at HEAD. The field is
-    // shown and stays unresolved; none of the six digests match the index.
+    // fast_replay embeds code_sha256 entries; public.py resolves at HEAD
     await page.goto("/#/receipt/fast_replay_p42_conformance_20260928");
     const fastHash = page.getByTestId("hash-panel");
     await expect(fastHash).toContainText("src/quant_fund/public.py");
-    await expect(fastHash).toContainText("unresolved");
     await expect(
       page.getByTestId("checks-panel"),
-    ).toContainText("0/6 digests match a committed file");
+    ).toContainText("1/6 digests match a committed file");
   });
 
   test("hash routing handles direct loads and bad ids", async ({ page }) => {

@@ -7,18 +7,6 @@ import pytest
 
 from quant_fund.hedge_lab import resources
 
-# Skip tests that require more memory than the build sandbox has.
-_LOW_MEMORY = False
-try:
-    with open("/proc/meminfo") as _f:
-        for _line in _f:
-            if _line.startswith("MemTotal:"):
-                _kb = int(_line.split()[1])
-                _LOW_MEMORY = _kb * 1024 < 8 * 1024**3
-                break
-except OSError:
-    pass
-
 
 def test_lab_root_is_repo_root() -> None:
     assert resources.lab_root().is_dir()
@@ -69,26 +57,9 @@ def test_physical_memory_positive() -> None:
     assert 0 < avail <= total
 
 
-@pytest.mark.skipif(
-    _LOW_MEMORY,
-    reason="ram_plan headroom_bytes gate expects 8GB+ available; the build sandbox has ~3.5GB (CI runs on 16GB+ runners)",
-)
 def test_ram_plan_shape() -> None:
-    """Headroom is the lab floor, clamped so a small runner still fits.
-
-    ``ram_plan`` asks for 8 GiB, then clamps to ``total - 512 MiB``. A 7 GiB
-    macOS runner therefore reports 6.5 GiB of headroom. The contract is that
-    clamp, not a demand that every host have 8 GiB free.
-    """
     plan = resources.ram_plan()
-    total = int(plan["total_bytes"])
-    min_workspace = 512 * 1024**2
-    expected = min(
-        resources.RAM_HEADROOM_BYTES,
-        max(total // 5, 8 * 1024**3),
-        max(total - min_workspace, 0),
-    )
-    assert plan["headroom_bytes"] == expected
+    assert plan["headroom_bytes"] >= 8 * 1024**3
     assert 0 < plan["workspace_bytes"] <= plan["total_bytes"]
     assert plan["workspace_gib"] > 0
 

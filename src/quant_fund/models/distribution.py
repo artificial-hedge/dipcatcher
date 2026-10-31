@@ -55,7 +55,7 @@ class GaussianDistribution(JoblibMixin):
         from scipy.stats import norm
 
         self.taus = taus
-        self.z = np.asarray(norm.ppf(np.asarray(taus, dtype=float)), dtype=float)
+        self.z = np.array([norm.ppf(t) for t in taus])
         self.mu = 0.0
         self.sig = 0.01
         self._fitted = False
@@ -92,7 +92,7 @@ class ScaledGaussianDistribution(JoblibMixin):
         from scipy.stats import norm
 
         self.taus = taus
-        self.z = np.asarray(norm.ppf(np.asarray(taus, dtype=float)), dtype=float)
+        self.z = np.array([norm.ppf(t) for t in taus])
         self.mu = 0.0
         self.z_sig = 1.0
         self._fitted = False
@@ -245,37 +245,6 @@ class ScaledStudentTDistribution(JoblibMixin):
         self.z_sig = 1.0
         self.nu = 8.0
         self._fitted = False
-        self._z: NDArray[np.float64] | None = None
-        self._z_nu: float | None = None
-        self._z_taus: tuple[float, ...] | None = None
-
-    def _tau_knots(self) -> NDArray[np.float64]:
-        """Standard-t quantiles at ``self.taus``. Reused across ``predict`` calls.
-
-        ``ν`` is known only after ``fit``, so the knots cannot be built in
-        ``__init__`` the way the Gaussian ``z`` grid is. A matching
-        ``(ν, taus)`` cache skips ``stdtrit``. Unpickled objects that predate
-        the cache recompute on first use.
-        """
-        from scipy.special import stdtrit
-
-        taus_t = tuple(float(t) for t in self.taus)
-        knots = getattr(self, "_z", None)
-        if (
-            isinstance(knots, np.ndarray)
-            and knots.shape == (len(taus_t),)
-            and getattr(self, "_z_nu", None) == float(self.nu)
-            and getattr(self, "_z_taus", None) == taus_t
-        ):
-            return np.asarray(knots, dtype=np.float64)
-        fresh = np.asarray(
-            stdtrit(float(self.nu), np.asarray(self.taus, dtype=np.float64)),
-            dtype=np.float64,
-        )
-        self._z = fresh
-        self._z_nu = float(self.nu)
-        self._z_taus = taus_t
-        return fresh
 
     def fit(
         self,
@@ -287,16 +256,16 @@ class ScaledStudentTDistribution(JoblibMixin):
         self.mu = float(np.mean(yy)) if yy.size else 0.0
         z = (yy - self.mu) / sc if yy.size else np.array([0.0])
         self.z_sig, self.nu = _fit_student_z(z)
-        self._z = None
         self._fitted = True
-        self._tau_knots()
         return self
 
     def predict(self, scale: NDArray[np.float64]) -> NDArray[np.float64]:
         if not self._fitted:
             raise RuntimeError("distribution model has not been fitted")
+        from scipy.stats import t as student_t
+
         sc = np.maximum(np.asarray(scale, dtype=float).reshape(-1), 1e-8)
-        z = self._tau_knots()
+        z = np.array([student_t.ppf(t, self.nu) for t in self.taus])
         width = self.z_sig * sc
         return np.asarray(self.mu + width[:, None] * z[None, :], dtype=np.float64)
 
@@ -525,35 +494,6 @@ class SkewTDistribution(JoblibMixin):
     def __init__(self, taus: list[float]) -> None:
         self.taus = taus
         self.params_: dict[str, float] | None = None
-        self.q_: NDArray[np.float64] | None = None
-        self._q_key: tuple[tuple[float, ...], float, float, float, float] | None = None
-
-    def _quantile_row(self) -> NDArray[np.float64]:
-        """One Hansen quantile per tau. ``predict`` only tiles this row."""
-        if self.params_ is None:
-            raise RuntimeError("distribution model has not been fitted")
-        p = self.params_
-        key = (
-            tuple(float(t) for t in self.taus),
-            float(p["nu"]),
-            float(p["lam"]),
-            float(p["mu"]),
-            float(p["sigma"]),
-        )
-        cached = getattr(self, "q_", None)
-        if (
-            getattr(self, "_q_key", None) == key
-            and isinstance(cached, np.ndarray)
-            and cached.shape == (len(self.taus),)
-        ):
-            return np.asarray(cached, dtype=np.float64)
-        fresh = np.asarray(
-            skew_t_ppf(np.asarray(self.taus, dtype=float), key[1], key[2], key[3], key[4]),
-            dtype=np.float64,
-        )
-        self.q_ = fresh
-        self._q_key = key
-        return fresh
 
     def fit(
         self, x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
@@ -561,13 +501,14 @@ class SkewTDistribution(JoblibMixin):
         yy = np.asarray(y, dtype=float).reshape(-1)
         yy = yy[np.isfinite(yy)]
         self.params_ = skew_t_fit(yy)
-        self.q_ = None
-        self._q_key = None
-        self._quantile_row()
         return self
 
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return np.tile(self._quantile_row(), (x.shape[0], 1))
+        if self.params_ is None:
+            raise RuntimeError("distribution model has not been fitted")
+        p = self.params_
+        q = np.array([skew_t_ppf(t, p["nu"], p["lam"], p["mu"], p["sigma"]) for t in self.taus])
+        return np.tile(q, (x.shape[0], 1))
 
     def metadata(self) -> ModelMeta:
         return ModelMeta(
@@ -699,16 +640,7 @@ class StackedDistribution(JoblibMixin):
         try:
             p = skew_t_fit(yy)
             cols.append(
-                np.asarray(
-                    skew_t_ppf(
-                        np.asarray(self.taus, dtype=float),
-                        p["nu"],
-                        p["lam"],
-                        p["mu"],
-                        p["sigma"],
-                    ),
-                    dtype=float,
-                )
+                np.array([skew_t_ppf(t, p["nu"], p["lam"], p["mu"], p["sigma"]) for t in self.taus])
             )
         except (ValueError, RuntimeError):
             pass

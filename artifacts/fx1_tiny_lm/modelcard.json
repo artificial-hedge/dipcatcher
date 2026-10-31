@@ -17,7 +17,6 @@
     "fixture-scale byte-level LM (~31k params) trained for seconds on CPU over fx1_seed_corpus.jsonl — exists so the weights-direct path loads a real artifact; not an fx-1 release candidate",
     "eval_delta values are synthetic ship-gate placeholders, not measured evals"
   ],
-  "fixture_only": true,
   "live_pnl_claim": false,
   "research_only": true
 }
