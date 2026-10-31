@@ -17,7 +17,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze ${{ matrix.language }}
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 60
     strategy:
       fail-fast: false

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   review:
     name: Review dependency changes
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 10
     permissions:
       contents: read

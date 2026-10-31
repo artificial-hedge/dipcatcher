@@ -34,7 +34,7 @@ env:
 
 jobs:
   python:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -73,7 +73,7 @@ jobs:
   aggregate:
     needs: python
     if: ${{ !cancelled() }}
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -110,7 +110,7 @@ jobs:
           if-no-files-found: error
 
   quality:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -146,7 +146,7 @@ jobs:
         run: make docs
 
   javascript:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -184,7 +184,7 @@ jobs:
         run: npm run test:e2e
 
   rust:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -200,7 +200,7 @@ jobs:
         run: make audit-rust
 
   kronos:
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -216,7 +216,7 @@ jobs:
     # Generate with the repository's own writer in a complete checkout, never
     # hand-forge or overwrite an old receipt. Upload for review and integration;
     # this read-only job cannot change the branch or mark evidence checks green.
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -244,7 +244,7 @@ jobs:
   result:
     needs: [python, aggregate, quality, javascript, rust, kronos, epoch-candidate]
     if: ${{ always() }}
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 5
     steps:
       - name: Reject missing, skipped, cancelled, or failed jobs

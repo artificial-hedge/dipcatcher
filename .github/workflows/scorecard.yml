@@ -23,7 +23,7 @@ concurrency:
 jobs:
   analysis:
     name: Scorecard analysis
-    runs-on: instabox-medium
+    runs-on: instabox-large
     timeout-minutes: 30
     permissions:
       actions: read
