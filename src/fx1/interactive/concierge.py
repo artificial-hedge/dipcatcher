@@ -10,305 +10,171 @@ slash commands:
   progress, ``/cancel`` and ``/redirect``.
 - ``/flash ...`` — inspect, correct, remove, search, and refresh persistent
   research memory.
-- ``/sessions`` / ``/resume`` — the durable session journal: every turn,
-  model switch, job transition, and approval decision is appended to
-  ``$FX1_CONFIG_DIR/sessions/<id>.jsonl``; work left running when a process
-  died is marked *interrupted* at the next start, never silently retried.
+- ``/trade`` — live-trading readiness. Live orders stay disabled; the only
+  executable book is the paper session.
+- ``/live`` — operator card for the live desk. The chat does not transmit.
 - plain text — a conversational turn with tool access to flash context,
   a bounded web lookup, and approval-gated harness commands.
 
 Responsiveness contract: background jobs run on their own thread. On POSIX
 terminals the console polls stdin so progress renders while waiting for a
-line; Windows terminals poll the console with ``msvcrt``; piped (non-TTY)
-stdin uses blocking reads. Ctrl-C follows the Codex convention: the first
-press cancels the running job (or clears the line), a second press within
-two seconds exits.
+line. Windows terminals and piped (non-TTY) stdin use blocking reads;
+background work continues, but its queued progress renders between lines.
 
 Every seam is injectable (backend, harness, researcher, store, approvals,
-journal, budget, input/output) so the whole surface is testable offline;
-nothing here fabricates results when a seam is missing — it says so.
+input/output) so the whole surface is testable offline; nothing here
+fabricates results when a seam is missing — it says so.
 """
 
 from __future__ import annotations
 
-import contextlib
-import dataclasses
-import inspect
 import json
-import select  # noqa: F401 — tests patch this module's select; the console shares it
+import select
 import shlex
-import sys  # noqa: F401 — tests patch this module's sys; console shares the object
+import sys
 import threading
-import time
-from collections.abc import Callable, Mapping
-from datetime import UTC, datetime
-from pathlib import Path
+from collections import deque
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any
 
 import typer
 
-from fx1.honesty import (
-    Fx1HonestyError,
-    scrub_model_text,
-    scrub_model_transcript,
-    validate_fx1_output,
-)
+from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive import actions, profiles
-from fx1.interactive import session as session_mod
-from fx1.interactive.approvals import ApprovalGate
-from fx1.interactive.budget import BudgetExceeded, BudgetLedger, RunBudget
-from fx1.interactive.concierge_chat import ChatCommands
-from fx1.interactive.concierge_console import _null
-from fx1.interactive.concierge_console import _tty_polling_read as _tty_polling_read
-from fx1.interactive.concierge_data import DataCommands
-from fx1.interactive.concierge_display import (
-    ApprovalTap as _ApprovalTap,  # noqa: F401 — historical name for red-team tests
-)
-from fx1.interactive.concierge_display import (
-    for_display as _for_display,
-)
-from fx1.interactive.concierge_display import (
-    int_field as _int_field,
-)
-from fx1.interactive.concierge_display import (
-    scrub_maybe as _scrub_maybe,
-)
-from fx1.interactive.concierge_display import (
-    scrub_patch as _scrub_patch,
-)
-from fx1.interactive.concierge_display import (
-    scrub_user as _scrub_user,
-)
-from fx1.interactive.concierge_jobs import BackgroundJob as BackgroundJob
-from fx1.interactive.concierge_jobs import JournaledApprovalGate
-from fx1.interactive.concierge_slash import (
-    BUDGET_DIMENSIONS as _BUDGET_DIMENSIONS,
-)
-from fx1.interactive.concierge_slash import (
-    MAX_PROGRESS_EVENTS_PER_TICK as _MAX_PROGRESS_EVENTS_PER_TICK,
-)
-from fx1.interactive.concierge_slash import (
-    SLASH_ALIASES as _SLASH_ALIASES,
-)
-from fx1.interactive.concierge_slash import (
-    doctor_next_actions as _doctor_next_actions,
-)
-from fx1.interactive.concierge_slash import (
-    suggest_slash as _suggest_slash,
-)
-from fx1.interactive.console import run_console as run_console
-from fx1.interactive.context_window import ContextBudget
-from fx1.interactive.data_ux import attachment_payload
-from fx1.interactive.diagnostics_ux import render_diagnostics, write_diagnostics_bundle
-from fx1.interactive.endpoint import (
-    OperationCancelled,
-    RetryPolicy,
-    call_with_retries,
-    explain_backend_error,
-    format_guidance,
-    probe_identity,
-)
-from fx1.interactive.families import FamilyCatalog, load_catalog, resolve_families
-from fx1.interactive.intent import looks_like_orchestration
-from fx1.interactive.jobs import JobLedger
-from fx1.interactive.model_ux import endpoint_stored_line, public_error, render_approvals
-from fx1.interactive.orb import OrbAnimator, OrbState
+from fx1.interactive.approvals import ApprovalGate, console_ask_fn
+from fx1.interactive.orb import OrbAnimator, OrbState, orbs_enabled
+from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
-from fx1.interactive.runctx import new_run_id, new_session_id
-from fx1.interactive.session_ux import (
-    export_session,
-    format_session_line,
-    format_session_list,
-    interrupted_hint,
-    record_turn,
-    stage_record,
-    turn_detail,
-    turn_outcome,
-)
-from fx1.interactive.sessions import SessionConflict, SessionError
 from fx1.interactive.superpower import (
     SuperpowerContext,
     SuperpowerResult,
-    bounded_call,
-    bounded_model_call,
     describe_capabilities,
     plan_goal,
+    run_plan,
 )
-from fx1.interactive.superpower_glue import (
-    PreparedRun,
-    RunSeams,
-    build_context,
-    evidence_report,
-    evidence_status_line,
-    operator_status,
-    reconcile_lines,
-)
-from fx1.interactive.usage_budget import PRESET_CHAT_TURN, UsageLimits, UsageTracker
+from fx1.serve.backends import HostedK3Backend
 
 HELP_TEXT = """\
-Chat                  plain text with the active model (tools: flash, web, harness)
-/use <model>          activate fx1 | fx1-lite (conversation continues; the switch is noted)
-/model                show the active model and endpoint host
-/models [check]       model table, or models-check of requested vs served
-/superpower <goal>    plan + run the relevant research capabilities (--sync inline; --web or FX1_WEB_RESEARCH=1 opts into search)
-/superpower help      list every capability the planner may select
-/data attach|list|remove|inspect   session datasets
-/runs                 read-only job ledger
+conversation          plain text chats with the active model (tools: flash, web, harness)
+/superpower <goal>    plan + run the relevant research capabilities (--sync to run inline)
 /research <goal>      deep web research in the background (--budget-s, --max-sources, --queries)
-/status               background job progress, elapsed time, and budget
+/status               show the background job's progress
 /cancel               cancel the background job (research or superpower)
 /redirect <goal>      re-target the background research at a new goal
-/evidence             receipts for the latest job
-/budget [dim value]   show or tighten run budgets (wall, harness, calls, retries, sources)
-/session              the active persisted session
-/sessions [n]         list recent sessions (journal); /resume <id> shows one transcript
-/resume <id>          restore a stored session, or show a journal transcript
-/export [json|md|PATH] redacted session export; a path alone is accepted; refuses to overwrite
-/new                  start a session without changing the model
-/families [goal]      research-family catalog; with a goal, show which families are eligible
 /flash add|list|show|remove|correct|search|refresh ...
+/superpower help      list every capability the planner may select
+/use <model>          activate fx1 | fx1-lite
+/model                show the active model
+/keys list|set|remove  manage model endpoints (presence-only)
 /harness list|describe|run  registered dipcatcher harness commands (fail-closed)
-/keys list|set|test|remove  manage model endpoints (presence-only); test = identity probe
-/approvals [revoke]   show or revoke operator approvals
-/diagnostics          content-free diagnostics; --bundle writes a private zip
-/doctor               readiness: endpoint, store, session journal, budgets, family catalog
+/live                 how to run the live desk (this chat does not transmit orders)
+/trade [readiness|help]  live orders are disabled; paper session is the only book
 /help                 this help
-/exit                 leave (Ctrl-C twice also exits; once cancels the running job)
+/exit                 leave
 """
 
 
-def _accepts_keyword(fn: Callable[..., Any], name: str) -> bool:
-    try:
-        params = inspect.signature(fn).parameters
-    except (TypeError, ValueError):
-        return False
-    return name in params or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+# ---------------------------------------------------------------------------
+# Background jobs
+# ---------------------------------------------------------------------------
 
 
-def _complete_superpower_attempt(
-    backend: Any,
-    prompt: str,
-    cancel_event: threading.Event | None,
-    ledger: BudgetLedger | None,
-    accepts_timeout: bool,
-) -> str:
-    if cancel_event is not None and cancel_event.is_set():
-        raise OperationCancelled("model call cancelled")
-    kwargs: dict[str, Any] = {}
-    if ledger is not None:
-        ledger.check_wall()
-        if accepts_timeout:
-            kwargs["timeout_s"] = ledger.remaining_s()
-    return str(backend.complete([{"role": "user", "content": prompt}], **kwargs))
+@dataclass
+class BackgroundJob:
+    """A cancellable background run with an event queue the console drains."""
+
+    label: str
+    run_fn: Callable[[threading.Event, Callable[[str, str], None]], Any]
+    cancel_event: threading.Event = field(default_factory=threading.Event)
+    done_event: threading.Event = field(default_factory=threading.Event)
+    events: deque[tuple[str, str]] = field(default_factory=deque)
+    result: Any = None
+    error: str = ""
+    announced: bool = False
+    thread: threading.Thread | None = field(default=None, init=False, repr=False)
+
+    def start(self) -> BackgroundJob:
+        def on_event(event: str, detail: str) -> None:
+            self.events.append((event, detail))
+
+        def target() -> None:
+            try:
+                self.result = self.run_fn(self.cancel_event, on_event)
+            except Exception as exc:  # noqa: BLE001 — report, never crash the shell
+                self.error = f"{type(exc).__name__}: {exc}"
+            finally:
+                self.done_event.set()
+
+        self.thread = threading.Thread(target=target, daemon=True, name=f"dip-{self.label}")
+        self.thread.start()
+        return self
+
+    @property
+    def running(self) -> bool:
+        return not self.done_event.is_set()
+
+    def cancel(self) -> None:
+        self.cancel_event.set()
+
+    def join(self, timeout_s: float | None = None) -> bool:
+        """Wait for the worker and report whether it actually stopped."""
+        if self.thread is not None:
+            self.thread.join(timeout_s)
+        return self.done_event.is_set()
+
+    def drain(self) -> list[tuple[str, str]]:
+        out: list[tuple[str, str]] = []
+        while self.events:
+            out.append(self.events.popleft())
+        return out
 
 
-def _wait_superpower_retry(
-    delay_s: float, cancel_event: threading.Event | None, ledger: BudgetLedger | None
-) -> None:
-    remaining = delay_s if ledger is None else min(delay_s, ledger.remaining_s())
-    if cancel_event is not None:
-        cancel_event.wait(remaining)
-    else:
-        time.sleep(remaining)
-    if ledger is not None:
-        ledger.check_wall()
+# ---------------------------------------------------------------------------
+# The concierge
+# ---------------------------------------------------------------------------
 
 
-def _family_payload_from_harness(harness: Any, goal: str, max_families: int) -> dict[str, Any]:
-    """Read the lab family surface when the typed client module is absent."""
-    result = harness.run("families", ["--select", goal, "--max", str(max_families)])
-    if int(getattr(result, "exit_code", 1)) != 0:
-        detail = getattr(result, "stderr", "") or "families command failed"
-        raise RuntimeError(str(detail)[:500])
-    payload = json.loads(getattr(result, "stdout", "") or "")
-    if not isinstance(payload, dict):
-        raise RuntimeError("families payload must be an object")
-    payload.setdefault("schema", "dipcatcher.family_surface.v1")
-    return payload
+def _parse_research_command(rest: str) -> tuple[str, dict[str, Any]]:
+    """Split ``/research`` text into ``(goal, options)``.
 
-
-def _session_limit(rest: str) -> int:
+    Raises ``ValueError`` with the command's usage text when the goal or a
+    numeric flag is missing or malformed.
+    """
     tokens = shlex.split(rest)
     if not tokens:
-        return 10
-    try:
-        return max(1, int(tokens[0]))
-    except ValueError:
-        raise ValueError("usage: /sessions [N]") from None
+        raise ValueError(
+            "usage: /research <goal> [--budget-s N] [--max-sources N] [--queries q1|q2|q3] [--sync]"
+        )
+    options: dict[str, Any] = {}
+    positional: list[str] = []
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        if token in {"--budget-s", "--max-sources"} and i + 1 < len(tokens):
+            try:
+                options[token[2:].replace("-", "_")] = int(tokens[i + 1])
+            except ValueError:
+                raise ValueError(f"{token} needs an integer") from None
+            i += 2
+            continue
+        if token == "--queries" and i + 1 < len(tokens):
+            options["queries"] = [q for q in tokens[i + 1].split("|") if q]
+            i += 2
+            continue
+        if token == "--sync":
+            options["sync"] = True
+            i += 1
+            continue
+        positional.append(token)
+        i += 1
+    goal = " ".join(positional)
+    if not goal.strip():
+        raise ValueError("usage: /research <goal> ...")
+    return goal, options
 
 
-_EXPORT_KINDS = {"json": "json", "md": "markdown", "markdown": "markdown"}
-
-
-_EXPORT_USAGE = "usage: /export [json|markdown] [PATH]"
-_EXPORT_SUFFIXES = {".json": "json", ".md": "markdown", ".markdown": "markdown"}
-
-
-def _export_args(rest: str) -> tuple[str, Path | None]:
-    """``/export``, ``/export json|md [PATH]``, or ``/export PATH``."""
-    tokens = shlex.split(rest)
-    if not tokens:
-        return "json", None
-    if len(tokens) > 2:
-        raise ValueError(_EXPORT_USAGE)
-    kind = _EXPORT_KINDS.get(tokens[0])
-    if kind is not None:
-        dest = Path(tokens[1]) if len(tokens) == 2 else None
-        return kind, dest
-    if len(tokens) == 1 and _looks_like_export_path(tokens[0]):
-        return _kind_for_export_path(tokens[0]), Path(tokens[0])
-    raise ValueError(_EXPORT_USAGE)
-
-
-def _looks_like_export_path(token: str) -> bool:
-    if "/" in token or "\\" in token:
-        return True
-    return Path(token).suffix.casefold() in _EXPORT_SUFFIXES
-
-
-def _kind_for_export_path(token: str) -> str:
-    return _EXPORT_SUFFIXES.get(Path(token).suffix.casefold(), "markdown")
-
-
-def _superpower_memory(result: SuperpowerResult) -> str:
-    """Session memory for a superpower result. Honesty failures are withheld."""
-    parts = (
-        f"goal: {result.goal}",
-        result.summary or "",
-        evidence_status_line(result),
-        result.explain(),
-    )
-    text = "\n\n".join(part for part in parts if part.strip())
-    if not text.strip():
-        return ""
-    try:
-        validate_fx1_output(text)
-    except Fx1HonestyError:
-        return scrub_model_text(text)
-    return text
-
-
-def _bundle_path(rest: str) -> Path | None:
-    tokens = shlex.split(rest)
-    if not tokens:
-        return None
-    if len(tokens) != 2 or tokens[0] != "--bundle":
-        raise ValueError("usage: /diagnostics [--bundle PATH]")
-    return Path(tokens[1])
-
-
-def _prompt_mark() -> str:
-    return ">"
-
-
-def _stdout_color() -> bool:
-    """True when display may keep SGR. Tests patch this function."""
-    from fx1.interactive.concierge_display import stdout_color
-
-    return stdout_color()
-
-
-class Concierge(ChatCommands, DataCommands):
+class Concierge:
     """Conversational orchestrator; one instance per session."""
 
     def __init__(
@@ -324,16 +190,6 @@ class Concierge(ChatCommands, DataCommands):
         input_fn: Callable[[str], str] = input,
         output_fn: Callable[..., None] = typer.echo,
         animated: bool | None = None,
-        journal: Any | None = None,
-        persist: bool = True,
-        run_budget: RunBudget | None = None,
-        retry_policy: RetryPolicy | None = None,
-        catalog: FamilyCatalog | None = None,
-        session_store: Any | None = None,
-        telemetry_emit: Callable[[str, Mapping[str, Any]], None] | None = None,
-        telemetry: Any = None,
-        harness_validator: Any | None = None,
-        usage_preset: UsageLimits | None = None,
     ) -> None:
         from fx1.flash.store import FlashStore
         from fx1.webresearch.engine import ResearchBudget, Researcher
@@ -343,303 +199,31 @@ class Concierge(ChatCommands, DataCommands):
         self._researcher = researcher if researcher is not None else Researcher()
         self._research_budget = research_budget or ResearchBudget()
         self._harness = harness
-        if backend_factory is None:
-            from fx1.serve.backends import HostedK3Backend
-
-            backend_factory = HostedK3Backend
-        self._backend_factory = backend_factory
+        self._approvals = approvals if approvals is not None else ApprovalGate()
+        self._backend_factory = backend_factory or HostedK3Backend
         self._input = input_fn
         self._output = output_fn
         self._animated = True if animated is None else animated
         self._messages: list[dict[str, Any]] = []
-        self._context_budget = ContextBudget.from_env()
-        self._context_trim_said = False
         self._job: BackgroundJob | None = None
-        self._jobs: JobLedger | None = None
-        self._job_counter = 0
-        self._catalog_cache: dict[str, FamilyCatalog] = {}
-        if catalog is not None:
-            self._catalog_cache["catalog"] = catalog
-        self._retry_policy = retry_policy or RetryPolicy()
-        self.startup_notes: list[str] = []
-        self._wall_budget = self._resolve_budget(run_budget)
-        self._journal: Any | None = journal
-        if self._journal is None and persist:
-            self._journal = session_mod.SessionJournal(
-                model=model, endpoint_host=self._endpoint_host(model)
-            )
-        gate = approvals if approvals is not None else ApprovalGate()
-        self._approvals: ApprovalGate = (
-            JournaledApprovalGate.wrap(gate, self._journal) if self._journal is not None else gate
-        )
-        self._state_lock = threading.Lock()
-        self._attachments: list[Any] = []
-        self._model_stats: dict[str, dict[str, Any]] = {}
-        self._prepared = None
-        self._evidence = None
-        self._cancel_scope = False
-        self._cancel_requested = False
-        self._turn_cancel: threading.Event | None = None
-        self._status_explicit = False
-        self._last_status = "none"
-        self._session_store = session_store
-        self._harness_validator = harness_validator
-        self._last_backend: Any = None
-        self._session: dict[str, Any] | None = None
-        self._skip_turn_record = False
-        self._turn_label = "turn"
-        self._budget_overrides: dict[str, Any] = {}
-        self.resume_notice = ""
-        self._corr_session = new_session_id()
-        self._last_answer = ""
-        self._last_result: Any | None = None
-        self._telemetry_box = telemetry
-        if telemetry_emit is None and hasattr(telemetry, "as_emit"):
-            telemetry_emit = telemetry.as_emit()
-        self._telemetry = telemetry_emit
-        self._usage_preset = usage_preset if usage_preset is not None else PRESET_CHAT_TURN
-        self._turn_mark: int | None = None
-        self._pending_snapshot: Any | None = None
-        self._last_snapshot: Any | None = None
-        self._active_tracker: Any | None = None
-        self._pass_deadline = True
-
-        def _forward_emit(event: str, fields: Mapping[str, Any]) -> None:
-            sink = self._telemetry
-            if callable(sink):
-                sink(event, fields)
-
-        self._emit = _forward_emit
-
-    @property
-    def active_model(self) -> str:
-        """Selected model id, ``fx1`` or ``fx1-lite``."""
-        return self.model
-
-    @property
-    def last_answer(self) -> str:
-        """Validated text of the last chat turn, or the last superpower summary."""
-        return self._last_answer
-
-    @property
-    def last_status(self) -> str:
-        return self._last_status
-
-    @property
-    def last_result(self) -> Any | None:
-        """Last superpower result, or None when superpower has not finished."""
-        return getattr(self, "_last_result", None)
-
-    @property
-    def last_usage(self) -> dict[str, Any]:
-        snap = self._last_snapshot
-        usage = None if snap is None else getattr(snap, "usage", None)
-        if isinstance(usage, dict):
-            return dict(usage)
-        return {}
-
-    def cancel_turn(self) -> None:
-        """Cancel the in-flight model turn. Safe to call from another thread."""
-        with self._state_lock:
-            self._cancel_requested = True
-            event = self._turn_cancel
-            if event is None:
-                event = threading.Event()
-                self._turn_cancel = event
-            event.set()
-
-    @property
-    def last_latency_s(self) -> float:
-        snap = self._last_snapshot
-        if snap is None:
-            return 0.0
-        latency = getattr(snap, "latency_s", 0.0)
-        if isinstance(latency, bool) or not isinstance(latency, (int, float)):
-            return 0.0
-        return float(latency)
-
-    def startup_checks(self) -> list[str]:
-        """Store warnings and jobs left by a previous process. Nothing is restarted."""
-        lines = [
-            line
-            for line in profiles.store_health()
-            if line != "credentials directory permissions were tightened to 0700"
-        ]
-        lines.extend(reconcile_lines(JobLedger().reconcile()))
-        return lines
-
-    def messages(self) -> list[dict[str, Any]]:
-        """Transcript retained for this process. Resume restores it from the store."""
-        return list(self._messages)
-
-    @property
-    def last_identity(self) -> Any:
-        snap = self._last_snapshot
-        identity = None if snap is None else getattr(snap, "identity", None)
-        if identity is not None:
-            return identity
-        backend = self._last_backend
-        if backend is None:
-            return None
-        return getattr(backend, "last_identity", None)
-
-    def _assign_status(self, status: str) -> None:
-        self._last_status = status
-        self._status_explicit = True
-
-    def _open_cancel_scope(self) -> None:
-        with self._state_lock:
-            self._cancel_scope = True
-            self._cancel_requested = False
-            self._turn_cancel = threading.Event()
-
-    def _close_cancel_scope(self) -> None:
-        with self._state_lock:
-            self._cancel_scope = False
-            self._cancel_requested = False
-            self._turn_cancel = None
-
-    # -- construction helpers ------------------------------------------------
-
-    def _resolve_budget(self, run_budget: RunBudget | None) -> RunBudget:
-        if run_budget is not None:
-            run_budget.validate()
-            return run_budget
-        try:
-            return RunBudget.from_env()
-        except ValueError as exc:
-            self.startup_notes.append(f"budget environment ignored ({exc}); defaults in effect")
-            return RunBudget()
-
-    @staticmethod
-    def _endpoint_host(model: str) -> str:
-        try:
-            endpoint = profiles.resolve_endpoint(model)
-        except ValueError:
-            return "invalid-url"
-        return profiles.host_of(endpoint[1]) if endpoint else "unconfigured"
-
-    # -- public session surface --------------------------------------------
-
-    @property
-    def session_id(self) -> str:
-        return str(self._journal.session_id) if self._journal is not None else "-"
-
-    @property
-    def journal(self) -> Any | None:
-        return self._journal
-
-    @property
-    def run_budget(self) -> RunBudget:
-        return self._wall_budget
-
-    @property
-    def job(self) -> BackgroundJob | None:
-        return self._job
-
-    @property
-    def job_running(self) -> bool:
-        job = self._job
-        return job is not None and job.running
-
-    def cancel_job(self) -> bool:
-        """Cancel the running background job; True when a cancel was issued."""
-        if self._job is None or not self._job.running:
-            return False
-        self._job.cancel()
-        return True
-
-    def close(self, reason: str = "exit") -> None:
-        self._journal_call("close", reason)
 
     # -- output helpers ------------------------------------------------------
 
     def _say(self, text: str = "") -> None:
-        self._output(_for_display(text, keep_color=_stdout_color()))
+        self._output(text)
 
     def _say_error(self, exc: Exception) -> None:
-        message = _for_display(f"error: {public_error(exc)}", keep_color=False)
-        typer.secho(message, err=True, fg=typer.colors.RED)
+        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
 
-    def _journal_call(self, method: str, *args: Any, **kwargs: Any) -> None:
-        """Invoke a journal recorder; journaling never blocks or breaks the chat."""
-        if self._journal is None:
-            return
-        with contextlib.suppress(Exception):
-            getattr(self._journal, method)(*args, **kwargs)
-
-    def _journal_event(self, kind: str, **data: Any) -> None:
-        self._journal_call("record", kind, **data)
-
-    def _journal_turn(self, role: str, text: str) -> None:
-        from fx1.interactive.redact import redact_text
-
-        self._journal_call("turn", role, redact_text(text))
-
-    def _backend(self, model: str | None = None) -> Any | None:
-        target = model or self.model
-        try:
-            resolved = profiles.resolve_endpoint(target)
-        except ValueError as exc:
-            self._say_error(RuntimeError(format_guidance(explain_backend_error(exc, model=target))))
-            return None
+    def _backend(self) -> Any | None:
+        resolved = profiles.resolve_endpoint(self.model)
         if not resolved:
             return None
         api_key, base_url = resolved
-        factory = self._backend_factory
-        if factory is None:
-            from fx1.serve.backends import HostedK3Backend
-
-            factory = HostedK3Backend
         try:
-            backend = factory(api_key=api_key, model=target, api_url=base_url)
-        except Exception as exc:  # noqa: BLE001
-            self._say_error(RuntimeError(format_guidance(explain_backend_error(exc, model=target))))
+            return self._backend_factory(api_key=api_key, model=self.model, api_url=base_url)
+        except Exception:  # noqa: BLE001
             return None
-        self._last_backend = backend
-        return backend
-
-    def _catalog(self, goal: str | None = None) -> FamilyCatalog:
-        from fx1.harness import Harness
-
-        harness = self._harness if self._harness is not None else Harness()
-        return load_catalog(harness, cache=self._catalog_cache, goal=goal)
-
-    def _catalog_for_run(
-        self, goal: str, cancel_event: threading.Event | None, ledger: BudgetLedger
-    ) -> FamilyCatalog:
-        """Load family eligibility within a /superpower cancel and wall budget."""
-        from fx1.harness import Harness
-
-        harness = self._harness if self._harness is not None else Harness()
-        abort_event = threading.Event()
-        accepts_cancel = _accepts_keyword(harness.run, "cancel_event")
-        accepts_timeout = _accepts_keyword(harness.run, "timeout_s")
-        accepts_extra_args = _accepts_keyword(harness.run, "extra_args")
-
-        class CatalogHarness:
-            def run(self, name: str, extra_args: list[str] | None = None) -> Any:
-                kwargs: dict[str, Any] = {}
-                if accepts_extra_args:
-                    kwargs["extra_args"] = extra_args
-                if accepts_cancel:
-                    kwargs["cancel_event"] = abort_event
-                if accepts_timeout:
-                    ledger.check_wall()
-                    kwargs["timeout_s"] = max(1, int(ledger.remaining_s()))
-                return harness.run(name, **kwargs)
-
-        try:
-            return bounded_call(
-                lambda: load_catalog(CatalogHarness(), cache=self._catalog_cache, goal=goal),
-                cancel_event=cancel_event,
-                budget_ledger=ledger,
-                on_abort=abort_event.set,
-            )
-        except OperationCancelled:
-            return FamilyCatalog.unavailable("lookup cancelled")
-        except BudgetExceeded:
-            return FamilyCatalog.unavailable("lookup deadline reached")
 
     # -- session loop --------------------------------------------------------
 
@@ -648,147 +232,40 @@ class Concierge(ChatCommands, DataCommands):
         text = line.strip()
         if not text:
             return False
-        self._open_cancel_scope()
-        try:
-            return self._run_line(text)
-        finally:
-            self._close_cancel_scope()
-
-    def _run_line(self, text: str) -> bool:
-        self._status_explicit = False
-        self._emit("concierge.turn", {"phase": "start", "model": self.model})
-        ended = False
-        try:
-            ended = self._handle_text(text)
-        except KeyboardInterrupt:
-            self._on_keyboard_interrupt()
-            self._persist_session()
-            self._finish_turn()
-            return False
-        if not self._status_explicit:
-            self._assign_status("ok")
-        self._finish_turn()
-        return ended
-
-    def _handle_text(self, text: str) -> bool:
         if text.startswith("/"):
-            if not text.lower().startswith("/keys"):
-                self._journal_turn("user", text)
-            ended = self._slash(text)
-            if not ended:
-                self._persist_session()
-            return ended
+            return self._slash(text)
         if text.lower() in {"exit", "quit"}:
             self.shutdown()
-            self._persist_session()
             return True
-        self._journal_turn("user", text)
-        if looks_like_orchestration(text):
-            self._say("routing this to research orchestration")
-            self._append_if_new("user", text)
-            self.start_superpower(text, sync=False)
-            self._persist_session()
-            return False
         self._chat_turn(text)
-        self._persist_session()
         return False
-
-    def _finish_turn(self) -> None:
-        usage = self.last_usage or {}
-        self._emit(
-            "concierge.turn",
-            {
-                "phase": "end",
-                "model": self.model,
-                "outcome": turn_outcome(self.last_status),
-                "latency_s": self.last_latency_s,
-                "usage": usage,
-            },
-        )
-        self._note_turn()
 
     def tick(self) -> None:
         """Drain background progress and announce completion — call between
         typed lines so the conversation stays responsive during research."""
         if self._job is None:
             return
-        for event, detail in self._job.drain(limit=_MAX_PROGRESS_EVENTS_PER_TICK):
+        for event, detail in self._job.drain():
             self._say(f"[{self._job.label}] {event}: {detail}")
         if self._job.done_event.is_set() and not self._job.announced:
             self._job.announced = True
             self._announce_job(self._job)
 
-    def _publish_superpower(self, result: SuperpowerResult) -> None:
-        with self._state_lock:
-            self._last_result = result
-            self._last_answer = result.summary or ""
-            self._last_status = operator_status(result)
-        self._status_explicit = True
-
-    def _record_superpower_answer(self, result: SuperpowerResult) -> None:
-        from fx1.interactive.redact import redact_text
-
-        text = redact_text(_superpower_memory(result))
-        if text:
-            self._append_if_new("assistant", text)
-        goal = redact_text(result.goal).strip()
-        if goal:
-            self._append_if_new("system", f"superpower goal: {goal}")
-        self._persist_session()
-
-    def _append_if_new(self, role: str, content: str) -> None:
-        cleaned = content.strip()
-        if not cleaned:
-            return
-        with self._state_lock:
-            last = self._messages[-1] if self._messages else None
-            if (
-                isinstance(last, dict)
-                and last.get("role") == role
-                and last.get("content") == cleaned
-            ):
-                return
-            self._messages.append({"role": role, "content": cleaned})
-
     def _announce_job(self, job: BackgroundJob) -> None:
-        if not job.job_id:
-            job.job_id = str(getattr(self, "_active_job_id", "") or "")
-        if job.ledger is None:
-            job.ledger = getattr(self, "_planned_budget_ledger", None)
         if job.error:
             self._say(f"[{job.label}] failed: {job.error}")
-            self._finish_job_record(job, "failed", job.error)
             return
         result = job.result
         if isinstance(result, SuperpowerResult):
-            self._publish_superpower(result)
-            self._record_superpower_answer(result)
             self._say("")
-            from fx1.interactive.redact import redact_text
-
-            self._say(redact_text(scrub_model_text(result.summary or "(no summary)")))
-            self._say(evidence_status_line(result))
+            self._say(result.summary or "(no summary)")
             self._say("")
-            self._say(redact_text(result.explain()))
-            status = "cancelled" if result.cancelled else "done"
-            detail = "partial" if result.partial else "complete"
-            artifacts = [a for run in result.runs for a in run.artifacts][:20]
-            self._finish_job_record(job, status, detail, artifacts)
+            self._say(result.explain())
             return
         if result is not None and hasattr(result, "to_markdown"):
             self._say(result.to_markdown())
-            cancelled = bool(getattr(result, "cancelled", False))
-            self._finish_job_record(job, "cancelled" if cancelled else "done")
             return
         self._say(f"[{job.label}] finished")
-        self._finish_job_record(job, "done")
-
-    def _finish_job_record(
-        self, job: BackgroundJob, status: str, detail: str = "", artifacts: list[str] | None = None
-    ) -> None:
-        if not job.job_id:
-            return
-        self._journal_call("job_finished", job.job_id, status, detail, artifacts)
 
     def join_job(self, timeout_s: float | None = None) -> None:
         """Block until the background job settles (used by --sync and tests)."""
@@ -800,22 +277,14 @@ class Concierge(ChatCommands, DataCommands):
         """Cancel and join the session-owned worker before the session exits."""
         job = self._job
         if job is None:
-            self.close()
             return True
-        stopped = True
         if job.running:
             job.cancel()
             stopped = job.join(timeout_s)
             if not stopped:
-                self._say(
-                    f"[{job.label}] did not stop within {timeout_s:.1f}s — cancellation is "
-                    "pending; the owned subprocess (if any) was signalled"
-                )
-                self._finish_job_record(job, "interrupted", "did not stop before exit")
-                self.close("exit-with-pending-job")
+                self._say(f"[{job.label}] did not stop within {timeout_s:.1f}s")
                 return False
         self.tick()
-        self.close()
         return True
 
     def _job_slot_available(self) -> bool:
@@ -830,24 +299,18 @@ class Concierge(ChatCommands, DataCommands):
         self.tick()
         return True
 
-    def _new_job_id(self, label: str) -> str:
-        self._job_counter += 1
-        return f"{label}-{self._job_counter:02d}"
-
     # -- slash commands ------------------------------------------------------
 
     def _slash(self, text: str) -> bool:
         command, _, rest = text[1:].partition(" ")
-        command = _SLASH_ALIASES.get(command.lower(), command.lower())
-        self._emit("concierge.command", {"name": command})
         handler = getattr(self, f"_cmd_{command.replace('-', '_')}", None)
         if handler is None:
-            self._say_error(ValueError(f"unknown command /{command}; {_suggest_slash(command)}"))
+            self._say_error(ValueError(f"unknown command /{command}; try /help"))
             return False
         try:
             return bool(handler(rest))
-        except (ValueError, KeyError) as exc:
-            self._say_error(ValueError(str(exc)))
+        except ValueError as exc:
+            self._say_error(exc)
             return False
 
     def _cmd_help(self, rest: str) -> bool:
@@ -862,7 +325,7 @@ class Concierge(ChatCommands, DataCommands):
 
     def _cmd_model(self, rest: str) -> bool:
         del rest
-        self._say(f"active model: {self.model} @ {self._endpoint_host(self.model)}")
+        self._say(f"active model: {self.model}")
         return False
 
     def _cmd_use(self, rest: str) -> bool:
@@ -870,437 +333,14 @@ class Concierge(ChatCommands, DataCommands):
         if not tokens:
             raise ValueError("usage: /use <fx1|fx1-lite>")
         model = tokens[0]
-        try:
-            profiles.check_model(model)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from None
-        previous = self.model
-        host = self._endpoint_host(model)
-        configured = host not in {"unconfigured", "invalid-url"}
+        profiles.apply_profile(model)
         self.model = model
-        if self._messages and previous != model:
-            self._messages.append(
-                {
-                    "role": "system",
-                    "content": (
-                        f"active model changed from {previous} to {model}. Earlier assistant "
-                        f"turns in this conversation were produced by {previous}; attribute "
-                        "them accordingly and do not claim them as your own."
-                    ),
-                }
-            )
-        self._journal_call("model_switch", previous, model, host)
-        if configured:
-            self._say(
-                f"active model {model!r} @ {host}; conversation kept "
-                f"({len(self._messages)} messages kept); credentials stay in the store "
-                f"(chat client only — lab subprocesses do not inherit {profiles.ENV_API_KEY})"
-            )
-        else:
-            self._say(f"active model {model!r}; conversation kept")
-            self._say(
-                f"{model} is unconfigured; {model} has no endpoint configured — /keys set {model}"
-            )
-        return False
-
-    def _cmd_diagnostics(self, rest: str) -> bool:
-        bundle = _bundle_path(rest)
-        diag, text = render_diagnostics(
-            config_dir=profiles.config_dir(),
-            session_id=self._corr_session,
-            model=self.model,
-            endpoint_rows=profiles.list_models,
-            job_counts=self._job_counts,
-            session_counts=self._session_counts,
-            telemetry=self._telemetry_box,
-        )
-        self._say(text)
-        if bundle is not None:
-            self._say(write_diagnostics_bundle(diag, bundle, telemetry=self._telemetry_box))
-        return False
-
-    def _job_counts(self) -> dict[str, int]:
-        records = self._job_ledger().list(limit=500)
-        counts: dict[str, int] = {}
-        for record in records:
-            key = str(record.state)
-            counts[key] = counts.get(key, 0) + 1
-        counts["total"] = len(records)
-        return counts
-
-    def _session_counts(self) -> dict[str, int]:
-        store = self._session_store
-        if store is None:
-            return {"total": 0}
-        rows, _warnings = store.list(limit=500)
-        return {"total": len(rows)}
-
-    def _ledger_state(self) -> str | None:
-        result = self._job.result if self._job is not None else None
-        job_id = getattr(result, "job_id", None)
-        if not isinstance(job_id, str) or self._jobs is None:
-            return None
-        try:
-            return str(self._jobs.get(job_id).state)
-        except Exception:  # noqa: BLE001 — cancel text stays honest if the ledger is unreadable
-            return None
-
-    def _cmd_approvals(self, rest: str) -> bool:
-        tokens = shlex.split(rest)
-        if not tokens:
-            self._say(render_approvals(self._approvals.snapshot()))
-            return False
-        if tokens[0] != "revoke" or len(tokens) > 2:
-            raise ValueError("usage: /approvals [revoke [key]]")
-        self._approvals.revoke(tokens[1] if len(tokens) == 2 else None)
-        self._say("approvals revoked" if len(tokens) == 1 else "approval revoked")
-        return False
-
-    def _cmd_session(self, rest: str) -> bool:
-        del rest
-        if self._session is None:
-            self._say(f"no persisted session; active model {self.model}")
-            return False
-        self._say(format_session_line(self._session, self.model))
-        return False
-
-    def _cmd_sessions(self, rest: str) -> bool:
-        if self._session_store is not None:
-            return self._list_stored_sessions(rest)
-        return self._list_journal_sessions(rest)
-
-    def _list_stored_sessions(self, rest: str) -> bool:
-        store = self._session_store
-        if store is None:
-            raise ValueError("session store is not configured")
-        limit = _session_limit(rest)
-        rows, warnings = store.list(limit)
-        self._say(format_session_list(rows))
-        for warning in warnings:
-            self._say(f"warning: {warning}")
-        return False
-
-    def _list_journal_sessions(self, rest: str) -> bool:
-        tokens = shlex.split(rest)
-        limit = 10
-        if tokens:
-            try:
-                limit = max(1, int(tokens[0]))
-            except ValueError:
-                raise ValueError("usage: /sessions [n]") from None
-        summaries = session_mod.list_sessions(limit=limit)
-        if not summaries:
-            self._say("(no recorded sessions)")
-            return False
-        rows = [
-            {
-                "session": s.session_id,
-                "started": s.started_at[:19],
-                "model": s.model,
-                "turns": str(s.turns),
-                "jobs": f"{s.jobs_total}" + (f" ({s.jobs_open} open)" if s.jobs_open else ""),
-                "ended": (s.ended_at or "-")[:19],
-                "last goal": (s.last_goal or "-")[:40],
-            }
-            for s in summaries
-        ]
-        self._say(actions.render_table(rows))
-        self._say("current session: " + self.session_id + " — /resume <id> shows a transcript")
-        return False
-
-    def _cmd_resume(self, rest: str) -> bool:
-        if self._session_store is not None:
-            record = self._load_resume(rest.strip())
-            self._adopt_resume(record)
-            return False
-        return self._show_journal_transcript(rest)
-
-    def _show_journal_transcript(self, rest: str) -> bool:
-        target = rest.strip()
-        if not target:
-            raise ValueError("usage: /resume <session-id or unique prefix>")
-        try:
-            events = session_mod.load_session(target)
-        except ValueError as exc:
-            raise ValueError(str(exc)) from None
-        if events is None:
-            raise ValueError(f"no session matches {target!r}; /sessions lists them")
-        header = session_mod.load_header(target) or {}
-        self._say(
-            f"session {header.get('session_id', target)} — model {header.get('model', '?')} @ "
-            f"{header.get('endpoint_host', '?')} (started {header.get('started_at', '?')}); "
-            "read-only transcript — nothing is re-executed"
-        )
-        self._say(session_mod.transcript(events))
-        return False
-
-    def _load_resume(self, text: str) -> dict[str, Any]:
-        store = self._session_store
-        if store is None:
-            raise ValueError("session store is not configured")
-        if not text:
-            record = store.latest()
-        else:
-            record = store.load(store.resolve_prefix(text))
-        if not isinstance(record, dict):
-            raise ValueError("no saved session to resume")
-        return record
-
-    def _adopt_resume(self, record: dict[str, Any]) -> None:
-        job = record.get("job") or {}
-        if job.get("state") == "running" and self._session_store is not None:
-            record = self._session_store.mark_interrupted(str(record["id"]))
-            self.resume_notice = (
-                f"session {record.get('id')} was running; marked interrupted and not restarted"
-            )
-            self._say(self.resume_notice)
-        self._install_record(record)
-        self._say(f"resumed session {record.get('id')} on model {self.model}")
-        if (record.get("job") or {}).get("state") == "interrupted":
-            self._say(interrupted_hint())
-
-    def _install_record(self, record: dict[str, Any]) -> None:
-        self._session = record
-        restored = str(record.get("model") or self.model)
-        profiles.check_model(restored)
-        with self._state_lock:
-            self.model = restored
-        self._messages = scrub_model_transcript(
-            [item for item in record.get("messages") or [] if isinstance(item, dict)]
-        )
-        stored_budget = record.get("budget")
-        self._budget_overrides = dict(stored_budget) if isinstance(stored_budget, dict) else {}
-        self._restore_attachments(record.get("attachments"), record.get("datasets"))
-
-    def _cmd_export(self, rest: str) -> bool:
-        if self._session_store is None or self._session is None:
-            raise ValueError("no persisted session to export")
-        self._stage_current()
-        kind, dest = _export_args(rest)
-        _path, message = export_session(
-            self._session_store, self._session, kind, dest, profiles.config_dir()
-        )
-        self._say(message)
-        return False
-
-    def _stage_current(self) -> None:
-        record = self._session
-        if not isinstance(record, dict):
-            return
-        job = self._job
-        stage_record(
-            record,
-            model=self.model,
-            messages=list(self._messages),
-            job_running=job is not None and job.running,
-            job_error="" if job is None else job.error,
-            job_present=job is not None,
-            budget=self._budget_overrides,
-            approvals=self._approvals.snapshot(),
-        )
-
-    def _cmd_new(self, rest: str) -> bool:
-        del rest
-        if self.job_running:
-            self._say("a background job is running; /cancel it before /new")
-            return False
-        self._persist_session()
         self._messages = []
-        self._budget_overrides = {}
-        self._set_attachments([])
-        self._job = None
-        self._session = None
-        if self._session_store is not None:
-            self._session = self._session_store.create(model=self.model, messages=[])
-        self._say(f"new session on model {self.model}")
-        return False
-
-    def restore(self, session_id: str, *, preferred_model: str | None = None) -> None:
-        """Load one session by id or unique prefix. A running job is not restarted."""
-        if self._session_store is None:
-            self.resume_notice = "session store is not configured"
-            return
-        self._install_restored(self._load_by_reference(session_id), preferred_model)
-
-    def restore_latest(self, *, preferred_model: str | None = None) -> None:
-        """Load the newest session. A running job is marked interrupted, not restarted."""
-        store = self._session_store
-        if store is None:
-            self.resume_notice = "session store is not configured"
-            return
-        record = store.latest()
-        if not record:
-            self.resume_notice = "no saved session to resume"
-            return
-        self._install_restored(record, preferred_model)
-
-    def _load_by_reference(self, session_id: str) -> dict[str, Any]:
-        store = self._session_store
-        if store is None:
-            raise SessionError("session store is not configured")
-        try:
-            loaded = store.load(store.resolve_prefix(session_id))
-        except SessionError as exc:
-            raise SessionError(public_error(exc)) from exc
-        if not isinstance(loaded, dict):
-            raise SessionError("session record must be an object")
-        return loaded
-
-    def _install_restored(self, record: dict[str, Any], preferred_model: str | None) -> None:
-        store = self._session_store
-        loaded = record
-        job = record.get("job") or {}
-        if job.get("state") == "running" and store is not None:
-            loaded = store.mark_interrupted(str(record["id"]))
-        if preferred_model is not None:
-            profiles.check_model(preferred_model)
-            loaded["model"] = preferred_model
-        self._install_record(loaded)
-        notice = f"resumed session {loaded.get('id')} on model {self.model}"
-        if (loaded.get("job") or {}).get("state") == "interrupted":
-            notice += "; the previous job was not restarted"
-        self.resume_notice = notice
-
-    def _cmd_evidence(self, rest: str) -> bool:
-        result = self._job.result if self._job is not None else None
-        self._say(evidence_report(result, self._evidence, rest.strip()))
-        return False
-
-    def _cmd_budget(self, rest: str) -> bool:
-        """Show both budget surfaces, or apply one wall or session override."""
-        tokens = shlex.split(rest)
-        if not tokens or tokens[0] in {"show", "list"}:
-            self._say_wall_budget()
-            self._say_session_budget()
-            return False
-        if tokens[0] in _BUDGET_DIMENSIONS:
-            return self._set_wall_budget(tokens)
-        return self._set_session_budget(tokens)
-
-    def _say_wall_budget(self) -> None:
-        self._say(f"run budget: {self._wall_budget.describe()}")
         self._say(
-            "tighten with /budget <wall|harness|calls|retries|sources|tokens> <value>; "
-            "environment defaults: FX1_BUDGET_WALL_S, FX1_BUDGET_HARNESS_STEPS, "
-            "FX1_BUDGET_MODEL_CALLS, FX1_BUDGET_RETRIES, FX1_BUDGET_WEB_SOURCES, "
-            "FX1_BUDGET_PROMPT_TOKENS"
+            f"active model {model!r}; {profiles.ENV_API_KEY} + {profiles.ENV_BASE_URL} "
+            "injected into this session"
         )
-
-    def _say_session_budget(self) -> None:
-        budget = self._run_budget()
-        if budget is None:
-            self._say("budget unavailable")
-            return
-        public = budget.as_public()
-        self._say(
-            "budget "
-            f"max_steps={public['max_steps']} max_seconds={public['max_seconds']} "
-            f"max_families={public['max_families']} max_harness={public['max_harness']} "
-            f"max_retries={public['max_retries']}; {public['spend_cap_note']}"
-        )
-        self._say(UsageTracker(self._usage_preset).describe())
-
-    def _set_wall_budget(self, tokens: list[str]) -> bool:
-        if len(tokens) != 2 or tokens[0] not in _BUDGET_DIMENSIONS:
-            raise ValueError(
-                "usage: /budget [show | <wall|harness|calls|retries|sources|tokens> <value>]"
-            )
-        dimension = tokens[0]
-        try:
-            if dimension == "wall":
-                candidate = dataclasses.replace(self._wall_budget, max_wall_s=float(tokens[1]))
-            else:
-                amount = int(tokens[1])
-                candidate = dataclasses.replace(
-                    self._wall_budget, **{_BUDGET_DIMENSIONS[dimension]: amount}
-                )
-        except ValueError:
-            raise ValueError(f"/budget {dimension} needs a number") from None
-        candidate.validate()
-        self._wall_budget = candidate
-        self._journal_event("budget_set", dimension=dimension, value=tokens[1])
-        self._say(f"run budget: {self._wall_budget.describe()}")
         return False
-
-    def _set_session_budget(self, tokens: list[str]) -> bool:
-        from fx1.interactive.budgets import BudgetError, RunBudget, merge_budget
-
-        if len(tokens) != 2:
-            raise ValueError(
-                "usage: /budget [max-steps N | max-seconds N | max-families N | "
-                "max-harness N | max-retries N]"
-            )
-        key = tokens[0].replace("-", "_")
-        if key not in {"max_steps", "max_seconds", "max_families", "max_harness", "max_retries"}:
-            raise ValueError(f"unknown budget field {tokens[0]!r}")
-        try:
-            number: int | float = float(tokens[1]) if key == "max_seconds" else int(tokens[1])
-        except ValueError as exc:
-            raise ValueError(f"{tokens[0]} needs a number") from exc
-        current = dict(self._budget_overrides)
-        current[key] = number
-        try:
-            merge_budget(RunBudget(), current)
-        except BudgetError as exc:
-            raise ValueError(str(exc)) from exc
-        self._budget_overrides = current
-        if isinstance(self._session, dict):
-            self._session["budget"] = dict(current)
-        self._say(f"budget {key}={number}")
-        return False
-
-    def _persist_session(self) -> None:
-        store = self._session_store
-        if store is None:
-            return
-        self._skip_turn_record = False
-        try:
-            self._write_session(store)
-        except SessionConflict:
-            self._skip_turn_record = True
-            self._say("session changed on disk; not saved over the newer revision")
-        except SessionError:
-            self._skip_turn_record = True
-            self._say("session was not saved")
-
-    def _write_session(self, store: Any) -> None:
-        record = self._session
-        if record is None:
-            record = store.create(model=self.model, messages=list(self._messages))
-            self._session = record
-        job = self._job
-        stage_record(
-            record,
-            model=self.model,
-            messages=list(self._messages),
-            job_running=job is not None and job.running,
-            job_error="" if job is None else job.error,
-            job_present=job is not None,
-            budget=self._budget_overrides,
-            approvals=self._approvals.snapshot(),
-            attachments=attachment_payload(self._attachment_snapshot()),
-        )
-        self._stage_datasets(record)
-        store.save(record)
-
-    def _note_turn(self) -> None:
-        store = self._session_store
-        record = self._session
-        if store is None or not isinstance(record, dict) or self._skip_turn_record:
-            return
-        record["approvals"] = self._approvals.snapshot()
-        served = None if self.last_identity is None else self.last_identity.served
-        warning = record_turn(
-            store,
-            record,
-            model=self.model,
-            served_model=served,
-            usage=self.last_usage,
-            outcome=self.last_status,
-            detail=turn_detail(self._turn_label),
-        )
-        if warning:
-            self._say(warning)
 
     def _cmd_keys(self, rest: str) -> bool:
         tokens = shlex.split(rest)
@@ -1316,26 +356,12 @@ class Concierge(ChatCommands, DataCommands):
                 else f"endpoint {tokens[1]!r} was not stored"
             )
             return False
-        if sub == "test" and len(tokens) in {1, 2}:
-            model = tokens[1] if len(tokens) == 2 else self.model
-            try:
-                profiles.check_model(model)
-            except KeyError as exc:
-                raise ValueError(str(exc)) from None
-            self._keys_test(model)
-            return False
         if sub == "set" and len(tokens) in {1, 2}:
             model = tokens[1] if len(tokens) == 2 else self.model
-            try:
-                profiles.check_model(model)
-            except KeyError as exc:
-                raise ValueError(str(exc)) from None
+            profiles.check_model(model)
             import getpass
 
-            try:
-                endpoint = profiles.resolve_endpoint(model)
-            except ValueError:
-                endpoint = None
+            endpoint = profiles.resolve_endpoint(model)
             default_url = endpoint[1] if endpoint else profiles.default_base_url()
             try:
                 api_key = getpass.getpass(f"› {model} API key: ")
@@ -1349,64 +375,8 @@ class Concierge(ChatCommands, DataCommands):
                 f"stored endpoint for {model!r} -> {profiles.host_of(base_url)} "
                 f"in {path} (mode 0600)"
             )
-            self._journal_event("endpoint_set", model=model, host=profiles.host_of(base_url))
             return False
-        raise ValueError("usage: /keys [list | set [model] | test [model] | remove <model>]")
-
-    def _keys_test(self, model: str) -> None:
-        """Authenticated identity probe: requested vs served model, latency, failure class."""
-        host = self._endpoint_host(model)
-        backend = self._backend(model)
-        if backend is None:
-            self._say(
-                f"{model} @ {host}: no endpoint configured — /keys set {model} first "
-                "(nothing was sent)"
-            )
-            return
-        with OrbAnimator(OrbState.SEARCHING, preset="inline") if self._animated else _null():
-            report = probe_identity(backend, model=model, endpoint_host=host)
-        self._say(report.render())
-        self._journal_event(
-            "identity_probe",
-            model=model,
-            host=host,
-            ok=report.ok,
-            served_model=report.served_model,
-            latency_ms=round(report.latency_ms, 1),
-            failure=str(report.failure) if report.failure else None,
-        )
-
-    def _keys_set(self, model: str) -> bool:
-        profiles.check_model(model)
-        prompted = self._prompt_endpoint(model)
-        if prompted is None:
-            return False
-        api_key, base_url = prompted
-        try:
-            path, spec = profiles.set_endpoint_spec(model, api_key, base_url)
-        except (ValueError, KeyError) as exc:
-            raise type(exc)(public_error(exc)) from None
-        self._say(endpoint_stored_line(model, path, spec.describe()))
-        self._say_store_warnings()
-        return False
-
-    def _prompt_endpoint(self, model: str) -> tuple[str, str] | None:
-        import getpass
-
-        endpoint = profiles.resolve_endpoint(model)
-        default_url = endpoint[1] if endpoint else profiles.default_base_url()
-        mark = _prompt_mark()
-        try:
-            api_key = getpass.getpass(f"{mark} {model} API key: ")
-            base_url = self._input(f"{mark} {model} endpoint URL [{default_url}]: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            self._say(f"endpoint setup for {model!r} cancelled; no changes saved")
-            return None
-        return api_key, base_url or default_url
-
-    def _say_store_warnings(self) -> None:
-        for warning in profiles.store_health():
-            self._say(f"warning: {warning}")
+        raise ValueError("usage: /keys [list | set [model] | remove <model>]")
 
     def _cmd_harness(self, rest: str) -> bool:
         tokens = shlex.split(rest)
@@ -1421,21 +391,44 @@ class Concierge(ChatCommands, DataCommands):
             return False
         raise ValueError("usage: /harness [list | describe <name> | run <name> [args...]]")
 
-    def _invoke_harness(self, harness: Any, name: str, extra_args: list[str]) -> Any:
-        """Pass session ids when the runner accepts the extended harness signature."""
-        run: Any = harness.run
-        if _accepts_keyword(run, "env_extra"):
-            cancel = self._turn_cancel if self._turn_cancel is not None else threading.Event()
-            return run(
-                name,
-                extra_args,
-                cancel_event=cancel,
-                env_extra={
-                    "DIPCATCHER_SESSION_ID": self._corr_session,
-                    "DIPCATCHER_RUN_ID": new_run_id(),
-                },
+    def _cmd_live(self, rest: str) -> bool:
+        """Operator card. The chat never transmits an order."""
+        del rest
+        self._say(
+            "\n".join(
+                (
+                    "Live desk — this chat does not transmit orders.",
+                    "  dipcatcher live status",
+                    "  dipcatcher live arm --venue loopback",
+                    "  dipcatcher live submit --symbol AAPL --side BUY --qty 1 --mark 100",
+                    "  dipcatcher live arm --venue drop --confirm SEND-LIVE-ORDERS",
+                    "  DIP_LIVE_ARM=1 dipcatcher live submit --symbol AAPL --side BUY --qty 1 --mark 100",
+                    "Shadow is the default and transmits nothing.",
+                    "Loopback fills are SYNTHETIC.",
+                    "The drop folder is the operator bridge. Evidence conditions stay blocked.",
+                    "The desk does not report a live-performance claim.",
+                    "Approved status only: /harness run live",
+                )
             )
-        return run(name, extra_args)
+        )
+        return False
+
+    def _cmd_trade(self, rest: str) -> bool:
+        tokens = shlex.split(rest) if rest.strip() else []
+        if tokens and tokens[0] not in {"readiness", "help"}:
+            raise ValueError("usage: /trade [readiness|help]")
+        if tokens and tokens[0] == "help":
+            self._say(
+                "Live orders are disabled. /trade readiness prints the five blocked "
+                "conditions. A paper book is the shell command "
+                "`dipcatcher trade session --state <path> --commands <jsonl>`. "
+                "`dipcatcher live` is the operator desk and does not transmit from this chat."
+            )
+            return False
+        from quant_fund.validation.live_readiness import format_readiness, live_readiness_report
+
+        self._say(format_readiness(live_readiness_report()))
+        return False
 
     def _run_harness(self, name: str, extra_args: list[str]) -> str:
         """Approval-gated, registry-constrained harness execution."""
@@ -1443,333 +436,75 @@ class Concierge(ChatCommands, DataCommands):
 
         command = next((c for c in HARNESS_REGISTRY if c.name == name), None)
         if command is None:
-            self._set_status("error")
-            self._say("unknown_command")
-            raise ValueError(f"{name!r} is not a registered harness command; /harness list")
+            raise KeyError(f"{name!r} is not a registered harness command")
         consequential = command.role.value == "model_training" or command.name in {
             "train",
             "optimize",
             "paper",
         }
         if consequential and not self._approvals.ask(
-            f"run harness command {name!r} (consequential)?",
-            kind="consequential",
-            key=f"harness:{name}",
+            f"run harness command {name!r} (consequential)?", kind="consequential"
         ):
             self._say(f"[harness] {name}: not approved — skipped")
-            return f"harness {name!r}: approval denied; command was not run"
+            return ""
         harness = self._harness if self._harness is not None else Harness()
-        result = self._invoke_harness(harness, name, extra_args)
-        leaked = self._screen_model_text(str(result.stdout or ""))
-        if result.stdout and leaked != result.stdout:
-            self._say(leaked)
-            return leaked
-        exit_code = int(result.exit_code)
-        cancelled = bool(getattr(result, "cancelled", False))
-        timed_out = bool(getattr(result, "timed_out", False))
-        truncated = bool(getattr(result, "truncated", False))
-        self._journal_event(
-            "harness_run",
-            command=name,
-            args=list(extra_args),
-            exit_code=exit_code,
-            cancelled=cancelled,
-        )
-        failed = exit_code != 0 or cancelled or timed_out
-        if failed:
-            status = (
-                "cancelled"
-                if cancelled
-                else "timed out"
-                if timed_out
-                else f"failed (exit {exit_code})"
-            )
-            if truncated:
-                status = f"{status}; truncated"
-            self._say(f"[harness] {name}: {status}; output below is incomplete")
-            self._set_status("cancelled" if cancelled else "error")
+        result = harness.run(name, extra_args)
         if result.stdout:
             self._say(result.stdout.rstrip()[-4000:])
         if result.stderr:
             self._say_error(RuntimeError(result.stderr.strip()[-4000:]))
-        if failed:
-            return f"harness {name!r} {status}; output withheld"
-        output = str(result.stdout)[-6000:] if result.stdout else "(no output)"
-        return f"harness {name!r} completed (exit 0); raw output is unverified data:\n{output}"
-
-    # -- /doctor, /budget, /families, /sessions, /resume ---------------------
-
-    def _cmd_doctor(self, rest: str) -> bool:
-        del rest
-        status = dict(actions.doctor(self.model))
-        status["session_id"] = self.session_id
-        status["session_journal"] = (
-            str(self._journal.path) if self._journal is not None else "disabled"
-        )
-        status["run_budget"] = self._wall_budget.describe()
-        job = self._job
-        status["background_job"] = (
-            f"{job.label} ({'running' if job.running else 'finished'})" if job else "none"
-        )
-        catalog = self._catalog_cache.get("catalog")
-        status["family_catalog"] = catalog.describe() if catalog else "not loaded yet"
-        status["next_actions"] = _doctor_next_actions(status, self.model)
-        self._say(actions.status_json(status))
-        return False
-
-    def _cmd_families(self, rest: str) -> bool:
-        goal = rest.strip()
-        with OrbAnimator(OrbState.WORKING, preset="inline") if self._animated else _null():
-            catalog = self._catalog(goal or None)
-        self._say(catalog.describe())
-        if goal:
-            selection = resolve_families(goal, catalog)
-            if not selection.mentioned:
-                self._say(
-                    "no research family is named in that goal — use family names "
-                    "(e.g. conformal, volatility, tail) or explicit family:<name> tokens"
-                )
-            for line in selection.explain():
-                self._say(line)
-            if catalog.available:
-                self._say(
-                    "note: the research runner has no per-family selector; automatic research "
-                    "is excluded when a goal names a family. /harness run research requests "
-                    "the configured full scorecard"
-                )
-        return False
+        return str(result.stdout)
 
     # -- /superpower ---------------------------------------------------------
 
     def _cmd_superpower(self, rest: str) -> bool:
         tokens = shlex.split(rest)
         if not tokens:
-            raise ValueError("usage: /superpower <goal> [--sync] [--web]")
+            raise ValueError("usage: /superpower <goal> [--sync]")
         if tokens[0] == "help":
-            self._say(describe_capabilities(self._catalog_cache.get("catalog")))
+            self._say(describe_capabilities())
             return False
         sync = "--sync" in tokens
-        allow_web = "--web" in tokens
-        goal = " ".join(t for t in tokens if t not in {"--sync", "--web"})
-        return self.start_superpower(goal, sync=sync, allow_web=allow_web)
-
-    def start_superpower(self, goal: str, *, sync: bool = False, allow_web: bool = False) -> bool:
-        """Run an already-parsed goal without interpreting it as slash-command syntax."""
-        from fx1.webresearch.engine import web_research_opted_in
-
+        goal = " ".join(t for t in tokens if t != "--sync")
         if not goal.strip():
-            raise ValueError("usage: /superpower <goal> [--sync] [--web]")
+            raise ValueError("usage: /superpower <goal> [--sync]")
         if not self._job_slot_available():
             return False
-        # --web is an explicit opt-in. FX1_WEB_RESEARCH=1 is the other opt-in.
-        web_ok = bool(allow_web) or web_research_opted_in()
-        self._superpower_allow_web = web_ok
-        return self._launch_superpower(goal, sync=sync)
+        backend = self._backend()
+        model_fn = None
+        if backend is not None:
 
-    def _launch_superpower(self, goal: str, *, sync: bool) -> bool:
-        prepared = self._prepare_superpower()
-        model_fn = self._bind_model_fn(self._backend())
-        cancel = threading.Event()
-        self._arm_turn(cancel)
-        self._arm_superpower_cancel(cancel)
-        try:
-            return self._start_superpower(prepared, goal, model_fn, cancel, sync=sync)
-        finally:
-            self._disarm_turn()
+            def model_fn(prompt: str) -> str:
+                with (
+                    OrbAnimator(OrbState.COMPOSING, preset="inline") if self._animated else _null()
+                ):
+                    return str(backend.complete([{"role": "user", "content": prompt}]))
 
-    def _start_superpower(
-        self,
-        prepared: PreparedRun,
-        goal: str,
-        model_fn: Callable[[str], str] | None,
-        cancel: threading.Event,
-        *,
-        sync: bool,
-    ) -> bool:
-        if not sync:
-            return self._start_superpower_async(prepared, goal, model_fn)
-        plan = self._plan_documented(goal, model_fn, cancel)
-        self._say_superpower_plan(plan)
-        if cancel.is_set():
-            self._say("turn cancelled")
-            self._set_status("cancelled")
+        plan = plan_goal(goal, model_fn=model_fn)
+        self._say(plan.describe())
+        self._say("")
+        if sync:
+            ctx = self._superpower_context(model_fn)
+            result = run_plan(plan, ctx)
+            job = BackgroundJob(label="superpower", run_fn=lambda *_: result)
+            job.result = result
+            job.done_event.set()
+            job.announced = True
+            self._job = job
+            self._announce_job(job)
             return False
-        self._active_job_id = new_run_id()
-        from fx1.interactive.redact import redact_text
-
-        self._journal_call(
-            "job_started", self._active_job_id, "superpower", redact_text(goal), plan.ids()
-        )
-        self._superpower_sync(prepared, plan, model_fn)
-        return False
-
-    def _start_superpower_async(
-        self,
-        prepared: PreparedRun,
-        goal: str,
-        model_fn: Callable[[str], str] | None,
-    ) -> bool:
-        """Plan inside the worker so a family-catalog lookup stays cancellable."""
 
         def run_fn(
             cancel_event: threading.Event, on_event: Callable[[str, str], None]
         ) -> SuperpowerResult:
-            self._arm_superpower_cancel(cancel_event)
-            plan = self._plan_documented(goal, model_fn, cancel_event)
-            self._say_superpower_plan(plan)
-            from fx1.interactive.redact import redact_text
-
-            self._journal_call(
-                "job_started",
-                str(getattr(self, "_active_job_id", "") or ""),
-                "superpower",
-                redact_text(goal),
-                plan.ids(),
+            job_ctx = self._superpower_context(
+                model_fn, on_event=on_event, cancel_event=cancel_event
             )
-            if cancel_event.is_set():
-                return SuperpowerResult(
-                    goal=goal,
-                    plan=plan,
-                    cancelled=True,
-                    summary="cancelled before a complete report was available",
-                    status="cancelled",
-                )
-            blocked = self._dataset_block()
-            if blocked:
-                from fx1.interactive.concierge_data import _blocked_result
+            return run_plan(plan, job_ctx)
 
-                return _blocked_result(plan, blocked)
-            return self._executed_plan(prepared, plan, model_fn, on_event, cancel_event)
-
-        self._emit("concierge.job", {"label": "superpower", "state": "started"})
-        job = BackgroundJob(label="superpower", run_fn=run_fn)
-        job.job_id = new_run_id()
-        job.goal = goal
-        job.ledger = getattr(self, "_planned_budget_ledger", None)
-        self._active_job_id = job.job_id
-        self._job = job.start()
+        self._job = BackgroundJob(label="superpower", run_fn=run_fn).start()
         self._say("[superpower] running in the background — /status, /cancel; chat stays open")
         return False
-
-    def _plan_documented(
-        self,
-        goal: str,
-        model_fn: Callable[[str], str] | None,
-        cancel: threading.Event | None,
-    ) -> Any:
-        """Keyword plan plus the lab ``research-families`` catalog.
-
-        ``capabilities list --json`` is probed first. A qualified catalog
-        selects executable steps. When that command is missing or not a
-        capabilities document, planning uses the documented family catalog
-        instead of stopping at ``catalog-unavailable``.
-        """
-        from fx1.interactive.budget import BudgetLedger
-        from fx1.interactive.contracts import CapabilityCatalog
-
-        ledger = BudgetLedger(self._wall_budget)
-        holder = getattr(self, "_superpower_cancel", None)
-        if isinstance(holder, dict):
-            holder["ledger"] = ledger
-        qualified = self._qualified_catalog()
-        planner_fn = self._bounded_planner_model(model_fn, cancel, ledger)
-        if isinstance(qualified, CapabilityCatalog):
-            from fx1.interactive.superpower_glue import make_plan
-
-            prepared = self._prepared
-            prepared.catalog = qualified
-            prepared.unavailable = None
-            plan = make_plan(
-                goal,
-                prepared,
-                model_fn=planner_fn,
-                family_selector=self._family_selector(),
-                max_harness=self._planner_step_cap(),
-                budget_s=self._planner_budget_s(),
-                allow_web=bool(getattr(self, "_superpower_allow_web", False)),
-            )
-            self._planned_family_catalog = None
-            self._planned_budget_ledger = ledger
-            return plan
-        family_catalog = self._catalog_for_run(goal, cancel, ledger)
-        plan = plan_goal(
-            goal,
-            model_fn=planner_fn,
-            max_harness=self._planner_step_cap(),
-            catalog=family_catalog,
-            budget_s=self._planner_budget_s(),
-            allow_web=bool(getattr(self, "_superpower_allow_web", False)),
-        )
-        if not family_catalog.available and not plan.catalog_unavailable:
-            plan.catalog_unavailable = family_catalog.note or "catalog unavailable"
-        self._planned_family_catalog = family_catalog
-        self._planned_budget_ledger = ledger
-        return plan
-
-    def _bounded_planner_model(
-        self,
-        model_fn: Callable[[str], str] | None,
-        cancel: threading.Event | None,
-        ledger: Any,
-    ) -> Callable[[str], str] | None:
-        """Stop waiting on planner refinement when the operator cancels or the wall elapses."""
-        if model_fn is None:
-            return None
-
-        def bounded(prompt: str) -> str:
-            return bounded_model_call(model_fn, prompt, cancel_event=cancel, budget_ledger=ledger)
-
-        return bounded
-
-    def _qualified_catalog(self) -> Any:
-        """Probe ``capabilities list --json``. None when it is not a catalog."""
-        from fx1.interactive.orchestration import load_catalog
-
-        loaded = load_catalog(self._harness_obj(), config_dir=profiles.config_dir())
-        return loaded.catalog
-
-    def _bind_model_fn(self, backend: Any | None) -> Callable[[str], str] | None:
-        if backend is None:
-            self._superpower_cancel = None
-            return None
-        holder: dict[str, Any] = {"cancel": None}
-        self._superpower_cancel = holder
-
-        def bound(prompt: str) -> str:
-            from fx1.interactive.budget import BudgetLedger
-
-            active = holder.get("ledger")
-            ledger = active if isinstance(active, BudgetLedger) else BudgetLedger(self._wall_budget)
-            return self._model_fn(backend, cancel_event=holder["cancel"], ledger=ledger)(prompt)
-
-        return bound
-
-    def _model_fn(
-        self,
-        backend: Any,
-        *,
-        cancel_event: threading.Event | None = None,
-        ledger: BudgetLedger | None = None,
-    ) -> Callable[[str], str]:
-        accepts_timeout = _accepts_keyword(backend.complete, "timeout_s")
-
-        def model_fn(prompt: str) -> str:
-            with OrbAnimator(OrbState.COMPOSING, preset="inline") if self._animated else _null():
-                return call_with_retries(
-                    lambda: _complete_superpower_attempt(
-                        backend, prompt, cancel_event, ledger, accepts_timeout
-                    ),
-                    policy=self._retry_policy,
-                    cancel_event=cancel_event,
-                    sleep=lambda delay: _wait_superpower_retry(delay, cancel_event, ledger),
-                    on_retry=lambda n, g, d: self._say(
-                        f"[model] retry {n}/{self._retry_policy.max_retries} in {d:.1f}s "
-                        f"({g.failure}: {g.summary})"
-                    ),
-                    model=self.model,
-                )
-
-        return model_fn
 
     def _superpower_context(
         self,
@@ -1777,10 +512,6 @@ class Concierge(ChatCommands, DataCommands):
         *,
         on_event: Callable[[str, str], None] | None = None,
         cancel_event: threading.Event | None = None,
-        ledger: BudgetLedger | None = None,
-        job_id: str = "",
-        catalog: FamilyCatalog | None = None,
-        allow_web: bool = False,
     ) -> SuperpowerContext:
         return SuperpowerContext(
             model_fn=model_fn,
@@ -1791,322 +522,37 @@ class Concierge(ChatCommands, DataCommands):
             flash_store=self._store,
             on_event=on_event,
             cancel_event=cancel_event,
-            budget_ledger=ledger,
-            journal=self._journal,
-            job_id=job_id,
-            catalog=catalog,
-            allow_web=allow_web,
         )
-
-    def _arm_turn(self, event: threading.Event) -> None:
-        with self._state_lock:
-            self._turn_cancel = event
-
-    def _disarm_turn(self) -> None:
-        with self._state_lock:
-            self._turn_cancel = None
-
-    def _current_cancel(self) -> threading.Event | None:
-        with self._state_lock:
-            return self._turn_cancel
-
-    def _clock(self) -> float:
-        return time.monotonic()
-
-    def _append_message(self, message: dict[str, Any]) -> None:
-        self._messages.append(message)
-
-    def _truncate_messages(self, start: int) -> None:
-        del self._messages[start:]
-
-    def _transcript(self) -> list[dict[str, Any]]:
-        return list(self._messages)
-
-    def _orb(self) -> Any:
-        if self._animated:
-            return OrbAnimator(OrbState.COMPOSING, preset="inline")
-        return contextlib.nullcontext()
-
-    def _note_call(self, snapshot: Any) -> None:
-        self._last_snapshot = snapshot
-
-    def _remember_answer(self, text: str) -> None:
-        self._last_answer = text
-        self._journal_turn("assistant", text)
-
-    def _remember_withheld(self, text: str) -> None:
-        self._last_answer = text
-        self._journal_turn("system", text)
-
-    def _tool_superpower(self, goal: str) -> str:
-        self.start_superpower(goal, sync=True)
-        result = self.last_result
-        summary = getattr(result, "summary", "") if result is not None else ""
-        return str(summary or "superpower finished")
-
-    def _tool_env(self, cancel: threading.Event | None) -> Any:
-        from pathlib import Path
-
-        from fx1.interactive import profiles
-        from fx1.interactive.chat_tools import ToolEnv
-
-        return ToolEnv(
-            store=self._store,
-            researcher=self._researcher,
-            harness=self._harness_obj(),
-            approvals=self._approvals,
-            validator=self._harness_validator,
-            cancel_event=cancel,
-            session_id=self._corr_session,
-            say=self._say,
-            say_error=self._say_error,
-            run_superpower=self._tool_superpower,
-            cwd=Path.cwd(),
-            config_dir=profiles.config_dir(),
-            emit=self._emit,
-        )
-
-    def _set_status(self, status: str) -> None:
-        with self._state_lock:
-            self._last_status = status
-        self._status_explicit = True
-        self._emit("concierge.status", {"status": status, "model": self.model})
-
-    def _arm_superpower_cancel(self, cancel: threading.Event | None) -> None:
-        carry = self._carry_superpower_cancel(cancel)
-        if cancel is not None and carry:
-            cancel.set()
-
-    def _carry_superpower_cancel(self, cancel: threading.Event | None) -> bool:
-        with self._state_lock:
-            holder = self._superpower_cancel
-            carry = self._cancel_requested
-            if holder is None:
-                return carry
-            previous = holder.get("cancel")
-            if previous is not None and previous.is_set():
-                carry = True
-            holder["cancel"] = cancel
-            return carry
-
-    def _context_for(
-        self,
-        prepared: PreparedRun,
-        model_fn: Callable[[str], str] | None,
-        on_event: Callable[[str, str], None] | None,
-        cancel_event: threading.Event | None,
-    ) -> Any:
-        ctx = build_context(
-            prepared,
-            RunSeams(
-                model_fn=model_fn,
-                harness=self._harness_obj(),
-                approvals=self._approvals,
-                researcher=self._researcher,
-                research_budget=self._research_budget,
-                flash_store=self._store,
-                on_event=on_event,
-                cancel_event=cancel_event,
-                budget=self._run_budget(),
-                job_ledger=self._job_ledger(),
-                session_id=getattr(self, "_corr_session", self.session_id),
-                telemetry_emit=getattr(self, "_telemetry", None),
-            ),
-            datasets=tuple(getattr(self, "_datasets", ())),
-        )
-        ctx.allow_web = getattr(self, "_superpower_allow_web", False)
-        ctx.journal = self._journal
-        ctx.job_id = str(getattr(self, "_active_job_id", "") or "")
-        family_catalog = getattr(self, "_planned_family_catalog", None)
-        if family_catalog is not None and ctx.catalog is None:
-            ctx.catalog = family_catalog
-        ledger = getattr(self, "_planned_budget_ledger", None)
-        if ledger is not None:
-            ctx.budget_ledger = ledger
-        return ctx
-
-    def _harness_obj(self) -> Any:
-        from fx1.harness import Harness
-
-        if self._harness is not None:
-            return self._harness
-        return Harness()
-
-    def _job_ledger(self) -> JobLedger:
-        if self._jobs is None:
-            self._jobs = JobLedger()
-        return self._jobs
-
-    def _max_families(self) -> int:
-        budget = self._run_budget()
-        if budget is None:
-            return 4
-        return _int_field(budget, "max_families", 4)
-
-    def _planner_step_cap(self) -> int:
-        """Harness-step ceiling for the planner. Family count is separate."""
-        budget = self._run_budget()
-        if budget is None:
-            return 4
-        return _int_field(budget, "max_harness", 4)
-
-    def _planner_budget_s(self) -> float | None:
-        """Estimated-runtime ceiling only after the operator sets max-seconds."""
-        if "max_seconds" not in self._budget_overrides:
-            return None
-        raw = self._budget_overrides.get("max_seconds")
-        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
-            return None
-        return float(raw)
-
-    def _run_budget(self) -> Any | None:
-        try:
-            from fx1.interactive.budgets import RunBudget
-        except ImportError:
-            return None
-        budget = RunBudget()
-        overrides = {str(key): value for key, value in self._budget_overrides.items()}
-        if overrides:
-            from fx1.interactive.budgets import merge_budget
-
-            return merge_budget(budget, overrides)
-        budget.validate()
-        return budget
-
-    def _family_selector(self) -> Callable[[str], dict[str, Any]]:
-        def select_families(goal: str) -> dict[str, Any]:
-            from fx1.harness import Harness
-
-            harness = self._harness if self._harness is not None else Harness()
-            try:
-                from fx1.interactive.families import FamilyClient, harness_family_runner
-            except ImportError:
-                return _family_payload_from_harness(harness, goal, self._max_families())
-            return FamilyClient(harness_family_runner(harness)).select(
-                goal, max_families=self._max_families()
-            )
-
-        return select_families
 
     # -- /research -----------------------------------------------------------
 
-    @staticmethod
-    def _parse_research_options(rest: str) -> tuple[str, dict[str, Any]]:
-        usage = (
-            "usage: /research <goal> [--budget-s N] [--max-sources N] [--queries q1|q2|q3] [--sync]"
-        )
-        tokens = shlex.split(rest)
-        if not tokens:
-            raise ValueError(usage)
-        options: dict[str, Any] = {}
-        positional: list[str] = []
-        i = 0
-        while i < len(tokens):
-            token = tokens[i]
-            if token in {"--budget-s", "--max-sources"} and i + 1 < len(tokens):
-                try:
-                    options[token[2:].replace("-", "_")] = int(tokens[i + 1])
-                except ValueError:
-                    raise ValueError(f"{token} needs an integer") from None
-                i += 2
-                continue
-            if token == "--queries" and i + 1 < len(tokens):
-                options["queries"] = [q for q in tokens[i + 1].split("|") if q]
-                i += 2
-                continue
-            if token == "--sync":
-                options["sync"] = True
-                i += 1
-                continue
-            positional.append(token)
-            i += 1
-        goal = " ".join(positional)
-        if not goal.strip():
-            raise ValueError(usage)
-        return goal, options
-
     def _cmd_research(self, rest: str) -> bool:
-        goal, options = self._parse_research_options(rest)
-        return self.start_research(
-            goal,
-            budget_s=options.get("budget_s"),
-            max_sources=options.get("max_sources"),
-            queries=options.get("queries"),
-            sync=options.get("sync", False),
-        )
-
-    def start_research(
-        self,
-        goal: str,
-        *,
-        budget_s: int | None = None,
-        max_sources: int | None = None,
-        queries: list[str] | None = None,
-        sync: bool = False,
-    ) -> bool:
-        """Run an already-parsed goal and query list without shell tokenization."""
-        if not goal.strip():
-            raise ValueError("usage: /research <goal> ...")
-        if budget_s is not None and budget_s <= 0:
-            raise ValueError("--budget-s must be positive")
-        if max_sources is not None and max_sources <= 0:
-            raise ValueError("--max-sources must be positive")
+        goal, options = _parse_research_command(rest)
         if not self._job_slot_available():
             return False
         from fx1.webresearch.engine import ResearchBudget
 
         base = self._research_budget
         budget = ResearchBudget(
-            max_duration_s=min(
-                budget_s if budget_s is not None else base.max_duration_s,
-                self._wall_budget.max_wall_s,
-            ),
-            max_sources=min(
-                max_sources if max_sources is not None else base.max_sources,
-                self._wall_budget.max_web_sources,
-            ),
+            max_duration_s=options.get("budget_s", base.max_duration_s),
+            max_sources=options.get("max_sources", base.max_sources),
             max_searches=base.max_searches,
             max_depth=base.max_depth,
             search_pause_s=base.search_pause_s,
         )
-        ledger = BudgetLedger(
-            dataclasses.replace(self._wall_budget, max_wall_s=budget.max_duration_s)
-        )
-        started_at = datetime.now(UTC).isoformat(timespec="seconds")
+        queries = options.get("queries")
 
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
-            from fx1.webresearch.engine import ResearchReport
+            return self._researcher.run(
+                goal,
+                budget=budget,
+                queries=queries,
+                cancel_event=cancel_event,
+                on_progress=lambda p: on_event(p.event, p.detail),
+            )
 
-            try:
-                return bounded_call(
-                    lambda: self._researcher.run(
-                        goal,
-                        budget=budget,
-                        queries=queries,
-                        cancel_event=cancel_event,
-                        on_progress=lambda p: on_event(p.event, p.detail),
-                    ),
-                    cancel_event=cancel_event,
-                    budget_ledger=ledger,
-                    on_abort=cancel_event.set,
-                )
-            except OperationCancelled:
-                ended = datetime.now(UTC).isoformat(timespec="seconds")
-                return ResearchReport(
-                    goal=goal,
-                    started_at=started_at,
-                    finished_at=ended,
-                    cancelled=True,
-                    budget=budget,
-                    errors=["cancelled before a complete report was available"],
-                )
-
-        job_id = self._new_job_id("research")
-        self._journal_call("job_started", job_id, "research", goal, ["web_research"])
-        job = BackgroundJob(
-            label="research", run_fn=run_fn, job_id=job_id, goal=goal, ledger=ledger
-        )
-        if sync:
+        job = BackgroundJob(label="research", run_fn=run_fn)
+        if options.get("sync"):
             job.start()
             job.done_event.wait()
             self._job = job
@@ -2125,50 +571,34 @@ class Concierge(ChatCommands, DataCommands):
         if self._job is None:
             self._say("no background job")
             return False
-        job = self._job
-        state = "running" if job.running else "finished"
-        if job.running and job.cancel_requested:
-            state = "cancelling (waiting for the current step to stop)"
-        line = f"[{job.label}] {state} · {job.elapsed_s():.0f}s elapsed"
-        if job.goal:
-            line += f" · goal: {job.goal[:60]}"
-        self._say(line)
-        if job.ledger is not None:
-            with contextlib.suppress(Exception):
-                self._say(str(job.ledger.describe()))
-        for event, detail in job.drain():
-            self._say(f"[{job.label}] {event}: {detail}")
-        if not job.running and not job.announced:
-            job.announced = True
-            self._announce_job(job)
+        state = "running" if self._job.running else "finished"
+        self._say(f"[{self._job.label}] {state}")
+        for event, detail in self._job.drain():
+            self._say(f"[{self._job.label}] {event}: {detail}")
+        if not self._job.running and not self._job.announced:
+            self._job.announced = True
+            self._announce_job(self._job)
         return False
 
     def _cmd_cancel(self, rest: str) -> bool:
         del rest
-        if not self.cancel_job():
+        if self._job is None or not self._job.running:
             self._say("no running background job")
             return False
-        assert self._job is not None
-        self._say(
-            f"[{self._job.label}] cancel requested — the run stops waiting now; "
-            "active network requests may finish at their transport timeout"
-        )
-        if self._job.running:
-            self._say("cancellation pending")
-        self._journal_event("cancel_requested", job_id=self._job.job_id)
+        self._job.cancel()
+        self._say(f"[{self._job.label}] cancel requested — will stop at the next step")
         return False
 
     def _cmd_redirect(self, rest: str) -> bool:
         goal = rest.strip()
         if not goal:
             raise ValueError("usage: /redirect <new goal>")
-        if self._job is None or not self._job.running or self._job.label != "research":
-            self._say("no running background research job to redirect")
+        if self._job is None or not self._job.running:
+            self._say("no running background job to redirect")
             return False
         if hasattr(self._researcher, "redirect"):
             self._researcher.redirect(goal)
             self._say(f"[{self._job.label}] redirect requested -> {goal!r}")
-            self._journal_event("redirect", job_id=self._job.job_id, goal=goal)
         else:
             self._say_error(RuntimeError("active job cannot be redirected"))
         return False
@@ -2229,12 +659,12 @@ class Concierge(ChatCommands, DataCommands):
         if not text.strip():
             raise ValueError("usage: /flash add <text> [--task T] [--tags a,b] [--source URL] ...")
         entry = self._store.add(
-            text=_scrub_user(text),
-            task=_scrub_user(str(options.get("task", ""))),
-            tags=[_scrub_user(t.strip()) for t in options.get("tags", "").split(",") if t.strip()],
-            sources=[{"url": _scrub_user(options["source"])}] if options.get("source") else [],
-            uncertainty=_scrub_maybe(options.get("uncertainty")),
-            conflicts=[_scrub_user(options["conflict"])] if options.get("conflict") else [],
+            text=text,
+            task=options.get("task", ""),
+            tags=[t.strip() for t in options.get("tags", "").split(",") if t.strip()],
+            sources=[{"url": options["source"]}] if options.get("source") else [],
+            uncertainty=options.get("uncertainty"),
+            conflicts=[options["conflict"]] if options.get("conflict") else [],
             private=bool(options.get("private")),
             verified=bool(options.get("verified")),
         )
@@ -2301,7 +731,7 @@ class Concierge(ChatCommands, DataCommands):
                 i += 2
                 continue
             raise ValueError(f"unknown /flash correct option {token!r}")
-        revised = self._store.update(entry_id, _scrub_patch(patch))
+        revised = self._store.update(entry_id, patch)
         if revised is None:
             raise KeyError(f"no flash entry {entry_id!r}")
         self._say(f"corrected {entry_id} (revision kept; history preserved)")
@@ -2328,3 +758,287 @@ class Concierge(ChatCommands, DataCommands):
             self._say_error(KeyError(f"no flash entry {entry_id!r}"))
             return
         self._say(report.note)
+
+    # -- plain chat ----------------------------------------------------------
+
+    def _chat_turn(self, text: str) -> None:
+        backend = self._backend()
+        if backend is None:
+            self._say(
+                f"no model endpoint configured — set one with `/keys set {self.model}`, or export "
+                "MOONSHOT_API_KEY / FX1_BASE_URL. Slash commands still work."
+            )
+            return
+        start = len(self._messages)
+        self._messages.append({"role": "user", "content": text})
+        tools = self._chat_tools()
+        try:
+            for _ in range(6):
+                with (
+                    OrbAnimator(OrbState.COMPOSING, preset="inline") if self._animated else _null()
+                ):
+                    completion = backend.complete_with_tools(
+                        self._messages, tools=tools, tool_choice="auto"
+                    )
+                content = validate_fx1_output(completion.content or "")
+                if not completion.tool_calls:
+                    self._messages.append({"role": "assistant", "content": content})
+                    self._say(content)
+                    return
+                self._messages.append(
+                    {
+                        "role": "assistant",
+                        "content": completion.content,
+                        "tool_calls": list(completion.tool_calls),
+                    }
+                )
+                for call in completion.tool_calls:
+                    result_text = self._execute_tool(call)
+                    self._messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call["id"],
+                            "content": result_text,
+                        }
+                    )
+            self._say("(tool loop budget exhausted — ask a follow-up to continue)")
+        except Fx1HonestyError as exc:
+            refusal = (
+                f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
+            )
+            if any(message.get("role") == "tool" for message in self._messages[start:]):
+                # A blocked answer cannot undo completed tool actions. Keep
+                # their validated call/result transcript for the next turn.
+                self._messages.append({"role": "assistant", "content": refusal})
+            else:
+                del self._messages[start:]
+            self._say(refusal)
+        except Exception as exc:  # noqa: BLE001 — a dead network must not kill the shell
+            del self._messages[start:]
+            self._say_error(exc)
+
+    def _chat_tools(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": "flash_retrieve",
+                    "description": (
+                        "Search persistent research memory (flash context) for "
+                        "prior findings relevant to a query. Returns findings with "
+                        "sources, uncertainty, and conflicts."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "web_lookup",
+                    "description": (
+                        "A bounded public-web lookup: search and read up to two "
+                        "sources. Use for facts outside the conversation; deep "
+                        "research belongs to /research."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "flash_save",
+                    "description": "Persist a finding to flash context for later sessions.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "text": {"type": "string"},
+                            "task": {"type": "string"},
+                            "uncertainty": {
+                                "type": "string",
+                                "enum": ["low", "medium", "high"],
+                            },
+                        },
+                        "required": ["text"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "harness_run",
+                    "description": (
+                        "Run one registered dipcatcher harness command "
+                        "(e.g. doctor, verify-research, research). Consequential "
+                        "commands require operator approval. Fail-closed on "
+                        "unknown names."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "args": {"type": "array", "items": {"type": "string"}},
+                        },
+                        "required": ["name"],
+                    },
+                },
+            },
+        ]
+
+    def _execute_tool(self, call: dict[str, Any]) -> str:
+        fn = call.get("function", {})
+        name = fn.get("name", "")
+        try:
+            arguments = json.loads(fn.get("arguments") or "{}")
+            if not isinstance(arguments, dict):
+                arguments = {}
+        except json.JSONDecodeError:
+            arguments = {}
+        if name == "flash_retrieve":
+            from fx1.flash.retrieve import context_block, retrieve
+
+            hits = retrieve(self._store, str(arguments.get("query", "")), k=4)
+            if not hits:
+                return "no relevant flash context found"
+            for hit in hits:
+                self._store.mark_used(hit.entry.id)
+            return context_block(hits)
+        if name == "flash_save":
+            entry = self._store.add(
+                text=str(arguments.get("text", "")),
+                task=str(arguments.get("task", "")),
+                uncertainty=arguments.get("uncertainty"),
+                tags=["model-saved"],
+            )
+            return f"saved flash entry {entry.id}"
+        if name == "web_lookup":
+            return self._web_lookup(str(arguments.get("query", "")))
+        if name == "harness_run":
+            harness_name = str(arguments.get("name", ""))
+            args_list = [
+                str(a) for a in arguments.get("args", []) if isinstance(a, (str, int, float))
+            ]
+            try:
+                stdout = self._run_harness(harness_name, args_list)
+            except KeyError as exc:
+                return f"harness refused: {exc}"
+            return stdout[-6000:] or "(command produced no output)"
+        return f"unknown tool {name!r}"
+
+    def _web_lookup(self, query: str) -> str:
+        """One search + at most two fetches, capped — the chat-scale lookup."""
+        from fx1.webresearch.engine import ResearchBudget
+
+        if not query.strip():
+            return "empty query"
+        budget = ResearchBudget(
+            max_duration_s=30,
+            max_searches=1,
+            max_sources=2,
+            max_depth=0,
+            search_pause_s=0.0,
+        )
+        report = self._researcher.run(query, budget=budget, queries=[query])
+        parts: list[str] = []
+        for source in report.sources:
+            if source.ok:
+                parts.append(f"SOURCE {source.url}\n{source.text[:2500]}")
+        if not parts:
+            return "web lookup found nothing (or the network is unavailable)"
+        return "\n\n".join(parts)
+
+
+class _null:
+    """Context manager that does nothing (animation disabled / non-TTY)."""
+
+    def __enter__(self) -> None:
+        return None
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Console driver
+# ---------------------------------------------------------------------------
+
+
+def _tty_polling_read(input_fn: Callable[[str], str], prompt: str, timeout_s: float) -> str | None:
+    """Poll a POSIX TTY; Windows and non-TTY input use blocking reads.
+
+    Returns None on timeout. The caller supplies an empty prompt while
+    waiting for a previously prompted line.
+    """
+    if sys.platform == "win32" or not sys.stdin.isatty():
+        return input_fn(prompt)
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    ready, _, _ = select.select([sys.stdin], [], [], timeout_s)
+    if not ready:
+        return None
+    line = sys.stdin.readline()
+    if line == "":  # EOF
+        raise EOFError
+    return line.rstrip("\n")
+
+
+def run_console(
+    model: str = DEFAULT_MODEL,
+    *,
+    concierge_factory: Callable[..., Concierge] | None = None,
+    input_fn: Callable[[str], str] = input,
+    output_fn: Callable[..., None] = typer.echo,
+    poll_timeout_s: float = 0.15,
+) -> None:
+    """Read chat input with idle progress ticks on POSIX terminals.
+
+    Windows and non-TTY input render queued progress between submitted lines.
+    """
+    concierge = (
+        concierge_factory()
+        if concierge_factory is not None
+        else Concierge(
+            model=model,
+            input_fn=input_fn,
+            output_fn=output_fn,
+            approvals=ApprovalGate(ask_fn=console_ask_fn(input_fn)),
+        )
+    )
+    model = concierge.model
+    endpoint = profiles.resolve_endpoint(model)
+    host = profiles.host_of(endpoint[1]) if endpoint else "unconfigured"
+    output_fn(orb_banner(model, host, color=orbs_enabled()))
+    output_fn(
+        f"dipcatcher concierge — model {model}. Plain text chats; "
+        "/superpower, /research, /flash, /help. Ctrl-D or /exit to leave."
+    )
+    if endpoint is None:
+        output_fn(f"No endpoint configured. Run /keys set {model} to add your API key and URL.")
+    if sys.platform == "win32":
+        output_fn("On Windows, background progress updates after you submit a line.")
+    prompt_pending = True
+    while True:
+        try:
+            line = _tty_polling_read(input_fn, "dip › " if prompt_pending else "", poll_timeout_s)
+        except (EOFError, KeyboardInterrupt):
+            output_fn("")
+            concierge.shutdown()
+            return
+        if line is None:  # poll timeout — render background progress
+            prompt_pending = False
+            concierge.tick()
+            continue
+        prompt_pending = True
+        try:
+            if concierge.handle_line(line):
+                return
+        except Exception as exc:  # noqa: BLE001 — a bad turn must not kill the shell
+            typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        concierge.tick()

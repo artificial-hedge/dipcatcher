@@ -101,32 +101,9 @@ def _negative_example(record: ReceiptRecord, system: str) -> SFTExample:
     )
 
 
-def _repo_root_for(receipts_dir: str | Path | Iterable[str | Path]) -> Path | None:
-    """Directory that holds ``quality/legacy_quarantine.json`` for these receipts.
-
-    ``quant_fund.utils.repo`` is not a module. Walking up from the receipts
-    directory is what makes ``fx1 corpus build`` consult the real registry.
-    """
-    if isinstance(receipts_dir, str | Path):
-        starts = [Path(receipts_dir)]
-    else:
-        starts = [Path(d) for d in receipts_dir]
-    for start in starts:
-        current = start.resolve()
-        for parent in (current, *current.parents):
-            registry = parent / "quality" / "legacy_quarantine.json"
-            if registry.is_file() and (parent / "receipts").is_dir():
-                return parent
-            if parent == parent.parent:
-                break
-    return None
-
-
 def build_corpus(
     receipts_dir: str | Path | Iterable[str | Path],
     out_jsonl: str | Path,
-    *,
-    repo_root: Path | None = None,
 ) -> dict[str, int]:
     """Build the SFT corpus and write it as JSONL.
 
@@ -136,16 +113,8 @@ def build_corpus(
     ``receipt_sha256`` provenance field.
     """
     system = _system_prompt()
-    if repo_root is None:
-        repo_root = _repo_root_for(receipts_dir)
-    records, refused = load_receipts(receipts_dir, repo_root=repo_root)
-    stats = {
-        "loaded": len(records),
-        "refused": refused,
-        "positive": 0,
-        "negative": 0,
-        "skipped": 0,
-    }
+    records = load_receipts(receipts_dir)
+    stats = {"loaded": len(records), "positive": 0, "negative": 0, "skipped": 0}
     out_path = Path(out_jsonl)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as fh:
@@ -174,7 +143,6 @@ def build_full_corpus(
     receipts_dir: str | Path | Iterable[str | Path],
     out_jsonl: str | Path,
     *,
-    repo_root: Path | None = None,
     notebooks: list[str | Path] | None = None,
     artifacts_dir: str | Path | None = None,
 ) -> dict[str, int]:
@@ -186,7 +154,7 @@ def build_full_corpus(
     from fx1.data.ledgers import ledger_corpus
     from fx1.data.notebooks import notebook_examples
 
-    stats = build_corpus(receipts_dir, out_jsonl, repo_root=repo_root)
+    stats = build_corpus(receipts_dir, out_jsonl)
     system = _system_prompt()
     extra: list[SFTExample] = []
     for doc in notebooks or []:

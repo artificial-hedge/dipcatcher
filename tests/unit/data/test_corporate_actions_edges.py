@@ -1,7 +1,7 @@
 """Wave 37: corporate_actions adjust_prices / splits / dividends edges.
 
 Complements test_data_pit.test_split_does_not_destroy_raw (raw preservation).
-Research/infrastructure only.
+Research/infrastructure only — no live broker / vendor MD.
 """
 
 from __future__ import annotations

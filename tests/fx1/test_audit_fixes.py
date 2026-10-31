@@ -253,13 +253,7 @@ def test_corpus_skips_honesty_violating_payload(tmp_path: Path):
     )
     out = tmp_path / "corpus.jsonl"
     stats = build_corpus(tmp_path, out)
-    assert stats == {
-        "loaded": 1,
-        "refused": 0,
-        "positive": 0,
-        "negative": 0,
-        "skipped": 1,
-    }
+    assert stats == {"loaded": 1, "positive": 0, "negative": 0, "skipped": 1}
     assert out.read_text(encoding="utf-8").strip() == ""
 
 
@@ -786,9 +780,7 @@ def test_hosted_backend_pins_temperature(monkeypatch):
 
     class _Resp:
         def read(self):
-            return json.dumps(
-                {"model": "kimi-k3", "choices": [{"message": {"content": "ok"}}]}
-            ).encode()
+            return json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
 
         def __enter__(self):
             return self

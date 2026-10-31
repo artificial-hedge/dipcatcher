@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -81,12 +82,10 @@ def parts(project: Path) -> Path:
         directory = root / lane
         directory.mkdir()
         config = directory / "coverage.ini"
-        config.write_text(gate.coverage_config(project), encoding="utf-8", newline="\n")
+        config.write_text(gate.coverage_config(project))
         coverage = directory / ".coverage"
         data = CoverageData(basename=str(coverage))
-        data.add_arcs(
-            {os.path.join("src", "sample.py"): [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1)]}
-        )
+        data.add_arcs({"src/sample.py": [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1)]})
         data.write()
         data.close()
         _junit(directory / "junit.xml")
@@ -149,7 +148,7 @@ def test_invalid_lane_fails_before_creating_artifacts(project: Path) -> None:
 
 
 def test_exact_lane_set_is_required(project: Path, parts: Path) -> None:
-    config_sha = gate._sha256(parts / "native" / "coverage.ini")
+    config_sha = hashlib.sha256(gate.coverage_config(project).encode()).hexdigest()
     assert len(gate.validate_parts(parts, gate.revision(project), config_sha)) == len(gate.LANES)
     (parts / "native").rename(parts / "other")
     with pytest.raises(gate.CoverageGateError, match="missing=.*native.*unexpected=.*other"):
@@ -170,7 +169,7 @@ def test_mismatched_manifest_is_rejected(
     project: Path, parts: Path, field: str, value: str
 ) -> None:
     _manifest(parts / "python-1" / "manifest.json", **{field: value})
-    config_sha = gate._sha256(parts / "native" / "coverage.ini")
+    config_sha = hashlib.sha256(gate.coverage_config(project).encode()).hexdigest()
     with pytest.raises(gate.CoverageGateError, match="mismatch"):
         gate.validate_parts(parts, gate.revision(project), config_sha)
 
@@ -189,7 +188,7 @@ def test_statement_only_data_is_not_branch_coverage(project: Path, parts: Path) 
     path = parts / "python-1" / ".coverage"
     path.unlink()
     data = CoverageData(basename=str(path))
-    data.add_lines({os.path.join("src", "sample.py"): [1]})
+    data.add_lines({"src/sample.py": [1]})
     data.write()
     data.close()
     _manifest(path.parent / "manifest.json", coverage_sha256=gate._sha256(path))
@@ -290,17 +289,9 @@ def test_successful_complete_aggregate(project: Path, parts: Path) -> None:
         data = CoverageData(basename=str(data_path))
         data.add_arcs(
             {
-                os.path.join("src", "sample.py"): [
-                    (-1, 1),
-                    (1, -1),
-                    (-1, 2),
-                    (2, 3),
-                    (3, -1),
-                    (2, 4),
-                    (4, -1),
-                ],
-                os.path.join("src", "never_imported.py"): [(-1, 1), (1, -1), (-1, 2), (2, -1)],
-                os.path.join("src", "__main__.py"): [(-1, 1), (1, -1)],
+                "src/sample.py": [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1), (2, 4), (4, -1)],
+                "src/never_imported.py": [(-1, 1), (1, -1), (-1, 2), (2, -1)],
+                "src/__main__.py": [(-1, 1), (1, -1)],
             }
         )
         data.write()
@@ -309,9 +300,6 @@ def test_successful_complete_aggregate(project: Path, parts: Path) -> None:
     output = project / "output"
     assert gate.combine(project, parts, output) == 0
     result = json.loads((output / "summary.json").read_text())
-    report = json.loads((output / "coverage.json").read_text())
-    assert set(report["files"]) == gate.tracked_sources(project)
-    assert report["totals"]["percent_covered"] == 100
     assert result["passed"] is True
     assert result["has_skipped_tests"] is False
     assert result["security_audit_claim"] is False

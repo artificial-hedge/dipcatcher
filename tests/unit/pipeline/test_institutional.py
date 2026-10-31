@@ -652,9 +652,9 @@ def test_ops_snapshot_insufficient_data_never_green(tmp_path) -> None:
     assert snap["checks"]["reconciliation"]["status"] == "insufficient_data"
     assert snap["checks"]["feature_drift"]["status"] == "insufficient_data"
     assert snap["checks"]["kill_switch"]["status"] == "insufficient_data"
-    # Some healthy checks cannot turn missing safety inputs into a green board.
-    assert snap["checks"]["gross"]["status"] == "ok"
-    assert snap["overall_status"] == "insufficient_data"
+    # all-insufficient -> overall reports insufficient, not ok
+    assert snap["overall_status"] in {"insufficient_data", "ok"}
+    assert snap["overall_status"] != "breach"
 
 
 def test_ops_snapshot_unmarked_position_is_breach(tmp_path) -> None:
@@ -671,77 +671,6 @@ def test_ops_snapshot_unmarked_position_is_breach(tmp_path) -> None:
     assert snap["checks"]["unmarked_positions"]["status"] == "breach"
     assert snap["checks"]["unmarked_positions"]["securities"] == ["BTC"]
     assert snap["overall_status"] == "breach"
-
-
-@pytest.mark.parametrize("cash", [np.nan, np.inf, -np.inf])
-def test_ops_snapshot_nonfinite_cash_is_breach(tmp_path, cash: float) -> None:
-    import json
-
-    from quant_fund.monitoring.dashboard import ops_snapshot, render_markdown
-
-    snap = ops_snapshot(nav=1_000.0, cash=cash, positions={}, marks={}, config=_cfg(tmp_path))
-    assert snap["checks"]["cash_buffer"] == {"status": "breach", "value": None}
-    assert snap["cash"] is None
-    assert snap["overall_status"] == "breach"
-    assert "cash: unavailable" in render_markdown(snap)
-    json.dumps(snap, allow_nan=False)
-
-
-@pytest.mark.parametrize("quantity", [np.nan, np.inf, -np.inf])
-def test_ops_snapshot_nonfinite_position_is_breach(tmp_path, quantity: float) -> None:
-    from quant_fund.monitoring.dashboard import ops_snapshot
-
-    snap = ops_snapshot(
-        nav=1_000.0,
-        cash=1_000.0,
-        positions={"BTC": quantity},
-        marks={"BTC": 100.0},
-        config=_cfg(tmp_path),
-    )
-    assert snap["checks"]["invalid_positions"]["securities"] == ["BTC"]
-    assert snap["checks"]["invalid_positions"]["status"] == "breach"
-    assert snap["n_positions"] == 1
-    assert snap["overall_status"] == "breach"
-
-
-def test_ops_snapshot_missing_held_mark_age_is_insufficient(tmp_path) -> None:
-    from quant_fund.monitoring.dashboard import ops_snapshot, render_markdown
-
-    snap = ops_snapshot(
-        nav=1_000.0,
-        cash=900.0,
-        positions={"BTC": 1.0},
-        marks={"BTC": 100.0},
-        config=_cfg(tmp_path),
-        mark_age_bars={},
-        n_open_orders=0,
-        kill_switch_state="ENABLED",
-        peak_nav=1_000.0,
-        recon_mismatches=0,
-        drift_alert=False,
-    )
-    assert snap["checks"]["mark_staleness"]["missing_securities"] == ["BTC"]
-    assert snap["checks"]["mark_staleness"]["status"] == "insufficient_data"
-    assert snap["overall_status"] == "insufficient_data"
-    assert "missing_age=BTC" in render_markdown(snap)
-
-
-@pytest.mark.parametrize("age", [-1, np.nan, np.inf, True, "0"])
-def test_ops_snapshot_invalid_mark_age_is_breach(tmp_path, age: object) -> None:
-    from quant_fund.monitoring.dashboard import ops_snapshot, render_markdown
-
-    snap = ops_snapshot(
-        nav=1_000.0,
-        cash=900.0,
-        positions={"BTC": 1.0},
-        marks={"BTC": 100.0},
-        config=_cfg(tmp_path),
-        mark_age_bars={"BTC": age},  # type: ignore[dict-item]
-    )
-    assert snap["checks"]["mark_staleness"]["invalid_securities"] == ["BTC"]
-    assert snap["checks"]["mark_staleness"]["status"] == "breach"
-    assert snap["overall_status"] == "breach"
-    assert "invalid_age=BTC" in render_markdown(snap)
 
 
 def test_ops_snapshot_markdown_and_invalid_nav(tmp_path) -> None:

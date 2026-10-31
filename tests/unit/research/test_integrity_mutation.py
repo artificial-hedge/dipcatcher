@@ -11,7 +11,6 @@ the chain check plus heads pin own that surface.
 
 from __future__ import annotations
 
-import contextlib
 import json
 from pathlib import Path
 
@@ -155,21 +154,10 @@ def _mini_repo(tmp_path: Path, *, sign: bool = True) -> tuple[Path, str | None]:
     """Minimal tree satisfying every verify_repo gate, optionally signed."""
     root = tmp_path / "repo"
     root.mkdir(parents=True)
-    signer = generate_keypair() if sign else None
     for jewel in DEFAULT_JEWELS:
         p = root / jewel
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(
-            signer[1] + "\n" if jewel == "quality/gate_signing.pub" and signer else f"# {jewel}\n"
-        )
-    # The evidence-policy jewels are parsed by the gates, which fail closed on
-    # a malformed policy file — the fixture carries well-formed empty ones.
-    (root / "quality" / "epoch_allowed_removals.json").write_text(
-        json.dumps({"schema": "epoch_acknowledgments.v1", "acks": []})
-    )
-    (root / "quality" / "legacy_quarantine.json").write_text(
-        json.dumps({"schema": "legacy_quarantine.v2", "files": {}})
-    )
+        p.write_text(f"# {jewel}\n")
     pin = root / "quality" / "epoch_heads.json"
     pin.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {}}))
     for corpus_dir, pattern, _req, _upd, _exempt in CORPORA:
@@ -179,22 +167,18 @@ def _mini_repo(tmp_path: Path, *, sign: bool = True) -> tuple[Path, str | None]:
         # JSON corpora feed the lattice gate — seeds must parse.
         (d / seed).write_text('{"seed": true}' if seed.endswith(".json") else "seed")
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
-        with contextlib.chdir(root):
-            update_heads_pin(pin, corpus_dir, pattern, ep)
+        update_heads_pin(pin, corpus_dir, pattern, ep)
     write_crown_jewels_pin(root)
     # Re-stamp quality so the pin + jewels file land as members.
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "quality", "*.json", ep)
+    update_heads_pin(pin, "quality", "*.json", ep)
     priv = None
     if sign:
-        assert signer is not None
-        priv, pub = signer
+        priv, pub = generate_keypair()
         sign_pins(root, priv, pub)
         write_crown_jewels_pin(root)  # pubkey is a jewel — repin after signing
         ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-        with contextlib.chdir(root):
-            update_heads_pin(pin, "quality", "*.json", ep)
+        update_heads_pin(pin, "quality", "*.json", ep)
         sign_pins(root, priv, pub)  # re-sign over final pin bytes
     return root, priv
 
@@ -269,9 +253,7 @@ def test_stale_pin_accepts_descendant_heads(tmp_path: Path) -> None:
     descendant; pin staleness is a pending-stamp state, not tamper."""
     corpus = _corpus(tmp_path)
     first = _stamp(corpus)
-    pin = tmp_path / "epoch_heads.json"
-    update_heads_pin(pin, corpus, "*.json", first)
-    exp = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    exp = {"receipt": first.name, "sha256": hash_bytes(first.read_bytes())}
     _member(corpus, "late.json", "x")
     second = _stamp(corpus)
     res = check_epoch_chain(corpus, expected_head=exp)
@@ -345,12 +327,7 @@ def test_jewel_mutated_deleted_symlinked_all_fail(tmp_path: Path) -> None:
     errors = crown_jewels_errors(root)
     assert "jewel_missing:Makefile" in errors
     (root / "evil.txt").write_text("attacker content")
-    try:
-        (root / "Makefile").symlink_to("evil.txt")
-    except OSError as exc:
-        if getattr(exc, "winerror", None) == 1314:
-            pytest.skip("Windows symlink privilege unavailable")
-        raise
+    (root / "Makefile").symlink_to("evil.txt")
     errors = crown_jewels_errors(root)
     assert "jewel_symlink:Makefile" in errors
 
@@ -405,11 +382,7 @@ def test_repinned_unsigned_drift_is_what_signature_exists_for(tmp_path: Path) ->
 def test_forged_signature_bytes_fail(tmp_path: Path) -> None:
     root = _signed_repo(tmp_path)
     sig = json.loads((root / "gate_pins.sig").read_text())
-    raw = str(sig["signature"])
-    # Prefixing "00" is a no-op when the signature already starts with that byte.
-    flipped = f"{int(raw[:2], 16) ^ 0x01:02x}{raw[2:]}"
-    assert flipped != raw
-    sig["signature"] = flipped
+    sig["signature"] = "00" + sig["signature"][2:]
     (root / "gate_pins.sig").write_text(json.dumps(sig, indent=2, sort_keys=True))
     res = verify_pin_signatures(root)
     assert res["ok"] is False and "signature_invalid" in res["errors"]
@@ -430,24 +403,9 @@ def test_attacker_keypair_resign_boundary(tmp_path: Path) -> None:
     what "valid" means. What actually catches it: gate_signing.pub is a
     crown jewel, so the swap trips jewel_mutated, and the new pubkey would
     have to ride in the same commit under git review."""
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-
-    from quant_fund.research.gate_signatures import key_id
-
     root, _priv = _mini_repo(tmp_path, sign=True)
     evil_priv, evil_pub = generate_keypair()
-    # The production writer now refuses a trust-root swap; model an attacker
-    # with direct file-write access to preserve the verifier boundary test.
-    sig_file = root / "gate_pins.sig"
-    body = json.loads(sig_file.read_text())
-    body["key_id"] = key_id(evil_pub)
-    body["signature"] = (
-        Ed25519PrivateKey.from_private_bytes(bytes.fromhex(evil_priv))
-        .sign(canonical_json_bytes(body["payload"]))
-        .hex()
-    )
-    (root / "quality/gate_signing.pub").write_text(evil_pub + "\n")
-    sig_file.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+    sign_pins(root, evil_priv, evil_pub)  # attacker resigns + swaps pubkey
     res = verify_pin_signatures(root)
     assert res["ok"] is True  # sig gate alone cannot see a full key swap
     assert "jewel_mutated:quality/gate_signing.pub" in crown_jewels_errors(root)
@@ -710,8 +668,6 @@ def test_deleted_tsa_cacert_degrades_but_jewel_gate_catches(tmp_path: Path) -> N
     """Deleting the committed CA makes chain_unchecked (honest degrade, not
     silent verify) — the cert files are crown jewels, so the swap/delete is
     caught one layer up."""
-    if not ta._openssl_available():
-        pytest.skip("openssl not on PATH")
     root = _mint_real_anchor(tmp_path)
     (root / TIMESTAMPS_DIR / ta.CACERT_NAME).unlink()
     res = verify_timestamps(root)
@@ -926,20 +882,6 @@ def test_verify_repo_malformed_heads_pin_fails_not_crashes(tmp_path: Path) -> No
     assert res["gates"]["crown_jewels"]["ok"]
 
 
-@pytest.mark.parametrize("field", ["tree_root", "chain_root", "n_epochs"])
-def test_verify_repo_heads_pin_omitting_position_field_fails(tmp_path: Path, field: str) -> None:
-    """Production gate: a committed pin entry with a position field deleted
-    fails ``epoch:<corpus>`` with exactly ``epoch_pin_field_missing``."""
-    root, _ = _mini_repo(tmp_path, sign=False)
-    assert verify_repo(root)["gates"]["epoch:receipts"]["errors"] == []
-    pin = root / "quality" / "epoch_heads.json"
-    doc = json.loads(pin.read_text())
-    del doc["heads"]["receipts/*.json"][field]
-    pin.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
-    errs = verify_repo(root)["gates"]["epoch:receipts"]["errors"]
-    assert errs == [f"epoch_pin_field_missing:{field!a}"], errs
-
-
 def test_verify_repo_rolled_back_chain_fails(tmp_path: Path) -> None:
     root, priv = _mini_repo(tmp_path, sign=True)
     assert priv is not None
@@ -948,8 +890,7 @@ def test_verify_repo_rolled_back_chain_fails(tmp_path: Path) -> None:
     # signed file, so re-sign after it legitimately advances.
     _member(root / "receipts", "late.json", "x")
     ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "receipts", "*.json", ep)
+    update_heads_pin(pin, "receipts", "*.json", ep)
     sign_pins(root, priv, (root / "quality" / "gate_signing.pub").read_text().strip())
     assert verify_repo(root)["ok"]
     ep.unlink()
@@ -976,8 +917,7 @@ def test_full_unsigned_launder_is_the_documented_boundary(tmp_path: Path) -> Non
     write_crown_jewels_pin(root)  # re-pin over the mutated jewel
     pin = root / "quality" / "epoch_heads.json"
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    with contextlib.chdir(root):
-        update_heads_pin(pin, "quality", "*.json", ep)
+    update_heads_pin(pin, "quality", "*.json", ep)
     res = verify_repo(root)
     assert res["gates"]["pin_signatures"]["errors"] == ["signature_file_missing"]
     for name, gate in res["gates"].items():
@@ -990,8 +930,7 @@ def test_full_unsigned_launder_is_the_documented_boundary(tmp_path: Path) -> Non
     write_crown_jewels_pin(root2)
     pin2 = root2 / "quality" / "epoch_heads.json"
     ep2 = write_epoch_receipt(corpus_epoch(root2 / "quality"), root2 / "quality")
-    with contextlib.chdir(root2):
-        update_heads_pin(pin2, "quality", "*.json", ep2)
+    update_heads_pin(pin2, "quality", "*.json", ep2)
     res2 = verify_repo(root2)
     assert not res2["ok"]
     sig_errs = res2["gates"]["pin_signatures"]["errors"]

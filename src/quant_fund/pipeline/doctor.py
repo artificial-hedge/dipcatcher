@@ -17,10 +17,8 @@ from quant_fund.config.models import AppConfig, RuntimeMode
 from quant_fund.research.catalog import BENCHMARK_CATALOG_VERSION, BENCHMARK_FAMILY_ORDER
 from quant_fund.research.verify import verify_research_artifact
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
-from quant_fund.utils.lab_paths import data_dir_status, resolve_data_root
 
 _REQUIRED_ARTIFACTS = frozenset({"bars", "actions", "master", "silver", "universe"})
-_DATA_DIR_PARTS = ("raw", "bronze", "silver", "gold", "metadata")
 _SHA256: re.Pattern[str] | None = None
 
 
@@ -43,48 +41,6 @@ def _core_import_status() -> str:
     return "ok"
 
 
-def _stamp_data_dirs(status: dict[str, object], root: Path) -> None:
-    """Record each lake dir. Doctor never creates directories."""
-    for part in _DATA_DIR_PARTS:
-        path = root / part
-        state = data_dir_status(path, create=False)
-        status[f"dir_{part}"] = state
-        status[f"dir_{part}_created"] = "yes" if state == "created" else "no"
-
-
-def _record_runtime_flags(status: dict[str, object], cfg: AppConfig) -> None:
-    status["core_kline_engine"] = "robinhood_plus" if cfg.robinhood_plus.enabled else "disabled"
-    status["robinhood_plus_backend"] = cfg.robinhood_plus.backend.value
-    status["robinhood_plus_blend_weight"] = float(cfg.robinhood_plus.blend_weight)
-    status["robinhood_plus_sizes_book"] = bool(
-        cfg.robinhood_plus.enabled and cfg.robinhood_plus.blend_weight > 0.0
-    )
-    status["fx1_package"] = "ok" if importlib.util.find_spec("fx1") else "missing"
-    status["fx1_moonshot_key"] = "set" if os.environ.get("MOONSHOT_API_KEY") else "unset"
-    status["fx1_signing_key"] = "set" if os.environ.get("FX1_SIGNING_KEY") else "unset"
-
-
-def _doctor_data_root(configured: str | Path) -> Path:
-    """Lake root for a diagnosis.
-
-    Inside the checkout, relative roots stay checkout-rooted. An empty working
-    directory outside the checkout is diagnosed as itself and is not attached
-    to the checkout lake.
-    """
-    from quant_fund.utils.lab_paths import discover_repo_root
-
-    path = Path(configured).expanduser()
-    if path.is_absolute():
-        return path.resolve()
-    cwd = Path.cwd().resolve()
-    checkout = discover_repo_root().resolve()
-    try:
-        cwd.relative_to(checkout)
-    except ValueError:
-        return (cwd / path).resolve()
-    return resolve_data_root(configured)
-
-
 def doctor(config_path: str | None = None) -> dict[str, object]:
     status: dict[str, object] = {
         "firm": __firm__,
@@ -104,8 +60,11 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
     status["live_allowed"] = str(cfg.runtime.allow_live)
     if cfg.runtime.mode is RuntimeMode.LIVE and not cfg.runtime.allow_live:
         status["live"] = "REJECTED"
-    root = _doctor_data_root(cfg.data.root)
-    _stamp_data_dirs(status, root)
+    root = Path(cfg.data.root)
+    for part in ("raw", "bronze", "silver", "gold", "metadata"):
+        p = root / part
+        p.mkdir(parents=True, exist_ok=True)
+        status[f"dir_{part}"] = "ok" if p.is_dir() else "missing"
     manifest = root / "metadata" / "data_manifest.json"
     if not manifest.is_file():
         status["data_manifest"] = "missing"
@@ -175,5 +134,14 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
         status["research_receipt"] = "ok" if verification["valid"] else "invalid"
     status["core_imports"] = _core_import_status()
     status["default_fill"] = cfg.execution.fill.value
-    _record_runtime_flags(status, cfg)
+    status["core_kline_engine"] = "robinhood_plus" if cfg.robinhood_plus.enabled else "disabled"
+    status["robinhood_plus_backend"] = cfg.robinhood_plus.backend.value
+    status["robinhood_plus_blend_weight"] = float(cfg.robinhood_plus.blend_weight)
+    status["robinhood_plus_sizes_book"] = bool(
+        cfg.robinhood_plus.enabled and cfg.robinhood_plus.blend_weight > 0.0
+    )
+    # fx-1 harness status — presence flags only, never secret values.
+    status["fx1_package"] = "ok" if importlib.util.find_spec("fx1") else "missing"
+    status["fx1_moonshot_key"] = "set" if os.environ.get("MOONSHOT_API_KEY") else "unset"
+    status["fx1_signing_key"] = "set" if os.environ.get("FX1_SIGNING_KEY") else "unset"
     return status

@@ -6,7 +6,8 @@ categorical distributional RL layer over the lane B4-i zero-intelligence LOB
 (2017), arXiv:1707.06887 (fixed atom support, Algorithm 1 categorical
 projection, cross-entropy loss), van Hasselt, Guez, Silver (2016),
 arXiv:1509.06461 (double-Q target action selection) and Mnih et al. (2015)
-(periodic hard target sync). No market data is touched anywhere.
+(periodic hard target sync). No market data is touched anywhere; there is no
+live-trading claim.
 
 Three groups:
 
@@ -132,11 +133,10 @@ GAMMA = 0.90
 DOCUMENTED_MARGIN = 0.003
 
 #: Tolerance for "reached the best fixed action cell": the pinned run lands
-#: -0.0006 below it (seed 11 lands +0.0038 above). Windows py3.13 / the
-#: runner's torch build measured a higher best cell (+0.01608) and a trained
-#: greedy mean of +0.01186, a 0.0042 shortfall. 0.005 still requires the
-#: policy to sit with the best open-loop cell, not merely above random.
-BEST_CELL_TOLERANCE = 0.005
+#: -0.0006 below it (seed 11 lands +0.0038 above), so a state-dependent policy
+#: is expected to be statistically indistinguishable from the best *open-loop*
+#: cell, not necessarily better.
+BEST_CELL_TOLERANCE = 0.002
 
 #: Relative cross-entropy reduction required over training (measured 0.63-0.72
 #: across four seeds; the assertion asks for 0.25).

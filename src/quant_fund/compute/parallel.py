@@ -6,11 +6,9 @@ completion order. Callers that draw random numbers must use that seed.
 Callers whose existing math is deterministic ignore it so published numbers
 stay on the original formula.
 
-Linux prefers ``forkserver`` (then ``spawn``, then ``fork``) so workers do not
-inherit a parent that already started threaded runtimes (e.g. JAX), which can
-deadlock under ``fork``. A pool that cannot start falls back to the calling
-process; task exceptions still propagate. Below ``min_items`` the map stays
-inline.
+Linux uses ``fork`` so workers inherit the already-imported parent. A pool
+that cannot start falls back to the calling process; task exceptions still
+propagate. Below ``min_items`` the map stays inline.
 """
 
 from __future__ import annotations
@@ -41,16 +39,6 @@ def _invoke[T, R](payload: tuple[Callable[[T, int], R], int, T]) -> R:
     return fn(item, seed)
 
 
-def _process_pool_context() -> multiprocessing.context.BaseContext:
-    if os.name == "posix":
-        for method in ("forkserver", "spawn", "fork"):
-            try:
-                return multiprocessing.get_context(method)
-            except ValueError:
-                continue
-    return multiprocessing.get_context("spawn")
-
-
 def process_map[T, R](
     fn: Callable[[T, int], R],
     items: Sequence[T],
@@ -75,7 +63,7 @@ def process_map[T, R](
         return _serial()
     payloads = [(fn, seed, item) for seed, item in zip(seeds, sequenced, strict=True)]
     try:
-        ctx = _process_pool_context()
+        ctx = multiprocessing.get_context("fork")
         pool = ProcessPoolExecutor(max_workers=workers, mp_context=ctx)
     except (OSError, ValueError):
         # fork is unavailable, or the pool cannot be created.

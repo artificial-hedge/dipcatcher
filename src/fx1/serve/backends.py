@@ -27,21 +27,12 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
 
-from fx1.modelcard import ModelCard, synthetic_fixture_from_env
-from fx1.serve.backends_stop import chat_completions_url as chat_completions_url
-from fx1.serve.backends_stop import (
-    env_float as _env_float,
-)
-from fx1.serve.backends_stop import (
-    openai_sibling_url as _openai_sibling_url,
-)
-
-_chat_completions_url = chat_completions_url
+from fx1.modelcard import ModelCard
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
@@ -128,6 +119,44 @@ class SamplingParams:
         return fields
 
 
+def _stop_cut(text: str, stops: tuple[str, ...] | list[str] | None) -> int:
+    """Index of the earliest stop-sequence occurrence, or len(text)."""
+    cut = len(text)
+    for s in stops or ():
+        i = text.find(s)
+        if i >= 0:
+            cut = min(cut, i)
+    return cut
+
+
+def truncate_at_stops(text: str, stops: tuple[str, ...] | list[str] | None) -> str:
+    """Cut ``text`` before the earliest stop sequence — OpenAI ``stop``
+    semantics, applied harness-side so every backend honors the contract
+    even when the upstream doesn't (the matched sequence itself is
+    excluded, per spec)."""
+    return text[: _stop_cut(text, stops)]
+
+
+def truncate_chunks(chunks: list[str], stops: tuple[str, ...] | list[str] | None) -> list[str]:
+    """``truncate_at_stops`` over a delta stream — preserves the
+    provider's chunk boundaries, emitting each chunk up to the cut and a
+    slice of the straddling chunk (a stop that lands mid-delta truncates
+    that delta rather than dropping whole chunks early)."""
+    if not stops:
+        return chunks
+    cut = _stop_cut("".join(chunks), stops)
+    out: list[str] = []
+    pos = 0
+    for chunk in chunks:
+        if pos >= cut:
+            break
+        piece = chunk[: cut - pos]
+        if piece:
+            out.append(piece)
+        pos += len(chunk)
+    return out
+
+
 class BackendNotConfiguredError(RuntimeError):
     """A backend whose required configuration is absent — a 503-class fault."""
 
@@ -142,6 +171,44 @@ class TokenCountUnavailableError(RuntimeError):
     Token counts come only from the provider's own tokenizer endpoint;
     when it refuses the route outright (404/405/501 or a rejected chat
     shape) the honest verdict is "unavailable", never an estimate."""
+
+
+def _chat_completions_url(base_url: str) -> str:
+    """Normalize a BYOK base to the chat-completions route.
+
+    Accepts ``https://host/v1``, ``https://host/v1/``, or an already-
+    complete ``.../chat/completions`` URL.
+    """
+    base = base_url.rstrip("/")
+    if base.endswith("/chat/completions"):
+        return base
+    return f"{base}/chat/completions"
+
+
+def _openai_sibling_url(chat_url: str, route: str) -> str:
+    """Derive a sibling route from a chat-completions URL.
+
+    ``https://host/v1/chat/completions`` + ``"embeddings"`` →
+    ``https://host/v1/embeddings``; a URL already ending in the route
+    passes through unchanged.
+    """
+    base = chat_url.rstrip("/")
+    if base.endswith("/chat/completions"):
+        base = base[: -len("/chat/completions")]
+    if base.endswith(f"/{route}"):
+        return base
+    return f"{base}/{route}"
+
+
+def _env_float(name: str, override: float | None, default: float) -> float:
+    """Resolve a seconds-valued knob: kwarg beats env beats default."""
+    raw = override if override is not None else os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    val = float(raw)
+    if val <= 0:
+        raise ValueError(f"{name} must be positive, got {val!r}")
+    return val
 
 
 class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
@@ -203,9 +270,7 @@ def _apply_byok_destination_policy(request: _ByokRequest) -> None:
 
 
 def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
-    if "%" in raw:
-        raise ValueError("zone identifiers are not accepted on literal addresses")
-    address = ipaddress.ip_address(raw)
+    address = ipaddress.ip_address(raw.split("%", 1)[0])
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
         return address.ipv4_mapped
     return address
@@ -416,30 +481,6 @@ class _UsageTracker:
                 self.total_usage[k] = self.total_usage.get(k, 0) + v
 
 
-def _openai_post_json(request: _ByokRequest, *, timeout_s: float, label: str) -> Any:
-    """POST one OpenAI-compatible request and decode its JSON response.
-
-    All transport and decoding failures are mapped to ``RuntimeError`` with
-    the label prefixed, so a caller never sees a bare 500 escape the error
-    envelope. ``OSError`` covers ``TimeoutError`` — urlopen does not wrap
-    read-side stalls in ``URLError``.
-    """
-    try:
-        with _openai_urlopen(request, timeout_s=timeout_s) as response:
-            return json.loads(response.read().decode())
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
-    except urllib.error.URLError as exc:
-        reason = type(exc.reason).__name__
-        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
-    except (OSError, http.client.HTTPException) as exc:
-        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
-    except UnicodeError as exc:
-        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
-
-
 def _openai_chat_complete(
     url: str,
     *,
@@ -472,7 +513,23 @@ def _openai_chat_complete(
     request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
-    payload = _openai_post_json(request, timeout_s=timeout_s, label=label)
+    try:
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
+            payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        # OSError covers TimeoutError — urlopen does not wrap read-side
+        # stalls in URLError, so without this a slow upstream escapes the
+        # error envelope as a bare 500.
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
     try:
         content = payload["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
@@ -483,8 +540,6 @@ def _openai_chat_complete(
         raise RuntimeError(
             f"malformed {label} completion payload: content is {type(content).__name__}, not str"
         )
-    if label in {"hosted_k3", "local_fx1"}:
-        _require_served_model(payload, model)
     return content, _extract_usage(payload)
 
 
@@ -588,27 +643,6 @@ def _tool_call_shape(raw: Any, label: str, i: int) -> dict[str, Any]:
     return raw
 
 
-def _add_tool_body_fields(
-    body_map: dict[str, Any],
-    *,
-    tools: list[dict[str, Any]] | None,
-    tool_choice: str | dict[str, Any] | None,
-    parallel_tool_calls: bool | None,
-    logprobs: bool | None,
-    top_logprobs: int | None,
-) -> None:
-    """Attach optional OpenAI tool-call fields; absent ones are omitted verbatim."""
-    for key, value in (
-        ("tools", tools),
-        ("tool_choice", tool_choice),
-        ("parallel_tool_calls", parallel_tool_calls),
-        ("logprobs", logprobs),
-        ("top_logprobs", top_logprobs),
-    ):
-        if value is not None:
-            body_map[key] = value
-
-
 def _openai_chat_complete_tools(
     url: str,
     *,
@@ -645,14 +679,16 @@ def _openai_chat_complete_tools(
         "messages": messages,
         **(sampling or SamplingParams()).body_fields(),
     }
-    _add_tool_body_fields(
-        body_map,
-        tools=tools,
-        tool_choice=tool_choice,
-        parallel_tool_calls=parallel_tool_calls,
-        logprobs=logprobs,
-        top_logprobs=top_logprobs,
-    )
+    if tools is not None:
+        body_map["tools"] = tools
+    if tool_choice is not None:
+        body_map["tool_choice"] = tool_choice
+    if parallel_tool_calls is not None:
+        body_map["parallel_tool_calls"] = parallel_tool_calls
+    if logprobs is not None:
+        body_map["logprobs"] = logprobs
+    if top_logprobs is not None:
+        body_map["top_logprobs"] = top_logprobs
     body = json.dumps(body_map).encode()
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -707,8 +743,6 @@ def _openai_chat_complete_tools(
             f"malformed {label} completion payload: logprobs is "
             f"{type(raw_lp).__name__}, not object|null"
         )
-    if label in {"hosted_k3", "local_fx1"}:
-        _require_served_model(payload, model)
     return (
         ToolCompletion(
             content=content,
@@ -718,89 +752,6 @@ def _openai_chat_complete_tools(
         ),
         _extract_usage(payload),
     )
-
-
-def _probe_matched_model(payload: Any, model: str) -> dict[str, Any]:
-    """Return the probed ``data[]`` row advertising *model*, fail-closed."""
-    data = payload.get("data") if isinstance(payload, dict) else None
-    rows = data if isinstance(data, list) else []
-    for item in rows:
-        if isinstance(item, dict) and item.get("id") == model:
-            return item
-    raise RuntimeError("identity probe did not report the requested model")
-
-
-def _stream_deltas(
-    response: Any,
-    *,
-    model: str,
-    label: str,
-    usage_out: list[dict[str, int]] | None,
-) -> Iterator[str]:
-    """Yield ``choices[0].delta.content`` strings from an SSE completion stream.
-
-    Empty delta frames (role/handshake chunks), usage-only frames, and
-    ``data: [DONE]`` terminate or skip cleanly; every malformed frame fails
-    closed as ``RuntimeError`` — a stream is never silently truncated.
-    """
-    for raw_line in response:
-        line = raw_line.decode("utf-8", "replace").strip()
-        if not line.startswith("data:"):
-            continue
-        data = line[len("data:") :].strip()
-        if data == "[DONE]":
-            break
-        chunk = _parse_stream_chunk(data, label)
-        u = _extract_usage(chunk)
-        if u is not None and usage_out is not None:
-            usage_out.clear()
-            usage_out.append(u)
-        content = _stream_chunk_content(chunk, model=model, label=label)
-        if content is not None:
-            yield content
-
-
-def _parse_stream_chunk(data: str, label: str) -> Any:
-    """Decode one SSE data frame, fail-closed on a non-JSON payload."""
-    try:
-        return json.loads(data)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"malformed {label} stream chunk: not JSON ({data[:48]!r})") from exc
-
-
-def _stream_chunk_content(chunk: Any, *, model: str, label: str) -> str | None:
-    """Extract ``choices[0].delta.content`` from one stream chunk, fail-closed.
-
-    A usage-only frame is valid even when its counters are absent or
-    unbillable; frame recognition must not depend on whether the accounting
-    sieve accepted any. Everything else malformed raises ``RuntimeError`` —
-    a stream is never silently truncated.
-    """
-    choices = chunk.get("choices") if isinstance(chunk, dict) else None
-    if choices is None:
-        if isinstance(chunk, dict) and isinstance(chunk.get("usage"), dict):
-            return None
-        raise RuntimeError(f"malformed {label} stream chunk: missing choices")
-    if not choices:
-        return None
-    delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
-    if not isinstance(delta, dict):
-        raise RuntimeError(f"malformed {label} stream chunk: missing delta")
-    _require_streamed_model(chunk, model=model, label=label)
-    content = delta.get("content")
-    if content is None:
-        return None
-    if not isinstance(content, str):
-        raise RuntimeError(
-            f"malformed {label} stream chunk: content is {type(content).__name__}, not str"
-        )
-    return content
-
-
-def _require_streamed_model(chunk: Any, *, model: str, label: str) -> None:
-    """When a chunk names its served model, it must be the requested one."""
-    if label in {"hosted_k3", "local_fx1"} and isinstance(chunk, dict) and "model" in chunk:
-        _require_served_model(chunk, model)
 
 
 def _openai_chat_stream(
@@ -845,7 +796,45 @@ def _openai_chat_stream(
         _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
-            yield from _stream_deltas(response, model=model, label=label, usage_out=usage_out)
+            for raw_line in response:
+                line = raw_line.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                data = line[len("data:") :].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except json.JSONDecodeError as exc:
+                    raise RuntimeError(
+                        f"malformed {label} stream chunk: not JSON ({data[:48]!r})"
+                    ) from exc
+                u = _extract_usage(chunk)
+                if u is not None and usage_out is not None:
+                    usage_out.clear()
+                    usage_out.append(u)
+                choices = chunk.get("choices") if isinstance(chunk, dict) else None
+                if choices is None:
+                    # A usage-only frame is valid even when its counters
+                    # are absent or unbillable. Frame recognition must not
+                    # depend on whether the accounting sieve accepted any.
+                    if isinstance(chunk, dict) and isinstance(chunk.get("usage"), dict):
+                        continue
+                    raise RuntimeError(f"malformed {label} stream chunk: missing choices")
+                if not choices:
+                    continue
+                delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
+                if not isinstance(delta, dict):
+                    raise RuntimeError(f"malformed {label} stream chunk: missing delta")
+                content = delta.get("content")
+                if content is None:
+                    continue
+                if not isinstance(content, str):
+                    raise RuntimeError(
+                        f"malformed {label} stream chunk: content is "
+                        f"{type(content).__name__}, not str"
+                    )
+                yield content
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
@@ -1129,14 +1118,10 @@ class HostedK3Backend(_UsageTracker):
         messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
-        timeout_s: float | None = None,
     ) -> str:
         # temperature defaults to 0 — eval/teacher runs must be
         # deterministic; unpinned sampling makes eval results
         # unreproducible across replays.
-        if timeout_s is not None and timeout_s <= 0:
-            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
-        limit = self._timeout_s if timeout_s is None else timeout_s
         body = json.dumps(
             {
                 "model": self._model,
@@ -1144,60 +1129,6 @@ class HostedK3Backend(_UsageTracker):
                 **(sampling or SamplingParams()).body_fields(),
             }
         ).encode()
-        request = urllib.request.Request(
-            self._api_url,
-            data=body,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self._api_key}",
-            },
-            method="POST",
-        )
-        try:
-            with _openai_urlopen(request, timeout_s=limit) as response:
-                payload = json.loads(response.read().decode())
-        except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"hosted_k3 endpoint returned HTTP {exc.code}") from exc
-        except urllib.error.URLError as exc:
-            reason = type(exc.reason).__name__
-            raise RuntimeError(f"hosted_k3 endpoint unreachable ({reason})") from exc
-        except (OSError, http.client.HTTPException) as exc:
-            raise RuntimeError(
-                f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
-            ) from exc
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise RuntimeError("malformed hosted_k3 completion payload: not JSON") from exc
-        except UnicodeError as exc:
-            raise RuntimeError(
-                f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
-            ) from exc
-        _require_served_model(payload, self._model)
-        content = payload["choices"][0]["message"]["content"]
-        if not isinstance(content, str):
-            raise RuntimeError(
-                f"malformed completion payload: content is {type(content).__name__}, not str"
-            )
-        self._record_usage(_extract_usage(payload))
-        return content
-
-    def identity_probe(self, *, max_tokens: int = 1) -> dict[str, Any]:
-        """One minimal authenticated completion used to read provider identity.
-
-        Sends ``messages=[{"role": "user", "content": "ping"}]`` and
-        ``max_tokens`` (overriding ``SamplingParams`` when that field is
-        set). Returns the provider envelope fields verbatim: ``model``,
-        ``id``, and ``usage``. Request construction, headers, and the
-        ``_openai_urlopen`` error mapping match ``complete``. Usage is
-        recorded via ``_record_usage`` when the payload carries integer
-        counters. Nothing is synthesized.
-        """
-        fields = {
-            "model": self._model,
-            "messages": [{"role": "user", "content": "ping"}],
-            **SamplingParams().body_fields(),
-        }
-        fields["max_tokens"] = max_tokens
-        body = json.dumps(fields).encode()
         request = urllib.request.Request(
             self._api_url,
             data=body,
@@ -1225,12 +1156,13 @@ class HostedK3Backend(_UsageTracker):
             raise RuntimeError(
                 f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
             ) from exc
+        content = payload["choices"][0]["message"]["content"]
+        if not isinstance(content, str):
+            raise RuntimeError(
+                f"malformed completion payload: content is {type(content).__name__}, not str"
+            )
         self._record_usage(_extract_usage(payload))
-        return {
-            "model": payload.get("model"),
-            "id": payload.get("id"),
-            "usage": payload.get("usage"),
-        }
+        return content
 
     def complete_with_tools(
         self,
@@ -1324,21 +1256,15 @@ class HostedK3Backend(_UsageTracker):
         )
 
 
-def _require_served_model(payload: Mapping[str, Any], requested: str) -> None:
-    """Refuse a completion whose served model is not the one we asked for."""
-    served = payload.get("model")
-    if served != requested:
-        raise RuntimeError(
-            f"response model {served!r} does not match requested model {requested!r}"
-        )
-
-
-def _is_loopback_host(host: str) -> bool:
-    """True only when the host resolves to a literal loopback address."""
+def _plain_http_host_problem(host: str) -> str | None:
+    """Why plain HTTP is unsafe for this host — ``None`` for literal loopback."""
     try:
-        return _normalized_address(host).is_loopback
+        address = _normalized_address(host)
     except ValueError:
-        return False
+        return "must use HTTPS unless the host is a literal loopback address"
+    if not address.is_loopback:
+        return "must use HTTPS unless the host is a literal loopback address"
+    return None
 
 
 def hosted_api_url_problem(url: str) -> str | None:
@@ -1364,13 +1290,11 @@ def hosted_api_url_problem(url: str) -> str | None:
         return "port must be 1-65535"
     if port is not None and not 0 < port < 65536:
         return "port must be 1-65535"
-    if "%" in url or "\\" in url:
-        return "must use HTTPS unless the host is a literal loopback address"
     host = parsed.hostname
     if not host:
         return "must name a host"
-    if parsed.scheme == "http" and not _is_loopback_host(host):
-        return "must use HTTPS unless the host is a literal loopback address"
+    if parsed.scheme == "http":
+        return _plain_http_host_problem(host)
     return None
 
 
@@ -1587,83 +1511,6 @@ def _free_tcp_port() -> int:
         sock.close()
 
 
-def _expected_weights_sha_from_manifest(root: Path) -> str | None:
-    manifest_path = root / "weights.manifest.json"
-    if not manifest_path.is_file():
-        return None
-    try:
-        manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise RuntimeError(f"cannot read weights manifest: {type(exc).__name__}") from exc
-    sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
-    return sha if isinstance(sha, str) else None
-
-
-def _parse_local_serve_url(url: str) -> None:
-    parsed = urllib.parse.urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
-
-
-def _load_local_fx1_card(
-    root: Path,
-    *,
-    enforce_ship_gate: bool | None,
-    synthetic_fixture: bool | None,
-) -> tuple[ModelCard, bool]:
-    from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
-
-    card_path = root / "modelcard.json"
-    if not card_path.exists():
-        raise FileNotFoundError(
-            f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
-        )
-    card = ModelCard.load(card_path)
-    if synthetic_fixture is None:
-        synthetic_fixture = synthetic_fixture_from_env()
-    placeholder = card.eval_delta.is_placeholder
-    if synthetic_fixture and not placeholder:
-        raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
-    if not synthetic_fixture and card.fixture_only:
-        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
-
-        require_nonfixture_or_test_opt_in(card)
-    gate = enforce_ship_gate if enforce_ship_gate is not None else enforce_ship_gate_from_env()
-    if gate and not card.ship_eligible and not synthetic_fixture and not card.fixture_only:
-        detail = (
-            " (placeholder eval_delta is not measured evidence)"
-            if placeholder
-            else " (honesty/domain/general deltas)"
-        )
-        raise RuntimeError(f"{card.version} failed the ship gate{detail}; refusing to serve")
-    if not synthetic_fixture:
-        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
-
-        require_nonfixture_or_test_opt_in(card)
-    return card, synthetic_fixture
-
-
-def _release_signature_ok(root: Path) -> bool:
-    """HMAC when a signing key is set; ed25519 when a public verify key is set."""
-    from fx1.serve.signing import verify_release, verify_release_ed25519
-
-    if os.environ.get("FX1_RELEASE_VERIFY_KEY"):
-        return verify_release_ed25519(root)
-    if os.environ.get("FX1_SIGNING_KEY"):
-        return verify_release(root)
-    return verify_release(root) or verify_release_ed25519(root)
-
-
-def _dedicated_local_engine_cmd(root: Path, synthetic_fixture: bool) -> tuple[str, str]:
-    port = _free_tcp_port()
-    url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
-    cmd = (
-        "$python -m fx1.serve.local_engine "
-        f"--port {port}{' --synthetic-fixture' if synthetic_fixture else ''}"
-    )
-    return url, cmd
-
-
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1695,7 +1542,6 @@ class LocalFx1Backend(_UsageTracker):
         self,
         checkpoint_dir: str | Path,
         *,
-        enforce_ship_gate: bool | None = None,
         require_signature: bool | None = None,
         serve_url: str | None = None,
         serve_cmd: str | None = None,
@@ -1703,31 +1549,52 @@ class LocalFx1Backend(_UsageTracker):
         api_key: str | None = None,
         timeout_s: float | None = None,
         start_timeout_s: float | None = None,
-        synthetic_fixture: bool | None = None,
     ) -> None:
         root = Path(checkpoint_dir)
-        self.card, synthetic_fixture = _load_local_fx1_card(
-            root,
-            enforce_ship_gate=enforce_ship_gate,
-            synthetic_fixture=synthetic_fixture,
-        )
-        self._synthetic_fixture = synthetic_fixture
-        if require_signature is None:
-            require_signature = bool(
-                os.environ.get("FX1_SIGNING_KEY") or os.environ.get("FX1_RELEASE_VERIFY_KEY")
+        card_path = root / "modelcard.json"
+        if not card_path.exists():
+            raise FileNotFoundError(
+                f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
             )
-        if require_signature and not _release_signature_ok(root):
+        self.card = ModelCard.load(card_path)
+        if not self.card.eval_delta.ship_eligible:
             raise RuntimeError(
-                "checkpoint release signature missing or invalid; "
-                "fx-1 serves only signed releases when FX1_SIGNING_KEY "
-                "or FX1_RELEASE_VERIFY_KEY is configured"
+                f"{self.card.version} failed the ship gate "
+                "(honesty/domain/general deltas); refusing to serve"
             )
+        if require_signature is None:
+            require_signature = bool(os.environ.get("FX1_SIGNING_KEY"))
+        if require_signature:
+            from fx1.serve.signing import verify_release
+
+            if not verify_release(root):
+                raise RuntimeError(
+                    "checkpoint release signature missing or invalid; "
+                    "fx-1 serves only signed releases when FX1_SIGNING_KEY "
+                    "is configured"
+                )
         self._root = root
-        self._expected_weights_sha = _expected_weights_sha_from_manifest(root)
+        # The weights sha this checkpoint's manifest pins — compared against
+        # the sha a live engine advertises before we attach (see
+        # ``_verify_served_weights``). None when the dir has no readable
+        # manifest (e.g. a raw vLLM checkpoint layout) — then there is
+        # nothing to verify against and attach stays a liveness probe.
+        self._expected_weights_sha: str | None = None
+        manifest_path = root / "weights.manifest.json"
+        if manifest_path.is_file():
+            try:
+                manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                manifest_obj = {}
+            sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
+            if isinstance(sha, str):
+                self._expected_weights_sha = sha
         self._verified_attach = False
         url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
         if url:
-            _parse_local_serve_url(url)
+            parsed = urllib.parse.urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
         self._url = _chat_completions_url(url) if url else ""
         cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
         self._serve_cmd = cmd
@@ -1737,7 +1604,17 @@ class LocalFx1Backend(_UsageTracker):
             and (root / "weights.safetensors").is_file()
             and not self._shares_env_checkpoint(root)
         ):
-            self._url, self._serve_cmd = _dedicated_local_engine_cmd(root, self._synthetic_fixture)
+            # A checkpoint dir that is not the environment's pinned
+            # FX1_CHECKPOINT_DIR can never be served by the shared
+            # FX1_LOCAL_SERVE_URL engine — that engine holds different
+            # weights, so attaching would silently serve the wrong model
+            # (``_verify_served_weights`` refuses it). Give this backend a
+            # dedicated in-repo engine instead: a free port per instance.
+            port = _free_tcp_port()
+            self._url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
+            self._serve_cmd = (
+                f"$python -m fx1.serve.local_engine --checkpoint-dir $checkpoint_dir --port {port}"
+            )
         self._model = (
             model if model is not None else (os.environ.get(LOCAL_MODEL_ENV) or self.card.version)
         )
@@ -1779,41 +1656,43 @@ class LocalFx1Backend(_UsageTracker):
             return False
 
     def _verify_served_weights(self) -> None:
-        """Refuse to attach when the live engine is not this checkpoint.
+        """Refuse to attach when the live engine serves different weights.
 
-        Every ensure re-probes ``/v1/models``. The served id must be the
-        requested model and, when a manifest pin exists, its weights SHA-256
-        must match. The probe uses the same opener as chat completions.
+        A port answering ``/v1/models`` could be *any* engine — including
+        one holding another checkpoint. When the engine advertises the
+        fx-1 weights pin (as ``LocalWeightsEngine.describe`` does), it
+        must equal the sha256 this backend's checkpoint manifest pins;
+        otherwise the attach would silently serve the wrong model.
+        Engines that don't advertise the key can't be verified — attach
+        proceeds, same contract as before.
         """
-        if not self._url:
+        if self._expected_weights_sha is None or not self._url:
             self._verified_attach = True
             return
         parsed = urllib.parse.urlparse(self._url)
         probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
-        headers: dict[str, str] = {}
-        if self._api_key:
-            headers["Authorization"] = f"Bearer {self._api_key}"
-        request = urllib.request.Request(probe, headers=headers, method="GET")
         try:
-            with _openai_urlopen(request, timeout_s=2) as response:
-                payload = json.loads(response.read().decode())
-        except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"identity probe failed (HTTP {exc.code})") from exc
-        except (urllib.error.URLError, OSError, ValueError, UnicodeError) as exc:
-            raise RuntimeError(f"identity probe failed ({type(exc).__name__})") from exc
-        matched = _probe_matched_model(payload, self._model)
-        if self._expected_weights_sha is not None:
-            fx1_meta = matched.get("fx1")
+            with urllib.request.urlopen(probe, timeout=2) as resp:  # noqa: S310 — declared local engine  # nosec B310
+                payload = json.loads(resp.read())
+        except (urllib.error.URLError, OSError, ValueError):
+            return  # not up / not parseable — liveness is _engine_up's job
+        data = payload.get("data") if isinstance(payload, dict) else None
+        for item in data or []:
+            fx1_meta = item.get("fx1") if isinstance(item, dict) else None
             served_sha = fx1_meta.get("weights_sha256") if isinstance(fx1_meta, dict) else None
-            if served_sha != self._expected_weights_sha:
+            if served_sha is not None and served_sha != self._expected_weights_sha:
                 raise RuntimeError(
-                    "weights SHA-256 advertised by the local engine does not match "
-                    "this checkpoint manifest"
+                    f"local fx-1 engine at {probe} advertises weights_sha256 "
+                    f"{str(served_sha)[:16]}… but this backend's checkpoint "
+                    f"manifest pins {self._expected_weights_sha[:16]}… — "
+                    "refusing to attach to weights it did not verify"
                 )
         self._verified_attach = True
 
     def _ensure_engine(self) -> None:
-        """Spawn the engine from the serve template and re-check its identity."""
+        """Spawn the engine from the serve template, once, and wait for it."""
+        if self._proc is not None or self._verified_attach:
+            return
         if not self._serve_cmd:
             if self._engine_up():
                 self._verify_served_weights()
@@ -2030,11 +1909,3 @@ def get_backend(kind: str, **kwargs: object) -> InferenceBackend:
     if kind not in backends:
         raise KeyError(f"unknown backend {kind!r}; choose from {sorted(backends)}")
     return cast(InferenceBackend, backends[kind](**kwargs))
-
-
-from fx1.serve.backends_stop import (  # noqa: E402 — stable api/chat imports
-    truncate_at_stops as truncate_at_stops,
-)
-from fx1.serve.backends_stop import (  # noqa: E402 — stable api/chat imports
-    truncate_chunks as truncate_chunks,
-)

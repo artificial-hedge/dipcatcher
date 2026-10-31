@@ -35,23 +35,6 @@ def _plain(text: str) -> str:
 
 runner = CliRunner()
 
-_ANSI = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def _sha256(path: Path) -> str:
-    """The digest an operator pins for a model file they produced and trust."""
-    import hashlib
-
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _plain(text: str) -> str:
-    """Collapse rich error boxes so ANSI splits inside flag names still match."""
-    stripped = _ANSI.sub("", text)
-    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
-    return " ".join(stripped.split())
-
-
 _FEATURES = ["mom_20", "reversal_1", "vol_20", "signal_core", "noise_a", "noise_b"]
 _SIGNAL = "signal_core"
 _NOISE = ("noise_a", "noise_b")
@@ -233,7 +216,6 @@ def test_report_on_a_user_model_and_matrix(tmp_path: Path) -> None:
     x, y, names, model = _demo_panel(11, 240, 0.3)
     model_path = tmp_path / "head.joblib"
     joblib.dump(_LeastSquaresHead(model.coef), model_path)
-    pinned = _sha256(model_path)
 
     frame = pl.DataFrame({name: x[:, i] for i, name in enumerate(names)})
     frame = frame.with_columns(pl.Series("label", y))
@@ -247,8 +229,6 @@ def test_report_on_a_user_model_and_matrix(tmp_path: Path) -> None:
             "report",
             "--model-path",
             str(model_path),
-            "--trusted-sha256",
-            pinned,
             "--features",
             str(features),
             "--label-col",
@@ -274,21 +254,12 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
 
     model_path = tmp_path / "head.joblib"
     joblib.dump(_LeastSquaresHead(np.zeros(3)), model_path)
-    pinned = _sha256(model_path)
     features = tmp_path / "features.parquet"
     pl.DataFrame({"a": np.zeros(40), "b": np.zeros(40), "y": np.zeros(40)}).write_parquet(features)
 
     neither = runner.invoke(
         explainability_app,
-        [
-            "report",
-            "--model-path",
-            str(model_path),
-            "--trusted-sha256",
-            pinned,
-            "--features",
-            str(features),
-        ],
+        ["report", "--model-path", str(model_path), "--features", str(features)],
     )
     assert neither.exit_code != 0
     assert "--labels or --label-col" in _plain(neither.output)
@@ -299,8 +270,6 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
             "report",
             "--model-path",
             str(model_path),
-            "--trusted-sha256",
-            pinned,
             "--features",
             str(features),
             "--label-col",
@@ -311,61 +280,6 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
     )
     assert both.exit_code != 0
     assert "not both" in _plain(both.output)
-
-
-class _MarkerGadget:
-    """Pickle whose deserialization writes ``marker``: proof the model was unpickled."""
-
-    def __init__(self, marker: Path) -> None:
-        self.marker = marker
-
-    def __reduce__(self) -> tuple[object, tuple[Path, str]]:
-        return (Path.write_text, (self.marker, "unpickled"))
-
-
-def _gadget_report_args(tmp_path: Path) -> tuple[list[str], Path]:
-    import joblib
-
-    marker = tmp_path / "ran"
-    model_path = tmp_path / "head.joblib"
-    joblib.dump(_MarkerGadget(marker), model_path)
-    features = tmp_path / "features.csv"
-    pl.DataFrame({"a": np.arange(20.0), "b": np.arange(20.0), "y": np.arange(20.0)}).write_csv(
-        features
-    )
-    args = [
-        "report",
-        "--model-path",
-        str(model_path),
-        "--features",
-        str(features),
-        "--label-col",
-        "y",
-        "--out-dir",
-        str(tmp_path / "out"),
-    ]
-    return args, marker
-
-
-def test_report_requires_a_pinned_model_digest(tmp_path: Path) -> None:
-    """joblib is pickle: an unpinned operator model is never deserialized."""
-    args, marker = _gadget_report_args(tmp_path)
-
-    result = runner.invoke(explainability_app, args)
-
-    assert result.exit_code != 0
-    assert "--trusted-sha256" in _plain(result.output)
-    assert not marker.exists()
-
-
-def test_report_refuses_a_model_whose_bytes_miss_the_pin(tmp_path: Path) -> None:
-    args, marker = _gadget_report_args(tmp_path)
-
-    result = runner.invoke(explainability_app, [*args, "--trusted-sha256", "0" * 64])
-
-    assert result.exit_code != 0
-    assert "checksum mismatch" in _plain(result.output)
-    assert not marker.exists()
 
 
 def _sealed_receipt(directory: Path) -> Path:

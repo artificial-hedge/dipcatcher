@@ -26,12 +26,8 @@ from quant_fund.research.vol_bench import (
 
 SHARD = "garch_vol"
 HORIZON = 1
-# Smaller deterministic grid than the original 200/96 pin: same seed, shard,
-# stride and model set, fewer origins and a shorter fit window so the CI
-# replay stays under 150s under load. The committed receipts/mcs_vol_drill.json
-# is left untouched; the replay carrier records claims_equal: false.
-MIN_HISTORY = 80
-N_ORIGINS = 24
+MIN_HISTORY = 200
+N_ORIGINS = 96
 STRIDE = 4
 N_BARS = MIN_HISTORY + N_ORIGINS * STRIDE + HORIZON + 8
 SEED = 7

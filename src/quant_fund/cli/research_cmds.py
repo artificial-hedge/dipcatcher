@@ -6,28 +6,63 @@ Split out of the original module. Import the parent path; it re-exports these na
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
 import typer
 
 from .app import app
-from .key_material import (
-    _attest_signing_pair,
-    _attest_witness_pem,
-    _env_key_material,
-    _load_signer_pairs,
-    _read_key_file,
-    _refuse_lone_key_under_quorum,
-)
-from .research_banner import _echo_synthetic_marker  # noqa: F401 — re-exported for tests
-from .research_pvalues import _harvest_p_values
 from .support import _cfg, format_data_label, format_fdr_families
 
 
-def _echo_family_lines(nb: Any) -> None:
-    """Print the per-family result lines for a research notebook."""
+def _harvest_p_values(findings: Iterable[Any]) -> list[float]:
+    """Pull the ``stat == "p"`` values out of one harvest_findings result.
+
+    Findings are dicts on the corpus-inference lane; attribute access is
+    tolerated so the command survives a dataclass-shaped finding.
+    """
+    out: list[float] = []
+    for finding in findings:
+        if isinstance(finding, Mapping):
+            stat, value = finding.get("stat"), finding.get("value")
+        else:
+            stat = getattr(finding, "stat", None)
+            value = getattr(finding, "value", None)
+        if stat == "p" and isinstance(value, (int, float)) and not isinstance(value, bool):
+            out.append(float(value))
+    return out
+
+
+@app.command()
+def research(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+    """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
+    from quant_fund.research.agent import format_p_value, run_research
+
+    cfg = _cfg(config)
+    nb = run_research(cfg)
+    # Always print DATA_LABEL + FDR families (regression-tested).
+    typer.echo(format_data_label(synthetic=bool(nb.synthetic), data_source=str(nb.data_source)))
+    if nb.synthetic:
+        typer.echo("SYNTHETIC")
+    typer.echo(f"{nb.product} — {nb.firm}'s proprietary research lab {nb.version}")
+    typer.echo(format_fdr_families(list(nb.hypotheses)))
+    typer.echo(nb.disclaimer)
+    for h in nb.hypotheses:
+        typer.echo(f"{h.id}: {h.decision} (p={format_p_value(h.p_value)})")
+    for r in nb.rankers:
+        if str(r.get("name", "")).startswith("_"):
+            dm_all = r.get("pairwise_dm_all") or []
+            for d in dm_all:
+                typer.echo(
+                    f"DM {d.get('a')} vs {d.get('b')}: "
+                    f"stat={d.get('statistic')} p={d.get('p_value')} preferred={d.get('preferred')}"
+                )
+            continue
+        typer.echo(
+            f"{r['name']}: IC={r['mean_ic']:.4f} RankIC={r.get('mean_rank_ic') or 0:.4f} "
+            f"t={r['t_ic']:.2f} mono={r.get('decile_monotonicity') or 0:.3f}"
+        )
     vol = nb.families.get("volatility", {})
     if vol:
         typer.echo(
@@ -77,11 +112,6 @@ def _echo_family_lines(nb: Any) -> None:
             f"high_vol_bound={crc.get('high_vol_mean_bound')} "
             f"low_vol_bound={crc.get('low_vol_mean_bound')}"
         )
-    _echo_family_lines_late(nb)
-
-
-def _echo_family_lines_late(nb: Any) -> None:
-    """Print the tail families (weighted conformal through northset)."""
     wcqr = nb.families.get("weighted_conformal", {})
     if wcqr:
         typer.echo(
@@ -137,51 +167,6 @@ def _echo_family_lines_late(nb: Any) -> None:
             f"session_book_vpin_mean={ns.get('session_book_vpin_mean')} "
             f"mean_session_book_snaps={ns.get('mean_session_book_snaps')}"
         )
-
-
-@app.command()
-def research(
-    config: Path = typer.Option(Path("configs/research.yaml")),
-    only: str | None = typer.Option(
-        None,
-        "--only",
-        help="Qualified family ids. Runs those families only and refuses the full scorecard.",
-    ),
-) -> None:
-    """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
-    if only:
-        from quant_fund.cli.family_cmds import emit_selected_run
-
-        emit_selected_run(config, only)
-        return
-    from quant_fund.research.agent import format_p_value, run_research
-
-    cfg = _cfg(config)
-    nb = run_research(cfg)
-    # Always print DATA_LABEL + FDR families (regression-tested).
-    typer.echo(format_data_label(synthetic=bool(nb.synthetic), data_source=str(nb.data_source)))
-    if nb.synthetic:
-        typer.echo("SYNTHETIC")
-    typer.echo(f"{nb.product} — {nb.firm}'s proprietary research lab {nb.version}")
-    typer.echo(format_fdr_families(list(nb.hypotheses)))
-    typer.echo(nb.disclaimer)
-    for h in nb.hypotheses:
-        typer.echo(f"{h.id}: {h.decision} (p={format_p_value(h.p_value)})")
-    for r in nb.rankers:
-        if str(r.get("name", "")).startswith("_"):
-            dm_all = r.get("pairwise_dm_all") or []
-            for d in dm_all:
-                typer.echo(
-                    f"DM {d.get('a')} vs {d.get('b')}: "
-                    f"stat={d.get('statistic')} p={d.get('p_value')} preferred={d.get('preferred')}"
-                )
-            continue
-        typer.echo(
-            f"{r['name']}: IC={r['mean_ic']:.4f} RankIC={r.get('mean_rank_ic') or 0:.4f} "
-            f"t={r['t_ic']:.2f} mono={r.get('decile_monotonicity') or 0:.3f}"
-        )
-    _echo_family_lines(nb)
-    _echo_family_lines_late(nb)
     typer.echo(f"json={nb.artifacts.get('json')}")
     typer.echo(f"markdown={nb.artifacts.get('markdown')}")
 
@@ -444,7 +429,7 @@ def verify_receipt_cmd(
     """
     import json
 
-    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file
+    from quant_fund.research.receipt_v2 import verify_receipt_file
 
     result = verify_receipt_file(path)
     typer.echo(json.dumps(result, indent=2))
@@ -520,7 +505,7 @@ def replay_cmd(
     verdict or a non-declared receipt.
     """
     import quant_fund.research.replay_proof as _replay_proof_mod
-    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     root = Path.cwd()
@@ -598,7 +583,7 @@ def replay_all_cmd(
     when every carrier skipped — an all-skip run proves nothing.
     """
     import quant_fund.research.replay_sweep as _replay_sweep_mod
-    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     root = Path.cwd()
@@ -622,14 +607,11 @@ def replay_all_cmd(
     atomic_write_text(out_path, json.dumps(document, indent=2, sort_keys=True) + "\n")
     for row in body["rows"]:
         typer.echo(f"carrier {row['carrier']}: verdict={row['verdict']}")
-    declared = body.get("n_declared", len(body["rows"]))
     typer.echo(
         f"carriers={body['n_carriers']} pass={body['n_pass']} "
         f"fail={body['n_fail']} skipped={body['n_skipped']} "
-        f"declared={declared} "
         f"coverage={body['coverage']:.4f} "
-        f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']} "
-        f"claims_skipped={body.get('n_claims_skipped', 0)}"
+        f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']}"
     )
     typer.echo(f"verdict={body['verdict']} receipt={out_path}")
     if strict and (body["n_fail"] > 0 or body["n_pass"] == 0):
@@ -737,9 +719,9 @@ def rankic(
 ) -> None:
     """Cross-sectional rank-IC bench on SYNTHETIC planted-signal panels (P3.4).
 
-       Per-date Spearman rank-IC between each challenger transform and h-step
-       forward returns, summarized with a Newey-West mean-IC t-stat. Proper-score
-    framing only — never a P&L.
+    Per-date Spearman rank-IC between each challenger transform and h-step
+    forward returns, summarized with a Newey-West mean-IC t-stat. Proper-score
+    framing only — never a P&L or live-trading claim.
     """
     from quant_fund.research.cross_sectional import (
         format_rankic_table,
@@ -1029,77 +1011,6 @@ def lane_power(
     typer.echo(f"receipt={path}")
 
 
-def _load_known_inconsistent(path: Path | None) -> dict[str, str] | None:
-    """``--known-inconsistent`` pins (filename -> 64-hex sha256); bad file → BadParameter."""
-    if path is None:
-        return None
-    if not path.is_file():
-        raise typer.BadParameter(f"known-inconsistent file {path} does not exist")
-    try:
-        raw_pins = json.loads(path.read_text())
-    except (OSError, ValueError) as exc:
-        raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
-    if not isinstance(raw_pins, dict) or not all(
-        isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
-    ):
-        raise typer.BadParameter(
-            "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
-        )
-    return dict(raw_pins)
-
-
-def _echo_suite_health_summary(receipt: dict[str, Any], path: Path) -> None:
-    """Receipt validity, quarantine coverage and acknowledged chain incidents."""
-    quarantine_state = receipt["quarantine"]
-    typer.echo(
-        f"receipts={receipt['n_receipts']} verified={receipt['n_ok']} "
-        f"quarantined={receipt['n_quarantined']} invalid={receipt['n_invalid']} "
-        f"verified_fraction={quarantine_state['verified_fraction']} "
-        f"pooled_evalue={receipt['pooled_evalue']}"
-    )
-    for category, count in quarantine_state["by_category"].items():
-        typer.echo(f"quarantined[{category}]={count}")
-    epoch_state = receipt.get("corpus_epoch") or {}
-    for incident in epoch_state.get("acknowledged") or []:
-        typer.echo(f"corpus_epoch acknowledged: {incident}")
-    typer.echo(f"receipt={path}")
-
-
-def _suite_health_strict_failures(receipt: dict[str, Any]) -> list[str]:
-    """Strict-gate failures: invalid receipts, stale quarantine entries, and a
-    broken epoch chain — reported separately, never merged into one count."""
-    bad = [f"{rel}: {why}" for rel, why in receipt["invalid"].items()]
-    bad += [f"quarantine: {err}" for err in receipt["quarantine"]["stale_entries"]]
-    epoch_state = receipt.get("corpus_epoch") or {}
-    if epoch_state.get("chain_ok") is False:
-        bad += [f"corpus_epoch: {err}" for err in epoch_state.get("errors") or []]
-    return bad
-
-
-def _load_epoch_policy(
-    corpus_dir: Path, heads_pin: Path | None, epoch_acks: Path | None, pattern: str = "*.json"
-) -> tuple[dict[str, Any] | None, list[dict[str, Any]] | None]:
-    """(pinned head entry, this chain's acks) — the one loader every gate that
-    checks a corpus chain shares, so no entry point reads the pin or the
-    acknowledgment ledger differently. Raises ``ValueError`` on a missing pin
-    entry or malformed ledger (callers surface it as a bad parameter)."""
-    from quant_fund.research.corpus_epoch import (
-        acks_for_corpus,
-        epoch_heads_key,
-        load_epoch_acks,
-        load_heads_pin,
-    )
-
-    key = epoch_heads_key(corpus_dir, pattern)
-    expected_head: dict[str, Any] | None = None
-    if heads_pin is not None:
-        expected_head = load_heads_pin(heads_pin).get(key)
-        if expected_head is None:
-            raise ValueError(f"heads-pin {heads_pin} has no entry for {key}")
-    acks = acks_for_corpus(load_epoch_acks(epoch_acks), key) if epoch_acks is not None else None
-    return expected_head, acks
-
-
 @app.command("suite-health")
 def suite_health_cmd(
     receipts_dir: Path = typer.Option(
@@ -1115,31 +1026,8 @@ def suite_health_cmd(
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Exit 1 unless every non-verifying receipt is quarantined in the "
-        "registry (path + bytes + exact errors), no registry entry is stale, and "
-        "the epoch chain is intact (CI evidence-audit gate).",
-    ),
-    quarantine_path: Path = typer.Option(
-        Path("quality/legacy_quarantine.json"),
-        "--quarantine",
-        help="legacy_quarantine.v2 registry of retained receipts that do not verify. "
-        "Absent file = empty registry (every failure is invalid).",
-    ),
-    heads_pin: Path | None = typer.Option(
-        None,
-        "--heads-pin",
-        help="Committed epoch-heads pin; the receipts chain must be the pinned head "
-        "or its descendant (same check as corpus-epoch --check --heads-pin).",
-    ),
-    epoch_acks: Path | None = typer.Option(
-        None,
-        "--epoch-acks",
-        help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1).",
-    ),
-    require_stamped: bool = typer.Option(
-        False,
-        "--require-stamped",
-        help="Unstamped receipts are chain errors, not informational.",
+        help="Exit 1 unless every failing receipt is a byte-pinned legacy "
+        "unsealed artifact (CI evidence-audit gate).",
     ),
 ) -> None:
     """Re-verify every receipt in a directory + pool evidence → sealed summary.
@@ -1148,24 +1036,12 @@ def suite_health_cmd(
     verify-receipt pass (seal + kind contract), harvestable p-values /
     e-values are pooled under arbitrary dependence, and a corrupt artifact
     withholds the pooled claim — never asserted over partial evidence.
-    Receipt validity (verified / quarantined / invalid) and corpus validity
-    (epoch chain under the pin + acknowledgment ledger) are reported apart.
     """
-    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
     from quant_fund.research.suite_health import suite_health, write_suite_health_receipt
 
     try:
-        quarantine = load_quarantine_or_empty(quarantine_path)
-        expected_head, corpus_acks = _load_epoch_policy(receipts_dir, heads_pin, epoch_acks)
-        _frame, receipt = suite_health(
-            receipts_dir,
-            alpha=alpha,
-            quarantine=quarantine,
-            expected_head=expected_head,
-            epoch_acks=corpus_acks,
-            require_stamped=require_stamped,
-        )
-    except (OSError, ValueError) as exc:
+        frame, receipt = suite_health(receipts_dir, alpha=alpha)
+    except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     try:
         path = write_suite_health_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -1177,9 +1053,33 @@ def suite_health_cmd(
             data_source=receipt["data_label"],
         )
     )
-    _echo_suite_health_summary(receipt, path)
+    typer.echo(
+        f"receipts={receipt['n_receipts']} ok={receipt['n_ok']} "
+        f"failed={receipt['n_failed']} pooled_evalue={receipt['pooled_evalue']}"
+    )
+    typer.echo(f"receipt={path}")
     if strict:
-        bad = _suite_health_strict_failures(receipt)
+        import polars as pl
+
+        from quant_fund.research.legacy_unsealed import (
+            is_known_contract_legacy,
+            is_known_unsealed,
+        )
+        from quant_fund.research.receipt_v2 import verify_receipt_file
+
+        bad: list[str] = []
+        for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
+            p = receipts_dir / str(row["file"])
+            result = verify_receipt_file(p)
+            if not (
+                is_known_unsealed(p, result["errors"])
+                or is_known_contract_legacy(p, result["errors"])
+            ):
+                bad.append(f"{row['file']}: {result['errors']}")
+        epoch_state = receipt.get("corpus_epoch")
+        if isinstance(epoch_state, dict) and epoch_state.get("chain_ok") is False:
+            for err in epoch_state.get("errors") or []:
+                bad.append(f"corpus_epoch: {err}")
         if bad:
             typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
             for line in bad:
@@ -1835,13 +1735,11 @@ def corpus_epoch(
         help="Verify the committed epoch chain against the live corpus "
         "(single fork-free chain, monotone membership, head == live root).",
     ),
-    epoch_acks: Path | None = typer.Option(
+    allowed_removals: Path | None = typer.Option(
         None,
-        "--epoch-acks",
-        help="With --check: epoch-history acknowledgment ledger "
-        "(epoch_acknowledgments.v1, e.g. quality/epoch_allowed_removals.json). Each "
-        "entry explains one removal/mutation already recorded in a sealed epoch; "
-        "acknowledged incidents are printed, unmatched entries are errors.",
+        "--allowed-removals",
+        help="JSON map of receipt filename -> sha256 whose removal is acknowledged "
+        "(e.g. moved to legacy-unsealed/).",
     ),
     out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
     receipt_version: int = typer.Option(
@@ -1921,16 +1819,22 @@ def corpus_epoch(
                 f"{sorted(existing)} — pass --glob to disambiguate"
             )
         glob = existing.pop() if existing else "*.json"
-    corpus_acks: list[dict[str, Any]] | None = None
-    if epoch_acks is not None:
-        from quant_fund.research.corpus_epoch import acks_for_corpus, load_epoch_acks
-
-        if not epoch_acks.is_file():
-            raise typer.BadParameter(f"epoch-acks file {epoch_acks} does not exist")
+    allowed: dict[str, str] | None = None
+    if allowed_removals is not None:
+        if not allowed_removals.is_file():
+            raise typer.BadParameter(f"allowed-removals file {allowed_removals} does not exist")
         try:
-            corpus_acks = acks_for_corpus(load_epoch_acks(epoch_acks), epoch_heads_key(root, glob))
+            raw_allowed = json.loads(allowed_removals.read_text())
         except (OSError, ValueError) as exc:
-            raise typer.BadParameter(f"epoch-acks is not a valid ledger: {exc}") from exc
+            raise typer.BadParameter(f"allowed-removals is not JSON: {exc}") from exc
+        if not isinstance(raw_allowed, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64
+            for k, v in raw_allowed.items()
+        ):
+            raise typer.BadParameter(
+                "allowed-removals must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        allowed = dict(raw_allowed)
     expected_head: dict[str, str] | None = None
     if heads_pin is not None:
         if not heads_pin.is_file():
@@ -1946,7 +1850,7 @@ def corpus_epoch(
     if check:
         result = check_epoch_chain(
             root,
-            acks=corpus_acks,
+            allowed_removals=allowed,
             pattern=glob,
             expected_head=expected_head,
             require_stamped=require_stamped,
@@ -1956,8 +1860,6 @@ def corpus_epoch(
         if not require_stamped:
             for name in result["unstamped"]:
                 typer.echo(f"epoch-chain info: unstamped member {name}")
-        for incident in result["acknowledged"]:
-            typer.echo(f"epoch-chain acknowledged: {incident}")
         if result["errors"]:
             for err in result["errors"]:
                 typer.echo(f"epoch-chain error: {err}")
@@ -2140,7 +2042,7 @@ def corpus_proof_cmd(
     if member is None:
         raise typer.BadParameter("--member is required unless --check is passed")
     body = member_proof(corpus_dir, member, epoch_receipt=epoch)
-    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 
     sealed = seal_receipt(
         wrap_receipt_v2(
@@ -2296,7 +2198,7 @@ def corpus_absence_cmd(
     if member is None:
         raise typer.BadParameter("--member is required unless --check is passed")
     from quant_fund.research.epoch_merkle import history_absence_receipt
-    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 
     if history:
         # The member glob is the corpus's declared pattern (receipts/*.json,
@@ -2387,7 +2289,7 @@ def epoch_delta_cmd(
         epoch_delta_receipt,
         verify_epoch_delta,
     )
-    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     if check is not None:
@@ -2514,7 +2416,7 @@ def epoch_position_cmd(
     target = receipt or epoch
     if target is None:
         raise typer.BadParameter("--receipt is required unless --check is passed")
-    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     body = epoch_position_receipt(corpus_dir, target)
@@ -2730,12 +2632,12 @@ def attest_release_cmd(
     ),
     out: Path | None = typer.Option(None, "--out", help="Attestation output path."),
     root: Path = typer.Option(Path("."), "--root", help="Repo root."),
-    key: Path | None = typer.Option(
+    key: str | None = typer.Option(
         None,
         "--key",
-        help="Ed25519 key FILE ('<priv_hex>:<pub_hex>' or two lines; owner-only, "
-        "chmod 600). Raw key material is refused on the command line. Falls "
-        "back to GATE_SIGNING_KEY env (inline material or a key file path).",
+        envvar="GATE_SIGNING_KEY",
+        help="Ed25519 key material: '<priv_hex>:<pub_hex>', a key file path, "
+        "or bare priv hex (env GATE_SIGNING_KEY).",
     ),
     witness: bool = typer.Option(
         False,
@@ -2760,14 +2662,37 @@ def attest_release_cmd(
 
     from quant_fund.research.release_attestation import release_attestation
 
-    priv, pub = _attest_signing_pair(key, root)
-    # Resolve the witness key before signing: a refused key aborts with nothing made.
-    pem = _attest_witness_pem(witness_key_file) if witness else None
+    if not key or not key.strip():
+        raise typer.BadParameter("GATE_SIGNING_KEY unset — cannot sign a release attestation")
+    raw = Path(key).read_text().strip() if Path(key).is_file() else key.strip()
+    fields = [s.strip() for s in raw.replace(":", "\n").splitlines() if s.strip()]
+    priv = fields[0]
+    pub_path = root / "quality/gate_signing.pub"
+    if not pub_path.is_file():
+        raise typer.BadParameter(f"no committed pubkey at {pub_path}")
+    pub = pub_path.read_text().strip()
+    if len(fields) == 2 and fields[1] != pub:
+        raise typer.BadParameter(
+            "supplied pubkey != committed quality/gate_signing.pub — refusing to sign"
+        )
     blob = {p.name: p.read_bytes() for p in artifacts}
     att = release_attestation(blob, root=root, private_seed_hex=priv, pubkey_hex=pub)
-    if pem is not None:
+    if witness:
         from quant_fund.research.release_attestation import witness_release
 
+        pem: bytes | None = None
+        if witness_key_file is not None:
+            pem = witness_key_file.read_bytes()
+        else:
+            import os
+
+            env_key = os.environ.get("WITNESS_SIGNING_KEY", "").strip()
+            if env_key:
+                pem = Path(env_key).read_bytes() if Path(env_key).is_file() else env_key.encode()
+        if pem is None:
+            raise typer.BadParameter(
+                "--witness needs WITNESS_SIGNING_KEY env or --witness-key-file"
+            )
         r_pub = root / "quality/rekor_pubkey.pem"
         att = witness_release(
             att,
@@ -2883,116 +2808,27 @@ def verify_repo_cmd(
     heads pin — into one verdict, optionally sealed as a repo_integrity.v1
     receipt. Provenance evidence only; never a market or P&L claim.
     """
-    from quant_fund.research.repo_integrity import (
-        committed_attestation_note,
-        format_verify_repo_line,
-        verify_repo,
-        verify_repo_summary,
-        write_repo_integrity_receipt,
-    )
+    from quant_fund.research.repo_integrity import verify_repo, write_repo_integrity_receipt
 
     # Verify first: --out writes into a chain-covered corpus dir, so a
     # post-write verify would flag the attestation itself as drift.
     result = verify_repo(root, heads_pin=heads_pin, evidence_only=evidence_only)
     if out is not None:
-        try:
-            path = write_repo_integrity_receipt(
-                out, root, heads_pin=heads_pin, evidence_only=evidence_only
-            )
-        except ValueError as exc:
-            typer.echo(f"verify-repo: {exc}")
-        else:
-            typer.echo(f"receipt={path}")
+        path = write_repo_integrity_receipt(
+            out, root, heads_pin=heads_pin, evidence_only=evidence_only
+        )
+        typer.echo(f"receipt={path}")
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for name, gate in result["gates"].items():
-        typer.echo(format_verify_repo_line(name, gate))
-    note = committed_attestation_note(root)
-    if note:
-        typer.echo(note)
+        state = "ok" if gate["ok"] else "FAIL " + ",".join(gate["errors"])
+        if name == "pin_signatures" and gate["ok"] and not gate.get("signed"):
+            state = "unsigned"
+        if gate.get("skipped"):
+            state = f"skipped({gate['skipped']})"
+        typer.echo(f"verify-repo {name}: {state}")
     if not result["ok"]:
         raise typer.Exit(code=1)
-    typer.echo(verify_repo_summary(result))
-
-
-@app.command("epoch-ack-gate")
-def epoch_ack_gate_cmd(
-    base_heads_pin: Path = typer.Option(
-        ...,
-        "--base-heads-pin",
-        help="The BASE branch's epoch-heads pin (`git show BASE:quality/epoch_heads.json`).",
-    ),
-    base_epoch_acks: Path | None = typer.Option(
-        None,
-        "--base-epoch-acks",
-        help="The BASE branch's acknowledgment ledger (`git show BASE:<ledger>`); absent or "
-        "pre-v1 reads as empty, which is stricter.",
-    ),
-    root: Path = typer.Option(Path("."), "--root", help="Repo root."),
-    epoch_acks: Path = typer.Option(
-        Path("quality/epoch_allowed_removals.json"),
-        "--epoch-acks",
-        help="This branch's acknowledgment ledger.",
-    ),
-) -> None:
-    """Base gate: a new acknowledgment for an append-only chain (receipts,
-    verifier, fleet evidence, dataset manifests) must explain a removal or
-    rewrite the BASE chain already recorded — never one stamped in the same
-    change. Each referenced base chain is authenticated against the base
-    pin's ``chain_root``. Fails closed on a malformed ledger or pin.
-    """
-    from quant_fund.research.repo_integrity import ack_ledger_gate
-
-    try:
-        result = ack_ledger_gate(
-            root,
-            base_heads_pin=base_heads_pin,
-            base_ledger=base_epoch_acks,
-            ledger=epoch_acks,
-        )
-    except (OSError, ValueError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    for err in result["errors"]:
-        typer.echo(f"epoch-ack-gate error: {err}")
-    typer.echo(
-        f"epoch-ack-gate acks={result['n_acks']} base_acks={result['n_base_acks']} "
-        f"chains={','.join(result['chains_checked']) or '-'} ok={result['ok']}"
-    )
-    if not result["ok"]:
-        raise typer.Exit(code=1)
-
-
-@app.command("quarantine-gate")
-def quarantine_gate_cmd(
-    base_ref: str = typer.Option(..., "--base-ref", help="BASE commit (e.g. FETCH_HEAD)."),
-    base_heads_pin: Path = typer.Option(
-        ...,
-        "--base-heads-pin",
-        help="The BASE branch's epoch-heads pin (`git show BASE:quality/epoch_heads.json`).",
-    ),
-    root: Path = typer.Option(Path("."), "--root", help="Repo root."),
-) -> None:
-    """Base gate: the quarantine registry may grow only to retain bytes the
-    BASE branch already had (stamped by its head, or present under the same
-    name), never to excuse a receipt this change adds. An
-    ``admission_honesty_gap`` entry must name an unstamped base file with
-    identical bytes.
-    """
-    from quant_fund.research.repo_integrity import quarantine_registry_gate
-
-    try:
-        result = quarantine_registry_gate(root, base_ref=base_ref, base_heads_pin=base_heads_pin)
-    except (OSError, ValueError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    for err in result["errors"]:
-        typer.echo(f"quarantine-gate error: {err}")
-    typer.echo(
-        f"quarantine-gate entries={result['n_entries']} base_entries={result['n_base_entries']} "
-        f"ok={result['ok']}"
-    )
-    if not result["ok"]:
-        raise typer.Exit(code=1)
+    typer.echo("repo integrity: all gates intact")
 
 
 @app.command("evidence-export")
@@ -3028,43 +2864,56 @@ def sign_pins_cmd(
         "(two lines, or `PRIV\\nPUB`). Falls back to GATE_SIGNING_KEY env.",
     ),
 ) -> None:
-    """Ed25519-sign integrity pins; require GATE_SIGNING_KEY or --key-file.
+    """Ed25519-sign the integrity pins (epoch_heads.json + crown_jewels.json).
 
-    Lone-key (``gate_signatures.v1``) only: refuses (exit 2) when
-    ``quality/gate_quorum.json`` is committed — use ``quorum-sign`` there.
+    Writes ``gate_pins.sig`` (repo root, outside every chained corpus) and
+    ``quality/gate_signing.pub``. The private seed is never persisted —
+    supply it via --key-file or the GATE_SIGNING_KEY env var
+    ("<priv_hex>:<pub_hex>" or a file path). Run after `make stamp-epochs`
+    so the signature covers the fresh pin bytes.
     """
-    from quant_fund.research.gate_signatures import key_id, sign_pins
+    import os
 
-    _refuse_lone_key_under_quorum(root)
-    material = (
-        _read_key_file(key_file, cmd="sign-pins")
-        if key_file is not None
-        else _env_key_material("GATE_SIGNING_KEY", cmd="sign-pins")
+    from quant_fund.research.gate_signatures import (
+        generate_keypair,
+        key_id,
+        sign_pins,
     )
-    # Fail closed: never mint an ephemeral key over quality/gate_signing.pub.
-    if material is None:
+
+    raw: str | None = None
+    if key_file is not None:
+        raw = key_file.read_text().strip()
+    else:
+        env = os.environ.get("GATE_SIGNING_KEY", "").strip()
+        if env:
+            raw = Path(env).read_text().strip() if Path(env).is_file() else env
+    if raw is None:
+        priv, pub = generate_keypair()
         typer.echo(
-            "sign-pins: no key material — supply --key-file or GATE_SIGNING_KEY "
-            "(refusing to mint an ephemeral key over the committed trust root)"
+            "generated an ephemeral keypair (no key supplied) — "
+            "the signature only attests to this key's holder"
         )
-        raise typer.Exit(code=2)
-    raw = material.decode().strip()
-    fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
-    if len(fields) != 2:
-        typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
-        raise typer.Exit(code=2)
-    priv, pub = fields
-    committed_pub = root / "quality" / "gate_signing.pub"
-    if committed_pub.is_file():
-        expected = committed_pub.read_text().strip()
-        if expected and pub != expected:
-            typer.echo(
-                "sign-pins: supplied public key does not match "
-                f"{committed_pub.as_posix()} — use rotate-key to change the trust root"
-            )
+    else:
+        fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
+        if len(fields) != 2:
+            typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
             raise typer.Exit(code=2)
+        priv, pub = fields
     sig_path = sign_pins(root, priv, pub)
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
+
+
+def _load_signer_pairs(raw: str) -> list[tuple[str, str]]:
+    """Parse 'PRIV:PUB' or two-line material; comma/newline separates signers."""
+    fields = [
+        f.strip()
+        for line in raw.replace(",", "\n").splitlines()
+        for f in line.replace(":", "\n").splitlines()
+        if f.strip()
+    ]
+    if not fields or len(fields) % 2 != 0:
+        raise ValueError("signer material must be '<priv_hex>:<pub_hex>' pairs")
+    return [(fields[i], fields[i + 1]) for i in range(0, len(fields), 2)]
 
 
 @app.command("quorum-init")
@@ -3118,7 +2967,7 @@ def quorum_rotate_cmd(
 
     from quant_fund.research.quorum_rotation import rotate_quorum
 
-    raws = [_read_key_file(f, cmd="quorum-rotate").decode().strip() for f in key_file]
+    raws = [f.read_text().strip() for f in key_file]
     if not raws:
         typer.echo("quorum-rotate: supply --key-file(s) of current quorum members")
         raise typer.Exit(code=2)
@@ -3147,12 +2996,15 @@ def quorum_sign_cmd(
     quorums refuse to write (a partial signature file would be a brick).
     ``GATE_QUORUM_KEYS`` supplies pairs comma-separated when no files given.
     """
+    import os
+
     from quant_fund.research.gate_signatures import sign_pins_quorum
 
-    raws = [_read_key_file(f, cmd="quorum-sign").decode().strip() for f in key_file]
+    raws = [f.read_text().strip() for f in key_file]
     if not raws:
-        env = _env_key_material("GATE_QUORUM_KEYS", cmd="quorum-sign")
-        raws = [] if env is None else [env.decode().strip()]
+        env = os.environ.get("GATE_QUORUM_KEYS", "").strip()
+        if env:
+            raws = [env] if not Path(env).is_file() else [Path(env).read_text().strip()]
     if not raws:
         typer.echo("quorum-sign: supply --key-file(s) or GATE_QUORUM_KEYS")
         raise typer.Exit(code=2)
@@ -3309,15 +3161,18 @@ def checkpoint_cmd(
     checkpoint binds the current signature. ``--anchor`` time-binds the
     checkpoint itself.
     """
+    import os
+
     from quant_fund.research.integrity_checkpoint import (
         anchor_checkpoint,
         write_checkpoint,
     )
 
-    raws = [_read_key_file(f, cmd="checkpoint").decode().strip() for f in key_file]
+    raws = [f.read_text().strip() for f in key_file]
     if not raws:
-        env = _env_key_material("GATE_SIGNING_KEY", cmd="checkpoint")
-        raws = [] if env is None else [env.decode().strip()]
+        env = os.environ.get("GATE_SIGNING_KEY", "").strip()
+        if env:
+            raws = [env] if not Path(env).is_file() else [Path(env).read_text().strip()]
     if not raws:
         typer.echo("checkpoint: no key material — supply --key-file or GATE_SIGNING_KEY")
         raise typer.Exit(code=2)
@@ -3378,13 +3233,17 @@ def witness_checkpoint_cmd(
     Rekor's signed entry timestamp and checkpoint note under the pinned
     Rekor pubkey). Requires network on submit; none on verify.
     """
+    import os
+
     from quant_fund.research.integrity_witness import submit_witness
 
-    pem = (
-        _read_key_file(key_file, cmd="witness-checkpoint")
-        if key_file is not None
-        else _env_key_material("WITNESS_SIGNING_KEY", cmd="witness-checkpoint")
-    )
+    pem: bytes | None = None
+    if key_file is not None:
+        pem = key_file.read_bytes()
+    else:
+        env = os.environ.get("WITNESS_SIGNING_KEY", "").strip()
+        if env:
+            pem = Path(env).read_bytes() if Path(env).is_file() else env.encode()
     if pem is None:
         typer.echo("witness-checkpoint: no key material — supply --key-file or WITNESS_SIGNING_KEY")
         raise typer.Exit(code=2)
@@ -3568,7 +3427,7 @@ def verify_rotations_cmd(
     for n in result["notes"]:
         typer.echo(f"  note: {n}")
     if out is not None:
-        from quant_fund.schemas.receipt_v2_leaf import seal_receipt
+        from quant_fund.research.receipt_v2 import seal_receipt
         from quant_fund.utils.atomicio import atomic_write_text
 
         payload = dict(result)
@@ -3706,12 +3565,6 @@ def admit(
         "--strict",
         help="Exit nonzero unless the verdict is 'admit'.",
     ),
-    heads_pin: Path | None = typer.Option(
-        None, "--heads-pin", help="Committed epoch-heads pin the corpus chain must honour."
-    ),
-    epoch_acks: Path | None = typer.Option(
-        None, "--epoch-acks", help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1)."
-    ),
 ) -> None:
     """Receipt admission gate: may this receipt join the evidence corpus?
 
@@ -3728,19 +3581,22 @@ def admit(
         raise typer.BadParameter(f"candidate receipt {candidate} does not exist")
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
-    pins = _load_known_inconsistent(known_inconsistent)
-    try:
-        expected_head, corpus_acks = _load_epoch_policy(root, heads_pin, epoch_acks)
-    except (OSError, ValueError) as exc:
-        raise typer.BadParameter(str(exc)) from exc
-    result = admission_check(
-        candidate,
-        root,
-        q=q,
-        known_inconsistent=pins,
-        expected_head=expected_head,
-        epoch_acks=corpus_acks,
-    )
+    pins: dict[str, str] | None = None
+    if known_inconsistent is not None:
+        if not known_inconsistent.is_file():
+            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
+        try:
+            raw_pins = json.loads(known_inconsistent.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+        if not isinstance(raw_pins, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+        ):
+            raise typer.BadParameter(
+                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        pins = dict(raw_pins)
+    result = admission_check(candidate, root, q=q, known_inconsistent=pins)
     try:
         path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
     except ValueError as exc:
@@ -3780,26 +3636,7 @@ def admit_batch_cmd(
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Exit nonzero unless every gated candidate's verdict is 'admit'.",
-    ),
-    quarantine_path: Path = typer.Option(
-        Path("quality/legacy_quarantine.json"),
-        "--quarantine",
-        help="legacy_quarantine.v2 registry: candidates matching an entry exactly are "
-        "retained record, listed and never admitted. Absent file = empty registry.",
-    ),
-    heads_pin: Path | None = typer.Option(
-        None, "--heads-pin", help="Committed epoch-heads pin the corpus chain must honour."
-    ),
-    epoch_acks: Path | None = typer.Option(
-        None, "--epoch-acks", help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1)."
-    ),
-    base_heads_pin: Path | None = typer.Option(
-        None,
-        "--base-heads-pin",
-        help="The BASE branch's epoch-heads pin (e.g. `git show BASE:quality/epoch_heads.json`). "
-        "Candidates whose bytes the base's pinned head epoch already stamped are corpus "
-        "members, not arrivals: listed as already_stamped and not re-admitted.",
+        help="Exit nonzero unless every candidate's verdict is 'admit'.",
     ),
 ) -> None:
     """Batch admission gate for a diff of receipts.
@@ -3816,35 +3653,26 @@ def admit_batch_cmd(
     root = Path(corpus_dir)
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
-    pins = _load_known_inconsistent(known_inconsistent)
-    from quant_fund.research.corpus_epoch import chain_ancestry, pinned_head_members
-    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
-
+    pins: dict[str, str] | None = None
+    if known_inconsistent is not None:
+        if not known_inconsistent.is_file():
+            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
+        try:
+            raw_pins = json.loads(known_inconsistent.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+        if not isinstance(raw_pins, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+        ):
+            raise typer.BadParameter(
+                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        pins = dict(raw_pins)
     try:
-        expected_head, corpus_acks = _load_epoch_policy(root, heads_pin, epoch_acks)
-        base_head, _ = _load_epoch_policy(root, base_heads_pin, None)
-        batch = admit_batch(
-            receipts,
-            root,
-            q=q,
-            known_inconsistent=pins,
-            quarantine=load_quarantine_or_empty(quarantine_path),
-            expected_head=expected_head,
-            epoch_acks=corpus_acks,
-            base_stamped=None if base_head is None else pinned_head_members(root, base_head),
-            base_epochs=None if base_head is None else chain_ancestry(root, base_head),
-        )
-    except (OSError, ValueError) as exc:
+        batch = admit_batch(receipts, root, q=q, known_inconsistent=pins)
+    except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    for err in batch["ack_errors"]:
-        typer.echo(f"admission epoch-ack rejected: {err}")
-    for err in batch["chain_errors"]:
-        typer.echo(f"admission epoch-chain error: {err}")
-    for rel in batch["already_stamped"]:
-        typer.echo(f"admission already-stamped at base (not re-admitted) candidate={rel}")
-    for rel in batch["retained_quarantined"]:
-        typer.echo(f"admission retained-quarantined (not admitted) candidate={rel}")
     for result in batch["results"]:
         path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
         failed = [c["name"] for c in result["checks"] if not c["ok"]]
@@ -3853,11 +3681,7 @@ def admit_batch_cmd(
             f"verdict={result['verdict']}" + (f" failed_checks={failed}" if failed else "")
         )
         typer.echo(f"receipt={path}")
-    typer.echo(
-        f"admit-batch candidates={batch['n_candidates']} gated={batch['n_gated']} "
-        f"already_stamped={len(batch['already_stamped'])} "
-        f"retained_quarantined={len(batch['retained_quarantined'])} verdict={batch['verdict']}"
-    )
+    typer.echo(f"admit-batch candidates={batch['n_candidates']} verdict={batch['verdict']}")
     if strict and batch["verdict"] != "admit":
         raise typer.Exit(code=1)
 
@@ -4324,5 +4148,325 @@ def xvenue_basis_cmd(
         raise typer.Exit(code=1)
 
 
-from .research_score_cmds import coherence as coherence  # noqa: E402
-from .research_score_cmds import concordance as concordance  # noqa: E402
+@app.command()
+def coherence(
+    panels: str | None = typer.Option(
+        None, help="Comma-separated panel names (default: every registered generator)."
+    ),
+    methods: str | None = typer.Option(
+        None,
+        help="Comma-separated reconciliation methods (default: direct, naive_sum, "
+        "independent_mc, copula_mc).",
+    ),
+    n_train: int = typer.Option(384, help="Leading rows used to fit margins and correlation."),
+    n_eval: int = typer.Option(128, help="Trailing scored origins."),
+    n_mc: int = typer.Option(512, help="Monte-Carlo paths for the copula aggregators (>=16)."),
+    seed: int = typer.Option(0, help="Synthetic panel seed."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Score quantile-reconciliation methods on SYNTHETIC panels and seal a receipt.
+
+    Compares direct / naive-sum / independent-MC / copula-MC aggregation on
+    seeded synthetic factor, independent, heavy-tail and regime-copula panels.
+    Reported as CRPS, PIT-KS and central-interval coverage — proper scores only,
+    never market evidence and never a P&L or Sharpe claim.
+    """
+    from quant_fund.research.coherence import (
+        METHODS,
+        PANEL_GENERATORS,
+        format_coherence_table,
+        run_coherence,
+        write_coherence_receipt,
+    )
+
+    panel_names = None if panels is None else [p.strip() for p in panels.split(",") if p.strip()]
+    if panel_names is not None:
+        unknown = sorted(set(panel_names) - set(PANEL_GENERATORS))
+        if unknown:
+            raise typer.BadParameter(
+                f"unknown panel(s) {', '.join(unknown)}; "
+                f"registered: {', '.join(sorted(PANEL_GENERATORS))}"
+            )
+    method_names = None if methods is None else [m.strip() for m in methods.split(",") if m.strip()]
+    if method_names is not None:
+        unknown = sorted(set(method_names) - set(METHODS))
+        if unknown:
+            raise typer.BadParameter(
+                f"unknown method(s) {', '.join(unknown)}; registered: {', '.join(METHODS)}"
+            )
+    try:
+        frame, receipt = run_coherence(
+            panel_names,
+            n_train,
+            n_eval,
+            seed=seed,
+            n_mc=n_mc,
+            methods=method_names if method_names is not None else METHODS,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_coherence_receipt(receipt, out_dir)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(format_coherence_table(frame))
+    typer.echo(f"verdict={receipt.get('verdict')}")
+    typer.echo(f"receipt={path}")
+
+
+@app.command()
+def concordance(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    heads: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(512, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(256, help="Trailing scored rows per shard."),
+    alpha: float = typer.Option(0.10, help="DM elimination significance level."),
+    n_boot: int = typer.Option(500, help="Stationary-bootstrap replicates."),
+    block: float | None = typer.Option(
+        None, help="Mean bootstrap block length (default: lane choice)."
+    ),
+    seed: int | None = typer.Option(None, help="Base seed (default: train.random_seed)."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Measure selection concordance across the SYNTHETIC fleet and seal a receipt.
+
+    Does the ranking a lane picks agree with the ranking an independent
+    elimination procedure produces? Reports Kendall tau, Jaccard overlap and the
+    DM-eliminated set — selection diagnostics only, never a live-trading claim.
+    """
+    from quant_fund.research.concordance import (
+        format_concordance_table,
+        run_concordance_eval,
+        write_concordance_receipt,
+    )
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    head_names = None if heads is None else [h.strip() for h in heads.split(",") if h.strip()]
+    shard_names = None if shards is None else [s.strip() for s in shards.split(",") if s.strip()]
+    try:
+        # The lane resolves the fleet and shards itself and raises ValueError on
+        # an unknown name, so validating here would build every head twice.
+        frame, receipt = run_concordance_eval(
+            seed=base_seed,
+            n_train=n_train,
+            n_eval=n_eval,
+            alpha=alpha,
+            n_boot=n_boot,
+            block=block,
+            head_names=head_names,
+            shard_names=shard_names,
+            taus=cfg.quantiles.levels,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_concordance_receipt(receipt, out_dir)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(format_concordance_table(frame))
+    typer.echo(f"verdict={receipt.get('verdict')}")
+    typer.echo(f"receipt={path}")
+
+
+@app.command("multih-fleet")
+def multih_fleet_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    models: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    horizons: str = typer.Option("1,5,20", help="Comma-separated h-step horizons (>=1)."),
+    n_train: int = typer.Option(200, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(40, help="Trailing scored origins per horizon."),
+    n: int = typer.Option(400, help="Synthetic series length per shard."),
+    seed: int | None = typer.Option(None, help="Base seed (default: train.random_seed)."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Race h-step quantile constructions on the SYNTHETIC fleet and seal a receipt.
+
+    For each head and horizon, scores the native multi-horizon fit against the
+    iid-sqrt and empirical-ratio h-step extensions. Pinball, central-interval
+    coverage and Kupiec p — proper scores only, never market evidence.
+    """
+    from quant_fund.research.fleet_eval import resolve_shard_generators
+    from quant_fund.research.multih_fleet import (
+        multih_factories,
+        run_multih_fleet_eval,
+        write_multih_receipt,
+    )
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    taus = list(cfg.quantiles.levels)
+    model_names = None if models is None else [m.strip() for m in models.split(",") if m.strip()]
+    shard_names = None if shards is None else [s.strip() for s in shards.split(",") if s.strip()]
+    try:
+        horizon_list = sorted({int(h) for h in horizons.split(",") if h.strip()})
+    except ValueError as exc:
+        raise typer.BadParameter(f"--horizons must be comma-separated integers: {exc}") from exc
+    if not horizon_list or min(horizon_list) < 1:
+        raise typer.BadParameter("--horizons must contain at least one horizon >= 1")
+    try:
+        factories = multih_factories(taus, base_seed, names=model_names)
+        generators = resolve_shard_generators(shard_names)
+        rows, receipt = run_multih_fleet_eval(
+            factories,
+            generators,
+            taus=taus,
+            horizons=horizon_list,
+            n_train=n_train,
+            n_eval=n_eval,
+            n=n,
+            seed=base_seed,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_multih_receipt(receipt, out_dir)
+    ok = sum(1 for r in rows if r.status == "ok")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"rows={len(rows)} ok={ok} errors={len(rows) - ok} "
+        f"heads={len(factories)} shards={len(generators)} horizons={','.join(map(str, horizon_list))}"
+    )
+    typer.echo(f"verdict={receipt.get('verdict')}")
+    typer.echo(f"receipt={path}")
+
+
+@app.command("expert-mixture")
+def expert_mixture_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    heads: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(512, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(256, help="Trailing scored rows per shard."),
+    alpha: float = typer.Option(0.05, help="Fixed-share switching rate."),
+    seed: int | None = typer.Option(None, help="Base seed (default: train.random_seed)."),
+    dev: bool = typer.Option(False, "--dev", help="Acknowledge dev-only use; required to run."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Run prediction-with-expert-advice over the SYNTHETIC fleet and seal a receipt.
+
+    Mixes the fleet under uniform, exponentially-weighted-average and
+    fixed-share weighting. Scored on regret against the best fixed expert in
+    hindsight — a mixture is never claimed dominant, and nothing here is market
+    evidence.
+    """
+    if not dev:
+        raise typer.BadParameter(
+            "expert-mixture is dev-only evidence tooling; pass --dev to acknowledge."
+        )
+    from quant_fund.research.expert_mixture import (
+        MIXERS,
+        format_expert_mixture_table,
+        run_expert_mixture_eval,
+        write_expert_mixture_receipt,
+    )
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    head_names = None if heads is None else [h.strip() for h in heads.split(",") if h.strip()]
+    shard_names = None if shards is None else [s.strip() for s in shards.split(",") if s.strip()]
+    try:
+        # As in `concordance`: the lane resolves and validates the fleet itself.
+        frame, receipt = run_expert_mixture_eval(
+            seed=base_seed,
+            n_train=n_train,
+            n_eval=n_eval,
+            alpha=alpha,
+            head_names=head_names,
+            shard_names=shard_names,
+            taus=cfg.quantiles.levels,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_expert_mixture_receipt(receipt, out_dir)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(format_expert_mixture_table(frame))
+    typer.echo(f"mixers={','.join(MIXERS)}")
+    typer.echo(f"verdict={receipt.get('verdict')}")
+    typer.echo(f"receipt={path}")
+
+
+@app.command()
+def compare(
+    run_a: Path = typer.Argument(..., exists=True, help="Receipt JSON or result dir for run A."),
+    run_b: Path = typer.Argument(..., exists=True, help="Receipt JSON or result dir for run B."),
+    higher_is_better: bool = typer.Option(
+        False, help="Score direction: positive delta favors A (default: loss convention)."
+    ),
+    alpha: float = typer.Option(0.05, help="Paired bootstrap significance level."),
+    n_boot: int = typer.Option(2000, help="Paired bootstrap replicates."),
+    seed: int = typer.Option(7, help="Bootstrap seed."),
+    min_paired: int = typer.Option(
+        10, help="Below this paired n the verdict is 'insufficient paired observations'."
+    ),
+    series: str | None = typer.Option(
+        None, help="Comma-separated series keys to restrict the comparison to."
+    ),
+    fmt: str = typer.Option("markdown", "--format", help="markdown or json."),
+    out: Path | None = typer.Option(None, help="Write the report here instead of stdout."),
+    receipt_out: Path | None = typer.Option(None, help="Also write a run_compare receipt here."),
+    receipt_version: int = typer.Option(
+        1, "--receipt-version", help="1 = run_compare.v1 blob (default), 2 = sealed receipt.v2."
+    ),
+) -> None:
+    """Paired comparison of two stored research runs.
+
+    Same lane as ``python -m quant_fund.research.compare`` (one shared
+    implementation, so the two surfaces cannot drift). Diagnostic only: proper
+    scores on stored receipts, never a live-trading or P&L claim. The envelope
+    is labeled ``DATA_LABEL=UNKNOWN`` because a comparison of two stored runs
+    cannot know whether either was SYNTHETIC.
+    """
+    from quant_fund.research.compare import (
+        COMPARE_DATA_LABEL,
+        build_compare_receipt,
+        compare_runs,
+    )
+
+    if fmt not in ("markdown", "json"):
+        raise typer.BadParameter("--format must be markdown or json")
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    series_keys = None if series is None else [s.strip() for s in series.split(",") if s.strip()]
+    try:
+        comparison = compare_runs(
+            run_a,
+            run_b,
+            higher_is_better=higher_is_better,
+            alpha=alpha,
+            n_boot=n_boot,
+            seed=seed,
+            min_paired=min_paired,
+            series_keys=series_keys,
+        )
+    except (ValueError, TypeError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    text = (
+        json.dumps(comparison.to_dict(), indent=2, allow_nan=False)
+        if fmt == "json"
+        else comparison.to_markdown()
+    )
+    if out is not None:
+        out.write_text(text + "\n")
+        typer.echo(f"report={out}")
+    else:
+        typer.echo(text)
+    if receipt_out is not None:
+        document = build_compare_receipt(comparison, version=receipt_version)
+        receipt_out.write_text(json.dumps(document, indent=2, allow_nan=False) + "\n")
+        typer.echo(f"receipt={receipt_out}")
+    typer.echo(format_data_label(synthetic=False, data_source=COMPARE_DATA_LABEL))
+    counts = comparison.verdict_counts
+    typer.echo(
+        f"series={len(comparison.series)} "
+        + " ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+    )

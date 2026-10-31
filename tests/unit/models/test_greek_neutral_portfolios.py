@@ -9,7 +9,7 @@ Hamilton, J.D. (1989, regime switching, composed via deep_hedging).
 
 All data here is SYNTHETIC (seeded GBM / regime-switch path ensembles marked
 under a flat BSM implied vol) — algorithmic-correctness evidence for the
-framework, never market evidence. The Sharpe-like
+framework, never market evidence; no live-trading claims. The Sharpe-like
 training objective is a simulator-internal training signal reported only
 under ``sim_internal_*`` keys, never a headline metric (AGENTS.md honesty
 contract). Torch tests skip cleanly when the nn extra is absent.

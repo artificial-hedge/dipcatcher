@@ -3,10 +3,6 @@
 Mirrors the harness-side ``dipcatcher doctor``: presence flags only,
 never secret values. Informational — nothing here hard-fails; missing
 pieces are reported so an operator can fix the environment.
-
-Distribution lineage calls ``quant_fund.utils.distribution_lineage``,
-which runs ``quant_fund.research.crown_jewels.distribution_lineage_digest``
-(the same library gate as ``dipcatcher crown-jewels``).
 """
 
 from __future__ import annotations
@@ -30,22 +26,9 @@ def _count_receipts(path: Path) -> int | None:
     return sum(1 for _ in path.rglob("*.json"))
 
 
-def _extra_presence() -> dict[str, str]:
-    """Report optional runtime extras without importing heavy stacks."""
-    return {
-        "torch": "present" if importlib.util.find_spec("torch") else "missing",
-        "safetensors": "present" if importlib.util.find_spec("safetensors") else "missing",
-    }
-
-
 def collect_status(root: Path | None = None) -> dict[str, object]:
-    """Return fx-1 readiness signals rooted at *root* (default: repo root)."""
-    if root is None:
-        from dipcatcher_cli.paths import repo_root
-
-        root = repo_root()
-    else:
-        root = Path(root)
+    """Return fx-1 readiness signals rooted at *root* (default: cwd)."""
+    root = root or Path.cwd()
     status: dict[str, object] = {
         "fx1_version": fx1.__version__,
         "base_model": fx1.BASE_MODEL,
@@ -53,7 +36,6 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
         # Presence flags only — values never leave the process.
         "moonshot_key": "set" if os.environ.get("MOONSHOT_API_KEY") else "unset",
         "signing_key": "set" if os.environ.get("FX1_SIGNING_KEY") else "unset",
-        "optional_extras": _extra_presence(),
     }
     receipts = _count_receipts(root / "receipts")
     status["receipts"] = receipts if receipts is not None else "missing"
@@ -79,26 +61,4 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
         status["eval_bank_tasks"] = len(DEFAULT_BANK)
     except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
         status["eval_bank_tasks"] = "unavailable"
-    try:
-        from quant_fund.utils.distribution_lineage import distribution_lineage_digest
-
-        lineage = distribution_lineage_digest(root)
-        status["distribution_lineage"] = lineage["digest"]
-        status["distribution_jewels_intact"] = lineage["jewels_intact"]
-    except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
-        status["distribution_lineage"] = "unavailable"
-    try:
-        from fx1.harness import HARNESS_REGISTRY
-        from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
-
-        harness_names = sorted(command.name for command in HARNESS_REGISTRY)
-        status["harness_registry_digest"] = hash_bytes(canonical_json_bytes(harness_names))
-    except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
-        status["harness_registry_digest"] = "unavailable"
-    try:
-        from fx1.interactive.superpower import interactive_surface_digest
-
-        status["interactive_surface_seal"] = interactive_surface_digest()
-    except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
-        status["interactive_surface_seal"] = "unavailable"
     return status

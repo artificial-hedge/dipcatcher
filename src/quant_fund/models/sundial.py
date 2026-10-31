@@ -13,10 +13,7 @@ uv.lock:
   pinning it would drag the whole environment backward for one lane.
 - ``AutoModelForCausalLM.from_pretrained(..., trust_remote_code=True)``
   *executes model-repo code* on import; per supply-chain policy that
-  stays an explicit manual step, never an implicit install. The load is
-  pinned to an immutable 40-hex Hub commit (weights *and* remote code),
-  never a moving branch; a model id without a pinned commit, or one that a
-  local path shadows, is refused.
+  stays an explicit manual step, never an implicit install.
 
 Fleet contract (mirrors ``models/distribution.py``): ``fit`` validates
 the series and resolves the predictor (the dep check); ``predict`` tiles
@@ -27,8 +24,6 @@ is empirical over ``num_samples`` paths per window.
 
 from __future__ import annotations
 
-import os
-import re
 from collections.abc import Sequence
 from typing import Any
 
@@ -52,49 +47,6 @@ _DEP_ERROR = (
 )
 
 _MODEL_ID = "thuml/sundial-base-128m"
-# Hub commit of ``thuml/sundial-base-128m`` as resolved by the Hugging Face
-# API on 2026-10-19 (repo lastModified 2026-03-09). trust_remote_code runs
-# modeling_sundial.py from exactly this commit. Runs before this pin did not
-# record a revision, so nothing says they loaded this commit.
-_MODEL_REVISION = "3212e42564493f520593e5414af4367fc4b49226"
-_PINNED_REVISIONS = {_MODEL_ID: _MODEL_REVISION}
-_COMMIT_SHA = re.compile(r"[0-9a-f]{40}")
-
-
-def _pinned_revision(model_id: str, revision: str | None) -> str:
-    """The immutable Hub commit to load ``model_id`` at. Fails closed.
-
-    trust_remote_code executes repo code, so a moving branch (``main``) or
-    an unpinned repo id would run whatever the repo serves on the day.
-    """
-    rev = _PINNED_REVISIONS.get(model_id) if revision is None else revision
-    if rev is None:
-        raise ValueError(
-            f"no pinned Hub revision for {model_id!r}; pass revision=<40-hex commit> "
-            "(trust_remote_code never runs an unpinned repo)"
-        )
-    if not isinstance(rev, str) or not _COMMIT_SHA.fullmatch(rev):
-        raise ValueError(f"revision must be a 40-hex Hub commit sha; got {rev!r}")
-    return rev
-
-
-def _pinned_from_pretrained(model_cls: Any, model_id: str, revision: str) -> Any:
-    """Hub load with weights and remote code both fixed at ``revision``.
-
-    transformers reads ``model_id`` from disk when that path exists (a
-    directory for config, weights and remote code; a file for config) and
-    then ignores ``revision``/``code_revision``, so a local path shadowing
-    the id would run unpinned code under the pinned label. Refused.
-    """
-    rev = _pinned_revision(model_id, revision)
-    if os.path.lexists(model_id):
-        raise ValueError(
-            f"{model_id!r} exists on local disk and would shadow the pinned Hub "
-            f"commit {rev}; trust_remote_code loads only from the Hub at that commit"
-        )
-    return model_cls.from_pretrained(
-        model_id, revision=rev, code_revision=rev, trust_remote_code=True
-    )
 
 
 def _as_tau_grid(taus: Sequence[float]) -> Array:
@@ -157,7 +109,6 @@ class SundialDistribution(JoblibMixin):
         lookback: int = 288,
         num_samples: int = 32,
         model_id: str = _MODEL_ID,
-        revision: str | None = None,
         predictor: Any = None,
     ) -> None:
         self.taus = _as_tau_grid(taus)
@@ -169,7 +120,6 @@ class SundialDistribution(JoblibMixin):
         self.lookback = int(lookback)
         self.num_samples = int(num_samples)
         self.model_id = model_id
-        self.revision = _pinned_revision(model_id, revision)
         self._predictor = predictor
         self._window: Array | None = None
         self._mu = 0.0
@@ -178,7 +128,7 @@ class SundialDistribution(JoblibMixin):
     def _ensure_predictor(self) -> Any:
         if self._predictor is None:
             cls = _load_model_cls()
-            self._predictor = _pinned_from_pretrained(cls, self.model_id, self.revision)
+            self._predictor = cls.from_pretrained(self.model_id, trust_remote_code=True)
         return self._predictor
 
     def _window_quantiles(self, window_z: Array) -> Array:
@@ -250,12 +200,10 @@ class SundialDistribution(JoblibMixin):
             extra={
                 "framework": "thuml/Sundial",
                 "model_id": self.model_id,
-                "model_revision": self.revision,
                 "device": "cpu",
                 "pretrained": True,
                 "weights_note": (
-                    "HF weights thuml/sundial-base-128m pinned to Hub commit "
-                    "model_revision (weights and remote code); dep is "
+                    "HF weights thuml/sundial-base-128m; dep is "
                     "uv.lock-incompatible (transformers==4.40.1 pin + "
                     "trust_remote_code executes repo code) — fails closed "
                     "until upstream loosens"

@@ -22,7 +22,7 @@ Honesty
 SYNTHETIC self-check: optimizes canonical test functions
 (sphere, ellipsoid/Cigar, Rastrigin) with deterministic seeds
 and reports achieved objective values / budgets — no market
-claims.
+claims, no live-trading claims.
 
 Composition
 -----------

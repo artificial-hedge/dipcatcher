@@ -137,29 +137,6 @@ def _check_data_manifest(bundle: ProofBundleV1, reasons: list[str]) -> None:
         reasons.append("data_manifest:merkle_root_mismatch")
 
 
-def _sidecar_bytes(path: Path, kind: str, reasons: list[str]) -> bytes | None:
-    """Read one sidecar, or record why it cannot be hashed.
-
-    A directory is named ``IsADirectoryError`` before it is opened.
-    ``Path.read_bytes`` raises ``PermissionError`` for a directory on
-    Windows, and the receipt contract pins the POSIX name.
-    """
-    if path.is_symlink():
-        reasons.append(f"sidecar:{kind}:unsafe_symlink")
-        return None
-    if not path.exists():
-        reasons.append(f"sidecar:{kind}:missing")
-        return None
-    if path.is_dir():
-        reasons.append(f"sidecar:{kind}:unreadable:IsADirectoryError")
-        return None
-    try:
-        return path.read_bytes()
-    except OSError as exc:
-        reasons.append(f"sidecar:{kind}:unreadable:{exc.__class__.__name__}")
-        return None
-
-
 def _check_sidecars(
     bundle: ProofBundleV1, bundle_dir: Path, reasons: list[str]
 ) -> dict[str, bytes]:
@@ -179,8 +156,16 @@ def _check_sidecars(
     }
     contents: dict[str, bytes] = {}
     for kind, path in sidecars.items():
-        data = _sidecar_bytes(path, kind, reasons)
-        if data is None:
+        if path.is_symlink():
+            reasons.append(f"sidecar:{kind}:unsafe_symlink")
+            continue
+        if not path.exists():
+            reasons.append(f"sidecar:{kind}:missing")
+            continue
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            reasons.append(f"sidecar:{kind}:unreadable:{exc.__class__.__name__}")
             continue
         if sha256_hex_bytes(data) != expected[kind]:
             reasons.append(f"sidecar:{kind}_sha256_mismatch")
@@ -227,8 +212,16 @@ def _check_committed_sidecars(
             reasons.append(f"sidecar:{kind}:invalid_commitment")
             continue
         path = bundle_dir / f"{bundle.bundle_id}.{kind}.json"
-        data = _sidecar_bytes(path, kind, reasons)
-        if data is None:
+        if path.is_symlink():
+            reasons.append(f"sidecar:{kind}:unsafe_symlink")
+            continue
+        if not path.exists():
+            reasons.append(f"sidecar:{kind}:missing")
+            continue
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            reasons.append(f"sidecar:{kind}:unreadable:{exc.__class__.__name__}")
             continue
         if sha256_hex_bytes(data) != expected:
             reasons.append(f"sidecar:{kind}_sha256_mismatch")

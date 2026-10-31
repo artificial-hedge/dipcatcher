@@ -36,7 +36,7 @@ under `receipts/`) or result directories containing `*.json` files.
 - Scalar fields whose key tokens match `FORBIDDEN_RESEARCH_METRIC_KEYS`
   (sharpe / sortino / calmar / pnl / nav) are moved to
   `excluded_diagnostics` — listed for context, never part of a verdict.
-- Diagnostic only (`research_only: true`,
+- Diagnostic only; no live-trading claims (`research_only: true`,
   `live_pnl_claim: false` on receipt output).
 
 ## CLI

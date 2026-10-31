@@ -1,6 +1,7 @@
 //! Optional native kernels for the dipcatcher research harness.
 //!
-//! Safe Rust only: this crate contains no `unsafe` blocks.
+//! Safe Rust only: this crate contains no `unsafe` blocks. Order routing and
+//! live-trading paths are intentionally absent.
 
 mod book;
 mod hashing;
@@ -9,7 +10,7 @@ mod rolling;
 
 use numpy::{PyArray1, PyReadonlyArray1};
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
+use pyo3::types::{PyBytes, PyDict};
 
 fn as_slice<'a>(values: &'a PyReadonlyArray1<'a, f64>) -> PyResult<&'a [f64]> {
     values.as_slice().map_err(|err| {
@@ -234,65 +235,72 @@ fn hash_bytes(data: &[u8]) -> String {
     hashing::sha256_hex(data)
 }
 
-struct PackedBlobs {
-    buf: Vec<u8>,
-    ends: Vec<usize>,
-}
-
-fn push_bytes(packed: &mut PackedBlobs, item: &Bound<'_, PyAny>) -> PyResult<()> {
-    let blob = item.cast::<PyBytes>().map_err(|_| {
-        pyo3::exceptions::PyTypeError::new_err("hash_many expects a sequence of bytes")
-    })?;
-    packed.buf.extend_from_slice(blob.as_bytes());
-    packed.ends.push(packed.buf.len());
-    Ok(())
-}
-
-fn pack_items<'py>(
-    items: impl IntoIterator<Item = Bound<'py, PyAny>>,
-    hint: usize,
-) -> PyResult<PackedBlobs> {
-    let mut packed = PackedBlobs {
-        buf: Vec::with_capacity(hint.saturating_mul(64)),
-        ends: Vec::with_capacity(hint),
-    };
-    for item in items {
-        push_bytes(&mut packed, &item)?;
-    }
-    Ok(packed)
-}
-
-fn hexes_to_list(py: Python<'_>, hexes: Vec<[u8; 64]>) -> PyResult<Bound<'_, PyList>> {
-    let texts: Vec<&str> = hexes
-        .iter()
-        .map(|hex| std::str::from_utf8(hex).expect("sha256 hex is ascii"))
-        .collect();
-    PyList::new(py, texts)
-}
-
-/// SHA-256 of each bytes object, as lowercase hex.
-///
-/// Lists and tuples are copied once and hashed off the GIL. A per-item
-/// `try_iter` loses to CPython 3.13's hashlib list comprehension on short
-/// blobs (the native bench is 20_000 × 64 bytes). Other iterables still work.
 #[pyfunction]
-fn hash_many<'py>(py: Python<'py>, chunks: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyList>> {
-    let packed = if let Ok(list) = chunks.cast::<PyList>() {
-        pack_items(list.iter(), list.len())?
-    } else if let Ok(tuple) = chunks.cast::<PyTuple>() {
-        pack_items(tuple.iter(), tuple.len())?
-    } else {
-        let mut packed = PackedBlobs {
-            buf: Vec::new(),
-            ends: Vec::new(),
-        };
-        for item in chunks.try_iter()? {
-            push_bytes(&mut packed, &item?)?;
+fn hash_many(py: Python<'_>, chunks: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
+    // One buffer, then hash outside the GIL. A Vec per 64-byte chunk was
+    // most of the overhead against CPython's hashlib, and 3.13 closed the
+    // rest of the gap. Split the hash across cores when the runner has them;
+    // std threads only, no extra crate.
+    let mut buf: Vec<u8> = Vec::new();
+    let mut lens: Vec<usize> = Vec::new();
+    for item in chunks.try_iter()? {
+        let item = item?;
+        let blob = item.cast::<PyBytes>().map_err(|_| {
+            pyo3::exceptions::PyTypeError::new_err("hash_many expects a sequence of bytes")
+        })?;
+        let bytes = blob.as_bytes();
+        buf.extend_from_slice(bytes);
+        lens.push(bytes.len());
+    }
+    let count = lens.len();
+    Ok(py.detach(move || hash_owned(&buf, &lens, count)))
+}
+
+fn hash_owned(buf: &[u8], lens: &[usize], count: usize) -> Vec<String> {
+    if count == 0 {
+        return Vec::new();
+    }
+    let mut offsets = Vec::with_capacity(count);
+    let mut cursor = 0usize;
+    for len in lens {
+        offsets.push(cursor);
+        cursor += *len;
+    }
+    let workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .clamp(1, 8);
+    if workers == 1 || count < 512 {
+        return (0..count)
+            .map(|index| hashing::sha256_hex(&buf[offsets[index]..offsets[index] + lens[index]]))
+            .collect();
+    }
+    let span = count.div_ceil(workers);
+    std::thread::scope(|scope| {
+        let mut joins = Vec::new();
+        for worker in 0..workers {
+            let start = worker * span;
+            if start >= count {
+                break;
+            }
+            let end = (start + span).min(count);
+            let bytes: &[u8] = buf;
+            let offs: &[usize] = &offsets;
+            let sizes: &[usize] = lens;
+            joins.push(scope.spawn(move || {
+                (start..end)
+                    .map(|index| {
+                        hashing::sha256_hex(&bytes[offs[index]..offs[index] + sizes[index]])
+                    })
+                    .collect::<Vec<_>>()
+            }));
         }
-        packed
-    };
-    let hexes = py.detach(move || hashing::hash_packed(&packed.buf, &packed.ends));
-    hexes_to_list(py, hexes)
+        let mut out = Vec::with_capacity(count);
+        for join in joins {
+            out.extend(join.join().expect("hash worker"));
+        }
+        out
+    })
 }
 
 #[pymodule]

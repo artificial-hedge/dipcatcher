@@ -47,12 +47,7 @@ def test_complete_batch_http_rejects_empty_item_before_backend_resolution(
     def unexpected_backend(name: str, *args: Any, **kwargs: Any) -> NoReturn:
         raise AssertionError(f"invalid batch must not resolve backend {name!r}")
 
-    app = create_app(
-        public_release=False,
-        backend_resolver=unexpected_backend,
-        state_dir=tmp_path,
-        rate_limit_rps=0,
-    )
+    app = create_app(backend_resolver=unexpected_backend, state_dir=tmp_path, rate_limit_rps=0)
     with TestClient(app, raise_server_exceptions=False) as client:
         response = client.post(
             "/harness/complete/batch",

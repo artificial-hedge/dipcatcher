@@ -27,7 +27,7 @@ def _client(env_key: str | None = "root-secret", **kw: Any) -> TestClient:
     else:
         os.environ["FX1_API_KEY"] = env_key
     return TestClient(
-        create_app(public_release=False, backend_resolver=lambda *a, **k: _B(), **kw),
+        create_app(backend_resolver=lambda *a, **k: _B(), **kw),
         raise_server_exceptions=False,
     )
 

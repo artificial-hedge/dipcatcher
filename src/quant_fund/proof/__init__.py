@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from quant_fund.proofcore.contracts import ProofError, ProofVerificationError
+
 __all__ = [
     "DataAccessRecorder",
     "HmacSha256Signer",
@@ -30,8 +32,6 @@ __all__ = [
 ]
 
 _LAZY = {
-    "ProofError": ("quant_fund.proofcore.contracts", "ProofError"),
-    "ProofVerificationError": ("quant_fund.proofcore.contracts", "ProofVerificationError"),
     "DataAccessRecorder": ("quant_fund.proof.recorder", "DataAccessRecorder"),
     "HmacSha256Signer": ("quant_fund.proof.sign", "HmacSha256Signer"),
     "InMemoryRecorder": ("quant_fund.proof.recorder", "InMemoryRecorder"),

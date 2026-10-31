@@ -52,8 +52,8 @@ Honesty: all quantities are computed on SYNTHETIC seeded paths (the built-in
 GBM/OU samplers) or caller-provided arrays. Outputs are distributional
 distances (signature-moment distance, KS statistic, ACF distance) —
 correctness/similarity evidence only, never market evidence; no
-Sharpe/Sortino/P&L headline (AGENTS.md honesty contract).
-Generated paths are research artifacts, not forecasts.
+Sharpe/Sortino/P&L headline and no live-trading claims (AGENTS.md honesty
+contract). Generated paths are research artifacts, not forecasts.
 
 Composition: reuses ``quant_fund.models.path_signatures`` (lazy import) for
 the canonical signature in the quality gate; complements the sibling

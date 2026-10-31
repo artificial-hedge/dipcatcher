@@ -59,15 +59,11 @@ SCORE_TOL: dict[str, tuple[float, float]] = {
     "crps_sum": (1e-6, 1e-5),
     "quantiles": (1e-6, 1e-5),
 }
-# fit_nu tolerance on IDENTIFIED inputs (rtol, atol).  The fit's own
-# Nelder-Mead xatol is 1e-4; the FP-reassociation noise on the current
-# numpy/scipy baseline rises with nu (e.g. 1.5e-2 at nu=578) because the
-# fit's inverse-power Hessian is ill-conditioned in the heavy-tail region.
-# A pure rtol of 1e-4 absorbs the noise; the previous pure-atol (5e-5)
-# was a dependency pin rather than a correctness pin.  The permanent
-# mutant (test_nu_check_detects_injected_drift_on_identified_input) still
-# asserts that a deliberate 1e-3-level convergence drift is caught.
-NU_TOL: tuple[float, float] = (1e-4, 0.0)
+# fit_nu tolerance on IDENTIFIED inputs (rtol, atol).  atol=5e-5 is tighter than
+# the fit's own Nelder-Mead xatol (=1e-4); measured FP-reassociation noise is
+# <=2.8e-5 (and exactly 0 on 19/21 cells), while a convergence-level 1e-4 drift
+# is caught (see test_nu_check_detects_injected_drift_on_identified_input).
+NU_TOL: tuple[float, float] = (0.0, 5e-5)
 UNIDENTIFIED_NU_KIND = "degenerate"
 
 
@@ -160,7 +156,7 @@ def build_golden() -> dict[str, Any]:
             "description": (
                 "GOLDEN BASELINE for fit_student_t numerical-equivalence proof (T8). "
                 "Seeded SYNTHETIC inputs; proper scores only (CRPS); no market "
-                "evidence."
+                "evidence and no live-trading/P&L claim."
             ),
             "quantile_levels": list(QUANTILE_LEVELS),
             "field_tolerance": tolerance,
@@ -241,15 +237,11 @@ def test_score_check_detects_injected_drift() -> None:
 
 
 def test_nu_check_detects_injected_drift_on_identified_input() -> None:
-    """PERMANENT mutant: a 1%% nu drift on an identified input must be caught
-    -- the nu tolerance (rtol=1e-4) is one hundred times tighter than the
-    injected perturbation.  Earlier the tolerance was a pure atol=5e-5
-    (twice the fit's own xatol) and the mutant injected 1e-4; the new
-    rtol-based tolerance tolerates the small FP noise but rejects anything
-    a hundred times larger."""
+    """PERMANENT mutant: a convergence-level (1e-4) nu drift on an identified
+    input must be caught -- the nu tolerance (5e-5) is tighter than xatol."""
     gcell = _first_identified_cell()
     drifted = dict(gcell)
-    drifted["fit_nu"] = gcell["fit_nu"] * 1.01
+    drifted["fit_nu"] = gcell["fit_nu"] + 1e-4
     with pytest.raises(AssertionError, match="fit_nu drifted"):
         assert_cell_matches(gcell, drifted)
 

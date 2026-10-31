@@ -31,8 +31,6 @@ SEAL_MARKERS = (
 # open PR (remove the entry once that PR merges). Every entry needs a reason.
 UNSEALED_WRITERS: dict[str, str] = {
     "cli/data_cmds.py": "membership-coverage --out report dump — CLI report output, not a receipt writer",
-    "cli/research_eval_cmds.py": "compare --format json is a CLI report; receipt v2 is sealed inside build_compare_receipt",
-    "paper/broker_adapter.py": "paper broker checkpoint is durable runtime state checked by seam parity, not a research receipt",
     "config/loader.py": "dump_resolved echoes the tracked config file — snapshot, not evidence",
     "data/adapters/dolthub_stocks.py": "cache provenance sidecar — self-digests the paired parquet (sha256 + dolt_commit) and is re-verified on every cache read",
     "data/ingest.py": "sealed on PR #261 (data_manifest receipt_sha256)",
@@ -127,7 +125,7 @@ def _writer_files() -> dict[str, list[int]]:
             continue
         hits = json_writer_lines(tree)
         if hits:
-            writers[path.relative_to(SRC).as_posix()] = hits
+            writers[str(path.relative_to(SRC))] = hits
     return writers
 
 

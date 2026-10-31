@@ -176,10 +176,8 @@ def test_artifact_scope_of_and_require_helpers() -> None:
 
 
 def test_garchvol_delegates_to_the_symmetric_contract() -> None:
-    # Default GARCHVol is the legacy univariate namespace; date-level overlays
-    # must stamp the pooled scope explicitly (see docs/VOL_SCOPE_CONTRACT.md).
-    default = GARCHVol()
-    assert default.series_scope == UNIVARIATE_RETURN_SERIES_SCOPE
+    # A bare GARCHVol is a univariate series. The pooled market overlay is an
+    # explicit scope, not the constructor default.
     pooled = GARCHVol(series_scope=POOLED_DATE_LEVEL_SCOPE)
     assert pooled.series_scope == POOLED_DATE_LEVEL_SCOPE
     pooled.assert_consumer_scope(DATE_LEVEL_PORTFOLIO_CONSUMER)

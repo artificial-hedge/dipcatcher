@@ -31,7 +31,7 @@ _BROAD = re.compile(r"\s*except\s+Exception\b")
 def actual_counts(root: Path = SRC) -> dict[str, int]:
     counts: dict[str, int] = {}
     for path in sorted(root.rglob("*.py")):
-        n = sum(1 for line in path.read_text(encoding="utf-8").splitlines() if _BROAD.match(line))
+        n = sum(1 for line in path.read_text().splitlines() if _BROAD.match(line))
         if n:
             counts[path.relative_to(ROOT).as_posix()] = n
     return counts
@@ -39,7 +39,7 @@ def actual_counts(root: Path = SRC) -> dict[str, int]:
 
 def manifest_counts(path: Path = MANIFEST) -> dict[str, int]:
     counts: dict[str, int] = {}
-    for lineno, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for lineno, raw in enumerate(path.read_text().splitlines(), start=1):
         stripped = raw.strip()
         if not stripped or stripped.startswith("#"):
             continue

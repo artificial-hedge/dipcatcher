@@ -2,7 +2,7 @@
 
 All streams are seeded synthetic fixtures (two-regime Gaussian via the repo's
 own ``quant_fund.stress.regimes.simulate_gaussian_hmm``); nothing here is
-market evidence. Lab scores are coverage
+market evidence and nothing is a live-trading claim. Lab scores are coverage
 and width only.
 """
 

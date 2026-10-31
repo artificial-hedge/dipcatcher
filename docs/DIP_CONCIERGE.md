@@ -1,102 +1,66 @@
-# dipcatcher CLI — chat with fx1 and fx1-lite
+# dipcatcher CLI — chat-first orchestration for fx1 and fx1-lite
 
-dipcatcher is Artificial Hedge's state-of-the-art harness for the **fx1**
-and **fx1-lite** chat ids (no released weights;
-[artificialhedge.co](https://artificialhedge.co)) from the command line. The
-CLI is designed like Codex CLI: you open it, you talk to it, and it does the
-work. Plain text is a conversation with the endpoint you configured;
-everything else is a slash command. `/superpower` is how the
+dipcatcher is Artificial Hedge's state-of-the-art harness for orchestrating
+its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
+from the command line. The CLI is designed like Codex CLI: you open it, you
+talk to it, and it does the work. Plain text is a conversation with the
+active model; everything else is a slash command. `/superpower` is how the
 conversation reaches dipcatcher's research families — it picks the
 capabilities that fit your goal, runs them, and explains what it used and
 why.
 
-> **Status (2026-10-12).** The packaged `dipcatcher` launcher opens chat when
-> stdin and stdout are terminals (`dipcatcher chat --model fx1-lite` chooses
-> the starting model, `--resume <id>` replays a prior session, `--version`
-> prints the distribution version); redirected bare invocation prints help,
-> and explicit lab commands retain their behavior. Sessions are durable
-> (`$FX1_CONFIG_DIR/sessions/*.jsonl`): every turn, model switch, job
-> transition and approval is journaled, and jobs left open by a dead process
-> are marked *interrupted* at the next start. `/superpower` runs under hard
-> budgets (wall clock, harness steps, model calls, retries, web sources),
-> propagates cancellation and deadlines into owned lab subprocesses
-> (SIGTERM → SIGKILL), labels every result with its evidence class, and
-> checks research-family eligibility against the lab's read-only catalog —
-> retired or unknown families fail closed. Model turns retry only transient
-> failures and otherwise explain the failure class with a next action;
-> `/keys test` records requested vs served model identity. Ctrl-C once
-> cancels the running job, twice exits. What remains open is listed under
-> [Known limitations](#known-limitations-honest-gaps) and in
-> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md): the `research`
-> bench still executes its configured scorecard; `/superpower` excludes
-> automatic research when a goal names a family because it cannot pass a
-> selector to that runner. Broad research goals can run the full scorecard.
-> Live hosted-model verification needs a working endpoint, and the frozen journey suite /
-> moderated trial have not been run. Nothing here is proof of live model
-> availability.
+> **Status (2026-10-08, working tree).** The packaged `dipcatcher` launcher
+> now opens chat when stdin and stdout are terminals. `dipcatcher chat
+> --model fx1-lite` chooses the starting model; `fxi` remains compatible.
+> Redirected bare invocation prints help, and explicit lab commands retain
+> their existing behavior. Ordinary chat and `/superpower` synthesis use the
+> honesty validator; refined plans enforce the same command cap as the
+> deterministic planner. Qualified family selection, durable jobs, full
+> terminal UX, and production acceptance remain open in
+> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md). These changes are
+> not yet a published release or proof of live model availability.
 
-> **Status (2026-10-12).** On a terminal, bare `dipcatcher` opens chat.
-> With stdin or stdout redirected, bare `dipcatcher` prints a short preface
-> and the lab help, and does not read a prompt. `dipcatcher chat` refuses
-> a non-terminal and exits 2. `fxi` opens the same concierge and, with
-> stdin closed, prints the banner and exits on EOF. `quant` is the lab CLI
-> without that preface. `/superpower` loads the capability catalog and the
-> read-only family surface; a family that cannot be bound with `--only` is
-> refused instead of widening to the full scorecard. Selective family
-> records are partial (`verified=false` on the evidence item) and are not
-> sealed receipts. `/data` attaches a CSV or Parquet that already sits
-> under `<cwd>/data`. `/runs` reads the job ledger and does not start
-> work. `/models check` is offline unless `--live` is set. Sessions persist
-> under `$FX1_SESSION_DIR`, else `$FX1_CONFIG_DIR/sessions`, else
-> `~/.fx1/sessions`, including dataset attachments. A job that was still
-> `running` is marked `interrupted` on resume and is not started again.
-> The chat process treats SIGHUP as exit 129 and SIGTERM as exit 143.
-> `dipcatcher exec --help` maps SIGINT and SIGHUP to 130 and SIGTERM to
-> 143. Two automated journey suites, a relevance suite, chaos tests, and
-> red-team tests exist. They do not close gates P1–P7. Live authenticated
-> smoke for both models, a five-user trial, a 24-hour soak, the
-> macOS/Windows matrix, and signed release artifacts are open. See
-> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md) and
-> the release evidence table (`DIPCATCHER_RELEASE_EVIDENCE.md`).
+## Design: Codex-style, chat-first
 
-## Honesty contract
+About 99% of the interface is the conversation. The rules:
 
-Research results are proper scores (pinball, CRPS, PIT, QLIKE, Brier, ECE,
-Kupiec, HMM likelihood). The honesty gate withholds an answer that
-headlines Sharpe, Sortino, Calmar, P&L, or NAV, that makes a
-live-performance claim, or that presents synthetic evidence with a number
-and no `SYNTHETIC` label. SYNTHETIC results are correctness tests, always
-labeled, and are not market evidence. There is no broker connectivity and
-no live-trading claim. Receipts are immutable evidence; a verification
-claim needs a receipt the harness checked. The lexical gate does not prove
-that a cited receipt is the right one for the sentence. A decimal glued to
-the token (`sharpe3.2`, `sharpe_3.2`, `NAV1.9`, `pnl4.2`) is a headline. A
-bare integer glued on (`sharpe2`) is not. Spelled-out numbers ("sharpe of
-two point one"), a token glued onto a prefix ("mySharpe 2.1"), and a bare
-metric name with no number stay outside the gate. A compromised endpoint
-can still return false but well-formed prose that this gate does not catch.
+| Principle | What it means here |
+|---|---|
+| One command, one conversation | Bare `dipcatcher` opens the chat. There is no subcommand tree to learn first. |
+| Plain text is a turn | Ask in your own words; the active model answers and calls tools (memory, web, harness) as needed. |
+| Slash commands for control | `/superpower`, `/research`, `/use`, `/status`, `/cancel` — discoverable with `/help`, never required to get started. |
+| Approval before consequence | Consequential lab work (`train`, `optimize`, `paper`) asks first; a refusal is recorded, not retried. |
+| Long work runs in the background | Jobs stream progress while you keep typing; `/cancel` and `/redirect` take effect at the next step. |
+| Honest by default | Ordinary chat and `/superpower` synthesis pass the existing honesty validator before display. This lexical check does not establish semantic correctness or verify a cited receipt. |
+| Subcommands are the other 1% | `dipcatcher research --config …` and the rest stay for scripts, CI, and receipts — the non-interactive path. |
 
-A loopback reply of `The strategy Sharpe 2.1 beat the book.` came back as
-exec status `withheld`, exit code 3, with this answer:
+New operator-facing features belong in the conversation (a slash command or
+a model tool in `src/fx1/interactive`), not as new top-level subcommands.
 
-```text
-answer withheld by the fx-1 honesty gate (fx-1 output headlines forbidden research metric token 'sharpe'; research results are proper scores, not Sharpe/P&L headlines.). Ask a follow-up to continue.
-```
+**Boundary rule.** The chat lives on the fx1 side (`src/fx1/interactive`),
+and `quant_fund` never imports `fx1` (enforced by
+`tests/unit/test_fx1_dependency_edge.py` and `configs/arch_boundaries.toml`).
+The outer launcher is `src/dipcatcher_cli`, outside both libraries. The chat
+reaches the lab exclusively through the registered
+harness commands in `fx1.harness.HARNESS_REGISTRY`, executed as
+subprocesses — the model can never touch an unregistered lab surface.
 
-## Install and first run
-
-From a checkout, with [uv](https://docs.astral.sh/uv/):
+## Quickstart
 
 ```sh
 uv sync --frozen --all-groups --all-extras
+dipcatcher              # opens chat in an interactive terminal
+# Inside chat: /keys set fx1 prompts for a masked API key and endpoint URL.
+# Use the completion URL supplied by your service; no endpoint is assumed live.
+# Inside chat: /help, /superpower help, /use fx1-lite, /exit
+# Or select the starting model explicitly:
+dipcatcher chat --model fx1-lite
 ```
 
-Without an endpoint the console still works: slash commands run and flash
-context runs. Public web search does not run unless the goal is started with
-`--web` (`/superpower --web …` or `dipcatcher superpower --web --sync …`)
-or `FX1_WEB_RESEARCH=1`. `/research` is an explicit web command. Model turns
-(chat replies, plan refinement, synthesis) report honestly that no endpoint
-is configured and fall back to a deterministic summary.
+Without an endpoint the console still works: slash commands run, web research
+runs, flash context runs — only model turns (chat replies, plan refinement,
+synthesis) report honestly that no endpoint is configured and fall back to a
+deterministic summary.
 
 ## The session
 
@@ -109,27 +73,19 @@ fail-closed posture:
 | `flash_retrieve` | ranks persistent research memory against the query | none (local read) |
 | `web_lookup` | one bounded search + up to two page reads | fetch policy |
 | `flash_save` | persists a finding with task/uncertainty | none (local write) |
-| `harness_run` | runs one registered `dipcatcher` command | approval when consequential; model-selected `research` refused |
-
-The model tool cannot start the full research scorecard. Use `/superpower`
-for a checked research plan or `/harness run research` to request the full
-configured scorecard explicitly.
+| `harness_run` | runs one registered `dipcatcher` command | approval when consequential |
 
 Slash commands:
 
 ```text
-/superpower <goal> [--sync] [--web]  plan + coordinate; --web or FX1_WEB_RESEARCH=1 opts into public search
-/superpower help                list the capability catalog (+ family catalog once loaded)
-/families [goal]                research-family catalog; classify the families a goal names
+/superpower <goal> [--sync]     plan + coordinate research capabilities
+/superpower help                list the capability catalog
 /research <goal> [--budget-s N] [--max-sources N] [--queries a|b] [--sync]
-/status                         background job state, elapsed time, budget ledger
-/cancel                         stop the background job; owned subprocesses are signalled
+/status                         background job progress
+/cancel                         stop the background job at its next step
 /redirect <new goal>            re-target the running research
-/budget [dim value]             show or tighten run budgets (wall|harness|calls|retries|sources|tokens)
 /flash add|list|show|remove|correct|search|refresh ...
-/sessions [n]                   recent sessions from the journal; /resume <id> replays one
-/keys list|set|test|remove      model endpoints (presence-only); test = identity probe
-/doctor                         readiness: endpoint, store, journal, budget, family catalog
+/keys list|set|remove           model endpoints (presence-only)
 /harness list|describe|run      registered lab commands
 /live                           operator card for the live desk (chat does not transmit)
 /trade [readiness|help]         live orders are disabled; paper is the only book
@@ -138,69 +94,12 @@ Slash commands:
 
 Background jobs run on their own thread; the console polls stdin between
 lines, so progress renders while you keep typing, and `/cancel` /
-`/redirect` take effect at the job's next step boundary — a lab subprocess
-owned by the job is sent SIGTERM (its whole process group) and SIGKILL five
-seconds later if it ignores that. On piped stdin the loop degrades to
-blocking reads (jobs still stream progress).
+`/redirect` take effect at the job's next step boundary. On piped stdin the
+loop degrades to blocking reads (jobs still stream progress).
 
-On Windows the console polls `msvcrt` instead of `select`, so background
-progress renders while you type; a build without `msvcrt` falls back to
-blocking reads. Input history lives in `$FX1_CONFIG_DIR/history` (mode 0600;
-`/keys` lines and anything that looks like a credential are never stored).
-
-**Ctrl-C** follows the Codex convention: the first press cancels the running
-job (or just clears the line when idle) and prints a hint; a second press
-within two seconds exits. Ctrl-D and `/exit` leave immediately; the session
-journal is closed and any still-running job is cancelled and joined (a job
-that does not stop within five seconds is reported, not hidden).
-
-### Sessions and recovery
-
-Every session appends to `$FX1_CONFIG_DIR/sessions/<id>.jsonl` (schema
-version 1, directory 0700, file 0600): a header (model, endpoint host, code
-revision, fx1 version) and then turns, model switches, job start/step/finish
-records, approvals, endpoint changes, cancel requests, and `session_end`.
-Secrets are redacted before they reach the file. On startup the console
-reconciles earlier files: a job with a start but no finish and no session end
-is marked `interrupted` — nothing is re-run — and the affected session ids are
-printed. `/sessions` lists recent sessions; `/resume <id>` prints a read-only
-transcript (also `dipcatcher chat --resume <id>`, `fxi sessions`,
-`fxi resume <id>`). A journal line is a mutable job record, not an immutable
-research receipt.
-
-### Budgets
-
-Each `/superpower` run gets a `BudgetLedger` from the session's `RunBudget`
-(defaults: 1800 s wall, 4 harness steps, 8 model calls, 2 retries per call,
-8 web sources; prompt tokens uncapped because provider prices are unknown —
-an unknown price never implies a spend cap). Environment defaults come from
-`FX1_BUDGET_WALL_S`, `FX1_BUDGET_HARNESS_STEPS`, `FX1_BUDGET_MODEL_CALLS`,
-`FX1_BUDGET_RETRIES`, `FX1_BUDGET_WEB_SOURCES`, `FX1_BUDGET_PROMPT_TOKENS`;
-`/budget harness 2` tightens one dimension for the session. A step that would
-exceed the budget is recorded `budget-exceeded` and the run says *partial*;
-the remaining wall budget is passed to each harness subprocess as its
-deadline (it can only tighten the registry timeout).
-
-### Model switching
-
-`/use fx1-lite` keeps the conversation. A system note is appended so the new
-model attributes earlier assistant turns to the previous model, the switch is
-journaled, and the prompt shows the new model and endpoint host. Switching to
-an unconfigured model is allowed — slash commands keep working and model
-turns say what is missing — so endpoint setup can happen in-chat afterwards.
-
-### Endpoint failures
-
-Model turns go through a bounded retry (`RetryPolicy`: two retries with
-capped exponential backoff) that only retries transient classes — rate limit
-(408/429), server (5xx), timeout, unreachable. Authentication (401/403), a
-wrong route (404), a rejected request (400/422 — the model id may be unknown
-to the service), a malformed payload, or a bad URL are reported once with a
-failure class and a next action, never retried, and never echo the URL or
-key. `/keys test [model]` sends one minimal authenticated completion and
-renders requested vs served model id, latency, and the failure class on
-error; a served identity that differs from the requested id is flagged
-(provider routing), recorded, and not treated as success of anything else.
+On Windows the console uses blocking input because console handles are not
+supported by `select`; queued background progress appears between submitted
+lines. Full cross-platform editing and live progress remain acceptance work.
 
 ## /trade — paper book and the blocked-conditions report
 
@@ -239,69 +138,26 @@ together with web research, flash retrieve/save, and synthesis.
    model pass falls back to the deterministic plan. Both paths apply
    `max_harness=4`; refinement deduplicates IDs and preserves retrieval first
    and synthesis last. The model may select another registered command that
-   the keyword pass missed, within that same cap, but it is never offered —
-   and cannot reinstate — a capability the family gate blocked.
-   **Family gate.** When the plan would run `research`, the lab's read-only
-   family catalog is loaded through the registered `research-families`
-   command. Schema v2 lists the 23 required families and six audit-justified
-   optional families as selectable; it reports counts for exploratory, live
-   and retired families without listing their names. When automatic research
-   is considered, the planner sends a bounded set of SHA-256 family-name
-   candidates to the local command
-   and checks the goal-bound response. This catches bare names of omitted
-   families without putting the raw goal on the subprocess command line.
-   An omitted name is classified unknown and fails closed. A missing, stale,
-   malformed or oversized lookup also excludes automatic `research`.
-   Families named in the goal — by name, alias (`tail risk` → `tail`,
-   `CRPS` → `distribution`, …) or explicit `family:<name>` token — are
-   classified *required*, *optional* or *unknown*. A goal that names only
-   retired or unknown families cannot
-   select `research`: the plan prints `excluded: research … no suitable
-   family`. If the catalog is unavailable, `research` is excluded and the
-   plan explains that eligibility could not be checked. An eligible named
-   family also excludes automatic `research`: `/superpower` cannot pass the
-   selection to the runner, which would execute the configured scorecard,
-   including optional benches unless required-only mode is set. The plan
-   explains the exclusion and marks the result partial.
-   A broad research goal without named families may run that full scorecard;
-   `/harness run research` requests it explicitly.
-   Commands that require explicit CLI inputs (`validate`, `collect`, and
-   `tearsheet`) stay available through `/harness run` and are excluded from
-   automatic plans until those inputs are supplied. Exclusions make the run
-   partial and are shown in the result.
+   the keyword pass missed, within that same cap. Consequential commands
+   still stop at the approval gate. This is command-level planning; suitable
+   research-family selection remains future work.
 2. **Recall.** Flash context is retrieved first (cheap, local) so prior
    findings feed everything downstream.
 3. **Execute.** Web research (budgeted, cancellable) runs before harness
-   commands; its content enters the synthesis context under an explicit
-   `UNTRUSTED WEB CONTENT` marker. Each harness step is admitted in order:
-   not cancelled, wall budget left, step budget left, approval granted when
-   consequential (`train`, `optimize`, `paper` — recorded `approval-denied`
-   when refused). The subprocess receives the cancel event and the remaining
-   wall budget as its deadline; a cancelled step is recorded `cancelled`, a
-   deadline hit `failed` ("deadline reached"). Harness output keeps its
+   commands. Consequential harness commands — `train`, `optimize`, `paper`
+   (the `MODEL_TRAINING` role) — require explicit operator approval and are
+   recorded `approval-denied` when refused. Harness output keeps its
    `DATA_LABEL=SYNTHETIC` honesty markers into the synthesis context.
 4. **Synthesize.** The final answer is composed from capability results only
    (sources and receipt paths cited), then passes
    `fx1.honesty.validate_fx1_output`: forbidden headline metrics
    (Sharpe/Sortino/Calmar/P&L/NAV), live-performance claims, or unlabeled
    synthetic evidence cause the answer to be **withheld** with the gate's
-   reason — violating text is never emitted. Without an endpoint (or when
-   the budget forbids another model call) a deterministic summary is
-   emitted and labelled as such. The run itself is saved to flash context
-   with its goal and capability list.
+   reason — violating text is never emitted. The run itself is saved to
+   flash context with its goal and capability list.
 
-The plan is printed with a per-capability rationale, the family verdicts and
-the budget before any selected capability runs. Every result carries an explain block
-(`capabilities used and why`) in which each capability names its **evidence
-class** — `verified-research-artifact` (`verify-research` returned a valid JSON
-verdict naming the checked path), `synthetic-correctness` (output labelled
-SYNTHETIC),
-`harness-output-unverified`, `heuristic-web`, `memory`,
-`model-interpretation`, or `deterministic-summary` — followed by a
-`result: complete|partial — N/M capabilities ran` verdict. A run with any
-failed, skipped, cancelled or budget-exceeded step says *partial*; the
-synthesis prompt is told the same, and unverified prose never inherits
-verified status.
+The plan is printed with a per-capability rationale before anything runs,
+and every result carries an explain block (`capabilities used and why`).
 
 ## Deep web research
 
@@ -387,74 +243,49 @@ optional staleness window, refresh state, and usage counts.
 ## One-shot mode (scripting)
 
 ```sh
-dipcatcher superpower "assess conformal coverage regressions" --sync
-dipcatcher superpower "train the ranking family" --sync --approve-consequential
-dipcatcher sessions --limit 5
-dipcatcher resume <session-id>
-dipcatcher keys test fx1-lite
-dipcatcher flash search "ecb rates"
-# fxi remains compatible for the same one-shots:
 fxi superpower "assess conformal coverage regressions" --sync
 fxi research "ECB rate path expectations" --budget-s 120 --max-sources 5 --sync
 fxi flash add "finding" --task t --tags a,b --uncertainty low
+fxi flash search "ecb rates"
 fxi flash refresh <id>
-dipcatcher --version
-dipcatcher research-families --text   # the family catalog the planner consults
 ```
 
 `--sync` runs inline (no background thread), which is what CI and pipes want.
-Non-interactive runs never wait for an approval: consequential commands are
-denied unless `--approve-consequential` states the policy for that run.
 
-Without an endpoint the console still accepts slash commands. A model turn
-says no endpoint is configured and does not invent a reply. Observed exec
-JSON (`status` `no_endpoint`, exit 5):
+## Tests and verification
 
 Offline suites (network seams injected; run with `make fx1-test` or
 `uv run pytest tests/fx1/test_flash.py tests/fx1/test_webresearch.py
 tests/fx1/test_superpower.py tests/fx1/test_concierge.py
-tests/fx1/test_concierge_production.py tests/fx1/test_interactive.py
-tests/fx1/test_session.py tests/fx1/test_budget.py tests/fx1/test_endpoint.py
-tests/fx1/test_families.py tests/fx1/test_lineio.py tests/fx1/test_harness.py`):
+tests/fx1/test_interactive.py`):
 
-- `tests/fx1/test_session.py` — journal header/schema, redaction, torn
-  lines, listing, prefix lookup, interrupted-job reconciliation
-  (idempotent), transcript truncation, thread safety, disk-failure
-  tolerance.
-- `tests/fx1/test_budget.py` / `tests/fx1/test_harness.py` — budget
-  validation, env parsing, ledger boundaries and thread safety; real
-  subprocess cancellation (SIGTERM → SIGKILL on a SIGTERM-ignoring child),
-  deadlines, output caps, legacy runner compatibility, missing-executable
-  fail-closed.
-- `tests/fx1/test_endpoint.py` — failure-class table, secret-free summaries,
-  retry/backoff/cancel semantics, identity probe rendering and wire shape.
-- `tests/fx1/test_families.py` — catalog parsing (fail-closed), alias and
-  `family:` resolution, retired/unknown refusal, unavailable-catalog
-  behaviour, prompt block.
-- `tests/fx1/test_lineio.py` — Ctrl-C policy, history filters and modes,
-  POSIX/Windows/blocking readers.
-- `tests/fx1/test_concierge_production.py` — the integrated behaviour:
-  journaled turns/jobs/approvals, `/use` continuity, `/budget`, `/status`,
-  `/doctor`, `/keys test`, retries with guidance, untrusted web framing,
-  family-aware planning (refusal, blocked refinement), evidence classes,
-  console startup reconciliation, Ctrl-C cancel/exit, history without
-  secrets.
+- `tests/fx1/test_flash.py` — CRUD, tombstones, torn-line reporting, threaded
+  appends, relevance ranking, staleness, privacy flags, context blocks,
+  refresh, cross-process persistence.
+- `tests/fx1/test_webresearch.py` — URL/SSRF policy, redirect re-checks,
+  size caps, robots subset + caching, DDG parsing against the live HTML
+  shape, claim extraction filters, contradiction detection, budgets
+  (time/search/source), cancel with partial results, redirect, fragment
+  dedupe, IRI encoding.
+- `tests/fx1/test_superpower.py` — registry/harness parity, consequential
+  set, planner selection + caps, model-refinement validation and fallbacks,
+  coordination order, approval denial, honesty-gate withholding, offline
+  summary, cancel semantics.
+- `tests/fx1/test_concierge.py` — slash dispatch, chat tool loop (flash
+  retrieve/save, harness approval + registry refusal, backend fault
+  rollback), background research lifecycle (status/cancel/redirect/error),
+  superpower sync/background, flash commands, console driver over scripted
+  stdin.
 
-## Entry points
-
-| Command | What happened here |
-|---|---|
-| `dipcatcher` | Terminal: chat. Not a terminal: preface, then lab `--help`. Does not read stdin. |
-| `dipcatcher chat [--model fx1\|fx1-lite] [--resume]` | Chat. Requires a terminal on stdin and stdout. `--resume` reloads the newest session and does not restart an interrupted job. |
-| `dipcatcher exec ...` | One turn, no prompts. Plain mode prints the answer on stdout and the footer on stderr. `--json` prints one `dipcatcher.exec.v1` document and, in the run below, also wrote the footer on stderr. `--data` is repeatable and uses the same resolver as `/data`. |
-| `dipcatcher models list [--json]` | Presence table for both models. Not a liveness claim. |
-| `dipcatcher models check [model] [--live] [--json] [--out PATH] [--timeout-s N]` | Offline configuration check, or one call per model with `--live`. `--out` is atomic mode `0600`. |
-| `dipcatcher sessions list\|show\|export\|rm\|prune` | Saved chats. JSON schema `dipcatcher.sessions.v1`. |
-| `dipcatcher resume [session] [--model fx1\|fx1-lite]` | Opens chat on a session. Requires a terminal. `last` or a unique prefix. |
-| `dipcatcher version` | Package version. Extra arguments exit 2: `usage: dipcatcher version`. |
-| `dipcatcher <lab-command>` | Passed to the lab CLI. Examples: `capabilities`, `families`, `doctor`, `research`. |
-| `quant` | Lab CLI only. No chat preface. |
-| `fxi` | Same concierge. `fxi shell` is the older one-line shell. `fxi setup` is the endpoint wizard. |
+Live verification (performed against the real internet during development):
+`fxi research --sync` fetched real sources (DDG lite), extracted real claims
+with URLs, and deduped fragments; `fxi superpower --sync` planned, ran live
+web research, saved to flash, and produced the offline synthesis; a separate
+`fxi flash list/search` process retrieved the saved entry — cross-session
+memory confirmed; a full piped REPL session (help → flash add/search/list →
+plain chat → exit) ran end-to-end, with the no-endpoint chat turn answering
+honestly instead of fabricating a model reply. Live *model* turns were not
+verifiable with the stored credentials — see Known limitations.
 
 ## Known limitations (honest gaps)
 
@@ -466,23 +297,10 @@ tests/fx1/test_families.py tests/fx1/test_lineio.py tests/fx1/test_harness.py`):
   are lexical, not semantic; mirrors/syndication of one article count as
   multiple corroborating sources (fragment URLs are deduped, distinct hosts
   are not).
-- **Family execution constraint**: the catalog gate decides which families
-  may be *selected and claimed*; `dipcatcher research` still executes its
-  configured scorecard. Constraining the benches actually executed needs a
-  family filter inside `quant_fund.research.agent.run_research` — not done.
-  `research-families` lists every retired name. A name in that set
-  classifies as retired (new selection blocked; historical receipts still
-  verify). A name in none of required, live optional, or retired classifies
-  as unknown. Both refuse. A payload that omits `retired` still classifies
-  only its 20-name sample, and unknown stays fail-closed.
-- **Cost budgets**: wall clock, harness steps, model calls, retries and web
-  sources are hard ceilings; a prompt-token cap applies only when
-  `FX1_BUDGET_PROMPT_TOKENS` is set, and provider prices are unknown, so no
-  spend cap in currency is claimed.
-- **Background jobs** live in-process; they do not survive a console restart.
-  The journal records them, and the next start marks them *interrupted*
-  (flash entries and reports written before the restart persist); nothing is
-  resumed automatically.
+- **Cost budgets**: time/search/source/byte limits are enforced; *token*
+  spend is tracked by the backend usage tracker but not yet budget-capped.
+- **Background jobs** live in-process; they do not survive a console restart
+  (flash entries and reports written before the restart do).
 - **Retrieval** is hashed bag-of-words — no embeddings, so paraphrased queries
   with no shared vocabulary miss.
 - **Contested detection** catches explicit negation/antonymy only; subtle

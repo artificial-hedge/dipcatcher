@@ -32,9 +32,7 @@ async def _event(event: threading.Event, timeout: float = 2.0) -> None:
 
 
 def _app(runner: Callable[[list[str], int], tuple[int, str, str]]) -> Any:
-    return api.create_app(
-        public_release=False, harness=Harness(runner=runner), max_inflight=32, rate_limit_rps=0
-    )
+    return api.create_app(harness=Harness(runner=runner), max_inflight=32, rate_limit_rps=0)
 
 
 @pytest.mark.parametrize("key_channel", ["header", "body"])

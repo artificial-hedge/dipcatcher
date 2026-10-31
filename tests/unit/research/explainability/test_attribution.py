@@ -149,27 +149,7 @@ def test_shap_backend_available_and_ranks_planted_feature(planted_model) -> None
     del shap
     model, x, y = planted_model
     result = shap_attribution(model.predict, x[:120], y[:120], FEATURES, seed=17, max_rows=60)
-    assert result.method in {"shap_permutation", "shap_permutation_numba_fallback"}
-    if result.method == "shap_permutation_numba_fallback":
-        assert any("Numba compiler defect" in warning for warning in result.warnings)
-    assert result.attributions[0].feature == "signal_core"
-
-
-def test_shap_numba_compiler_defect_has_explicit_fallback(planted_model, monkeypatch) -> None:
-    shap = pytest.importorskip("shap")
-    model, x, y = planted_model
-
-    class BrokenPermutation:
-        def __init__(self, *args, **kwargs) -> None:
-            pass
-
-        def __call__(self, _x):
-            raise AttributeError("'function' object has no attribute 'get_call_template'")
-
-    monkeypatch.setattr(shap.explainers, "Permutation", BrokenPermutation)
-    result = shap_attribution(model.predict, x[:120], y[:120], FEATURES, seed=17, max_rows=60)
-    assert result.method == "shap_permutation_numba_fallback"
-    assert any("Numba compiler defect" in warning for warning in result.warnings)
+    assert result.method == "shap_permutation"
     assert result.attributions[0].feature == "signal_core"
 
 

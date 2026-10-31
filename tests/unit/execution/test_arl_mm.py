@@ -8,8 +8,8 @@ IEEE Trans. Inf. Theory 27); Williams (1992, Machine Learning 8,
 REINFORCE); Hochreiter & Schmidhuber (1997, Neural Computation 9).
 
 All data here is SYNTHETIC (seeded Hawkes/GBM market-making simulator) —
-correctness evidence for the algorithm, never market evidence.
-All mark-to-market accounting stays namespaced
+correctness evidence for the algorithm, never market evidence; no
+live-trading claims; all mark-to-market accounting stays namespaced
 sim_internal_*. Torch tests skip cleanly when the nn extra is absent.
 """
 

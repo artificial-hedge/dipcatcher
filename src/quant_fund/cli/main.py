@@ -47,8 +47,6 @@ from quant_fund.cli.micro_cmds import (
     candle_book,
     kyle_ofi,
 )
-from quant_fund.cli.families_cmds import research_families
-from quant_fund.cli.family_cmds import families_cmd
 from quant_fund.cli.research_cmds import (
     research,
     execution_sensitivity_cmd,
@@ -74,11 +72,9 @@ from quant_fund.cli.research_cmds import (
     tape_verify_cmd,
     coherence,
     concordance,
-)
-from quant_fund.cli.research_eval_cmds import (
-    compare,
-    expert_mixture_cmd,
     multih_fleet_cmd,
+    expert_mixture_cmd,
+    compare,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,
@@ -120,7 +116,6 @@ from quant_fund.cli.live_cmds import (
     live_status,
     live_submit,
 )
-import quant_fund.cli.score_cmds as score_cmds  # noqa: F401 — registers score-forecasts
 from quant_fund.cli.train_cmds import (
     _train as _train,
     train_callback,
@@ -206,9 +201,7 @@ __all__ = [
     "backtest",
     "candle_book",
     "kyle_ofi",
-    "families_cmd",
     "research",
-    "research_families",
     "execution_sensitivity_cmd",
     "verify_all_cmd",
     "verify_identities",

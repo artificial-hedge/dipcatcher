@@ -179,7 +179,6 @@ def test_fukasawa_iv_convergence_regimes(fukasawa_iv: dict[str, float]) -> None:
     # parameter is pushed (halving vol-of-vol, n 4->16 mean-reversion,
     # T 0.02->0.08 maturity); the eq. 53 normalization identity holds.
     blob = fukasawa_iv
-    # The bench prefixes every seeded score with synthetic_.
     assert blob["synthetic_deterministic_vol_abs_resid"] < 1e-3
     assert (
         blob["synthetic_small_volvol_abs_resid_a25"] < blob["synthetic_small_volvol_abs_resid_a50"]
@@ -267,7 +266,6 @@ def test_ivs_diffusion_noarb_and_hedge(ivs_diffusion: dict[str, float]) -> None:
     # error sharply vs resampling, and the no-arb post-training penalty
     # slashes static-arbitrage violation rates below the stream's own.
     blob = ivs_diffusion
-    # The bench prefixes every seeded score with synthetic_.
     assert blob["synthetic_es_gain_vs_resample"] > 0.0
     assert blob["synthetic_es_model"] < blob["synthetic_es_resample"]
     assert blob["synthetic_hedge_rmse_model"] < blob["synthetic_hedge_rmse_resample"]
@@ -286,13 +284,9 @@ def test_numpy_benches_are_deterministic(
     dcp: dict[str, float],
 ) -> None:
     # Seeded from module constants, so a fresh call must reproduce the
-    # fixture bit-for-bit. Wall-clock runtime is not part of that contract.
+    # fixture bit-for-bit.
     assert bench_langevin_impact() == langevin_impact
     assert bench_event_time_flow() == event_time_flow
-    fresh_iv = bench_fukasawa_iv()
-    fresh_iv.pop("synthetic_runtime_seconds", None)
-    pinned_iv = dict(fukasawa_iv)
-    pinned_iv.pop("synthetic_runtime_seconds", None)
-    assert fresh_iv == pinned_iv
+    assert bench_fukasawa_iv() == fukasawa_iv
     assert bench_rccp() == rccp
     assert bench_dcp() == dcp

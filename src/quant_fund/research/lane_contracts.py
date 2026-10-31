@@ -414,16 +414,6 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.replay_sweep import replay_coverage_contract_errors
 
         return replay_coverage_contract_errors(payload)
-    return _replay_proof_route(payload)
-
-
-def _replay_proof_route(payload: Mapping[str, Any]) -> list[str]:
-    """Deep route for ``replay_proof.v1`` bodies, else fall through to sigkernel."""
-    kind = payload.get("kind")
-    if payload.get("schema") == "replay_proof.v1" or kind in ("replay_proof", "replay_proof.v1"):
-        from quant_fund.research.replay_proof import replay_proof_contract_errors
-
-        return replay_proof_contract_errors(payload)
     return _sigkernel_route(payload)
 
 

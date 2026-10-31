@@ -49,7 +49,7 @@
   },
   "pooled_alarmed": false,
   "pooled_evalue": 9.169798001218833,
-  "receipt_sha256": "17223b57479ec33fc5121a135ee047d406ee28158611d4e7096b879e9d7c00fb",
+  "receipt_sha256": "78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940",
   "replay": {
     "argv": [
       "dipcatcher",
@@ -67,6 +67,5 @@
       }
     ]
   },
-  "research_only": true,
-  "schema": "serial_watch.v1"
+  "research_only": true
 }

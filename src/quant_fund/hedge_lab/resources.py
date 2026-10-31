@@ -85,7 +85,7 @@ def physical_memory() -> tuple[int, int]:
     phys = int(os.sysconf("SC_PHYS_PAGES")) if hasattr(os, "sysconf") else 0
     total = page * phys
     available = _proc_meminfo_available()
-    if available is None and hasattr(os, "sysconf"):
+    if available is None:
         try:
             available = int(os.sysconf("SC_AVPHYS_PAGES")) * page
         except (AttributeError, ValueError, OSError):
@@ -142,20 +142,9 @@ def _windows_physical_memory() -> tuple[int, int] | None:
 
 def ram_plan() -> dict[str, int | float]:
     total, available = physical_memory()
-    # Headroom floor is a target for the production lab. On small CI runners
-    # the floor would exceed the machine's total RAM, so we clamp to
-    # ``total - 512MB`` to preserve the ``workspace + headroom <= total``
-    # invariant that test_ram_plan_leaves_headroom pins. The 512MB slack
-    # leaves room for the workspace floor (also 512MB) so neither side
-    # dominates the plan on tight hardware.
-    min_workspace = 512 * 1024**2
-    headroom = min(
-        RAM_HEADROOM_BYTES,
-        max(total // 5, 8 * 1024**3),
-        max(total - min_workspace, 0),
-    )
+    headroom = min(RAM_HEADROOM_BYTES, max(total // 5, 8 * 1024**3))
     target = int(min(available, total - headroom) * RAM_TARGET_FRACTION)
-    target = max(target, min_workspace)
+    target = max(target, 512 * 1024**2)
     return {
         "total_bytes": int(total),
         "available_bytes": int(available),

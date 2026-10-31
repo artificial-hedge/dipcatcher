@@ -1,22 +1,16 @@
 # ULTRA PLAN — Production readiness for dipcatcher / fx-1
 
 **Status:** draft for owner ruling · **Created:** 2026-10-08 · **Measured at:** local `HEAD f70c140b5e`, `origin/main 3b246fffa5`, macOS 27.0.0
-**Scope:** what must be true before the research CLI, publicly served `fx1` and `fx1-lite`, and live trading can together be called production-ready, in what order, with what gate.
+**Scope:** what must be true before this repo can be called production-ready, in what order, with what gate.
 **Method:** every claim below is measured from this repo at the SHA above. Commands are reproducible. Where a claim comes from a self-report rather than a measurement, it is labelled *(self-reported)*.
-
-**Historical snapshot.** The divergence, workflow triggers, and some open-item counts below have changed since the measured SHAs. See the dated CI status in the root README's Continuous integration section and rerun each exit gate at the candidate revision.
-
-**Current evidence blocker (2026-10-17):** three committed proofcore replay receipts fail exact artifact verification on Linux CI; two also fail on Windows. See [§11](#11-committed-replay-provenance-blocker-2026-10-17).
-
-**Current release target (2026-10-16):** all three surfaces above. The phases below began as an internal research-platform plan and remain necessary groundwork; completing them alone does not complete the public-model or live-trading release. Public models still need real trained weights for both names, measured evaluation and license evidence, signed checkpoint verification, and deployment gates. Live trading remains blocked on licensed PIT data, authenticated broker/fill reconciliation, venue measurements, a non-synthetic forward record, and separate written authorization.
 
 ---
 
 ## 0. Verdict
 
-dipcatcher is **not production-ready across the three required surfaces**. The research CLI still needs a green, enforced release baseline and reconciled provenance. Neither public model has released evaluated weights or approved deployment evidence. Live trading needs external data, broker integration, venue measurements, authorization, and the frozen **1,400 eligible paired-session** forward record. At 252 eligible sessions per year, that record alone is about **5.6 years** of collection; it cannot be closed by repository work.
+dipcatcher is **not far from production. It is far from *verified*.**
 
-The engineering and test inventory below are substantial, but they do not establish these missing outcomes. The 400-run CI census and other findings in this section are the **2026-10-08 snapshot**, not current release verdicts; rerun the exit gates at the candidate revision.
+The engineering is genuinely strong — 245k LOC across 13.4k modules, a 116k-LOC test suite, `mypy --strict` total, sealed receipts, a real honesty contract. The problem is not capability. It is that **nothing has been verified in 400 consecutive CI attempts**, and one sealed evidence artifact is parameterized in a way that can never become valid forward evidence.
 
 Three findings decide the readiness question:
 
@@ -29,21 +23,21 @@ Three findings decide the readiness question:
 
 Everything in Phases 0–2 is about making the rest of the repo *falsifiable*. Until F1 is fixed, every other claim in this repo — the 81% coverage floor, strict typing on 668 modules, receipt verification, the SBOM — is asserted but unproven, because the machine that would refute them is dark.
 
-**Current verdict:** research CLI readiness can be established with repository gates and release checks. Public `fx1`/`fx1-lite` serving and live trading remain release blockers until their model, evidence, entitlement, broker, and authorization inputs exist and pass the stated gates. No internal-only milestone satisfies the all-surface production target.
+**The honest ceiling:** dipcatcher can become production-ready as a **research and evaluation platform for internal analysts**. It cannot become production-ready for **live trading** — that is blocked on procurement and authorization, not on code, per `docs/INSTITUTIONAL_READINESS.md`. This plan is explicit about which one it is achieving.
 
 ---
 
 ## 1. What "production-ready" means here
 
-Three required surfaces. Readiness is conjunctive: each row must clear its own gates before the all-surface claim is made.
+Three tiers. Mixing them is how a research repo accidentally implies it trades.
 
-| Surface | Definition | Reachable by code alone? | Current gate |
+| Tier | Definition | Reachable by code? | Target |
 |---|---|---|---|
-| **A — Research CLI** | Installable `dipcatcher` chat and lab commands, honest receipts, green gates, reproducible from one release SHA | **Mostly** | Phases 0–7 and release evidence |
-| **B — Public `fx1` and `fx1-lite`** | Approved Kimi-derived weights for both names, measured model gates, serving identity, signed releases, authenticated deployment, and license rights | **No** | Trained artifacts, measurements, permission, and deployment evidence absent |
-| **C — Live trading** | Authorized vendor PIT data, authenticated broker reconciliation, venue measurements, non-synthetic forward record, signed promotion receipt, and written live authorization | **No** | Procurement, integration, evidence, and authorization blocked |
+| **A — Research platform** | Internal analysts can trust a receipt: green gates, reproducible from one SHA, docs match code, no live claims | **Yes** | Phase 0–5, ~2–3 weeks |
+| **B — Distributed platform** | A + signed releases, third-party security review, install path, onboarding | **Mostly** | Phase 6–7, ~4–6 weeks |
+| **C — Live trading** | Authorized vendor PIT data, authenticated broker reconciliation, venue cost measurements, non-synthetic forward record, signed promotion receipt | **No** | Blocked: procurement + authorization |
 
-The numbered phases are repository and research-platform prerequisites. They do not, by themselves, promote a model or authorize live capital. Public model release and live trading require the separate evidence and approval gates above.
+This plan delivers **Tier A completely** and **Tier B substantially**. It does not attempt Tier C, and Phase 4 exists only to keep Tier C honest while it stays blocked.
 
 ---
 
@@ -127,7 +121,7 @@ Verified with `verify_timestamps('.')`:
 
 The freeze is now committed to by an external TSA signature, chain-verified against the repo's pinned FreeTSA CA and signer certs, and `fresh` against current bytes. **A history rewriter can no longer backdate it.** (Only the file's sha256 was posted to the TSA — never its contents.)
 
-Remaining Phase-4 work: start prospective collection. ADR-0009 and the readiness docs now resolve the `window.start` label and record the external anchor (§Phase 4).
+Remaining Phase-4 work: start prospective collection, resolve the `window.start` label ambiguity in prose, and repoint the three docs (§Phase 4).
 
 ### 2.3 History has forked — F3
 
@@ -153,9 +147,9 @@ Tracked-file census (`git ls-files`, 22,280 files total):
 
 | Path | Tracked | Verdict |
 |---|---|---|
-| `.dsh-24x7/` | **911** (128 MB) | Historical census. **The blanket untracking verdict is superseded by Correction 3 below:** this tree includes pinned SOTA evidence and is an integrity corpus. |
-| `.box-soft-verify/` | 18 | Historical census. Its integrity-corpus membership also needs reconciliation before untracking. |
-| `.cursor/`, `.serena/`, `.freebuff/` | ~7 | Historical census. `.cursor/` is an integrity corpus; classify before untracking. |
+| `.dsh-24x7/` | **911** (128 MB) | Genuine scratch: `lane-simlive` 206, `eval-shards` 89, `native` 66, ~14 `lane-*` dirs × 25, `mega-arena` 16. Fleet run dumps and one-off probes (`fix_clobbers.py`, `probe_drift.py`, `win_fix2.ps1`). **Untrack.** |
+| `.box-soft-verify/` | 18 | Tool state. **Untrack.** |
+| `.cursor/`, `.serena/`, `.freebuff/` | ~7 | Editor/agent state. **Untrack.** |
 | `.github/workflows/*.json` | 32 | **CORRECTION — not litter. Legitimate epoch evidence.** See below. |
 | `tests/tests/` | 0 `.py` | **CORRECTION — not a stray mirror, not a problem.** See below. |
 
@@ -163,9 +157,7 @@ Tracked-file census (`git ls-files`, 22,280 files total):
 
 **Operational consequence, and it is load-bearing: editing any `.yml` under `.github/workflows/` invalidates its pinned member sha256.** Any workflow change must be followed by `make stamp-epochs` → `make sign-pins` → `make anchor-pins`, in that order, before `make epoch-consistency` can pass. Do not move or delete these files. This was caught while implementing Phase 0 — the workflow edits *will* leave the tree failing epoch verification until re-stamped, and that is the intended handoff state, not a regression.
 
-**Correction 2 — `tests/tests/` is a known sftp-clobber artifact, already handled.** `.gitignore:96-103` documents the root cause: the off-machine `put -r src /D:/dipcatcher/src` re-creates nested clobber directories named like "src inside src", "tests inside tests", and "scripts inside scripts", and all three are already ignored (`/tests/tests/`). `pyproject.toml:358` `testpaths` correctly excludes it. On disk it is four empty directories. **Nothing to fix** — and deleting it is pointless because the clobber recreates it.
-
-**Correction 3 — blanket scratch removal would break evidence gates (2026-10-16).** The dedicated worktree currently tracks 912 `.dsh-24x7/` files, including 66 `native/` inputs and receipts (2.27 MB) and 16 `mega-arena/` inputs and receipts (5.93 MB). `.github/workflows/reproduce_sota.yml` checks out and reads these committed paths; removing them would fail the native reproduction job. `src/quant_fund/research/repo_integrity.py` and `Makefile` declare `.dsh-24x7/`, `.box-soft-verify/`, and `.cursor/` as epoch corpora. Evidence export and independent bundle verification require `.dsh-24x7/`; `quality/epoch_heads.json` and historical checkpoints bind its head. Existing receipts and inventories name `.dsh-24x7/native/MERGED_d1_native.json`. This corpus is append-only. The acknowledgment gate accepts a new removal acknowledgment only for an epoch already authenticated on the base branch, so a removal, acknowledgment, and new epoch in one ordinary PR would still fail. These files cannot be treated as disposable scratch just because a later ignore rule hides new arrivals. A governed migration needs a per-file census, preserved evidence bytes and paths (or a hash-verified fetch), updated readers and policy, a valid base-chain transition, new signed and anchored pins and checkpoint, and a clean fresh-checkout plus bundle proof. Keep the old receipts immutable.
+**Correction 2 — `tests/tests/` is a known sftp-clobber artifact, already handled.** `.gitignore:96-103` documents the root cause: the off-machine `put -r src /D:/dipcatcher/src` re-creates a nested copy of src, of tests, and of scripts, and all three are already ignored (`/tests/tests/`). `pyproject.toml:358` `testpaths` correctly excludes it. On disk it is four empty directories. **Nothing to fix** — and deleting it is pointless because the clobber recreates it.
 
 Also: **231 local branches**, many stale `devin/*`, `kimi/*`, `codex/*` agent branches.
 
@@ -259,13 +251,13 @@ gh run list --limit 20 --json conclusion --jq \
 
 1. Merge Phase 0 onto `main`. Wait for the first green `ci.yml`. **Record the SHA** — this becomes `PROD_BASELINE`, the revision every Tier-A claim is stamped against.
 2. `make coverage` and `make proofcore-coverage` locally on `PROD_BASELINE`; publish the result as a workflow artifact so the floor's trend is visible.
-3. After the required CI and full-matrix runs pass, tag `v<fx1.__version__>` at the exact green `main` commit and let `release.yml` execute for the first time in repo history. The release preflight requires an exact tag/package version match; the current package version is `0.4.0`, so `v0.4.0-rc.1` requires a version bump on the tagged commit. A successful signed, SBOM'd, attested tag build retires the H5 penalty *(self-reported M6: "signing/SBOM/SLSA never exercised — no tags, no releases")* and m3's *"H5 capped this factor: 24 = 60%"*.
+3. Tag `v0.4.0-rc.1` and let `release.yml` execute for the first time in repo history. This retires the H5 penalty *(self-reported M6: "signing/SBOM/SLSA never exercised — no tags, no releases")* and m3's *"H5 capped this factor: 24 = 60%"*.
 4. Verify the outputs with the repo's own tooling:
    ```bash
    uv run python scripts/verify_release_artifacts.py dist/
    gh attestation verify dist/*.whl --repo artificial-hedge/dipcatcher
    ```
-5. Decide explicitly whether the versioned tag is a real release. `release.yml` uploads artifacts and **does not publish to PyPI or create a GitHub Release**. For Tier A that is sufficient and honest; record the decision in `CHANGELOG.md` rather than leaving it ambiguous.
+5. Decide explicitly whether `rc.1` is a real release. `release.yml` uploads artifacts and **does not publish to PyPI or create a GitHub Release**. For Tier A that is sufficient and honest; record the decision in `CHANGELOG.md` rather than leaving it ambiguous.
 
 **Exit gate:** one green CI SHA + one successful signed, SBOM'd, attested tag build.
 
@@ -278,16 +270,16 @@ Sequenced first because receipts bind revision: rebasing 300+ commits after re-s
 1. **Reconcile the divergence.** `origin/main` has 14 commits absent locally; local has 314 absent from origin. Local carries the entire INFLIGHT/verifier/epoch-pin history; origin carries the "external kimi-code gate-remediation chain". Determine which is the true spine **before** touching either. Then:
    - `make stamp-epochs` → `make sign-pins` → `make anchor-pins` in that order (`AGENTS.md` is explicit; every `stamp-epochs` stales the anchors).
    - `make epoch-consistency EPOCH_BASE=<ref>` as the gate.
-2. **Reconcile operational scratch and evidence.** The ignore rules now prevent new scratch from being added, but the old blanket `git rm -r --cached` plan is unsafe (Correction 3). First inventory pinned corpus members and workflow inputs, choose a byte-preserving tracked evidence location or hash-verified artifact store, update readers and epoch policy, then sign and anchor the migration. Only remove files proven to be scratch from the index; keep local durable fleet state on disk.
+2. **Untrack operational scratch.** Add `.dsh-24x7/`, `.box-soft-verify/`, `.cursor/`, `.serena/`, `.freebuff/` to `.gitignore` **and** `git rm -r --cached` them. Correct `AGENTS.md`, which currently asserts `.dsh-24x7` is gitignored when only two subpaths are. 936 tracked files leave the tree.
 3. **Prune branches.** 231 local branches; delete merged and stale agent branches (`devin/*`, `kimi/*`, `codex/*`, `cursor/*`, `copilot/*`).
 4. **Delete the empty `tests/tests/`** shell so the dropped mirror cannot re-enter collection. `testpaths` already excludes it; this makes that durable.
-5. **De-colonize `INFLIGHT`.** 4,154 lines, newest 50 entries are mythology family names. Move the retired-family ledger into a dedicated verifier-side log (planned path under `verifier/`, not yet created) and keep `INFLIGHT` for live state. `day_grind_progress.md` (139 KB) and `.test_durations` (777 KB) get the same treatment — move to artifacts, keep a pointer.
+5. **De-colonize `INFLIGHT`.** 4,154 lines, newest 50 entries are mythology family names. Move the retired-family ledger to a markdown log under verifier and keep `INFLIGHT` for live state. `day_grind_progress.md` (139 KB) and `.test_durations` (777 KB) get the same treatment — move to artifacts, keep a pointer.
 
 **Exit gate**
 
 ```bash
 git rev-list --left-right --count origin/main...HEAD   # → 0 0
-git ls-files -i -c --exclude-standard             # → reviewed evidence exceptions only until signed migration
+git ls-files | grep -cE '^(\.dsh-24x7|\.cursor|\.serena|\.freebuff|\.box-soft-verify)/'  # → 0
 make epoch-consistency EPOCH_BASE=origin/main          # → pass
 ```
 
@@ -308,7 +300,7 @@ The catalog is the repo's most visible quantitative claim surface, and at 10,222
 
 ### Phase 4 — Hold Tier C honest without faking it · **P1 · ~2 days + ongoing**
 
-Repository code alone cannot close the five institutional conditions. It must provide the verifiers and live controls, then wait for the external evidence and authorization they require.
+Code cannot close the five institutional conditions. What code *can* do is stop the repo from implying it did.
 
 1. **Anchor the forward prereg freeze — DONE 2026-10-08.** ✅ Executed and verified:
    ```bash
@@ -318,14 +310,12 @@ Repository code alone cannot close the five institutional conditions. It must pr
      print(verify_timestamps('.'))"
    ```
    Result: `ok=true`, `chain_verified`, `fresh=true`, `errors=[]`. The freeze is now externally timestamped. **Only the file's sha256 was transmitted to the TSA, never its contents.** No v2 receipt is required — the defect was the missing anchor, not the window parameterization.
-2. **Resolve the `window.start` label ambiguity — DONE 2026-10-08.** `window.start = 2026-07-01` is the calendar span of `forward_2026H2`, not the collection start. The operative `splits.forward` rule and the later external anchor are explained in [ADR-0009](adr/0009-forward-record-freeze-and-eligibility.md) and [REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md).
-3. **Repoint the readiness narrative — DONE 2026-10-08.** [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md), [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md), and [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) state that the freeze was externally anchored on 2026-10-08 and collection has not begun.
-4. **Record the decision — DONE.** [ADR-0009](adr/0009-forward-record-freeze-and-eligibility.md) records the external anchor, eligibility rule, external ownership of conditions 1 and 2, and the SPENT 2025 holdout. Condition 3 cannot claim a prospective close before the 2026-10-08 anchor.
-5. **Start prospective collection (open — and date-bound).** The record needs an append-only hash chain and externally anchored close and open packets. `dipcatcher forward-shadow freeze` opens a local simulated journal; it does not bind the anchored `forward_2026H2` pre-registration or independently verify a data source. The separate `dipcatcher paper --forward-stage` path binds the canonical momentum-20/equal-weight, 1,400-session protocol but still reports external attestation, independent strategy replay, and forward evidence acceptance as unverified. Neither path currently closes condition 3. Establish the approved source and independently verifiable capture path before the first eligible close; collection then remains wall-clock-bound.
-6. **Implement independent condition-3 acceptance (open engineering work).** Bind the actual collection to the externally anchored pre-registration, verify the external timestamp and source of each close and open packet, independently replay both strategies and the frozen admission rule, and fail closed on missing sessions, deviations, or receipt-chain gaps. A passing verifier requires the real prospective record; repository fixtures alone cannot satisfy it.
-7. **Implement a live promotion verifier (open engineering work).** The existing immutable `promotion_receipt.v1` is research-only. A separate live receipt must bind accepted conditions 1–4, the exact evidence hashes, and written capital authorization. A real broker adapter, authenticated drop-copy reconciliation, and live pre-trade enforcement need their own acceptance tests before any live endpoint can be enabled.
+2. **Resolve the `window.start` label ambiguity (open).** `window.start = 2026-07-01` is the calendar span of `forward_2026H2`, not the collection start; the operative rule is `splits.forward` (first decision after the 2026-10-07 freeze). State this explicitly wherever the window is cited so it cannot be read as "collection began 2026-07-01".
+3. **Repoint the readiness narrative (open).** `INSTITUTIONAL_READINESS.md:27,71`, `EVIDENCE_PROCUREMENT.md:41`, and `FORWARD_SHADOW_POWER.md:47` cite `forward_2026H2` as the path to condition 3. They should state that the freeze is externally anchored as of 2026-10-08 and that collection has not begun.
+4. **Add a decision record** (`docs/adr/`) stating: conditions 1 and 2 are procurement/authorization, owned outside engineering; the earliest honest condition-3 date is the first prospective close after the 2026-10-08 anchor; the 2025 holdout is SPENT and must never be retuned.
+5. **Start prospective collection (open — and date-bound).** Append-only, hash-chained, externally anchored at each close. This is the only path to Tier C condition 3. Every week of delay is a week of window permanently unavailable; this item is wall-clock-bound, not effort-bound, so it should start before the code work finishes.
 
-**Exit gate:** v1 anchor `chain_verified` + `fresh` ✅; label ambiguity resolved ✅; three docs repointed ✅; ADR filed ✅; first prospective close, independent condition-3 acceptance, and the live promotion verifier still open.
+**Exit gate:** v1 anchor `chain_verified` + `fresh` ✅; label ambiguity resolved; three docs repointed; ADR filed; first prospective close recorded.
 
 ---
 
@@ -390,7 +380,7 @@ These are the specific failure modes this repo is most likely to walk into next.
 5. **Do not retune the spent 2025 holdout.** It is SPENT. Using it again converts the repo's strongest honesty asset into its worst liability.
 6. **Do not weaken the honesty tokens.** `FORBIDDEN_RESEARCH_METRIC_KEYS` ↔ `FORBIDDEN_HEADLINE_TOKENS` move together, always, and `tests/fx1/test_honesty_inheritance.py` keeps blocking drift.
 7. **Do not merge the 314-commit divergence blindly.** Reconstruct intent first; then re-stamp, re-sign, re-anchor in order.
-8. **Keep Tier C engineering separate from external evidence.** Conditions 1 and 2 need an entitlement and an authorization; the live adapter and independent forward verifier still need engineering. Neither can substitute for the other.
+8. **Do not chase Tier C with code.** Conditions 1 and 2 need an entitlement and an authorization. A better adapter does not substitute for either.
 
 ---
 
@@ -403,14 +393,14 @@ These are the specific failure modes this repo is most likely to walk into next.
 | Segfault is in the Rust native path and resists bisection | Medium | Verification lane unreliable | `-n 0` documented path; `make native` off as a fallback lane; report honestly as an open defect | 5 |
 | `forward_2026H2` interval is treated as valid forward evidence by a reader | **Medium-High** — three docs cite it | **Integrity** — an unearned claim becomes load-bearing | Phase 4 supersession + doc repointing + explicit exclusion note | 4 |
 | Retirement of 7,529 families breaks old-receipt verification | Low — guard already covers it | Evidence unverifiable | `test_catalog_retired_families.py` asserts archived receipts still verify; run it first in Phase 3 | 3 |
-| Premature Tier C claim | Medium — ambition is documented in `ULTRAPLAN_FRONTIER.md` | Missing procurement, authorization, or verifier is mistaken for a passing gate | Track engineering and external evidence separately in Phase 4 and the Tier C exit criteria | 4, ongoing |
+| Scope creep into Tier C | Medium — ambition is documented in `ULTRAPLAN_FRONTIER.md` | Blocked on procurement, so all effort wasted | Tier table in §1; ADR in Phase 4 | 4, ongoing |
 | Re-scoring `HONESTY_RATING.md` reads as self-congratulation | Medium | Credibility | Keep H1–H5 rules fixed; publish deductions *before* fixes; never remove a deduction without its evidence | 8 |
 
 ---
 
 ## 6. Prod-readiness scorecard
 
-Repository controls to re-run on every `PROD_BASELINE`. Rows with commands return pass/fail; rows naming a policy or artifact still need an executable check before they can count as green. This scorecard does not establish public-model or live-trading acceptance.
+Machine-checkable. Each row is a command that returns pass/fail. Re-run on every `PROD_BASELINE`. This is the artifact that replaces 90 prose docs.
 
 | # | Control | Check | Target |
 |---|---|---|---|
@@ -419,26 +409,21 @@ Repository controls to re-run on every `PROD_BASELINE`. Rows with commands retur
 | 3 | History integrity | `git rev-list --left-right --count origin/main...HEAD` | `0  0` |
 | 4 | Epoch chain | `make epoch-consistency EPOCH_BASE=origin/main` | pass |
 | 5 | Tree hygiene | `git ls-files \| grep -cE '^(\.dsh-24x7\|\.cursor\|\.serena\|\.freebuff\|\.box-soft-verify)/'` | `0` |
-| 6 | Receipts | `make receipts-reverify && make evidence-audit` | Pass required; receipt stage passed on 2026-10-16, aggregate blocked by workflow epoch drift |
+| 6 | Receipts | `make receipts-reverify && make evidence-audit` | **FAIL (exit 2)** — 2/10 fixed, 8 need schema-specific verifiers |
 | 7 | Lint/format | `make lint` | pass |
 | 8 | Types | `make typecheck` + `uv run mypy src/fx1` | pass |
 | 9 | Coverage floor | `make coverage` | ≥ 81%, trend published |
 | 10 | Test reliability | 3× full suite, no segfault | 3/3 clean |
-| 11 | Complexity | `make lint` (ruff mccabe) | max complexity 71, 1,090 baselined functions at soft threshold 10; no regressions |
+| 11 | Complexity | `make lint` (ruff mccabe) | ceiling < 74, 736 pinned |
 | 12 | Honesty | `make fx1-test -k honesty` | pass, no token drift |
 | 13 | Catalog | `LIVE_OPTIONAL` justified-or-flagged | 100%, ratchet green |
-| 14 | Forward pre-registration anchor | prereg seal RFC 3161-anchored, `verify_timestamps` `chain_verified` + `fresh` | pass ✅ 2026-10-08; forward evidence remains uncollected |
+| 14 | Forward evidence | prereg seal RFC 3161-anchored, `verify_timestamps` `chain_verified` + `fresh` | pass ✅ 2026-10-08 |
 | 15 | Release | `git tag -l 'v*'` non-empty; attestation verifies | ≥ 1 signed release |
 | 16 | Dependency audit | `make audit-all` | no high/critical |
 | 17 | Docs drift | drift checker enabled | pass |
 | 18 | Honesty ledger | `HONESTY_RATING.md` dated at `PROD_BASELINE` | current |
 
 Rows 1–5 are the Tier-A gate. Tier A is **not** achieved until all five are green.
-
-| Additional release surface | Required acceptance procedure | Current result |
-|---|---|---|
-| Tier B — public fx1 and fx1-lite | On the exact release image, verify each real checkpoint's signed immutable inventory, license rights, served-weight identity, measured ship gates, and an independently held preregistered bank with authenticated run-start chronology and evaluator-signed case results. Implement and run a complete verifier for those inputs before either alias is advertised. | **Blocked.** The trust registry is empty and `_independent_public_eval_verified` returns false; no model or fixture result can substitute. |
-| Tier C — live trading | Verify all five conditions in [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md): licensed PIT feed; authorized broker with authenticated order, fill, and drop-copy reconciliation plus live pre-trade enforcement; 1,400 eligible paired sessions independently replayed against the anchored protocol; sourced venue measurements; and a distinct signed live promotion receipt plus written capital authorization. Run the completed condition-3 verifier, live receipt verifier, and live adapter acceptance tests before enabling an endpoint. | **Blocked.** External inputs and independent condition-3 acceptance are missing, the live adapter and live receipt verifier are unimplemented, and `LiveEndpointRefused` remains the active behavior. |
 
 ---
 
@@ -481,7 +466,7 @@ P5 reliability ──┴──> P6 fx-1 labeling ──> P7 supply chain ──>
 - [ ] Issue tracker live
 - [ ] Docs drift checker merged and green
 
-**Tier C — external evidence and engineering both remain open.** Procurement must supply licensed point-in-time data and venue measurements; Trading and Compliance must authorize the broker, drop copy, and live capital. Engineering must implement and validate the authorized live adapter, authenticated order/fill reconciliation, live pre-trade enforcement, independent condition-3 acceptance, and a distinct live promotion receipt/verifier. The current paper adapter refuses live endpoints, and neither forward-shadow path can promote its simulated record. The frozen paper close protocol requires source availability at the event timestamp; a later real-feed release would require a newly predeclared and externally anchored decision cutoff. Condition-3 collection can begin only under the applicable anchored protocol and must reach the frozen 1,400 eligible paired sessions before acceptance. Track these as separate gates; do not substitute fixtures or local attestations for external evidence.
+**Tier C — explicitly out of engineering scope.** Blocked on procurement (condition 1) and authorization (condition 2). Condition-3 evidence can begin at the first prospective close after the 2026-10-08 anchor. Track honestly; do not simulate.
 
 ---
 
@@ -531,7 +516,7 @@ EXC_BAD_ACCESS (SIGSEGV)  KERN_INVALID_ADDRESS at 0x0000000000000580
 
 ### Phase 3 — the catalog surface is now measurable, and the number is damning
 
-The justify-or-flag classification was first implemented in `src/quant_fund/research/catalog/optional_classification.py` using the audit evidence file (`quality/canon_qualification_summary.json`). The 2026-10-17 packaging update below pins a compact six-name snapshot to that file and to the exact live-optional name set, so installed wheels retain the audit classification when the repository-level evidence file is absent.
+The justify-or-flag classification is implemented in `src/quant_fund/research/catalog/optional_classification.py` and **derived from the audit's own evidence file** (`quality/canon_qualification_summary.json`) rather than hand-listed — so re-running `scripts/canon_qualify.py` and the classifier cannot disagree without the difference surfacing as an unclassified family.
 
 **Measured result:**
 
@@ -545,7 +530,7 @@ The justify-or-flag classification was first implemented in `src/quant_fund/rese
 
 **Six.** Of 2,693 families the research surface can still emit, **6 have a real mechanism and 2,687 are template stubs** the same audit already flagged as retirement candidates. This is the §2.5 suspicion, now quantified: the "live optional" surface is 99.8% generated bulk, and presenting it as a live research surface overstates what exists.
 
-At that initial audit stage, the change was deliberately conservative:
+Deliberately conservative:
 - `exploratory` is a **label, not a retirement.** Nothing removes a family from `OPTIONAL_BENCHMARK_FAMILIES`, changes `verify.py`'s allow-list, or weakens fail-closed verification — **an archived receipt naming an exploratory family still verifies exactly as before.**
 - The `agent.py` change is **docstring-only** (recording that `_retired_optional_families()` must keep enumerating the full optional set, since narrowing it would let a retired family back into a live receipt).
 - `LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING = 2693` is a ratchet that may fall, never rise without an audit receipt. *(A `FAMILES` typo in that export name was corrected to `FAMILIES` for consistency; everything re-validated after.)*
@@ -553,8 +538,6 @@ At that initial audit stage, the change was deliberately conservative:
 **Validated:** 17 tests pass (new classification tests plus the pre-existing retired-families guard); `ruff check` clean; `ruff format --check` clean; `mypy --strict` → *no issues in 23 source files*.
 
 **The decision this forces (owner):** 2,687 exploratory families are now explicitly labelled rather than quietly presented as research breadth. The honest follow-up is to either retire them or stop describing the live-optional set as a research surface — the classification makes either choice cheap and visible.
-
-**Audit packaging and planner surface (2026-10-17):** Installed wheels lack the repo-level `quality/` tree. The classifier now carries the audit-derived six-name justified snapshot, pinned to the summary file SHA-256 and exact live-optional name-set SHA-256. A wheel without the summary keeps the same classification; a source checkout with changed audit evidence or live names fails closed until the snapshot is reviewed and updated. This closes the missing-summary path that previously called every live optional family "justified." The default `research-families` schema v2 exposes only 23 required and six justified optional names, plus counts for 2,687 exploratory and 2,693 live optional families. For each planner goal, a bounded, goal-bound hash lookup identifies bare names of omitted families without listing the full set in the default catalog or putting the raw goal on the subprocess command line; failed, cancelled, or timed-out lookups exclude automatic `research`. Named-family goals also exclude it because the runner has no per-family selector. The plain-chat model tool refuses `research`, while an operator can explicitly request the full scorecard. Live template family blobs carry `provenance: template`; scorecard checks ignore that label as evidence and the verifier rejects a conflicting label while accepting older receipts without it. The live-optional ratchet test pins its historical 2,693 ceiling independently of the production constant. Phase 3 remains open because explicit `research` still executes the optional battery by default and the runner has no per-family selector.
 
 **Phase 4 step 1 — forward prereg externally anchored.** ✅
 
@@ -601,7 +584,7 @@ Total across all push-triggered workflows: **96 jobs / 16 workflows**, down from
 
 > **This is not sufficient, and the plan should not pretend otherwise.** A code push still requests 96 jobs against a 20-job concurrency cap — roughly five waves — so CI will *still* queue at high push cadence. The config edits remove the self-cancelling behaviour and reclaim the doc-push waste; the binding constraint is **push cadence**, and the fix for that is the merge queue in Phase 0 step 4, which is a repository-setting change that cannot be made from the tree.
 
-**Phase 2 step 2 (partial) — new scratch is ignored.** `.gitignore` now covers `.dsh-24x7/`, `.cursor/`, `.serena/`, `.freebuff/`, `.box-soft-verify/`, `.playwright-mcp/`, `.hypothesis/`, verified with `git check-ignore`. Existing tracked members remain in the index. Correction 3 supersedes the proposed blanket untracking step: several are evidence inputs or epoch members and need an explicit signed migration.
+**Phase 2 step 2 (partial) — scratch no longer re-trackable.** `.gitignore` now covers `.dsh-24x7/`, `.cursor/`, `.serena/`, `.freebuff/`, `.box-soft-verify/`, `.playwright-mcp/`, `.hypothesis/`, verified with `git check-ignore`. `AGENTS.md` corrected: it claimed `.dsh-24x7` was gitignored when only two subpaths were; it now states the rule *and* the 911 already-tracked files that `.gitignore` cannot untrack.
 
 **Phases 6 + 8 — fx-1 status and honesty ledger.** `README.md` (+116/−3), `HONESTY_RATING.md` (+49), `docs/FX1.md` (+22), `docs/FX1_API_STABILITY.md` (+9):
 
@@ -655,7 +638,7 @@ The code in that commit implements exactly that (`if value is not False: return 
 ```python
 for key in _iter_mapping_keys(payload):
     if key == "live_pnl_claim":
-        continue          # exempt regardless of value — a live claim passes
+        continue  # exempt regardless of value — a live claim passes
 ```
 
 So `{"live_pnl_claim": False, "receipts": [{"live_pnl_claim": True}]}` returned **True** — a receipt asserting a live P&L was passing the research-headline honesty gate. The test asserting the opposite has therefore never been green since that commit.
@@ -686,7 +669,7 @@ The two **lost-fix / missing-feature** clusters (`test_forbidden_metric_flags.py
 
 **Second lost-fix case — also a mount, and now restored.** `src/quant_fund/cli/sota_cmds.py` exists and defines all three operator groups with all 17 subcommands, including `forward-shadow freeze`. `cli/_app.py` mounts 17 other sub-apps via `app.add_typer(...)` — but **`sota_cmds` was not in that list**, and its own docstring still claims *"`cli._app` mounts this module"*. So the mount was dropped and nobody noticed, because the module still imported fine; it simply wasn't reachable from the CLI.
 
-That is the same failure shape as the honesty fix: **working code, correct tests, missing wiring.** The concrete cost was that `uv run dipcatcher forward-shadow freeze` — the command the readiness matrix named for opening a local forward-shadow journal — did not exist. The command is now reachable, but that journal cannot close institutional condition 3 without an independent verifier and the real prospective evidence.
+That is the same failure shape as the honesty fix: **working code, correct tests, missing wiring.** The concrete cost was that `uv run dipcatcher forward-shadow freeze` — the command `docs/INSTITUTIONAL_READINESS.md:73` names as the mechanism for closing institutional condition 3 — did not exist, so the documented procedure for starting forward collection was not executable.
 
 **Fix applied:** import the three apps in `cli/_app.py` and mount them as `prospective-sota`, `forward-shadow`, and `sota`. `sota_cmds` imports only stdlib + `typer` at module level (its shared helpers are lazy), so the import cannot reintroduce the `cli.support -> cli._app` cycle its docstring warns about. **All 40 tests in `test_sota_cmds.py` now pass**; bare `dipcatcher` still prints help and exits 0; `ruff` and `mypy --strict` clean.
 
@@ -781,21 +764,16 @@ The work was sound. One defect was found and fixed in review: the export `LIVE_O
 
 **Note on validation cost:** running `mypy --strict` over the whole `src/quant_fund` (~13k modules) is what exhausted the agent's budget. Scoping mypy to the changed package (`mypy --strict src/quant_fund/research/catalog`, 23 files) returns in seconds and is sufficient to validate this kind of change. Worth adopting as the default review loop.
 
-### Earlier audit and current receipt-gate update
+### Still open
 
-**Recheck on 2026-10-16 in the dedicated worktree (base `afb0d8c63`):** the exact `dipcatcher suite-health --strict` receipt stage passed in 8.3 seconds with `--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json --epoch-acks quality/epoch_allowed_removals.json --require-stamped`: 404 corpus JSON files, 387 verified, 17 byte-and-error-pinned quarantined, 0 invalid. The receipts epoch chain passed with its acknowledged history. `test_committed_receipts_verify_or_are_quarantined` also passed. Quarantined historical records remain excluded from pooled evidence (`pooled_evalue=None`); a passing strict gate does not turn them into verified findings.
-
-The fast self-seal scan now reports 395 eligible files: 391 canonical seals, 2 valid alternate JSON conventions, 0 mismatches, and 2 files without a `receipt_sha256` seal. It excludes 7 `legacy-unsealed/` records and 2 detached seal sidecars, which the full suite accounts for through the quarantine registry. `calib_real_drill.json` verifies with a canonical seal; commit `32a0dd7f9` restored its stamped bytes after the temporary retag. The old mismatch described below is no longer present. The scan now fails on an empty corpus and ambiguous or nonfinite JSON, with tests.
-
-The combined scorecard row 6 remains blocked: the `evidence-audit` workflow corpus check reports `head_member_digest_drift` for `ci.yml`, `fx1.yml`, `matrix.yml`, `proofcore.yml`, and `release.yml` after this worktree's changes. Its pinned epochs require the owner-held signing and anchor ceremony after the release revision is settled. The historical audit notes below describe the earlier failure state, not the current receipt verdict.
-
-- **Historical scorecard row 6 (`make receipts-reverify`) — failed, exit 2, after ~20 minutes in the earlier audit.** The old gate ran to completion: **10 failures across 393 files in `receipts/`.** Both problems were diagnosed; the current strict suite-health path and quarantine registry are summarized above.
+- **Scorecard row 6 (`make receipts-reverify`) — FAILS, exit 2, after ~20 minutes.** The gate ran to completion: **10 failures across 393 files in `receipts/`.** Both problems are now diagnosed.
 
   **Cost.** The gate shells out once per receipt:
   ```python
   # src/quant_fund/proofcore/ci.py:291
-  verifier = verify if verify is not None else _cli_verifier   # ← subprocess
-  for path in paths: ok = verifier(path)
+  verifier = verify if verify is not None else _cli_verifier  # ← subprocess
+  for path in paths:
+      ok = verifier(path)
   ```
   391 receipts × a measured **3.1 s** per invocation ≈ **20 minutes**, with **zero output until the end**. Almost all of that is interpreter startup and heavy transitive imports, not verification. The injection seam already exists — verifying in-process would collapse this to seconds. Isolation is probably deliberate, so keep it behind a flag rather than delete it.
 
@@ -857,7 +835,7 @@ The combined scorecard row 6 remains blocked: the `evidence-audit` workflow corp
 
   Ten tests pin the behaviour (`tests/unit/test_receipt_integrity_scan.py`), including that a silent body edit breaks the seal, that sidecars are never collected as receipts, that the `ensure_ascii=True` convention is treated as **intact rather than corrupt**, that genuine drift still fails under *both* conventions, and that scanning the real `receipts/` is deterministic.
 
-  **Historical self-seal verdict: FAIL — 384 ok, 2 ok-alt-convention, 1 mismatch, 2 no-selfseal.** The mismatch was resolved by restoring the originally stamped bytes. The distinct schema and tape provenance gaps are retained in the exact quarantine registry; they are not counted as verified research evidence.
+  **Current verdict: FAIL — 384 ok, 2 ok-alt-convention, 1 mismatch, 2 no-selfseal.** The single mismatch (`calib_real_drill.json`) is the actionable item. Either write the four schema verifiers or demote row 6 to "known-pending" — but do not leave it looking green-capable.
 
 - **A drift the guards caught — and a fix.** Editing `.github/workflows/proofcore.yml` broke `test_staged_workflow_matches_activated_copy`: `docs/proofcore/proofcore.yml` is a reference copy that must stay byte-identical to the active workflow below its 3-line activation header, and the workflow edit was not mirrored. Caught by running the suite and fixed by mirroring; all 22 tests in `tests/unit/test_proofcore_ci.py` now pass. **Worth noting: this guard did its job** — and it means any workflow edit under `.github/workflows/` should mirror into `docs/proofcore/proofcore.yml` if that is the affected file.
 - **Epoch re-stamp.** `.github/workflows/` fails epoch verification until `make stamp-epochs` → `make sign-pins` → `make anchor-pins` runs. Needs `GATE_SIGNING_KEY`.
@@ -867,9 +845,9 @@ The combined scorecard row 6 remains blocked: the `evidence-audit` workflow corp
 
 | Item | Reason |
 |---|---|
-| Untrack `.dsh-24x7` wholesale | This would remove committed SOTA reproduction inputs and an epoch corpus; a byte-preserving evidence migration and signed chain are required first (Correction 3). |
+| Untrack the 911 `.dsh-24x7` files | A 911-file deletion on the already-314-commit-diverged local spine would deepen the fork before the owner rules on which side is canonical. Prepared for the reconciliation commit. |
 | `stamp-epochs` / `sign-pins` / `anchor-pins` | Requires `GATE_SIGNING_KEY`; must run in strict order after the history decision, since every `stamp-epochs` stales existing anchors. |
-| Tag a version matching `fx1.__version__`, release, push | Irreversible and externally visible. Owner decision after the release gates pass. |
+| Tag `v0.4.0-rc.1`, release, push | Irreversible and externally visible. Owner decision. |
 | Merge/rebase the 314/14 divergence | Rewrites history and invalidates receipt pins. Owner decision on the canonical spine. |
 | Prune 231 local branches | Mostly `devin/*`, `kimi/*`, `codex/*`; safe but belongs with the reconciliation. |
 | Remove `tests/tests/` | **Not a defect** — known sftp-clobber artifact, already ignored (`.gitignore:102`), recreated by the clobber. |
@@ -884,38 +862,3 @@ The combined scorecard row 6 remains blocked: the `evidence-audit` workflow corp
 6. **"fx-1 has no weights on disk" was wrong.** `artifacts/fx1_tiny_lm/weights.safetensors` (127 KB) **is tracked in git.** Its own modelcard calls it a *"fixture-scale byte-level LM (~31k params) … not an fx-1 release candidate"* whose `eval_delta` values are *"synthetic ship-gate placeholders, not measured evals."* No capability is over-claimed, but the flat "no weights" wording was false and README's former "No model weights are in the tree" was worse. §2.6 now states the narrower, correct position. **Worth owner attention:** that card carries bare numbers (`0.5 → 0.51`) that read like scores even though they are disclaimed.
 7. **`git tag` went 0 → 4 mid-audit** — the four are `attic/receipt-provenance/*` anchors, not releases, so `git tag -l 'v*'` is still `0`. This is a live demonstration of the missing drift checker: a number in the docs went stale inside a single working session because another lane was writing.
 8. **A committed receipt fails verification.** `dipcatcher verify-research` reports `families_unknown: copula_specification, selective_inference, spa_test`. Verified **pre-existing** — those names appear nowhere in `src/` or `receipts/`, and are not in `OPTIONAL`, `REQUIRED`, or `RETIRED`. The fail-closed contract is behaving correctly, but scorecard row 6 does not currently pass.
-
----
-
-## 11. Committed replay provenance blocker — 2026-10-17
-
-`tests/unit/research/test_replay_proof.py::test_committed_lane_replays` reruns each committed receipt's declared argv in a clean root and requires its output artifact SHA-256 to equal the receipt's pin. Windows text-mode newline translation caused four failures: `fleet_eval_ab613c423b36627d.json`, `honest_verdict_9d631fa6aace437a.json`, `monitor_run_e69a3aed9568e30d.json`, and `rankic_eval_addd924f107eedd8.json`. `publish_text_once` now writes and compares exact UTF-8 bytes; clean Windows AMD64 replays of all four produce the current pinned paths and SHA-256 hashes. Two cases still fail on Windows with `exit_code == 0` and `all_match == false`, including with Python 3.12.14 and the historical proof's NumPy/SciPy/Polars versions:
-
-| Receipt | Current pinned artifact path / SHA-256 | Locally produced path / SHA-256 |
-|---|---|---|
-| `capacity_eval_5cf0042e91c7953c.json` | `data/metadata/replay/capacity_eval_f990aaadaa5b647b.json` / `7d5d3502ad6587d67ce442364468121b4feb59941f148645bbcb92071dc706cb` | `data/metadata/replay/capacity_eval_e6e7c306b2e6bcf7.json` / `e21e672dfa42210d37412113c2fe7fb8c9c22c76c6ff38c64d8eecbe34262e16` |
-| `vol_bench_dc16af46c3f2975b.json` | `data/metadata/replay/vol_bench_c770505112aeabce.json` / `deaafdde472fe5a553c6345ef608c7b69ce3b52e334945607cb710d55693fab8` | `data/metadata/replay/vol_bench_85da831313a506f1.json` / `29fe554e2b1ec1f477c22828973894296eca4f5257b18e9350241c1baf9b44df` |
-
-The exact-head Linux proofcore coverage job also ran `rankic_eval_addd924f107eedd8.json` successfully but produced `data/metadata/replay/rankic_eval_3b893263e811f672.json` (SHA-256 `5c10eb1734552b84c9bc001c35c4b106ad841ea0efa5bd8ff1f92674ca470f6b`) instead of its pin `data/metadata/replay/rankic_eval_507c328d7ea41c76.json` (SHA-256 `3671585a73edeab75c50c4a1eed874b7af4842e0a0156f223d39b7c4e6804100`). Its passing Windows replay does not establish cross-platform reproducibility. The same Linux job produced different siblings for capacity and vol-bench. All three current committed pins need authoritative producer evidence or a governed evidence migration.
-
-Commit `faafaf04040e9dc87b27154c157dc5b54655a401` changed artifact paths and hashes in six replay receipts (including the two Windows failures), without adding corresponding artifact bytes or positive replay proofs. Later commits re-sealed and renamed the receipts. The earlier positive proofs for the remaining lanes (`replay_proof_f5fe541481bbf231.json`, `replay_proof_701ae84c3d9813e0.json`) attest the **old** pins on macOS arm64; neither attests the current pins. A SHA-256 scan of all 49,624 reachable Git blobs found neither Windows-mismatched current pinned artifact, and `data/metadata/replay/` is absent locally. The receipt scientific payloads (`books`/`shards`, `dataset_sha256`, `inputs_sha256`, and results) were identical before and after the pin-only change.
-
-The two Windows drifts are inside generated numeric data, not the output writer. For capacity, both synthetic weight-array hashes match the receipt, while the uniform ADV hash is pinned as `8ecaf67526c80a674e9fd3b972398e12d551a8391e381a39b829e5de918eb790` and Windows produces `d66aae3b64284315824fe3e16e5a0cddcb87f3f0c0ae25012c88965b644a8bae`; the concentrated ADV hash also differs. For vol-bench, all three `garch_vol` input-array hashes match, while `rough_vol` returns, realized variance, and Parkinson hashes differ (pinned returns `28df1304f4bd66ff73589805060717b4fca43788f35b241639b158e34ae25b76`; Windows `72a2716277003a93f4aaf0b0b6dff43bf3fdc86576a9675fb6c08845ec054dcf`). Both local runs consequently change `dataset_sha256`, `inputs_sha256`, results, and artifact paths. The results differ only at floating-point scale, and NumPy/SciPy/Polars match the older proof's versions, so platform numerical kernels are a plausible cause; the missing current pinned arrays and positive origin proofs prevent proving that explanation or deriving an exact-byte portability fix. The relevant capacity and rough-vol producer algorithms have not changed since the older proofs. Scientific producer changes based only on target hashes would fabricate a result, so no such change was made.
-
-**Required to clear this blocker:** obtain an authoritative runtime and complete dependency/source/input specification that actually reproduces each failing **current** artifact path and SHA-256 from its committed receipt, then generate positive replay proofs and run the exact-byte gate on the required release runners. Merely supplying a saved artifact cannot pass the gate: `run_replay` removes declared outputs before executing the producer. If the current pins cannot be reproduced, the owner must issue new payload-consistent receipts and proofs, preserve the old receipts as immutable evidence, and explicitly resolve how retracted receipts remain covered by the fail-closed committed-replay gate. The existing tombstone mechanism excludes claims from lattice inference but does **not** exclude them from this test. Any replacement pin/epoch chain then needs the owner-held quorum signing, anchor, and checkpoint ceremony. The worktree lacks a complete authoritative producer package for the failing pins and the registered signer key; this gate must remain red until authoritative evidence exists. The old macOS proof environment cannot justify skipping the two Windows-mismatched current pins, and the Linux rankic discrepancy still needs an explained, reproducible resolution.
-
-The owner can provide the three current pinned paths above and the producing source revision, Python/dependency versions, platform, and inputs. On that runtime, run `dipcatcher replay receipts/<receipt-name>.json` for each receipt; the command writes sealed `receipts/replay_proof_<digest16>.json` only after executing the producer, and a pass requires all pinned bytes to match. The committed `quality/gate_quorum.json` has threshold 1 and key ID `bc3bcff676056adf`. After any legitimate new receipt/epoch state is settled and the source tree is frozen, the Windows owner runs `& .\scripts\owner_pin_ceremony.ps1 -KeyFile 'D:\keys\gate-quorum.txt'`, using the registered pair held outside the repository. The helper verifies the seed/public pair and registry quorum before any tracked pin changes, then updates crown-jewel hashes, extends epochs in Makefile order, signs and anchors both pins, signs the checkpoint, and verifies the repository and checkpoint chain. Its CLI calls use `uv run --frozen`, which preserves `uv.lock` after the pin is written. Add `-AnchorCheckpoint` to that invocation for a checkpoint timestamp. Receipt bytes stay immutable. The Makefile's POSIX shell loop is not the Windows PowerShell path.
-
-The separate `data/manifests/replay/mcs_vol.json` carrier also has an exact-byte
-replay drift. Its pinned `data/metadata/replay/mcs_vol_drill.json` SHA-256 is
-`9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0`.
-A local 2026-10-16 replay at commit `18b8847cf` exited successfully in 216
-seconds without a timeout, but produced SHA-256
-`ff48dc013ca998ae1a5235878716670dc33e28e6135d9b533556289495dffcb5`
-and a different scientific result: `realized_garch` was
-eliminated at origin 28, leaving four survivors, whereas the committed
-`receipts/mcs_vol_drill.json` has no eliminations and five survivors. The
-owner must supply this original artifact and its producing runtime, inputs,
-numerical dependencies, and positive origin evidence too. Treat the carrier
-as unresolved until the exact producer reproduces its pin or a governed,
-signed evidence migration explains the substantive result change.

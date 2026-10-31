@@ -43,7 +43,7 @@ the discrete bounds converge to the true model-free bounds as the strike
 and state grids refine.
 
 Honesty contract: outputs are proper pricing bounds and superhedging costs.
-No Sharpe/Sortino/P&L content. SYNTHETIC test data
+No Sharpe/Sortino/P&L content; no live-trading claims. SYNTHETIC test data
 is labelled as such.
 
 References

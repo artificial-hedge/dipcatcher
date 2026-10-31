@@ -24,7 +24,6 @@ from quant_fund.models.rl import (
     run_linucb_panel,
     run_thompson_panel,
 )
-from quant_fund.models.robinhood_plus.constants import AMOUNT_COL, PRICE_COLS, VOLUME_COL
 from quant_fund.models.tail import DrawdownClassifier, GaussianTail, HistoricalTail
 from quant_fund.pipeline.artifact_manifest import (
     UNSUPERVISED_LABEL,
@@ -481,6 +480,7 @@ def train_robinhood_plus(
     """Persist the robinhood+ engine card. The tokenizer is unsupervised."""
     _require_model(model_name, {"hierarchical_markov", "transformer"}, "robinhood_plus")
     from quant_fund.models.robinhood_plus.bench import bench_robinhood_plus
+    from quant_fund.models.robinhood_plus.constants import KLINE_FEATURE_NAMES
     from quant_fund.models.robinhood_plus.engine import RobinhoodPlusEngine
 
     engine = RobinhoodPlusEngine(
@@ -495,17 +495,10 @@ def train_robinhood_plus(
     engine.fit(np.zeros((2, 1)), np.zeros(2))
     path = Path(config.data.root) / "metadata" / f"robinhood_plus_{model_name}.joblib"
     df = panel(config)
-    # The engine consumes K-line columns, not the ranking feature registry.
-    # An empty intersection with DEFAULT_FEATURES is not an identity.
-    required = (*PRICE_COLS, VOLUME_COL)
-    missing = [name for name in required if name not in df.columns]
-    if missing:
-        raise ValueError(
-            "robinhood+ training requires K-line columns "
-            + ", ".join(missing)
-            + "; refusing an empty feature identity"
-        )
-    engine_features = [name for name in (*required, AMOUNT_COL) if name in df.columns]
+    # The card is an unsupervised K-line tokenizer, not a tabular ranker.
+    # Ranking-zoo columns are often absent on a price panel and must not be
+    # what the artifact claims it was fit on.
+    engine_features = [str(name) for name in KLINE_FEATURE_NAMES]
     save_training_artifact(
         engine,
         path,
@@ -567,7 +560,7 @@ def train_family(config: AppConfig, family: str, model_name: str | None = None) 
             result["artifact_identity_error"] = str(exc)
         # Dataset identity is verified, never assumed: an artifact whose
         # manifest carries no (or an unverified) identity is recorded loudly
-        # here and blocks promotion downstream (see research.promotion_receipt).
+        # here and blocks promotion downstream (see proof.promotion_receipt).
         try:
             identity = verify_artifact_manifest(Path(artifact_path))
             result["dataset_identity"] = identity.model_dump(mode="json")

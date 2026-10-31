@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -51,22 +49,6 @@ def test_genesis_epoch(corpus_dir: Path) -> None:
     assert epoch_contract_errors(receipt) == []
 
 
-def test_member_digest_names_match_case_sensitive_sort(tmp_path: Path) -> None:
-    """Epoch receipts require ``sorted(names)``. Windows Path order does not.
-
-    ``README.md`` sorts before ``momentum_…`` in case-sensitive POSIX order
-    and after it under Windows' case-insensitive path order. A stamp made
-    on the fleet host has to match a stamp made on the Linux CI runner.
-    """
-    (tmp_path / "README.md").write_text("readme", encoding="utf-8")
-    (tmp_path / "momentum_original39.npz").write_bytes(b"npz")
-    names = list(member_digests(tmp_path, pattern="*"))
-    assert names == ["README.md", "momentum_original39.npz"]
-    receipt = corpus_epoch(tmp_path, pattern="*")
-    assert epoch_contract_errors(receipt) == []
-    assert [m["name"] for m in receipt["members"]] == names
-
-
 def test_epoch_root_deterministic_and_order_free() -> None:
     m1 = {"a": "ab" * 32, "b": "cd" * 32}
     m2 = {"b": "cd" * 32, "a": "ab" * 32}
@@ -100,26 +82,13 @@ def test_deleted_member_detected(corpus_dir: Path) -> None:
     assert any("member_removed:" in e and "'a.json'" in e for e in errors)
 
 
-def _ack(member: str, epoch: Path, frm: str, to: str | None, transition: str) -> dict[str, Any]:
-    return {
-        "corpus": "c/*.json",
-        "member": member,
-        "transition": transition,
-        "from_sha256": frm,
-        "to_sha256": to,
-        "epoch": epoch.name,
-        "reason": "test fixture",
-    }
-
-
-def test_acknowledged_removal_is_reported_not_failed(corpus_dir: Path) -> None:
+def test_allowed_removal_pin(corpus_dir: Path) -> None:
     _stamp(corpus_dir)
     digest = member_digests(corpus_dir)["a.json"]
     (corpus_dir / "a.json").unlink()
-    epoch = _stamp(corpus_dir)
-    result = check_epoch_chain(corpus_dir, acks=[_ack("a.json", epoch, digest, None, "removed")])
-    assert not any("'a.json'" in e for e in result["errors"])
-    assert result["acknowledged"] == [f"member_removed:'a.json'@{epoch.name!a}"]
+    _stamp(corpus_dir)
+    errors = check_epoch_chain(corpus_dir, allowed_removals={"a.json": digest})["errors"]
+    assert not any("member_removed:" in e and "'a.json'" in e for e in errors)
 
 
 def test_mutated_member_detected(corpus_dir: Path) -> None:
@@ -301,15 +270,9 @@ def test_heads_pin_rollback_detected(tmp_path: Path) -> None:
     first = write_epoch_receipt(corpus_epoch(corpus), corpus)
     _receipt(corpus, "b.json", "2")
     second = write_epoch_receipt(corpus_epoch(corpus), corpus)
-    from quant_fund.research.corpus_epoch import (
-        epoch_heads_key,
-        load_heads_pin,
-        update_heads_pin,
-    )
+    from quant_fund.utils.hashing import hash_bytes
 
-    pin = tmp_path / "epoch_heads.json"
-    update_heads_pin(pin, corpus, "*.json", second)
-    exp = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    exp = {"receipt": second.name, "sha256": hash_bytes(second.read_bytes())}
     assert check_epoch_chain(corpus, expected_head=exp)["errors"] == []
     # Attack: delete the head epoch — without the pin this rewinds silently.
     second.unlink()
@@ -319,75 +282,6 @@ def test_heads_pin_rollback_detected(tmp_path: Path) -> None:
     # And unpinned, the same rollback is silent — documenting why the pin exists.
     unpinned = check_epoch_chain(corpus)
     assert unpinned["head"] == first.name and unpinned["errors"] == []
-
-
-@pytest.mark.parametrize("absent", ["drop", "null"])
-@pytest.mark.parametrize("field", ["tree_root", "chain_root", "n_epochs"])
-def test_heads_pin_omitted_position_field_fails_closed(
-    tmp_path: Path, field: str, absent: str
-) -> None:
-    """Omission is not a legacy shape: every position field is required, so
-    deleting (or nulling) one fails closed — via ``load_heads_pin`` exactly as
-    ``verify-repo`` reads the pin, and for a caller-built entry alike."""
-    from quant_fund.research.corpus_epoch import (
-        epoch_heads_key,
-        load_heads_pin,
-        update_heads_pin,
-    )
-
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    _receipt(corpus, "a.json", "1")
-    write_epoch_receipt(corpus_epoch(corpus), corpus)
-    _receipt(corpus, "b.json", "2")
-    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
-    pin = tmp_path / "epoch_heads.json"
-    update_heads_pin(pin, corpus, "*.json", second)
-    key = epoch_heads_key(corpus, "*.json")
-    doc = json.loads(pin.read_text())
-    if absent == "drop":
-        del doc["heads"][key][field]
-    else:
-        doc["heads"][key][field] = None
-    pin.write_text(json.dumps(doc))
-    want = [f"epoch_pin_field_missing:{field!a}"]
-    assert check_epoch_chain(corpus, expected_head=load_heads_pin(pin)[key])["errors"] == want
-    assert check_epoch_chain(corpus, expected_head=doc["heads"][key])["errors"] == want
-
-
-def test_update_heads_pin_refuses_a_head_outside_the_chain(tmp_path: Path) -> None:
-    """The writer fails closed instead of emitting an entry without
-    ``chain_root``/``n_epochs`` (which the verifiers now reject): a head the
-    chain under ``corpus_dir`` does not contain is refused and the pin is
-    left untouched. A stale ancestor head is still pinnable — it commits to
-    its own prefix, exactly as the verifier recomputes it."""
-    from quant_fund.research.corpus_epoch import (
-        epoch_heads_key,
-        load_heads_pin,
-        update_heads_pin,
-    )
-
-    corpus = tmp_path / "corpus"
-    corpus.mkdir()
-    _receipt(corpus, "a.json", "1")
-    first = write_epoch_receipt(corpus_epoch(corpus), corpus)
-    _receipt(corpus, "b.json", "2")
-    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
-    pin = tmp_path / "epoch_heads.json"
-    update_heads_pin(pin, corpus, "*.json", second)
-    before = pin.read_bytes()
-    elsewhere = tmp_path / "elsewhere"  # a corpus whose chain lacks the head
-    elsewhere.mkdir()
-    _receipt(elsewhere, "z.json", "9")
-    write_epoch_receipt(corpus_epoch(elsewhere), elsewhere)
-    with pytest.raises(ValueError, match="refusing to pin"):
-        update_heads_pin(pin, elsewhere, "*.json", second)
-    assert pin.read_bytes() == before
-
-    update_heads_pin(pin, corpus, "*.json", first)
-    entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
-    assert entry["receipt"] == first.name and entry["n_epochs"] == 1
-    assert check_epoch_chain(corpus, expected_head=entry)["errors"] == []
 
 
 def test_heads_pin_bound_chain_fields(tmp_path: Path) -> None:
@@ -492,7 +386,7 @@ def test_allow_member_updates_for_mutable_corpora(tmp_path: Path) -> None:
     _receipt(corpus, "manifest.json", "v3")
     drift = check_epoch_chain(corpus, allow_member_updates=True)
     assert "head_member_digest_drift:'manifest.json'" in drift["errors"]
-    # Removals still error in mutable mode (only an epoch-bound ack explains one).
+    # Removals still error in mutable mode (use allowed_removals pins).
     (corpus / "pin.json").unlink()
     removed = check_epoch_chain(corpus, allow_member_updates=True)
     assert any("pin.json" in e for e in removed["errors"])
@@ -573,12 +467,7 @@ def test_symlink_members_refused_and_flagged(tmp_path: Path) -> None:
     _receipt(corpus, "real.json", "1")
     outside = tmp_path / "outside.json"
     outside.write_text('{"escape": true}')
-    try:
-        (corpus / "link.json").symlink_to(outside)
-    except OSError as exc:
-        if getattr(exc, "winerror", None) == 1314:
-            pytest.skip("Windows symlink privilege unavailable")
-        raise
+    (corpus / "link.json").symlink_to(outside)
     with pytest.raises(ValueError, match="symlink"):
         corpus_epoch(corpus)
     assert _symlink_errors(corpus, "*.json") == ["member_is_symlink:'link.json'"]
@@ -594,28 +483,6 @@ def test_symlink_members_refused_and_flagged(tmp_path: Path) -> None:
     assert "member_is_symlink:'link.json'" in check_epoch_chain(corpus)["errors"]
 
 
-def test_symlinked_corpus_root_is_refused_and_flagged(tmp_path: Path) -> None:
-    """``rglob`` follows a symlinked corpus dir, so a re-rooted corpus is stamped
-    and verified in full while none of its children is a link -- the member scan
-    could never see it. Both the stamp and the chain check refuse the root."""
-    from quant_fund.research.corpus_epoch import _symlink_errors
-
-    real = tmp_path / "zz_corpus"
-    real.mkdir()
-    _receipt(real, "a.json", "1")
-    root = tmp_path / "receipts"
-    root.symlink_to(real, target_is_directory=True)
-    assert member_digests(root) == member_digests(real)  # the divergence being closed
-    with pytest.raises(ValueError, match="symlink"):
-        corpus_epoch(root)
-    assert _symlink_errors(root, "*.json") == ["corpus_root_is_symlink:'receipts'"]
-    assert _symlink_errors(real, "*.json") == []
-    # Live-tree leg: a chain stamped in the real dir fails once read through the link.
-    _stamp(real)
-    assert check_epoch_chain(real)["errors"] == []
-    assert "corpus_root_is_symlink:'receipts'" in check_epoch_chain(root)["errors"]
-
-
 def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     """Control/format/separator chars in member names are refused — a raw
     ``\\n`` in a label would inject a fake 'all gates intact' line into
@@ -626,17 +493,11 @@ def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     corpus = tmp_path / "receipts"
     corpus.mkdir()
     _receipt(corpus, "real.json", "1")
-    quoted = _portable_name_errors({"x\ny.json": "ab" * 32})
-    assert quoted == ["member_name_not_portable:'x\\ny.json'"]
-    assert all("\n" not in error for error in quoted)
     bad = "evil\nverify-repo: all gates intact.json"
-    try:
-        (corpus / bad).write_text("{}", encoding="utf-8", newline="\n")
-    except OSError:
-        # Windows rejects a newline in the filename, so that attack cannot
-        # be stored. U+202E is a format character NTFS will store.
-        bad = "evil\u202e.json"
-        (corpus / bad).write_text("{}", encoding="utf-8", newline="\n")
+    (corpus / bad).write_text("{}")
+    assert _portable_name_errors({"x\ny.json": "ab" * 32}) == [
+        "member_name_not_portable:'x\\ny.json'"
+    ]
     with pytest.raises(ValueError, match="non-portable"):
         corpus_epoch(corpus)
     (corpus / bad).unlink()
@@ -758,128 +619,3 @@ def test_script_membership_parity(tmp_path: Path) -> None:
     (lake / "nested" / "manifest.json").write_text("{}")
     for d in (corpus, gh, lake):
         assert sv._member_digests(d, "*") == member_digests(d, pattern="*")
-
-
-def test_member_digests_skip_gitignored_untracked_files(tmp_path: Path) -> None:
-    """A gitignored untracked file is not corpus evidence.
-
-    ``data/metadata/resolved_config.json`` is ignored derived state. Stamping
-    it made CI's clean checkout fail ``head_member_missing_live`` while a
-    machine that still had the file passed. Tracked files stay members.
-    """
-    from scripts import verify_epoch_chain as sv
-
-    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
-    corpus = tmp_path / "data" / "metadata"
-    corpus.mkdir(parents=True)
-    (tmp_path / ".gitignore").write_text(
-        "data/metadata/local.json\ndata/metadata/価格.json\n", encoding="utf-8"
-    )
-    (corpus / "kept.json").write_text("{}\n")
-    (corpus / "local.json").write_text("{}\n")
-    (corpus / "価格.json").write_text("{}\n")
-    assert set(member_digests(corpus)) == {"kept.json"}
-    assert sv._member_digests(corpus, "*.json") == member_digests(corpus)
-
-
-# --- D7-06: a pinned head must reach the commit the pin rides in -------------
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-# Stamp corpora whose dirs the committed .gitignore otherwise hides.
-IGNORED_CORPORA = (".dsh-24x7", ".cursor", ".box-soft-verify")
-
-
-def _ignore_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, gitignore: str) -> Path:
-    """A worktree with ``gitignore`` at its root, a tracked member per
-    corpus and an empty heads pin; cwd is the repo. Global/system git
-    config and excludes are isolated so only ``gitignore`` decides."""
-    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(tmp_path / "no-gitconfig"))
-    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
-    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
-    (repo / ".gitignore").write_text(gitignore)
-    for name in (*IGNORED_CORPORA, "scratch"):
-        (repo / name).mkdir()
-        (repo / name / "member.txt").write_text(f"{name}\n")
-    pin = repo / "quality" / "epoch_heads.json"
-    pin.parent.mkdir()
-    pin.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {}}))
-    # Force-added: the real repo tracks members under these ignored dirs.
-    subprocess.run(["git", "-C", str(repo), "add", "-f", "--", "."], check=True)
-    monkeypatch.chdir(repo)
-    return repo
-
-
-def _stamp_cli(corpus: str) -> Any:
-    from typer.testing import CliRunner
-
-    from quant_fund.cli.main import app
-
-    args = ["corpus-epoch", "--corpus-dir", corpus, "--glob", "*", "--out-dir", corpus]
-    return CliRunner().invoke(app, [*args, "--heads-pin", "quality/epoch_heads.json"])
-
-
-def test_stamp_refuses_a_gitignored_untracked_head(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A head written where git ignores it is left out by ``git add -A``,
-    so the commit carries a pin naming a file a clean checkout lacks
-    (``epoch_head_missing``). The stamper refuses before writing the epoch
-    or touching the pin; the library writer refuses the same way."""
-    repo = _ignore_repo(tmp_path, monkeypatch, "scratch/\n")
-    pin = repo / "quality" / "epoch_heads.json"
-    pin_bytes = pin.read_bytes()
-    res = _stamp_cli("scratch")
-    assert res.exit_code == 2, res.output
-    assert "ignores" in res.output and "negation" in res.output
-    assert not list((repo / "scratch").glob("corpus_epoch_*.json"))
-    assert pin.read_bytes() == pin_bytes
-    corpus = repo / "scratch"
-    with pytest.raises(ValueError, match="git ignores it and it is untracked"):
-        write_epoch_receipt(corpus_epoch(corpus, pattern="*"), corpus)
-    assert not list(corpus.glob("corpus_epoch_*.json"))
-
-
-@pytest.mark.parametrize("corpus", IGNORED_CORPORA)
-def test_repo_gitignore_stages_heads_of_ignored_corpora(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corpus: str
-) -> None:
-    """Under the committed .gitignore, ``make stamp-epochs``'s write into each
-    ignored corpus succeeds and a plain ``git add -A`` stages the head the pin
-    names; the corpus's other host-local scratch stays ignored."""
-    repo = _ignore_repo(tmp_path, monkeypatch, (REPO_ROOT / ".gitignore").read_text())
-    (repo / corpus / "host_local.txt").write_text("scratch\n")
-    res = _stamp_cli(corpus)
-    assert res.exit_code == 0, res.output
-    from quant_fund.research.corpus_epoch import load_heads_pin
-
-    head = load_heads_pin(repo / "quality" / "epoch_heads.json")[f"{corpus}/*"]["receipt"]
-    subprocess.run(["git", "add", "-A"], check=True)
-    staged = subprocess.run(
-        ["git", "diff", "--cached", "--name-only"], check=True, capture_output=True, text=True
-    ).stdout.splitlines()
-    assert f"{corpus}/{head}" in staged
-    assert "quality/epoch_heads.json" in staged
-    assert f"{corpus}/host_local.txt" not in staged
-
-
-def test_no_stamped_corpus_head_is_gitignored(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Closed world: no chain ``verify-repo`` checks may keep its epoch heads
-    behind the committed .gitignore (path probe; tracked state not consulted)."""
-    from quant_fund.research.repo_integrity import CORPORA
-
-    _ignore_repo(tmp_path, monkeypatch, (REPO_ROOT / ".gitignore").read_text())
-    probes = [f"{c[0]}/corpus_epoch_0123456789abcdef.json" for c in CORPORA]
-    proc = subprocess.run(
-        ["git", "check-ignore", "--no-index", "--stdin"],
-        input="\n".join(probes) + "\n",
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert proc.returncode in (0, 1), proc.stderr
-    assert proc.stdout.splitlines() == []

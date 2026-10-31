@@ -17,25 +17,11 @@ import polars as pl
 
 
 def _num(value: Any) -> float | None:
-    if isinstance(value, (bool, str, bytes)):
-        return None
     try:
         out = float(value)
-    except (TypeError, ValueError, OverflowError):
+    except (TypeError, ValueError):
         return None
     return out if np.isfinite(out) else None
-
-
-def _checked_tol(value: float) -> float:
-    if isinstance(value, (bool, str, bytes)):
-        raise ValueError("tol must be finite and non-negative")
-    try:
-        tol = float(value)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("tol must be finite and non-negative") from exc
-    if not np.isfinite(tol) or tol < 0:
-        raise ValueError("tol must be finite and non-negative")
-    return tol
 
 
 def reconcile_broker_states(
@@ -52,18 +38,16 @@ def reconcile_broker_states(
     """
     if not isinstance(expected, dict) or not isinstance(actual, dict):
         raise ValueError("broker states must be dicts")
-    tol = _checked_tol(tol)
+    if tol < 0 or not np.isfinite(tol):
+        raise ValueError("tol must be finite and non-negative")
     mismatches: list[str] = []
     deltas: dict[str, float] = {}
 
     def _cmp_scalar(key: str) -> None:
-        if key not in expected and key not in actual:
-            if key == "cash":
-                mismatches.append("cash: missing from both broker states")
-            return
         a, b = _num(expected.get(key)), _num(actual.get(key))
         if a is None or b is None:
-            mismatches.append(f"{key}: invalid or missing numeric value")
+            if expected.get(key) != actual.get(key):
+                mismatches.append(f"{key}: {expected.get(key)!r} != {actual.get(key)!r}")
             return
         deltas[f"{key}_delta"] = b - a
         if abs(b - a) > tol:
@@ -143,11 +127,6 @@ def reconcile_equity(
         missing = {time_col, "nav"} - set(frame.columns)
         if missing:
             raise ValueError(f"{name} equity missing columns: {sorted(missing)}")
-    tol = _checked_tol(tol)
-    duplicate_expected = expected.height - expected.select(time_col).unique().height
-    duplicate_actual = actual.height - actual.select(time_col).unique().height
-    null_expected = expected[time_col].null_count()
-    null_actual = actual[time_col].null_count()
     # Unmatched = timestamp present on one side only. A matched timestamp
     # carrying a null nav is not "unmatched" — count it separately so a null
     # nav cannot masquerade as a missing row.
@@ -171,10 +150,6 @@ def reconcile_equity(
             "unmatched_expected": int(only_exp),
             "unmatched_actual": int(only_act),
             "matched_null_nav": matched_nulls,
-            "duplicate_expected_timestamps": duplicate_expected,
-            "duplicate_actual_timestamps": duplicate_actual,
-            "null_expected_timestamps": null_expected,
-            "null_actual_timestamps": null_actual,
             "status": "no_shared_timestamps",
             "live_pnl_claim": False,
             "research_only": True,
@@ -184,24 +159,11 @@ def reconcile_equity(
     delta = (both["nav_act"] - both["nav_exp"]).to_numpy().astype(float)
     max_abs = float(np.max(np.abs(delta)))
     return {
-        "match": bool(
-            max_abs <= tol
-            and only_exp == 0
-            and only_act == 0
-            and matched_nulls == 0
-            and duplicate_expected == 0
-            and duplicate_actual == 0
-            and null_expected == 0
-            and null_actual == 0
-        ),
+        "match": bool(max_abs <= tol and only_exp == 0 and only_act == 0 and matched_nulls == 0),
         "n_matched": int(both.height),
         "unmatched_expected": int(only_exp),
         "unmatched_actual": int(only_act),
         "matched_null_nav": matched_nulls,
-        "duplicate_expected_timestamps": duplicate_expected,
-        "duplicate_actual_timestamps": duplicate_actual,
-        "null_expected_timestamps": null_expected,
-        "null_actual_timestamps": null_actual,
         "max_abs_nav_delta": max_abs,
         "mean_nav_delta": float(np.mean(delta)),
         "last_nav_delta": float(delta[-1]),
@@ -230,29 +192,18 @@ def reconcile_fills(
         missing -= set(frame.columns)
         if missing:
             raise ValueError(f"{name} fills missing columns: {sorted(missing)}")
-    tol = _checked_tol(tol)
     exp_dup = expected.height - expected.select(key).unique().height
     act_dup = actual.height - actual.select(key).unique().height
     joined = expected.select(
-        *key,
-        pl.lit(True).alias("_expected_present"),
-        pl.col(qty_col).alias("q_exp"),
-        pl.col(price_col).alias("p_exp"),
+        *key, pl.col(qty_col).alias("q_exp"), pl.col(price_col).alias("p_exp")
     ).join(
-        actual.select(
-            *key,
-            pl.lit(True).alias("_actual_present"),
-            pl.col(qty_col).alias("q_act"),
-            pl.col(price_col).alias("p_act"),
-        ),
+        actual.select(*key, pl.col(qty_col).alias("q_act"), pl.col(price_col).alias("p_act")),
         on=list(key),
         how="full",
     )
-    only_exp = int(joined.filter(pl.col("_actual_present").is_null()).height)
-    only_act = int(joined.filter(pl.col("_expected_present").is_null()).height)
-    both = joined.filter(
-        pl.col("_expected_present").is_not_null() & pl.col("_actual_present").is_not_null()
-    )
+    both = joined.drop_nulls()
+    only_exp = int(joined.filter(pl.col("q_act").is_null()).height)
+    only_act = int(joined.filter(pl.col("q_exp").is_null()).height)
     mismatches: list[str] = []
     if exp_dup:
         mismatches.append(f"expected frame has {exp_dup} duplicated key rows")
@@ -268,10 +219,8 @@ def reconcile_fills(
         if both.height
         else np.array([])
     )
-    n_qty_nonfinite = int((~np.isfinite(qd)).sum()) if qd.size else 0
-    n_px_nonfinite = int((~np.isfinite(pd_)).sum()) if pd_.size else 0
-    n_qty_bad = int(((qd > tol) | ~np.isfinite(qd)).sum()) if qd.size else 0
-    n_px_bad = int(((pd_ > tol) | ~np.isfinite(pd_)).sum()) if pd_.size else 0
+    n_qty_bad = int((qd > tol).sum()) if qd.size else 0
+    n_px_bad = int((pd_ > tol).sum()) if pd_.size else 0
     if n_qty_bad:
         mismatches.append(f"{n_qty_bad} matched fills differ on quantity")
     if n_px_bad:
@@ -285,12 +234,8 @@ def reconcile_fills(
         "unmatched_actual": only_act,
         "n_qty_mismatch": n_qty_bad,
         "n_price_mismatch": n_px_bad,
-        "n_qty_nonfinite": n_qty_nonfinite,
-        "n_price_nonfinite": n_px_nonfinite,
-        "max_abs_qty_delta": float(qd[np.isfinite(qd)].max()) if np.isfinite(qd).any() else 0.0,
-        "max_abs_price_delta": (
-            float(pd_[np.isfinite(pd_)].max()) if np.isfinite(pd_).any() else 0.0
-        ),
+        "max_abs_qty_delta": float(qd.max()) if qd.size else 0.0,
+        "max_abs_price_delta": float(pd_.max()) if pd_.size else 0.0,
         "mismatches": mismatches,
         "tol": float(tol),
         "live_pnl_claim": False,

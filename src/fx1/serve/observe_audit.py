@@ -267,7 +267,6 @@ def _make_app(
         if api_key is not None:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=_fast_runner),
             backend_resolver=fake_resolve,
             **create_kw,
@@ -724,18 +723,12 @@ def _probe_rate_limited_metrics() -> dict[str, bool]:
     out: dict[str, bool] = {}
     client, _ = _client(rate_limit_rps=1.0)
     root = {"X-API-Key": _ROOT}
-    # capacity is max(1, rps)=1: first call consumes, the burst refuses.
-    # A call slower than 1 s would refill that token, so the clock is pinned.
-    _mono, _box = time.monotonic, [time.monotonic()]
-    time.monotonic = lambda: _box[0]
-    try:
-        burst = [client.get("/harness/commands", headers=root).status_code for _ in range(4)]
-        n_429 = sum(1 for c in burst if c == 429)
-        health_codes = [client.get("/health").status_code for _ in range(3)]
-        _box[0] += 1.1  # refill the global bucket before scraping
-        m = _metrics(client, root)
-    finally:
-        time.monotonic = _mono
+    # capacity is max(1, rps)=1: first call consumes, the burst refuses
+    burst = [client.get("/harness/commands", headers=root).status_code for _ in range(4)]
+    n_429 = sum(1 for c in burst if c == 429)
+    health_codes = [client.get("/health").status_code for _ in range(3)]
+    time.sleep(1.1)  # refill the global bucket before scraping
+    m = _metrics(client, root)
     out["rate_limited_total_exact"] = (
         burst[0] == 200
         and n_429 >= 1

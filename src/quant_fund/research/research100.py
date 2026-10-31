@@ -14,7 +14,7 @@ from typing import Any, cast
 def load_catalog() -> list[dict[str, Any]]:
     """Load the shipped catalog; identifiers are stable, not performance ranks."""
     rows: list[dict[str, Any]] = json.loads(
-        files("quant_fund.research").joinpath("research100.json").read_text(encoding="utf-8")
+        files("quant_fund.research").joinpath("research100.json").read_text()
     )
     if len(rows) != 100 or len({r["id"] for r in rows}) != 100:
         raise ValueError("research100 catalog requires 100 unique entries")

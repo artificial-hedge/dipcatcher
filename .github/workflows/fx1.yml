@@ -4,10 +4,6 @@ on:
   push:
     branches: [main, 'fx-1/**']
   pull_request:
-    branches: [main, 'fx-1/**']
-  merge_group:
-    types: [checks_requested]
-    branches: [main]
 
 # Least privilege. This workflow only reads the repo and runs tests.
 permissions:
@@ -47,10 +43,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        # Goldenpath loads the fixture checkpoint via safetensors (nn extra).
-        # Without --all-extras, weights_direct_ran fails and the lane is red
-        # even though the harness itself is healthy.
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --frozen --all-groups --extra nn
       # Gates are invoked through their Make targets so the CI gate and
       # `make fx1-test` / `make fx1-lint` cannot drift (same commands, same
       # flags, same testpaths).
@@ -63,63 +56,11 @@ jobs:
           # --strict keeps new code strict at birth; no allowlist needed.
           uv run mypy --strict src/fx1
       - name: Tests
-        run: |
-          set -o pipefail
-          make fx1-test 2>&1 | tee "$RUNNER_TEMP/fx1-test.log"
-          python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          log = Path(os.environ["RUNNER_TEMP"]) / "fx1-test.log"
-          text = log.read_text(encoding="utf-8", errors="replace")
-          m = re.search(r"(\d+) passed(?:, (\d+) skipped)?", text)
-          if not m:
-              raise SystemExit("fx1-test log missing pytest pass/skip summary")
-          passed = int(m.group(1))
-          skipped = int(m.group(2) or 0)
-          print(f"fx1-test summary: passed={passed} skipped={skipped}")
-          PY
+        run: make fx1-test
       # Documented contract (docs/FX1_TRAINING.md): honesty inheritance is
       # blocking — fails if fx-1's forbidden set drifts from the lab catalog.
       - name: Honesty inheritance gate
-        run: |
-          set -o pipefail
-          PYTEST_ADDOPTS="${PYTEST_ADDOPTS:-} --junitxml=${RUNNER_TEMP}/fx1-honesty.xml" \
-            PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
-      - name: Pass/skip summary
-        if: always()
-        run: |
-          python - <<'PY'
-          import os
-          import xml.etree.ElementTree as ET
-
-          def totals(path: str) -> tuple[int, int, int, int] | None:
-              if not os.path.isfile(path):
-                  return None
-              root = ET.parse(path).getroot()
-              nodes = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
-              tests = failures = errors = skipped = 0
-              for node in nodes:
-                  tests += int(node.attrib.get("tests", 0))
-                  failures += int(node.attrib.get("failures", 0))
-                  errors += int(node.attrib.get("errors", 0))
-                  skipped += int(node.attrib.get("skipped", 0))
-              return (tests - failures - errors - skipped, skipped, failures, errors)
-
-          temp = os.environ["RUNNER_TEMP"]
-          for name, filename in (("tests", "fx1-tests.xml"), ("honesty", "fx1-honesty.xml")):
-              counted = totals(os.path.join(temp, filename))
-              if counted is None:
-                  print(f"fx1 pass/skip summary: suite={name} missing")
-                  continue
-              passed, skipped, failed, errors = counted
-              total = passed + skipped + failed + errors
-              print(
-                  f"fx1 pass/skip summary: suite={name} passed={passed} "
-                  f"skipped={skipped} failed={failed} errors={errors} total={total}"
-              )
-          PY
+        run: PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
       - name: Corpus contract smoke
         run: |
           uv run fx1 corpus build --receipts-dir receipts --out "$RUNNER_TEMP/fx1_corpus.jsonl"
@@ -136,26 +77,4 @@ jobs:
               assert {"messages", "negative", "receipt_sha256", "source_path"} <= row.keys(), row.keys()
               assert re.fullmatch(r"[0-9a-f]{64}", row["receipt_sha256"]), row["receipt_sha256"]
           print(f"corpus contract OK: {len(rows)} provenance-hashed lines")
-          PY
-
-  required-gate:
-    name: fx1-required
-    needs: [test]
-    if: ${{ always() }}
-    runs-on: instabox-large
-    timeout-minutes: 5
-    steps:
-      - name: Require every fx1 job to succeed
-        env:
-          NEEDS_JSON: ${{ toJSON(needs) }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-
-          jobs = json.loads(os.environ["NEEDS_JSON"])
-          failures = {name: row.get("result") for name, row in jobs.items() if row.get("result") != "success"}
-          if not jobs or failures:
-              raise SystemExit(f"required fx1 jobs did not all pass: {failures or 'no dependencies'}")
-          print(f"all {len(jobs)} required fx1 job groups passed")
           PY

@@ -1,8 +1,9 @@
 """Operations behind ``fxi`` commands — shared by the REPL and the Typer app.
 
-fx-1 credentials never appear on argv. Children that need hosted-model
-access receive credentials via an explicit ``env=`` mapping; the parent and
-lab harness subprocesses stay scrubbed.
+The one rule of this module: fx-1 credentials travel as environment values
+on child processes, never as argv. Subprocess calls apply the active model
+profile to ``os.environ`` (so the session remembers it) and inherit the
+environment.
 """
 
 from __future__ import annotations
@@ -28,9 +29,13 @@ from fx1.serve.backends import HostedK3Backend
 
 # Console scripts shipped in the fx-1 distribution that fxi may launch.
 TOOLS: tuple[str, ...] = ("fxi", "fx1", "dipcatcher", "quant", "verify-ledger", "mc-engine")
-_CLIENT_TOOLS: frozenset[str] = frozenset({"fxi", "fx1"})
 
 BackendFactory = Callable[..., HostedK3Backend]
+
+
+def _apply(model: str) -> None:
+    """Inject the model's endpoint into os.environ; fail-closed when missing."""
+    profiles.apply_profile(model)
 
 
 def _which(argv0: str) -> str:
@@ -46,24 +51,20 @@ def run_eval(out: Path | None, model: str = DEFAULT_MODEL) -> int:
     The child ``fx1 eval`` reads ``MOONSHOT_API_KEY``/``FX1_BASE_URL`` from
     its environment (applied here) and is told which model id to send.
     """
-    env = profiles.subprocess_env_for_model(model)
+    _apply(model)
     argv = [_which("fx1"), "eval", "--backend", "hosted_k3", "--model", model]
     if out is not None:
         argv += ["--out", str(out)]
-    proc = subprocess.run(argv, check=False, env=env)  # noqa: S603 — argv built from literals
+    proc = subprocess.run(argv, check=False)  # noqa: S603 — argv built from literals
     return proc.returncode
 
 
 def run_tool(tool: str, args: list[str], model: str = DEFAULT_MODEL) -> int:
-    """Run a shipped console script.
-
-    ``fx1`` / ``fxi`` receive the model endpoint via ``env=``. Lab tools
-    (``dipcatcher``, ``quant``, …) inherit a credential-scrubbed environment.
-    """
+    """Run a shipped console script with the model's key in its environment."""
     if tool not in TOOLS:
         raise KeyError(f"unknown tool {tool!r}; choose from {sorted(TOOLS)}")
-    env = profiles.subprocess_env_for_model(model, inject_credentials=tool in _CLIENT_TOOLS)
-    proc = subprocess.run([_which(tool), *args], check=False, env=env)  # noqa: S603
+    _apply(model)
+    proc = subprocess.run([_which(tool), *args], check=False)  # noqa: S603
     return proc.returncode
 
 
@@ -77,13 +78,6 @@ def _complete_with_orb(
         return backend.complete(messages)
 
 
-def _you_prompt() -> str:
-    from fx1.interactive.terminal import unicode_stdout
-
-    mark = "›" if unicode_stdout() else ">"
-    return f"you {mark} "
-
-
 def chat(
     model: str = DEFAULT_MODEL,
     prompt: str | None = None,
@@ -93,7 +87,7 @@ def chat(
     output_fn: Callable[..., None] = typer.echo,
     animated: bool | None = None,
 ) -> int:
-    """One-shot (``prompt`` given) or multi-turn chat with a configured endpoint.
+    """One-shot (``prompt`` given) or multi-turn chat with a hosted fx-1 model.
 
     Fail-closed when no endpoint resolves for *model*; network errors inside
     the loop are reported and the turn is dropped, never fatal to the shell.
@@ -122,7 +116,7 @@ def chat(
     output_fn(f"fxi chat — model {model} @ {host}; 'exit' or Ctrl-D to leave")
     while True:
         try:
-            line = input_fn(_you_prompt()).strip()
+            line = input_fn("you › ").strip()
         except (EOFError, KeyboardInterrupt):
             output_fn("")
             return 0
@@ -166,8 +160,8 @@ def harness_get(name: str) -> Mapping[str, Any]:
 
 
 def harness_run(name: str, extra_args: list[str] | None = None, model: str = DEFAULT_MODEL) -> int:
-    """Execute a registered harness command (lab env is credential-scrubbed)."""
-    del model
+    """Execute a registered harness command with the session env (keys included)."""
+    _apply(model)
     result = Harness().run(name, extra_args)
     if result.stdout:
         typer.echo(result.stdout.rstrip())

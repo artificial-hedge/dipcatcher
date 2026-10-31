@@ -19,7 +19,6 @@ import re
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
 
 from fx1.flash.store import FlashEntry, FlashStore
 
@@ -189,38 +188,18 @@ def retrieve(
     k: int = 5,
     min_score: float = DEFAULT_MIN_SCORE,
     now: float | None = None,
-    include_private: bool = True,
 ) -> list[Retrieval]:
-    """Rank the store against *query*; optionally omit private entries."""
+    """Rank the store against *query*; only entries above *min_score* return."""
     if k <= 0:
         raise ValueError("k must be positive")
     now = time.time() if now is None else now
     scored: list[Retrieval] = []
     for entry in store.all():
-        if entry.private and not include_private:
-            continue
         score, reasons = score_entry(entry, query, now=now)
         if score >= min_score:
             scored.append(Retrieval(entry=entry, score=score, reasons=reasons))
     scored.sort(key=lambda hit: hit.score, reverse=True)
     return scored[:k]
-
-
-def release_private(retrievals: list[Retrieval], approvals: Any | None) -> list[Retrieval]:
-    """Keep private entries only after an explicit private-data approval.
-
-    With no gate, or a denial, private findings stay on disk and out of the
-    model prompt. Non-private hits are unchanged.
-    """
-    private = [hit for hit in retrievals if hit.entry.private]
-    if not private:
-        return retrievals
-    if approvals is not None and approvals.ask(
-        f"share {len(private)} private flash entries with the model?",
-        kind="private_data",
-    ):
-        return retrievals
-    return [hit for hit in retrievals if not hit.entry.private]
 
 
 def context_block(retrievals: list[Retrieval], *, max_chars: int = 6000) -> str:

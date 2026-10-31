@@ -48,7 +48,7 @@ def _spec_id(client: TestClient) -> str:
 
 
 def test_wire_unbound_shape_reloads() -> None:
-    client = TestClient(create_app(public_release=False))
+    client = TestClient(create_app())
     spec_id = _spec_id(client)
     res = client.post(
         f"/v1/evals/{spec_id}",
@@ -69,7 +69,7 @@ def test_wire_unbound_shape_reloads() -> None:
 
 
 def test_wire_bound_shape_frozen_409() -> None:
-    client = TestClient(create_app(public_release=False))
+    client = TestClient(create_app())
     spec_id = _spec_id(client)
     run = client.post(f"/v1/evals/{spec_id}/runs", json={"model": "byok"})
     assert run.status_code == 201, run.text
@@ -86,7 +86,7 @@ def test_wire_bound_shape_frozen_409() -> None:
 
 
 def test_wire_shape_validation_still_422() -> None:
-    client = TestClient(create_app(public_release=False))
+    client = TestClient(create_app())
     spec_id = _spec_id(client)
     bad = client.post(
         f"/v1/evals/{spec_id}",
@@ -140,7 +140,7 @@ def _transport_for(client: TestClient):
 
 
 def test_client_twin_forwards_shape_fields() -> None:
-    tc = TestClient(create_app(public_release=False))
+    tc = TestClient(create_app())
     api = HarnessClient("http://testclient", api_key="k3y-material", transport=_transport_for(tc))
     spec_id = _spec_id(tc)
     body = api.eval_spec_update(
@@ -165,13 +165,13 @@ def test_bound_freeze_survives_state_dir_replay() -> None:
 
     with tempfile.TemporaryDirectory() as td:
         state = Path(td) / "state"
-        app = create_app(state_dir=state, public_release=False)
+        app = create_app(state_dir=state)
         client = TestClient(app)
         spec_id = _spec_id(client)
         assert client.post(f"/v1/evals/{spec_id}/runs", json={"model": "byok"}).status_code == 201
         # A second app over the same journal replays the binding — the
         # freeze is evidence, not an in-memory flag.
-        client2 = TestClient(create_app(state_dir=state, public_release=False))
+        client2 = TestClient(create_app(state_dir=state))
         res = client2.post(
             f"/v1/evals/{spec_id}",
             json={"data_source_config": {"type": "custom", "item_schema": _SCHEMA}},

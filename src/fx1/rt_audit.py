@@ -53,7 +53,7 @@ Flagged warts (documented, not fixed):
 - ``flag_refusal_regex`` — ``_REFUSAL_RE`` matches "the docs refuse to
   load" (any mention counts as a refusal) yet misses "I can not" (the
   space defeats ``\bcannot\b``).
-- ``flag_arg_schema_partial`` — only 8 of 24 registered commands have
+- ``flag_arg_schema_partial`` — only 8 of 23 registered commands have
   argument schemas; the rest accept arbitrary/missing args.
 - ``flag_mock_validates_fresh_rng`` — MockHarness validates output
   templates drawn from a *fresh* probe rng, not the execute-stream rng —

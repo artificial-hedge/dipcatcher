@@ -210,7 +210,6 @@ def _client(
     receipts.mkdir()
     with _api_key_env(api_key):
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=lambda argv, timeout_s: (0, "ok", "")),
             backend_resolver=lambda name, *a, **k: (backend_map or _backends())[name](**k),
             state_dir=state_dir if state_dir is not None else isolated / "state",
@@ -968,15 +967,9 @@ def _probe_quota_independence(results: dict[str, bool]) -> None:
     results["token_budget_isolated_from_sibling"] = _chat(client, fat_key, "f2").status_code == 200
 
     limited, _api2 = _client(rate_limit_rps=2.0)
-    # Capacity is 2. Mint plus the first GET spend it. A slow client refills.
-    _mono, _box = time.monotonic, [time.monotonic()]
-    time.monotonic = lambda: _box[0]
-    try:
-        k1, _ = _mint(limited, name="one", scopes=["read", "write"])
-        first = limited.get("/v1/models", headers=_h(_ROOT))
-        second = limited.get("/v1/models", headers=_h(k1))
-    finally:
-        time.monotonic = _mono
+    k1, _ = _mint(limited, name="one", scopes=["read", "write"])
+    first = limited.get("/v1/models", headers=_h(_ROOT))
+    second = limited.get("/v1/models", headers=_h(k1))
     results["host_rate_limiter_shares_bucket_across_keys"] = (
         first.status_code == 200 and second.status_code == 429
     )

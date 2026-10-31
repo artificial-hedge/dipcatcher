@@ -159,7 +159,7 @@ def compile_dossier(
         # when the card's eval delta passed — and so does an incomplete
         # dossier: the five-activity pack cannot certify a checkpoint on
         # evidence it never pinned.
-        ship_eligible=(card.ship_eligible and not contamination_flagged and is_complete),
+        ship_eligible=(card.eval_delta.ship_eligible and not contamination_flagged and is_complete),
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)

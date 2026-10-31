@@ -6,12 +6,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # Stable v1.7.4 (TLC 2.19), not the rolling v1.8.0 prerelease.
-# The immutable asset API (id 184694200) 403s for unauthenticated runners.
-# This tag URL was re-fetched on 2026-10-13 and matched the pinned SHA-256
-# and size below. A force-moved tag still fails closed in verify_jar;
-# there is no checksum fallback. See spec/tla/README.md.
+# Asset IDs do not follow replacement uploads. Deletion must fail closed.
+# See spec/tla/README.md for upstream provenance and upgrade procedure.
 JAR="${TLA_TOOLS_JAR:-$ROOT/.tla/tla2tools-1.7.4.jar}"
-URL="https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar"
+URL="https://api.github.com/repos/tlaplus/tlaplus/releases/assets/184694200"
 SHA="936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88"
 SIZE="2274532"
 

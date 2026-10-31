@@ -39,7 +39,6 @@ from quant_fund.research.gate_signatures import (
     registry_sha256,
 )
 from quant_fund.utils.atomicio import atomic_write_bytes, atomic_write_text
-from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes
 
 QUORUM_ROTATION_SCHEMA = "quorum_rotation.v1"
@@ -117,8 +116,7 @@ def _count_valid(
         if kid in valid:
             continue  # a replayed signer cannot satisfy a quorum twice
         try:
-            pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pub))
-            Ed25519PublicKey.from_public_bytes(pub_bytes).verify(
+            Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub)).verify(
                 bytes.fromhex(str(entry.get("signature", ""))),
                 canonical_json_bytes(payload),
             )

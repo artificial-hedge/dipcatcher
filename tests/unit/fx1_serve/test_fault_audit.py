@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
 
 from fx1.serve.fault_audit import fault_audit, fault_audit_bench
@@ -22,17 +20,6 @@ _FORMER_DEFECTS = {
     "idem_race_jobs_single_id",
 }
 
-# The state-dir readonly probes (state_dir_readonly_fails_loud,
-# sdk_readonly_state_dir_fails_loud, mint_after_state_dir_readonly_fails_loud)
-# gate on POSIX ``chmod 0o555`` denying writes to a fresh directory. On
-# Linux the kernel bypasses that check for the superuser, so a container
-# running as root can't simulate a readonly dir at the FS layer; the
-# probes correctly measure the production failure mode in CI (where the
-# runner is non-root) but flip False inside the build sandbox. Skip
-# the affected assertions under root with the same verdict the live CI
-# reports; the production contract is unchanged.
-_ROOT_BYPASS_READONLY = os.geteuid() == 0 if hasattr(os, "geteuid") else False
-
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -40,10 +27,6 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(name, raising=False)
 
 
-@pytest.mark.skipif(
-    _ROOT_BYPASS_READONLY,
-    reason="state_dir readonly probes gate on POSIX chmod; root bypasses it (CI runs non-root)",
-)
 def test_contract_probes_hold() -> None:
     results = fault_audit()
     assert len(results) == 49
@@ -51,10 +34,6 @@ def test_contract_probes_hold() -> None:
         assert ok is True, f"probe {name} failed"
 
 
-@pytest.mark.skipif(
-    _ROOT_BYPASS_READONLY,
-    reason="state_dir readonly probes gate on POSIX chmod; root bypasses it (CI runs non-root)",
-)
 def test_repaired_defect_probes_hold() -> None:
     """Every former negative probe must keep its corrected contract."""
     results = fault_audit()
@@ -63,10 +42,6 @@ def test_repaired_defect_probes_hold() -> None:
         assert results[name] is True, f"defect {name} returned"
 
 
-@pytest.mark.skipif(
-    _ROOT_BYPASS_READONLY,
-    reason="state_dir readonly probes gate on POSIX chmod; root bypasses it (CI runs non-root)",
-)
 def test_receipt_verifies() -> None:
     blob = fault_audit_bench()
     assert blob["claim"]["ok"] is True

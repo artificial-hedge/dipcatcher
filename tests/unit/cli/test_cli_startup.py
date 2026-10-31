@@ -45,7 +45,6 @@ HEAVY_MODULES = (
 
 # Wall-clock ceilings for a fresh interpreter. See module docstring.
 _DIPCATCHER_HELP_S = 1.5
-_DIPCATCHER_VERSION_S = 0.6
 _FX1_HELP_S = 1.0
 _SUBPROCESS_TIMEOUT_S = 30
 
@@ -60,19 +59,12 @@ def _env() -> dict[str, str]:
     return env
 
 
-def _run(args: list[str], *, uninstrumented: bool = False) -> subprocess.CompletedProcess[str]:
-    env = _env()
-    if uninstrumented:
-        # Full offline coverage traces child interpreters via coverage.py's
-        # subprocess patch. Measure the CLI as users run it, without tracing
-        # every import in this timing-only child. Other tests cover imports.
-        env.pop("COVERAGE_PROCESS_CONFIG", None)
-        env.pop("COVERAGE_PROCESS_START", None)
+def _run(args: list[str]) -> subprocess.CompletedProcess[str]:
     started = time.perf_counter()
     completed = subprocess.run(
         [sys.executable, *args],
         cwd=_ROOT,
-        env=env,
+        env=_env(),
         capture_output=True,
         text=True,
         timeout=_SUBPROCESS_TIMEOUT_S,
@@ -80,31 +72,6 @@ def _run(args: list[str], *, uninstrumented: bool = False) -> subprocess.Complet
     )
     completed.elapsed = time.perf_counter() - started  # type: ignore[attr-defined]
     return completed
-
-
-@pytest.mark.parametrize(
-    "args",
-    [
-        ["-m", "quant_fund.cli.main", "--help"],
-        ["-m", "quant_fund.cli.main", "kyle-ofi", "--help"],
-        ["-m", "dipcatcher_cli", "--help"],
-    ],
-)
-def test_help_survives_narrow_console_encoding(args: list[str]) -> None:
-    env = _env()
-    env["PYTHONIOENCODING"] = "cp1252:strict"
-    completed = subprocess.run(
-        [sys.executable, *args],
-        cwd=_ROOT,
-        env=env,
-        capture_output=True,
-        encoding="cp1252",
-        timeout=_SUBPROCESS_TIMEOUT_S,
-        check=False,
-    )
-    assert completed.returncode == 0, completed.stderr
-    assert "Usage" in completed.stdout
-    assert "UnicodeEncodeError" not in completed.stderr
 
 
 def test_package_and_cli_imports_skip_heavy_modules() -> None:
@@ -128,17 +95,13 @@ def test_package_and_cli_imports_skip_heavy_modules() -> None:
     ("args", "budget_s", "needle"),
     [
         (["-m", "quant_fund.cli.main", "--help"], _DIPCATCHER_HELP_S, "Usage"),
-        (["-m", "dipcatcher_cli", "--help"], _DIPCATCHER_HELP_S, "Usage"),
-        (["-m", "dipcatcher_cli", "--version"], _DIPCATCHER_VERSION_S, "dipcatcher"),
         (["-m", "fx1.cli", "--help"], _FX1_HELP_S, "Usage"),
         (["-m", "quant_fund.cli.main", "train"], _DIPCATCHER_HELP_S, "Specify a family"),
         (["-m", "fx1.cli", "doctor"], _FX1_HELP_S, "{"),
-        (["-m", "dipcatcher_cli", "--help"], _DIPCATCHER_HELP_S, "Start a conversation"),
-        (["-m", "dipcatcher_cli", "--version"], _FX1_HELP_S, "dipcatcher"),
     ],
 )
 def test_cli_first_output_stays_under_budget(args: list[str], budget_s: float, needle: str) -> None:
-    completed = _run(args, uninstrumented=True)
+    completed = _run(args)
     elapsed = float(completed.elapsed)  # type: ignore[attr-defined]
     assert completed.returncode == 0, completed.stderr
     assert needle in completed.stdout
@@ -149,7 +112,7 @@ def test_cli_first_output_stays_under_budget(args: list[str], budget_s: float, n
         # page cache can blow the wall-clock pin without any product change.
         # Re-measure once so the pin still trips on a real regression while
         # absorbing one-off jitter.
-        completed = _run(args, uninstrumented=True)
+        completed = _run(args)
         elapsed = float(completed.elapsed)  # type: ignore[attr-defined]
         assert completed.returncode == 0, completed.stderr
         assert needle in completed.stdout

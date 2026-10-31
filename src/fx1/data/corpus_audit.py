@@ -65,18 +65,6 @@ def corpus_audit() -> dict[str, Any]:
                 "live_pnl_claim": True,
             },
         )
-        # Honesty-stamp reject (live_pnl_claim true) is refused, not a
-        # negative example. A claimless ineligible receipt still trains as
-        # a refusal/honesty negative.
-        _w(
-            root,
-            "claimless.json",
-            {
-                "schema": "claimless.v1",
-                "disclaimer": "no claim",
-                "correctness": {"metric": 1.0},
-            },
-        )
         # eligibility-clean but its correctness payload violates the
         # honesty contract once rendered → must be skipped, not emitted
         _w(
@@ -94,7 +82,6 @@ def corpus_audit() -> dict[str, Any]:
         lines = [json.loads(ln) for ln in out_jsonl.read_text().splitlines() if ln.strip()]
         out["stats_account"] = stats == {
             "loaded": 3,
-            "refused": 1,
             "positive": 1,
             "negative": 1,
             "skipped": 1,

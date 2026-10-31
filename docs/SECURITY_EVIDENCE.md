@@ -43,13 +43,6 @@ raw artifacts under `data/metadata/reports/deps_hygiene_20260928/`
   `trusted_checkpoint_sha256` whose digest must `compare_digest`-match the
   file bytes, else `UntrustedArtifactError`. Default load paths (JSON,
   ONNX, `weights_only` torch) never reach `pickle.loads`.
-- quant_fund `joblib.load`: only inside `quant_fund.models.base.load_trusted_joblib`,
-  which unpickles only bytes whose SHA-256 `compare_digest`-matches a pin.
-  `load_joblib_artifact` / `JoblibMixin.load` take the pin from the required
-  `<artifact>.sha256` sidecar (missing, malformed, or mismatched raises
-  `ArtifactIntegrityError`); `explain report` requires `--trusted-sha256`. A
-  co-located sidecar detects corruption or replacement; it does not
-  authenticate who wrote the artifact.
 - `yaml.load`/`yaml.unsafe_load`: not used; config loads go through
   `yaml.safe_load` paths.
 

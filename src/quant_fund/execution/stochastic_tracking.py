@@ -91,7 +91,7 @@ of the paper's own objective (impact cost ``J_0``, rate penalty, tracking
 L2, time-translation modulus) or a seeded SYNTHETIC Monte-Carlo statistic
 (keys prefixed ``synthetic_``); they are correctness evidence for the
 implemented mathematics, never market evidence, never a P&L or Sharpe-family
-headline. Fail-closed throughout:
+headline, and they make no live-trading claim. Fail-closed throughout:
 degenerate grids, non-finite or non-positive coefficients, violated
 Assumption 4.1, ``eps`` outside ``(0, T^2/4]``, or malformed target paths all
 raise ``ValueError``.

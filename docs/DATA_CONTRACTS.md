@@ -3617,7 +3617,7 @@ Setter: `canonical_northset_bars` → `NorthsetMarketView`; copied onto the nort
 
 - Split-adjusted prices drive candle geometry and sweep detection; TR close drives forward exits when present.
 - `raw_fixture_opt_out` is visible honesty for narrow fixtures without corp actions — **not** empirical adjusted evidence (`sweep_evidence_scope` becomes `fixture_raw_unadjusted` when bars are non-synthetic).
-- These keys are receipt metadata beside `label` / `dgp` / `component_sources`.
+- These keys are receipt metadata beside `label` / `dgp` / `component_sources`; they do not authorize live trading.
 
 Config: `northset.require_adjusted_ohlc` (default true). Synthetic fixtures typically run with require_adjusted false or provide adjusted cols per lab setup.
 

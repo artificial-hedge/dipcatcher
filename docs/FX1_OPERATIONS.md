@@ -97,7 +97,7 @@ result = harness.invoke_discovery_tool(
 
 The host supplies the workspace root at construction. The three operation tool
 schemas do not allow model-generated arguments to override it. The existing
-24 subprocess commands remain in `HARNESS_REGISTRY`; operation discovery and
+23 subprocess commands remain in `HARNESS_REGISTRY`; operation discovery and
 execution use a separate literal registry. Unknown IDs and extra input fields
 are rejected. These operations compute over supplied values or read local data.
 

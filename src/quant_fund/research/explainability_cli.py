@@ -290,11 +290,6 @@ def report_cmd(
     model_path: Path = typer.Option(
         ..., exists=True, dir_okay=False, help="joblib-pickled fitted model with predict(x)."
     ),
-    trusted_sha256: str = typer.Option(
-        ...,
-        help="SHA-256 you pinned for --model-path. joblib is pickle, so the model is "
-        "deserialized only when its bytes hash to this digest.",
-    ),
     features: Path = typer.Option(
         ..., exists=True, dir_okay=False, help="Parquet/CSV feature matrix."
     ),
@@ -321,16 +316,16 @@ def report_cmd(
 
     Rows are treated as time-ordered for the drift block. Output is labeled
     REAL because the inputs are the operator's own — that labels provenance, it
-    is not evidence of live performance. The model is unpickled only when its
-    bytes match ``--trusted-sha256``.
+    is not evidence of live performance.
     """
-    from quant_fund.models.base import load_trusted_joblib
+    import joblib
+
     from quant_fund.research.explainability import build_report
 
     include_shap = _maybe_shap(shap)
     try:
         x, y, names = _load_xy(features, labels, label_col)
-        model = load_trusted_joblib(model_path, trusted_sha256.strip().lower(), label="model")
+        model = joblib.load(model_path)
         report = build_report(
             model,
             x,

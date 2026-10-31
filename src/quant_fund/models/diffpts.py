@@ -95,7 +95,7 @@ score (CRPS via ``crps_empirical``, pinball, PIT histogram / KS) on seeded
 SYNTHETIC streams — correctness evidence, never market evidence; the bench
 dict carries ``dgp="fixture"`` / ``claim="research_metric_only"`` /
 ``synthetic=...`` markers. No Sharpe/Sortino/Calmar/P&L headline is
-computed.
+computed; there is no live-trading claim and no broker connectivity.
 
 Composition (reuse, do not reimplement): ``metrics.scoring.crps_empirical``
 and ``metrics.scoring.mean_pinball`` and ``metrics.probability.pit_ks`` own

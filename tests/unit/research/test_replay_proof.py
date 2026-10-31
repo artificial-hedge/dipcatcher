@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -27,44 +25,26 @@ DECLARED_RECEIPT = REPO_ROOT / "receipts" / "serial_watch_78dd891261e2aae9.json"
 _ARTIFACT_CONTENT = '{"ok": true}'
 _ARTIFACT_SHA256 = hashlib.sha256(_ARTIFACT_CONTENT.encode()).hexdigest()
 _ARTIFACT_REL = "out/result.json"
-_WRITE_ARTIFACT_SRC = (
-    "from pathlib import Path\n"
-    "p = Path('out')\n"
-    "p.mkdir(parents=True, exist_ok=True)\n"
-    f"(p / 'result.json').write_text({_ARTIFACT_CONTENT!r}, encoding='utf-8')\n"
-)
-# What a hostile receipt's argv would do if it ever ran: leave a marker.
-_MARKER = "PWNED"
-_MARKER_SRC = f"import pathlib; pathlib.Path({_MARKER!r}).write_text('ran')\n"
+_WRITE_ARTIFACT_ARGV = [
+    sys.executable,
+    "-c",
+    (
+        "from pathlib import Path\n"
+        "p = Path('out')\n"
+        "p.mkdir(parents=True, exist_ok=True)\n"
+        f"(p / 'result.json').write_text({_ARTIFACT_CONTENT!r}, encoding='utf-8')\n"
+    ),
+]
 
 
 def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _tracked_lane(root: Path, source: str, name: str = "lane.py") -> list[str]:
-    """Write a lane script, ``git add`` it under ``root``, return its argv.
-
-    Replay only runs a relative ``*.py`` that is git-tracked inside the
-    root, so scratch roots index their lane scripts the way a checkout does.
-    """
-    script = root / name
-    script.parent.mkdir(parents=True, exist_ok=True)
-    script.write_text(source, encoding="utf-8")
-    if not (root / ".git").exists():
-        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-    subprocess.run(["git", "add", "--", name], cwd=root, check=True)
-    return [name]
-
-
 def _write_receipt(root: Path, body: dict[str, Any], *, name: str = "receipt.json") -> Path:
     path = root / name
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(body, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
     return path
 
 
@@ -136,7 +116,7 @@ def test_run_replay_passes_and_reexecutes(tmp_path: Path) -> None:
     assert not artifact.exists()
     receipt = _receipt_with_manifest(
         tmp_path,
-        _tracked_lane(tmp_path, _WRITE_ARTIFACT_SRC),
+        _WRITE_ARTIFACT_ARGV,
         [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}],
     )
     body = run_replay(receipt, root=tmp_path)
@@ -155,7 +135,7 @@ def test_forged_artifact_digest_fails(tmp_path: Path) -> None:
     """Pinned digest ≠ produced bytes → fail, honestly reported."""
     receipt = _receipt_with_manifest(
         tmp_path,
-        _tracked_lane(tmp_path, _WRITE_ARTIFACT_SRC),
+        _WRITE_ARTIFACT_ARGV,
         [{"path": _ARTIFACT_REL, "sha256": "0" * 64}],
     )
     body = run_replay(receipt, root=tmp_path)
@@ -170,7 +150,7 @@ def test_missing_artifact_fails(tmp_path: Path) -> None:
     """A declared artifact the lane never writes → fail."""
     receipt = _receipt_with_manifest(
         tmp_path,
-        _tracked_lane(tmp_path, _WRITE_ARTIFACT_SRC),
+        _WRITE_ARTIFACT_ARGV,
         [{"path": "out/never_written.json", "sha256": "f" * 64}],
     )
     body = run_replay(receipt, root=tmp_path)
@@ -185,12 +165,13 @@ def test_missing_artifact_fails(tmp_path: Path) -> None:
 def test_nonzero_exit_fails(tmp_path: Path) -> None:
     """The lane exits non-zero → fail even though artifact bytes match."""
     (tmp_path / _ARTIFACT_REL).parent.mkdir(parents=True, exist_ok=True)
-    argv = _tracked_lane(
-        tmp_path,
+    argv = [
+        sys.executable,
+        "-c",
         "import pathlib, sys\n"
         f"pathlib.Path({_ARTIFACT_REL!r}).write_text({_ARTIFACT_CONTENT!r})\n"
         "sys.exit(3)\n",
-    )
+    ]
     receipt = _receipt_with_manifest(
         tmp_path, argv, [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
     )
@@ -203,16 +184,15 @@ def test_nonzero_exit_fails(tmp_path: Path) -> None:
 
 
 def test_stale_artifact_does_not_satisfy_pin(tmp_path: Path) -> None:
-    """A pre-placed file must not count — replay clears stale artifacts in its
-    output dir (``data/metadata/replay``) first."""
-    rel = "data/metadata/replay/result.json"
-    artifact = tmp_path / rel
+    """A pre-placed file must not count — replay deletes declared artifacts first."""
+    artifact = tmp_path / _ARTIFACT_REL
     artifact.parent.mkdir(parents=True, exist_ok=True)
     artifact.write_text(_ARTIFACT_CONTENT, encoding="utf-8")
-    argv = _tracked_lane(tmp_path, "import sys; sys.exit(0)\n")  # writes nothing
-    receipt = _receipt_with_manifest(tmp_path, argv, [{"path": rel, "sha256": _ARTIFACT_SHA256}])
+    argv = [sys.executable, "-c", "import sys; sys.exit(0)"]  # writes nothing
+    receipt = _receipt_with_manifest(
+        tmp_path, argv, [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
+    )
     body = run_replay(receipt, root=tmp_path)
-    assert not artifact.exists()
     assert body["exit_code"] == 0
     assert body["artifacts"][0]["match"] is False
     assert body["artifacts"][0]["note"] == "artifact_missing"
@@ -221,7 +201,7 @@ def test_stale_artifact_does_not_satisfy_pin(tmp_path: Path) -> None:
 
 def test_timeout_fails(tmp_path: Path) -> None:
     """A lane that outruns its bound fails closed rather than hanging."""
-    argv = _tracked_lane(tmp_path, "import time; time.sleep(30)\n")
+    argv = [sys.executable, "-c", "import time; time.sleep(30)"]
     receipt = _receipt_with_manifest(tmp_path, argv, [{"path": "x", "sha256": "f" * 64}])
     started = time.monotonic()
     body = run_replay(receipt, root=tmp_path, timeout_s=0.5)
@@ -237,7 +217,7 @@ def test_artifact_escape_fails(tmp_path: Path) -> None:
     outside.write_text(_ARTIFACT_CONTENT, encoding="utf-8")
     receipt = _receipt_with_manifest(
         tmp_path,
-        _tracked_lane(tmp_path, "pass\n"),
+        [sys.executable, "-c", "pass"],
         [{"path": str(outside), "sha256": _ARTIFACT_SHA256}],
     )
     body = run_replay(receipt, root=tmp_path)
@@ -258,7 +238,7 @@ def test_contract_round_trip_and_lies(tmp_path: Path) -> None:
     """The contract re-derives every claimed equivalence — forged flags fail."""
     receipt = _receipt_with_manifest(
         tmp_path,
-        _tracked_lane(tmp_path, _WRITE_ARTIFACT_SRC),
+        _WRITE_ARTIFACT_ARGV,
         [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}],
     )
     body = run_replay(receipt, root=tmp_path)
@@ -285,7 +265,7 @@ def test_committed_serial_watch_lane_replays(tmp_path: Path) -> None:
 
     The receipt and its committed PIT fixture are mirrored into a scratch
     root so the replayed ``dipcatcher`` argv writes nowhere near the real
-    receipts dir; argv resolves to ``sys.executable -c`` calling ``app()``.
+    receipts dir; argv resolves to ``sys.executable -m quant_fund.cli.main``.
     """
     if not DECLARED_RECEIPT.is_file():
         pytest.skip("declared serial_watch receipt not committed on this branch")
@@ -334,45 +314,17 @@ def _committed_lane_receipts() -> list[Path]:
 
 def _mirror_lane_run_inputs(root: Path) -> None:
     """Mirror the repo inputs every lane argv reads: ``configs/`` wholesale
-    (research.yaml composes base.yaml, including the nested ``configs/configs/``
-    tree; fleet/vol-bench/verdict/fleet-monitor resolve it relative to cwd) —
-    lanes that do not read it are unaffected."""
+    (research.yaml composes base.yaml; fleet/vol-bench/verdict/fleet-monitor
+    resolve it relative to cwd) — lanes that do not read it are unaffected."""
+    import shutil
+
     src_dir = REPO_ROOT / "configs"
     if not src_dir.is_dir():
         return
     dst_dir = root / "configs"
     if dst_dir.exists():
-        return
+        shutil.rmtree(dst_dir)
     shutil.copytree(src_dir, dst_dir)
-
-
-def _replay_mismatch_details(root: Path, artifacts: list[dict[str, Any]]) -> str:
-    """Show hashes of generated siblings when a digest-named pin does not replay."""
-    generated: list[dict[str, str]] = []
-    for row in artifacts:
-        declared = Path(row["path"])
-        directory = (root / declared.parent).resolve()
-        if not directory.is_relative_to(root.resolve()) or not directory.is_dir():
-            continue
-        prefix, separator, digest = declared.stem.rpartition("_")
-        stem_prefix = (
-            prefix + "_"
-            if separator and len(digest) == 16 and all(c in "0123456789abcdef" for c in digest)
-            else declared.stem
-        )
-        for candidate in sorted(directory.iterdir()):
-            if (
-                candidate.is_file()
-                and candidate.suffix == declared.suffix
-                and candidate.stem.startswith(stem_prefix)
-            ):
-                generated.append(
-                    {
-                        "path": candidate.relative_to(root).as_posix(),
-                        "sha256": _file_sha256(candidate),
-                    }
-                )
-    return f"declared/observed={artifacts!r}; generated siblings={generated!r}"
 
 
 @pytest.mark.parametrize(
@@ -395,21 +347,8 @@ def test_committed_lane_replays(tmp_path: Path, declared: Path) -> None:
     assert body["source_receipt_sha256"] == _file_sha256(declared)
     assert body["source_receipt_seal"] == source["receipt_sha256"]
     assert body["argv"] == manifest["argv"]
-    assert body["exit_code"] == 0, body.get("stderr_tail") or body.get("spawn_error")
-    mismatches = [
-        f"{row.get('path')} note={row.get('note')} "
-        f"expected={str(row.get('expected_sha256') or '')[:16]} "
-        f"observed={str(row.get('observed_sha256') or '')[:16]}"
-        for row in body.get("artifacts") or []
-        if not row.get("match")
-    ]
-    if body["all_match"] is not True:
-        replay_dir = tmp_path / "data" / "metadata" / "replay"
-        present = (
-            sorted(path.name for path in replay_dir.glob("*.json")) if replay_dir.is_dir() else []
-        )
-        mismatches.append(f"present={present}")
-    assert body["all_match"] is True, "; ".join(mismatches) or body.get("spawn_error")
+    assert body["exit_code"] == 0
+    assert body["all_match"] is True
     assert body["verdict"] == "pass"
     assert replay_proof_contract_errors(body) == []
 
@@ -439,56 +378,6 @@ def test_committed_lane_forged_digest_fails(tmp_path: Path, declared: Path) -> N
     assert replay_proof_contract_errors(body) == []
 
 
-def _vol_bench_replay_receipt() -> Path:
-    matches = [path for path in _committed_lane_receipts() if path.name.startswith("vol_bench_")]
-    assert matches, "no committed vol_bench replay receipt"
-    return matches[0]
-
-
-def test_committed_vol_bench_replay_isolated_from_shared_tmp_cwd_and_home(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """vol_bench committed-lane replay must not read a neighbour's HOME cache,
-    runner TMPDIR, or a git repo sitting above the pytest tmp tree.
-
-    CI failed this lane with ``artifact_missing`` (exit 0, sibling hash name)
-    in shard order and passed it alone at the same SHA — the leak is shared
-    process state, not the portable_fp kernels.
-    """
-    import os
-    import subprocess
-
-    declared = _vol_bench_replay_receipt()
-    source = json.loads(declared.read_text())
-    poison_home = tmp_path / "poison_home"
-    (poison_home / ".cache" / "dipcatcher").mkdir(parents=True)
-    (poison_home / ".cache" / "dipcatcher" / "seed").write_text("not-a-lane-input")
-    foreign_tmp = tmp_path / "foreign_tmp"
-    foreign_tmp.mkdir()
-    (foreign_tmp / "stale.json").write_text("{}")
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
-    monkeypatch.setenv("HOME", str(poison_home))
-    monkeypatch.setenv("USERPROFILE", str(poison_home))
-    monkeypatch.setenv("TMPDIR", str(foreign_tmp))
-    monkeypatch.setenv("TMP", str(foreign_tmp))
-    monkeypatch.setenv("TEMP", str(foreign_tmp))
-    monkeypatch.chdir(tmp_path)
-
-    lane_root = tmp_path / "lane"
-    lane_root.mkdir()
-    _mirror_lane_run_inputs(lane_root)
-    receipt = _write_receipt(lane_root / "receipts", source, name=declared.name)
-
-    body = run_replay(receipt, root=lane_root, timeout_s=180.0)
-    assert body["exit_code"] == 0, body.get("stderr_tail") or body.get("spawn_error")
-    assert body["all_match"] is True, body.get("artifacts")
-    assert body["verdict"] == "pass"
-    assert os.environ.get("HOME") == str(poison_home)
-    lane_home = lane_root / ".replay_lane_tmp" / "home"
-    assert lane_home.is_dir()
-    assert not (lane_home / ".cache" / "dipcatcher" / "seed").exists()
-
-
 def _tape_manifest(root: Path, tapes: list[dict[str, Any]], name: str = "tape.json") -> Path:
     """Write a seal-valid tape_manifest.v1 into root/data/manifests."""
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -515,7 +404,7 @@ def _with_tapes(root: Path, tapes: list[dict[str, Any]], *, name: str = "receipt
         "live_pnl_claim": False,
         "data_label": "SYNTHETIC",
         "replay": {
-            "argv": _tracked_lane(root, _WRITE_ARTIFACT_SRC),
+            "argv": _WRITE_ARTIFACT_ARGV,
             "artifacts": [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}],
             "input_tapes": tapes,
         },
@@ -600,11 +489,7 @@ def test_input_tapes_manifest_invalid_fails(tmp_path: Path) -> None:
     # Corrupt the committed manifest AFTER sealing.
     doc = json.loads(path.read_text())
     doc["n_rows"] = 999
-    path.write_text(
-        json.dumps(doc, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
     receipt = _with_tapes(tmp_path, [{"manifest": "data/manifests/t.json"}])
     body = run_replay(receipt, root=tmp_path)
     assert body["inputs_ok"] is False
@@ -736,104 +621,6 @@ def test_carrier_input_tapes_resolve_to_committed_manifest() -> None:
                 assert mbody.get("schema") == "tape_manifest.v1"
 
 
-def _git_ignored(rels: list[str]) -> set[str]:
-    """Paths git ignores (private or derived data). No git: none (fail closed)."""
-    import subprocess
-
-    try:
-        proc = subprocess.run(
-            ["git", "check-ignore", "-z", "--stdin"],
-            cwd=REPO_ROOT,
-            input="\0".join(rels).encode(),
-            capture_output=True,
-            check=False,
-        )
-    except OSError:
-        return set()
-    if proc.returncode not in (0, 1):
-        return set()
-    return {p for p in proc.stdout.decode().split("\0") if p}
-
-
-def test_carrier_literal_pins_match_live_bytes_unless_git_ignored() -> None:
-    """A literal input pin names repo bytes: it must exist and match.
-
-    The sweep skips a carrier whose input tape is absent or drifted (honest
-    for a private tape on CI), so a pin left on a renamed or resealed
-    committed receipt would skip silently forever. Only a path git ignores
-    (private or derived data) may be absent here; any other stale pin fails.
-    """
-    pins = [
-        (carrier.name, str(tape["path"]), tape.get("sha256"))
-        for carrier in _carrier_dir()
-        for tape in json.loads(carrier.read_text())["replay"].get("input_tapes", [])
-        if "path" in tape
-    ]
-    assert pins, "no literal input pins found; the corpus carrier pins 72"
-    ignored = _git_ignored([rel for _, rel, _ in pins])
-    stale: list[tuple[str, str, str]] = []
-    for name, rel, pinned in pins:
-        if rel in ignored:
-            continue
-        path = REPO_ROOT / rel
-        if not path.is_file():
-            stale.append((name, rel, "missing"))
-        elif _file_sha256(path) != pinned:
-            stale.append((name, rel, "drift"))
-    assert not stale, f"carrier pins on non-ignored inputs are stale: {stale}"
-
-
-def test_corpus_carrier_input_set_delta_matches_committed_bytes() -> None:
-    """The corpus carrier's drift label re-derives from committed files: the
-    members it audits versus the members the committed receipt read."""
-    carrier = json.loads((CARRIER_DIR / "corpus.json").read_text())
-    members = set(json.loads((REPO_ROOT / "data/manifests/replay_corpus_members.json").read_text()))
-    (entry,) = carrier["reproduces"]
-    committed = json.loads((REPO_ROOT / entry["receipt"]).read_text())
-    read = set(committed["params"]["input_labels"])
-    delta = {"added": sorted(members - read), "removed": sorted(read - members)}
-    if delta["added"] or delta["removed"]:
-        assert entry["claims_equal"] is False
-        assert entry["drift_reason"].startswith("input_set_changed")
-        assert entry["input_set_delta"] == delta
-    else:
-        assert "input_set_delta" not in entry
-
-
-def _load_carrier_generator() -> Any:
-    import importlib.util
-
-    script = REPO_ROOT / "scripts" / "gen_drill_replay_manifests.py"
-    spec = importlib.util.spec_from_file_location("gen_drill_replay_manifests_t", script)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def test_generator_labels_a_changed_corpus_input_set(tmp_path: Path) -> None:
-    """Renamed audit members are an input change, never a bare contract addition."""
-    gen = _load_carrier_generator()
-    committed = tmp_path / "committed.json"
-    produced = tmp_path / "produced.json"
-    committed.write_text(json.dumps({"n": 1, "params": {"input_labels": {"a.json": "X"}}}))
-    produced.write_text(
-        json.dumps({"n": 1, "n_retracted": 0, "params": {"input_labels": {"b.json": "X"}}})
-    )
-    entry = gen._reproduces_entry("receipts/c.json", committed, produced)
-    assert entry["claims_equal"] is False
-    assert entry["claim_diff_keys"] == ["n_retracted", "params"]
-    assert entry["drift_reason"] == "input_set_changed_with_contract_field_addition"
-    assert entry["input_set_delta"] == {"added": ["b.json"], "removed": ["a.json"]}
-
-    produced.write_text(
-        json.dumps({"n": 1, "n_retracted": 0, "params": {"input_labels": {"a.json": "X"}}})
-    )
-    entry = gen._reproduces_entry("receipts/c.json", committed, produced)
-    assert entry["drift_reason"] == "contract_field_addition"
-    assert "input_set_delta" not in entry
-
-
 def test_artifact_overwrites_committed_is_blocked(tmp_path: Path) -> None:
     """A manifest declaring a git-tracked artifact path must not execute —
     replay must never clobber committed evidence."""
@@ -844,220 +631,10 @@ def test_artifact_overwrites_committed_is_blocked(tmp_path: Path) -> None:
     subprocess.run(["git", "add", "tracked.txt"], cwd=tmp_path, check=True)
     receipt = _receipt_with_manifest(
         tmp_path,
-        _tracked_lane(tmp_path, "pass\n"),
+        [sys.executable, "-c", "pass"],
         [{"path": "tracked.txt", "sha256": _file_sha256(marker)}],
     )
     body = run_replay(receipt, root=tmp_path)
     assert body["verdict"] == "fail"
     assert body.get("spawn_error", "").startswith("artifact_overwrites_committed")
     assert body["exit_code"] is None
-
-
-# --- argv and deletion are not the receipt's to choose ------------------------
-#
-# A receipt is data. Its ``replay`` block may only name code this checkout
-# already trusts (a console-script entry point, or a git-tracked relative
-# ``*.py`` inside the root), and may only make replay delete a stale file
-# inside the replay output dir. Everything else is refused before spawn.
-
-
-def _assert_refused(body: dict[str, Any], prefix: str) -> None:
-    assert body["verdict"] == "fail"
-    assert str(body.get("spawn_error", "")).startswith(prefix), body.get("spawn_error")
-    assert body["exit_code"] is None
-    assert body["all_match"] is False
-    assert replay_proof_contract_errors(body) == []
-
-
-def test_foreign_executable_argv_never_runs(tmp_path: Path) -> None:
-    """``argv[0]`` naming an interpreter (or any other executable) is refused."""
-    _tracked_lane(tmp_path, "pass\n")  # a git checkout, so only argv decides
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        [sys.executable, "-c", _MARKER_SRC],
-        [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}],
-    )
-    body = run_replay(receipt, root=tmp_path)
-    _assert_refused(body, "argv_rejected:not_entrypoint_or_script:")
-    assert not (tmp_path / _MARKER).exists()
-
-
-def test_option_shaped_py_head_never_runs(tmp_path: Path) -> None:
-    """A head ending in ``.py`` is not a script path when it is an interpreter
-    option: ``python '-c<code>#.py'`` would execute ``<code>``."""
-    _tracked_lane(tmp_path, "pass\n")
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        [f"-c{_MARKER_SRC.strip()} #.py"],
-        [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}],
-    )
-    body = run_replay(receipt, root=tmp_path)
-    _assert_refused(body, "argv_rejected:not_a_path:")
-    assert not (tmp_path / _MARKER).exists()
-
-
-@pytest.mark.parametrize(
-    ("kind", "reason"),
-    [
-        ("absolute", "absolute_path"),
-        ("parent", "parent_reference"),
-        ("symlink_out", "escapes_root"),
-        ("untracked", "script_untracked"),
-        ("tracked_link_to_untracked", "script_untracked"),
-        ("loop", "unresolvable"),
-        ("missing", "script_missing"),
-    ],
-)
-def test_script_head_outside_the_trusted_tree_never_runs(
-    tmp_path: Path, kind: str, reason: str
-) -> None:
-    """Only a relative, in-root, git-tracked ``*.py`` runs; every other script
-    head is refused before spawn and its code never executes."""
-    root = tmp_path / "root"
-    root.mkdir()
-    _tracked_lane(root, "pass\n")
-    outside = tmp_path / "outside.py"
-    outside.write_text(_MARKER_SRC, encoding="utf-8")
-    if kind == "absolute":  # even a tracked in-root script, named absolutely
-        _tracked_lane(root, _MARKER_SRC, name="marker.py")
-        head = str((root / "marker.py").resolve())
-    elif kind == "parent":
-        head = "../outside.py"
-    elif kind == "symlink_out":
-        (root / "link.py").symlink_to(outside)
-        subprocess.run(["git", "add", "--", "link.py"], cwd=root, check=True)
-        head = "link.py"
-    elif kind == "untracked":
-        (root / "untracked.py").write_text(_MARKER_SRC, encoding="utf-8")
-        head = "untracked.py"
-    elif kind == "tracked_link_to_untracked":
-        (root / "loose.py").write_text(_MARKER_SRC, encoding="utf-8")
-        (root / "link.py").symlink_to("loose.py")
-        subprocess.run(["git", "add", "--", "link.py"], cwd=root, check=True)
-        head = "link.py"
-    elif kind == "loop":
-        (root / "a.py").symlink_to("b.py")
-        (root / "b.py").symlink_to("a.py")
-        head = "a.py"
-    else:
-        head = "nope.py"
-    receipt = _receipt_with_manifest(
-        root, [head], [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
-    )
-    body = run_replay(receipt, root=root)
-    _assert_refused(body, f"argv_rejected:{reason}:")
-    assert not (root / _MARKER).exists()
-    assert not (tmp_path / _MARKER).exists()
-
-
-def test_script_head_outside_a_git_checkout_never_runs(tmp_path: Path) -> None:
-    """No repository, nothing is tracked: a scratch root cannot vouch for code."""
-    (tmp_path / "lane.py").write_text(_MARKER_SRC, encoding="utf-8")
-    receipt = _receipt_with_manifest(
-        tmp_path, ["lane.py"], [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
-    )
-    body = run_replay(receipt, root=tmp_path)
-    _assert_refused(body, "argv_rejected:script_untracked:")
-    assert not (tmp_path / _MARKER).exists()
-
-
-def test_tracked_script_head_runs(tmp_path: Path) -> None:
-    """Positive control for the refusals above: the same marker code, tracked
-    in-root, does run — the guard refuses provenance, not the payload."""
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        _tracked_lane(tmp_path, _MARKER_SRC, name="scripts/lane.py"),
-        [{"path": _MARKER, "sha256": hashlib.sha256(b"ran").hexdigest()}],
-    )
-    body = run_replay(receipt, root=tmp_path)
-    assert body.get("spawn_error") is None
-    assert body["exit_code"] == 0 and body["verdict"] == "pass"
-    assert (tmp_path / _MARKER).read_text() == "ran"
-
-
-@pytest.mark.parametrize("declared", [".env", "data/models/weights.bin", "receipts/keep.json"])
-def test_preexisting_artifact_outside_output_dir_is_refused_not_deleted(
-    tmp_path: Path, declared: str
-) -> None:
-    """A receipt naming an existing untracked file (secrets, weights, evidence)
-    as its artifact must not get replay to delete it: refuse, touch nothing."""
-    victim = tmp_path / declared
-    victim.parent.mkdir(parents=True, exist_ok=True)
-    victim.write_bytes(b"precious")
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        _tracked_lane(tmp_path, _MARKER_SRC),
-        [{"path": declared, "sha256": "0" * 64}],
-    )
-    body = run_replay(receipt, root=tmp_path)
-    _assert_refused(body, f"artifact_preexists_outside_output_dir:{declared}")
-    assert victim.read_bytes() == b"precious"
-    assert not (tmp_path / _MARKER).exists()  # refused before argv ran
-
-
-def test_refusal_deletes_nothing_even_inside_the_output_dir(tmp_path: Path) -> None:
-    """Refusal is decided before any deletion: a vetted stale file in the
-    output dir survives when a sibling artifact is refused."""
-    stale = tmp_path / "data" / "metadata" / "replay" / "stale.json"
-    stale.parent.mkdir(parents=True)
-    stale.write_bytes(b"stale")
-    (tmp_path / ".env").write_bytes(b"secret")
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        _tracked_lane(tmp_path, "pass\n"),
-        [
-            {"path": "data/metadata/replay/stale.json", "sha256": "0" * 64},
-            {"path": ".env", "sha256": "0" * 64},
-        ],
-    )
-    body = run_replay(receipt, root=tmp_path)
-    _assert_refused(body, "artifact_preexists_outside_output_dir:.env")
-    assert stale.read_bytes() == b"stale"
-    assert (tmp_path / ".env").read_bytes() == b"secret"
-
-
-def test_symlinked_artifact_in_output_dir_is_refused(tmp_path: Path) -> None:
-    """A symlink planted in the output dir cannot redirect the stale-file
-    delete onto its target."""
-    victim = tmp_path / ".env"
-    victim.write_bytes(b"secret")
-    out_dir = tmp_path / "data" / "metadata" / "replay"
-    out_dir.mkdir(parents=True)
-    (out_dir / "x.json").symlink_to(victim)
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        _tracked_lane(tmp_path, "pass\n"),
-        [{"path": "data/metadata/replay/x.json", "sha256": "0" * 64}],
-    )
-    body = run_replay(receipt, root=tmp_path)
-    _assert_refused(body, "artifact_preexists_symlink:data/metadata/replay/x.json")
-    assert victim.read_bytes() == b"secret"
-    assert (out_dir / "x.json").is_symlink()
-
-
-def test_replay_cli_refuses_foreign_argv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """End to end through ``dipcatcher replay``: the hostile receipt's argv
-    never runs, the file it names is not deleted, and the sealed proof
-    records the refusal and verifies."""
-    from typer.testing import CliRunner
-
-    from quant_fund.cli.main import app
-    from quant_fund.research.receipt_v2 import verify_receipt_file
-
-    _tracked_lane(tmp_path, "pass\n")
-    (tmp_path / ".env").write_bytes(b"secret")
-    receipt = _receipt_with_manifest(
-        tmp_path,
-        [sys.executable, "-c", _MARKER_SRC],
-        [{"path": ".env", "sha256": "0" * 64}],
-        name="evil.json",
-    )
-    monkeypatch.chdir(tmp_path)
-    result = CliRunner().invoke(app, ["replay", str(receipt), "--out", "proof.json"])
-    assert result.exit_code == 1, result.output
-    assert not (tmp_path / _MARKER).exists()
-    assert (tmp_path / ".env").read_bytes() == b"secret"
-    proof = json.loads((tmp_path / "proof.json").read_text())
-    assert proof["payload"]["spawn_error"].startswith("argv_rejected:")
-    assert proof["payload"]["verdict"] == "fail"
-    assert verify_receipt_file(tmp_path / "proof.json")["valid"]

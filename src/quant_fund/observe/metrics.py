@@ -23,8 +23,12 @@ METRIC_HELP = {
     "dipcatcher_simulation_pnl": (
         "Simulated mark-to-market result. Not a live P&L claim and not a research score."
     ),
-    "dipcatcher_simulation_gross_exposure": ("Simulated gross exposure."),
-    "dipcatcher_simulation_net_exposure": ("Simulated net exposure."),
+    "dipcatcher_simulation_gross_exposure": (
+        "Simulated gross exposure. Not a live trading position and not a research score."
+    ),
+    "dipcatcher_simulation_net_exposure": (
+        "Simulated net exposure. Not a live trading position and not a research score."
+    ),
 }
 
 

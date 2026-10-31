@@ -3,9 +3,8 @@
 ## The inversion in one paragraph
 
 fx-1 (`src/fx1`) is an in-tree sub-project: corpus construction, an eval
-bank, training plumbing, and a training plan. No release checkpoint is in
-this repository. The tracked `artifacts/fx1_tiny_lm/` weights are a fixture,
-not a release. dipcatcher is the harness: the chat-first CLI that
+bank, training plumbing, and a training plan. No trained checkpoint is in
+this repository. dipcatcher is the harness: the chat-first CLI that
 orchestrates fx1 and fx1-lite ([the dipcatcher CLI](DIP_CONCIERGE.md)), over
 the data engine, evaluation bench, and verification layer. The package is organized so a future training
 run would inherit its integrity from the harness gates, then expose that
@@ -41,27 +40,11 @@ layout.
                │                                   │
         ┌──────▼───────────────────────────────────▼──────┐
         │ HARNESS  (fx1.harness → dipcatcher / quant_fund) │
-        │  32 registered lab commands, 4 roles, fail-closed│
+        │  23 registered lab commands, 4 roles, fail-closed│
         │  benches (proper scores) · verify-research ·     │
         │  honesty gates (FORBIDDEN metrics) · PIT data    │
         └──────────────────────────────────────────────────┘
 ```
-
-## Interactive layer
-
-The chat is `fx1.interactive`, launched by `dipcatcher` (`dipcatcher_cli`)
-or by `fxi`. Plain text is a turn with fx1 or fx1-lite. Slash commands
-and `dipcatcher exec` are the other doors. The model may run a lab command
-only when it is one of the 32 entries in `fx1.harness.HARNESS_REGISTRY`
-(verification, data engine, evaluation, model training). `/diagnostics`
-in this tree reported `harness: commands: 32`. The lab CLI that
-`dipcatcher <name>` forwards to is larger; unqualified names are listed
-by `dipcatcher capabilities list` and are not executed by the qualified
-planner.
-
-Operator detail, exit codes, and the honesty gate are in
-[the dipcatcher CLI guide](DIP_CONCIERGE.md). That guide's model checks
-used a loopback stub. They are not a live-model or release claim.
 
 ## Trust flow (what an auditor should trace)
 
@@ -73,16 +56,13 @@ the plan the package encodes.
 2. **Training run** → blocked until quality gates, contamination scan, frozen
    split, and a passing base eval exist; emits an immutable receipt.
    `build_training_manifest` writes that receipt. It does not launch training.
-3. **Checkpoint** → no release checkpoint is in the tree. A ~31k-parameter
-   fixture lives at `artifacts/fx1_tiny_lm/` and is not a release candidate.
-   The ship gate would require a model
+3. **Checkpoint** → none is in the tree. The ship gate would require a model
    card whose eval deltas beat the base statistically (bootstrap CI +
    McNemar) and whose honesty gate passed natively, plus a signed release
    and optional TEE/zkML attestation.
 4. **Served answer** → the serve path is specified to validate honesty and
    attach provenance. Refusal behavior is specified as DPO pairs and
-   red-team cases. Local completion attaches to an external engine; there is
-   no in-process generator.
+   red-team cases. Local generation is unimplemented.
 5. **Regulatory dossier** → `fx1 mrm` compiles the available evidence into the
    five-activity structure.
 

@@ -17,8 +17,8 @@ import tomllib
 from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import datetime
-from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, TypeGuard
+from pathlib import Path
+from typing import Any
 
 from quant_fund.metrics import inference, snooping
 from quant_fund.research import cost_allocation, net_replay, net_tournament, real_benchmark
@@ -38,16 +38,6 @@ def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, An
 
 def _reject_nonfinite(token: str) -> None:
     raise ValueError(f"non-finite JSON value: {token}")
-
-
-def _index_path_is_absolute(value: str) -> bool:
-    """True when a declared index path is absolute on POSIX or Windows.
-
-    ``Path.is_absolute`` follows the host. ``/abs/run`` is absolute on Linux
-    and a drive-root join on Windows; ``C:/abs`` is the reverse.
-    """
-    windows = PureWindowsPath(value)
-    return PurePosixPath(value).is_absolute() or windows.is_absolute() or bool(windows.root)
 
 
 def _receipt(path: Path, errors: list[str]) -> dict[str, Any] | None:
@@ -747,16 +737,6 @@ def verify_phase1_run(
     }
 
 
-def _index_path_is_relative(raw: Any) -> TypeGuard[str]:
-    """Reject absolute, rooted, and drive-relative paths on every host OS."""
-    return (
-        isinstance(raw, str)
-        and bool(raw)
-        and not PurePosixPath(raw).anchor
-        and not PureWindowsPath(raw).anchor
-    )
-
-
 def verify_phase1_index(path: Path) -> dict[str, Any]:
     """Verify an index binding run receipts to source configs and code provenance."""
     path = Path(path)
@@ -820,14 +800,10 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
         if kind not in {"real_benchmark", "net_tournament"}:
             errors.append(f"{label}: unknown run kind")
             continue
-        if not isinstance(run_path, str) or not run_path or _index_path_is_absolute(run_path):
+        if not isinstance(run_path, str) or not run_path or Path(run_path).is_absolute():
             errors.append(f"{label}: run path must be relative to index")
             continue
-        if (
-            not isinstance(config_path, str)
-            or not config_path
-            or _index_path_is_absolute(config_path)
-        ):
+        if not isinstance(config_path, str) or not config_path or Path(config_path).is_absolute():
             errors.append(f"{label}: config path must be relative to index")
             continue
         identity = (kind, run_path)

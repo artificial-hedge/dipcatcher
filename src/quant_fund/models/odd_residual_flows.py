@@ -76,7 +76,7 @@ Deviations from the paper (documented, harness-driven):
 Honesty (AGENTS.md contract): everything runs on SYNTHETIC seeded streams --
 correctness evidence, never market evidence. Scores are proper (CRPS, log
 score, PIT) plus point MAE of the frozen mean forecaster; no
-Sharpe/Sortino/Calmar/P&L headline.
+Sharpe/Sortino/Calmar/P&L headline and no live-trading claims.
 
 Conventions: torch is the optional ``nn`` extra, imported lazily via
 :func:`_torch` (mirrors ``models/deep_hedging.py``), so this module imports

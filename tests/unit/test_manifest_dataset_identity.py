@@ -79,13 +79,6 @@ def _frame(n_dates: int = 64, n_secs: int = 6) -> pl.DataFrame:
                     "breadth": 0.5 + float(rng.normal(0, 0.05)),
                     "high": 101.0 + float(rng.normal(0, 1.0)),
                     "low": 99.0 + float(rng.normal(0, 1.0)),
-                    # robinhood+ K-line identity columns (split-adjusted OHLCV).
-                    "open_split_adjusted": 100.0 + float(rng.normal(0, 1.0)),
-                    "high_split_adjusted": 101.0 + float(rng.normal(0, 1.0)),
-                    "low_split_adjusted": 99.0 + float(rng.normal(0, 1.0)),
-                    "close_split_adjusted": 100.0 + float(rng.normal(0, 1.0)),
-                    "volume": 1_000.0 + abs(float(rng.normal(0, 50.0))),
-                    "amount": 100_000.0 + abs(float(rng.normal(0, 5_000.0))),
                 }
             )
     return pl.DataFrame(rows)

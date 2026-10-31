@@ -18,13 +18,16 @@ SYNTHETIC fills in tests are correctness fixtures only, never market evidence.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
-from math import isfinite
 from typing import Any, Literal
 
 from quant_fund.schemas.errors import ConfigError, KillSwitchActive
+
+#: Float slack for filled-quantity comparisons. Not a price tolerance.
+_QTY_EPS = 1e-9
 
 #: The only endpoint kinds this paper/simulated adapter accepts.
 ALLOWED_ENDPOINT_KINDS: frozenset[str] = frozenset({"paper", "simulated"})
@@ -97,47 +100,11 @@ class _OrderState:
     fill_ids: list[str] = field(default_factory=list)
     last_fill_time: datetime | None = None
     last_seq: int | None = None
+    cancelled: bool = False
 
 
 def _signed_qty(side: Side, quantity: float) -> float:
     return quantity if side == "BUY" else -quantity
-
-
-def _finite_number(value: object, name: str, *, positive: bool = False) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise OrderLedgerError(f"{name} must be a finite number")
-    try:
-        number = float(value)
-    except OverflowError as exc:
-        raise OrderLedgerError(f"{name} must be finite") from exc
-    if not isfinite(number):
-        raise OrderLedgerError(f"{name} must be finite")
-    if positive and number <= 0:
-        raise OrderLedgerError(f"{name} must be positive")
-    return number
-
-
-def _aware_time(value: object, name: str) -> None:
-    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
-        raise OrderLedgerError(f"{name} must be a timezone-aware datetime")
-
-
-def _nonempty_id(value: object, name: str) -> None:
-    if not isinstance(value, str) or not value.strip():
-        raise OrderLedgerError(f"{name} must be a non-empty string")
-
-
-def _validate_fill(fill: Fill) -> None:
-    _nonempty_id(fill.fill_id, "fill_id")
-    _nonempty_id(fill.order_id, "order_id")
-    _nonempty_id(fill.security_id, "security_id")
-    _finite_number(fill.quantity, "fill quantity", positive=True)
-    _finite_number(fill.price, "fill price", positive=True)
-    _aware_time(fill.fill_time, "fill_time")
-    if fill.seq is not None and (
-        isinstance(fill.seq, bool) or not isinstance(fill.seq, int) or fill.seq < 0
-    ):
-        raise OrderLedgerError("fill seq must be a nonnegative integer")
 
 
 class OrderFillLedger:
@@ -158,13 +125,11 @@ class OrderFillLedger:
         position_tolerance: float = 1e-6,
     ) -> None:
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
-        self._cash_tolerance = _finite_number(cash_tolerance, "cash_tolerance")
-        self._position_tolerance = _finite_number(position_tolerance, "position_tolerance")
-        if self._cash_tolerance < 0 or self._position_tolerance < 0:
-            raise OrderLedgerError("reconciliation tolerances must be nonnegative")
+        self._cash_tolerance = float(cash_tolerance)
+        self._position_tolerance = float(position_tolerance)
         self._orders: dict[str, _OrderState] = {}
         self._fills: dict[str, Fill] = {}
-        self._computed_cash = _finite_number(starting_cash, "starting_cash")
+        self._computed_cash = float(starting_cash)
         self._computed_positions: dict[str, float] = {}
         self._declared_cash: float | None = None
         self._declared_positions: dict[str, float] | None = None
@@ -173,10 +138,14 @@ class OrderFillLedger:
         self._counters: dict[str, int] = {
             "orders": 0,
             "duplicate_orders": 0,
+            "cancels": 0,
             "fills": 0,
             "duplicate_fills": 0,
             "orphan_fills": 0,
             "out_of_order_fills": 0,
+            "overfills": 0,
+            "security_mismatches": 0,
+            "fills_after_cancel": 0,
         }
 
     # -- kill switch --
@@ -201,54 +170,58 @@ class OrderFillLedger:
         """Record an order idempotently; refuse new orders after a kill trip."""
         if self._kill_state != "ENABLED":
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
-        _nonempty_id(order.order_id, "order_id")
-        _nonempty_id(order.security_id, "security_id")
-        if order.side not in ("BUY", "SELL"):
-            raise OrderLedgerError("order side must be BUY or SELL")
-        _finite_number(order.quantity, "order quantity", positive=True)
-        if order.submitted_time is not None:
-            _aware_time(order.submitted_time, "submitted_time")
-        if not isinstance(order.expects_fill, bool):
-            raise OrderLedgerError("expects_fill must be boolean")
         if order.order_id in self._orders:
-            if self._orders[order.order_id].order != order:
-                raise OrderLedgerError(f"conflicting replay for order_id {order.order_id!r}")
             self._counters["duplicate_orders"] += 1
             return "duplicate_order"
         self._orders[order.order_id] = _OrderState(order=order)
         self._counters["orders"] += 1
         return "accepted"
 
+    def cancel(self, order_id: str) -> str:
+        """Cancel a working order. Allowed while the kill switch is tripped.
+
+        Returns ``cancelled``, ``duplicate_cancel``, ``already_filled``, or
+        ``unknown_order``. A cancel drops the residual from the missing-fill
+        set. Fills that arrive afterward are recorded and not applied.
+        """
+        if not isinstance(order_id, str) or not order_id.strip():
+            raise OrderLedgerError("order_id must be a non-empty string")
+        state = self._orders.get(order_id)
+        if state is None:
+            return "unknown_order"
+        if state.cancelled:
+            return "duplicate_cancel"
+        if state.filled_qty + _QTY_EPS >= state.order.quantity:
+            return "already_filled"
+        state.cancelled = True
+        self._counters["cancels"] += 1
+        return "cancelled"
+
     # -- fill intake --
 
     def record_fill(self, fill: Fill) -> str:
         """Record a fill idempotently, classifying every anomaly.
 
-        Returns one of ``accepted``, ``duplicate_fill``, ``orphan_fill`` or
-        ``out_of_order_fill``. Duplicates and out-of-order fills are counted
-        and never double-count into positions/cash.
+        Returns ``accepted``, ``duplicate_fill``, ``orphan_fill``,
+        ``out_of_order_fill``, ``overfill``, ``security_mismatch``, or
+        ``fill_after_cancel``. Duplicates are never double-counted. Overfills,
+        security mismatches, and fills after cancel are stored for replay and
+        are not applied to positions or cash.
         """
         _validate_fill(fill)
         if fill.fill_id in self._fills:
-            if self._fills[fill.fill_id] != fill:
-                raise OrderLedgerError(f"conflicting replay for fill_id {fill.fill_id!r}")
             self._counters["duplicate_fills"] += 1
             return "duplicate_fill"
+        self._fills[fill.fill_id] = fill
         state = self._orders.get(fill.order_id)
         if state is None:
-            self._fills[fill.fill_id] = fill
             self._counters["orphan_fills"] += 1
             return "orphan_fill"
-        if fill.security_id != state.order.security_id:
-            raise OrderLedgerError("fill security_id differs from its order")
-        if state.filled_qty + fill.quantity > state.order.quantity:
-            raise OrderLedgerError("fills exceed submitted order quantity")
-        signed = _signed_qty(state.order.side, fill.quantity)
-        if not isfinite(self._computed_positions.get(fill.security_id, 0.0) + signed):
-            raise OrderLedgerError("fill would overflow computed position")
-        if not isfinite(self._computed_cash - signed * fill.price):
-            raise OrderLedgerError("fill would overflow computed cash")
-        self._fills[fill.fill_id] = fill
+        blocked = self._unapplied_fill(state, fill)
+        if blocked is not None:
+            counter, verdict = blocked
+            self._counters[counter] += 1
+            return verdict
         verdict = "accepted"
         if self._is_out_of_order(state, fill):
             self._counters["out_of_order_fills"] += 1
@@ -256,6 +229,17 @@ class OrderFillLedger:
         self._apply_fill(state, fill)
         self._counters["fills"] += 1
         return verdict
+
+    def _unapplied_fill(self, state: _OrderState, fill: Fill) -> tuple[str, str] | None:
+        """Anomaly that must not move positions or cash, if any."""
+        if fill.security_id != state.order.security_id:
+            return ("security_mismatches", "security_mismatch")
+        if state.cancelled:
+            return ("fills_after_cancel", "fill_after_cancel")
+        remaining = state.order.quantity - state.filled_qty
+        if abs(fill.quantity) > remaining + _QTY_EPS:
+            return ("overfills", "overfill")
+        return None
 
     def _is_out_of_order(self, state: _OrderState, fill: Fill) -> bool:
         if state.last_fill_time is not None and fill.fill_time < state.last_fill_time:
@@ -277,19 +261,38 @@ class OrderFillLedger:
     # -- declaration (broker-reported) state, for drift alarms --
 
     def declare_state(self, *, cash: float, positions: dict[str, float]) -> None:
-        declared_cash = _finite_number(cash, "declared cash")
-        declared_positions: dict[str, float] = {}
-        for security_id, quantity in positions.items():
-            _nonempty_id(security_id, "declared security_id")
-            declared_positions[security_id] = _finite_number(quantity, "declared position")
-        self._declared_cash = declared_cash
-        self._declared_positions = declared_positions
+        self._declared_cash = float(cash)
+        self._declared_positions = {str(k): float(v) for k, v in positions.items()}
 
     # -- reconciliation --
 
     def _missing_fills(self) -> list[str]:
         return [
-            oid for oid, st in self._orders.items() if st.order.expects_fill and not st.fill_ids
+            oid
+            for oid, st in self._orders.items()
+            if st.order.expects_fill and not st.cancelled and not st.fill_ids
+        ]
+
+    def _order_status(self, state: _OrderState) -> str:
+        if state.cancelled:
+            return "cancelled"
+        if state.filled_qty <= _QTY_EPS:
+            return "open"
+        if state.filled_qty + _QTY_EPS < state.order.quantity:
+            return "partial"
+        return "filled"
+
+    def _order_rows(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "order_id": oid,
+                "security_id": state.order.security_id,
+                "side": state.order.side,
+                "quantity": state.order.quantity,
+                "filled_qty": state.filled_qty,
+                "status": self._order_status(state),
+            }
+            for oid, state in self._orders.items()
         ]
 
     def _drift_report(self) -> dict[str, Any]:
@@ -328,6 +331,9 @@ class OrderFillLedger:
             self._counters["duplicate_fills"]
             or self._counters["orphan_fills"]
             or self._counters["out_of_order_fills"]
+            or self._counters["overfills"]
+            or self._counters["security_mismatches"]
+            or self._counters["fills_after_cancel"]
             or missing
             or drift["alarm"]
         )
@@ -337,6 +343,7 @@ class OrderFillLedger:
             "kill_state": self._kill_state,
             "counters": dict(self._counters),
             "missing_fills": missing,
+            "orders": self._order_rows(),
             "drift": drift,
             "computed_cash": self._computed_cash,
             "computed_positions": dict(self._computed_positions),
@@ -345,6 +352,20 @@ class OrderFillLedger:
             "research_only": True,
             "live_pnl_claim": False,
         }
+
+
+def _validate_fill(fill: Fill) -> None:
+    """Reject a fill that cannot be an execution print."""
+    if isinstance(fill.quantity, bool) or not isinstance(fill.quantity, (int, float)):
+        raise OrderLedgerError("fill quantity must be a finite number")
+    if isinstance(fill.price, bool) or not isinstance(fill.price, (int, float)):
+        raise OrderLedgerError("fill price must be a finite number")
+    if not math.isfinite(float(fill.quantity)) or float(fill.quantity) <= 0.0:
+        raise OrderLedgerError("fill quantity must be finite and strictly positive")
+    if not math.isfinite(float(fill.price)) or float(fill.price) <= 0.0:
+        raise OrderLedgerError("fill price must be finite and strictly positive")
+    if not fill.fill_id or not fill.order_id or not fill.security_id:
+        raise OrderLedgerError("fill_id, order_id, and security_id must be non-empty")
 
 
 __all__ = [

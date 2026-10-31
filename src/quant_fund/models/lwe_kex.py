@@ -23,7 +23,5 @@ def _lwe_kex(rng: np.random.RandomState, q: int = 3329, n: int = 16) -> bool:
 
 def bench_lwe_kex(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    ok = sum(
-        _lwe_kex(np.random.RandomState(rng.randint(2**31, dtype=np.int64))) for _ in range(200)
-    )
+    ok = sum(_lwe_kex(np.random.RandomState(rng.randint(2**31))) for _ in range(200))
     return {"synthetic_kex_agreement": ok / 200}

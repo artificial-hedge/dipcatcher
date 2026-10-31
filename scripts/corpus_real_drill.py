@@ -56,10 +56,7 @@ def main() -> int:
         out_path.unlink()
 
     report = corpus_audit(receipts_dir, q=args.q, glob=args.glob, members=members)
-    # code_revision / generated_at_commit name the checkout. A replay on a
-    # later commit would never match a pinned artifact sha if either stayed.
     report.pop("code_revision", None)
-    report.pop("generated_at_commit", None)
     report.pop("meta", None)
     if membership_sha256 is not None:
         report["params"]["membership"] = str(args.membership)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -91,89 +90,3 @@ def test_fleet_registry_includes_sundial() -> None:
     from quant_fund.research.fleet_eval import FLEET_HEAD_REGISTRY
 
     assert "sundial" in FLEET_HEAD_REGISTRY
-
-
-# Hub commit resolved via the Hugging Face API on 2026-10-19.
-_PINNED = "3212e42564493f520593e5414af4367fc4b49226"
-
-
-class _RecordingAutoModel:
-    """Stands in for AutoModelForCausalLM; records the hub-load kwargs."""
-
-    calls: list[tuple[str, dict[str, Any]]] = []
-
-    @classmethod
-    def from_pretrained(cls, model_id: str, **kwargs: Any) -> str:
-        cls.calls.append((model_id, kwargs))
-        return "loaded"
-
-
-def test_default_hub_load_is_pinned_and_recorded() -> None:
-    model = SundialDistribution()
-    assert model.revision == _PINNED
-    assert model.metadata().extra["model_revision"] == _PINNED
-
-
-def test_unpinned_model_id_or_moving_branch_refused() -> None:
-    with pytest.raises(ValueError, match="no pinned Hub revision"):
-        SundialDistribution(model_id="someone/unpinned-fork")
-    with pytest.raises(ValueError, match="40-hex"):
-        SundialDistribution(revision="main")
-    explicit = SundialDistribution(model_id="org/other", revision="a" * 40)
-    assert explicit.metadata().extra["model_revision"] == "a" * 40
-
-
-def test_trust_remote_code_load_carries_pinned_revision() -> None:
-    from quant_fund.models.sundial import _pinned_from_pretrained
-
-    _RecordingAutoModel.calls = []
-    out = _pinned_from_pretrained(_RecordingAutoModel, "thuml/sundial-base-128m", _PINNED)
-    assert out == "loaded"
-    assert _RecordingAutoModel.calls == [
-        (
-            "thuml/sundial-base-128m",
-            {"revision": _PINNED, "code_revision": _PINNED, "trust_remote_code": True},
-        )
-    ]
-    with pytest.raises(ValueError, match="40-hex"):
-        _pinned_from_pretrained(_RecordingAutoModel, "thuml/sundial-base-128m", "main")
-    assert len(_RecordingAutoModel.calls) == 1
-
-
-@pytest.mark.parametrize("kind", ["dir", "file"])
-def test_local_path_shadowing_the_hub_id_refused(
-    kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # transformers loads an existing local path in place of the Hub id and
-    # ignores revision/code_revision; the pinned label would then be false.
-    from quant_fund.models.sundial import _pinned_from_pretrained
-
-    monkeypatch.chdir(tmp_path)
-    shadow = tmp_path / "thuml" / "sundial-base-128m"
-    if kind == "dir":
-        shadow.mkdir(parents=True)
-    else:
-        shadow.parent.mkdir()
-        shadow.write_text("")
-    _RecordingAutoModel.calls = []
-    with pytest.raises(ValueError, match="shadow the pinned Hub commit"):
-        _pinned_from_pretrained(_RecordingAutoModel, "thuml/sundial-base-128m", _PINNED)
-    assert _RecordingAutoModel.calls == []
-
-
-def test_fleet_receipt_records_sundial_revision() -> None:
-    from quant_fund.research.fleet_eval import fleet_head_factories, run_distribution_fleet
-
-    taus = (0.1, 0.5, 0.9)
-    factories = {
-        # Registry head: n_train below lookback fails fit before any hub load.
-        **fleet_head_factories(taus, 0, ["sundial"]),
-        "sundial_stub": lambda: SundialDistribution(taus, predictor=_FakeSundial(), lookback=16),
-    }
-    _, receipt = run_distribution_fleet(
-        factories, ["iid_gaussian"], n_train=64, n_eval=8, seed=0, taus=taus
-    )
-    status = {row["model"]: row["status"] for row in receipt["results"]}
-    assert status == {"sundial": "error", "sundial_stub": "ok"}
-    for name in ("sundial", "sundial_stub"):
-        assert receipt["model_versions"][name]["revision"] == _PINNED

@@ -37,8 +37,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from quant_fund.utils.absdiff import ensemble_crps
-
 Array = NDArray[np.float64]
 
 
@@ -401,7 +399,10 @@ def _crps_ensemble(obs: Array, pred: Array) -> float:
         if x_finite.size == 0 or not np.isfinite(y):
             total += float("nan")
             continue
-        total += ensemble_crps(y, x_finite)
+        term1 = float(np.mean(np.abs(x_finite - y)))
+        pairwise = np.abs(x_finite[:, None] - x_finite[None, :])
+        term2 = float(np.mean(pairwise)) / 2.0
+        total += term1 - term2
     return total / float(n)
 
 

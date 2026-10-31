@@ -12,8 +12,8 @@ Madhusudhanan et al. (2026, arXiv:2608.11114, TORF baseline).
 All data here is SYNTHETIC (seeded heteroskedastic streams composed in the
 TORF/DeRegiME lane fixture style — bitwise-identical to
 ``odd_residual_flows._synthetic_hetero_stream`` for shared seeds, asserted
-below) — algorithmic correctness evidence, never market evidence.
-Proper scores only (CRPS, endpoint log score, PIT,
+below) — algorithmic correctness evidence, never market evidence; no
+live-trading claims. Proper scores only (CRPS, endpoint log score, PIT,
 coverage) plus point MAE. Torch-dependent tests skip cleanly when the nn
 extra is absent; the numpy core (schedules, Algorithm-2 sampler, scoring
 wiring) and all input-contract edges run without torch.

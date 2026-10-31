@@ -91,5 +91,5 @@ conventions — `canonical_json_bytes` (`digest_convention: "canonical_json"`)
 and the strict `json.dumps` form used by `real_benchmark`
 (`"strict_json"`); `fleet_eval.v1` payloads additionally get their writer
 contract. Verification is integrity-only — it is not a digital signature
-(see `docs/RECEIPT_VERIFICATION.md` for
+and never authorizes live trading (see `docs/RECEIPT_VERIFICATION.md` for
 the Phase-1 notebook/run verifier).

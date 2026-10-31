@@ -2,8 +2,8 @@
 
 Research-only minute bars from
 [mito0o852/OHLCV-1m](https://huggingface.co/datasets/mito0o852/OHLCV-1m).
-This is not a SIP feed and not a corporate-action vintage.
-Nothing here is a performance claim.
+This is not a SIP feed, not a corporate-action vintage, and not a live-trading
+source. Nothing here is a performance claim.
 
 ## What was on the Hub
 

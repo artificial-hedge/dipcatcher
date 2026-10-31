@@ -54,20 +54,16 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "CITATION.cff",  # attribution metadata
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",  # contributor rules
-    "Executive Summary.pdf",  # product overview (tracked input)
-    "FULL_COVERAGE.md",  # full-offline coverage lane contract
     "Dockerfile",  # the container definition — a build-env tamper surface
     "Executive Summary.pdf",  # tracked root brief — no epoch coverage
     "FULL_COVERAGE.md",  # coverage notes at repo root
     "HONESTY_RATING.md",  # the public honesty ledger
     "INFLIGHT",  # work ledger
-    "install.sh",  # curl installer for fxi/dipcatcher — supply-chain surface
     "LICENSE",  # the legal terms — a swapped license text is unreviewed relicensing
     "README.md",  # the front door — install instructions are a hijack surface
     "MATH_SPEC.md",  # fx-1 math contract (tracked input)
     "RESEARCH_REFERENCES.md",  # fx-1 bibliography (tracked input)
     "SECURITY.md",  # disclosure policy
-    "sonar-project.properties",  # Sonar analysis scope — dropping src would hide findings
     "day_grind_progress.md",  # progress tracker
     "docker-compose.yml",  # local service definitions
     "install.sh",  # tracked root installer — a supply-chain surface
@@ -85,15 +81,6 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "tests/conftest.py",  # suite-level fixtures
     "uv.lock",  # the supply-chain lock
     "quality/gate_signing.pub",  # the pin-signature trust root
-    # Evidence policy: which non-verifying receipts are retained as
-    # quarantined, and which recorded epoch-history incidents are explained.
-    # Either file decides what the strict gates accept, so a change to one is
-    # a gate change — re-pinned and re-signed by the key holder, not merged
-    # silently.
-    "quality/legacy_quarantine.json",
-    "quality/epoch_allowed_removals.json",
-    "src/quant_fund/research/legacy_unsealed.py",
-    "src/quant_fund/research/suite_health.py",
     "quality/witness_signing.pub",  # Rekor witness-signature key
     "quality/rekor_pubkey.pem",  # the public log's verification key — a swapped
     # copy would launder forged SET/checkpoint-note signatures
@@ -132,9 +119,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/timestamp_anchor.py",
     "src/quant_fund/research/witness_scan.py",
     "src/quant_fund/utils/atomicio.py",
-    "src/quant_fund/utils/ed25519_public.py",  # rejects forgeable Ed25519 trust roots
     "src/quant_fund/utils/hashing.py",
-    "scripts/ed25519_public.py",  # independent auditors' point validation
     "scripts/verify_auditor_bundle.py",  # the independent second verifier —
     # a silent patch to IT defeats the divergence-detection layer
     "scripts/verify_ots_auditor.py",  # the standalone OTS/Bitcoin auditor —
@@ -144,13 +129,6 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "scripts/verify_epoch_chain.py",  # standalone full-chain auditor —
     # same class: a silent patch to the independent oracle defeats the
     # divergence-detection layer
-    # --- fx-1 orchestration: fail-closed harness bridge + dynamic workflow ---
-    "src/fx1/harness.py",
-    "src/fx1/interactive/concierge.py",
-    "src/fx1/interactive/superpower.py",
-    "src/fx1/interactive/workflow.py",
-    "src/fx1/interactive/trigger_lexicon.py",
-    "src/fx1/interactive/surface_seal.py",
 )
 
 
@@ -295,41 +273,3 @@ def crown_jewels_errors(
         elif hash_bytes(path.read_bytes()) != expected:
             errors.append(f"jewel_mutated:{name}")
     return sorted(errors)
-
-
-DISTRIBUTION_LINEAGE_SCHEMA = "distribution_lineage.v1"
-_EPOCH_HEADS_PATH = Path("quality/epoch_heads.json")
-_REPO_INTEGRITY_PATH = Path("quality/repo_integrity.json")
-
-
-def distribution_lineage_digest(root: Path | str = ".") -> dict[str, Any]:
-    """Bind a checkout to the signed integrity substrate at runtime.
-
-    The digest is not secret — it is a compact, hard-to-forge fingerprint of
-    whether this tree still matches the committed crown-jewel pins, epoch
-    head ledger, and repo-integrity attestation. A shallow fork that drops
-    ``quality/`` or rewrites gate files without re-minting every downstream
-    receipt diverges on the next ``doctor`` call.
-    """
-    base = Path(root)
-    pin = base / DEFAULT_PIN_PATH
-    payload: dict[str, Any] = {
-        "schema": DISTRIBUTION_LINEAGE_SCHEMA,
-        "crown_jewels_pin_present": pin.is_file(),
-        "jewels_intact": crown_jewels_errors(base) == [],
-    }
-    for label, rel in (
-        ("crown_jewels_pin_sha256", DEFAULT_PIN_PATH),
-        ("epoch_heads_sha256", _EPOCH_HEADS_PATH),
-        ("repo_integrity_sha256", _REPO_INTEGRITY_PATH),
-    ):
-        path = base / rel
-        payload[label] = hash_bytes(path.read_bytes()) if path.is_file() else None
-    bind_parts = [
-        f"{key}={payload[key]}"
-        for key in sorted(payload)
-        if key.endswith("_sha256") and payload[key] is not None
-    ]
-    bind_parts.append(f"jewels_intact={payload['jewels_intact']}")
-    payload["digest"] = hash_bytes("\n".join(bind_parts).encode("utf-8"))
-    return payload

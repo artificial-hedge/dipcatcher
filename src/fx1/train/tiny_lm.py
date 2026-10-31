@@ -20,17 +20,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from fx1.models.tiny_lm import DEFAULT_MLP_RATIO, build_tiny_lm
 from fx1.train.config import TrainConfig
 from quant_fund.utils.atomicio import atomic_write_text
 
 if TYPE_CHECKING:
-    from torch.nn import Module as TorchModule
+    import torch
 
     from fx1.modelcard import EvalDelta
 
@@ -41,6 +41,7 @@ EOS_ID = 257
 DEFAULT_DIM = 32
 DEFAULT_CTX = 64
 DEFAULT_N_HEADS = 4
+DEFAULT_MLP_RATIO = 4
 
 MIN_CORPUS_BYTES = 512
 # Step bounds for the ft surface: every job performs real gradient updates
@@ -100,7 +101,61 @@ def plan_steps(n_positions: int, n_epochs: int) -> int:
     return min(MAX_FT_STEPS, max(MIN_FT_STEPS, n_epochs * per_epoch))
 
 
-def load_base_tensors(model: TorchModule, checkpoint_dir: Path) -> str:
+def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Module:
+    """The torch twin of ``fx1.serve.local_engine._TinyLM`` — identical math."""
+    import torch
+    from torch import nn
+
+    class _Block(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.ln1 = nn.LayerNorm(dim)
+            self.attn = nn.ModuleDict({"qkv": nn.Linear(dim, 3 * dim), "proj": nn.Linear(dim, dim)})
+            self.ln2 = nn.LayerNorm(dim)
+            self.mlp = nn.ModuleDict(
+                {
+                    "fc1": nn.Linear(dim, DEFAULT_MLP_RATIO * dim),
+                    "fc2": nn.Linear(DEFAULT_MLP_RATIO * dim, dim),
+                }
+            )
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            n = x.shape[1]
+            dh = dim // n_heads
+            a = self.ln1(x)
+            qkv = self.attn["qkv"](a)
+            q, k, v = qkv.split(dim, dim=-1)
+            qh = q.reshape(1, n, n_heads, dh).transpose(1, 2)
+            kh = k.reshape(1, n, n_heads, dh).transpose(1, 2)
+            vh = v.reshape(1, n, n_heads, dh).transpose(1, 2)
+            scores = qh @ kh.transpose(-2, -1) / math.sqrt(dh)
+            mask = torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)
+            scores = scores.masked_fill(mask, float("-inf"))
+            attended = (torch.softmax(scores, dim=-1) @ vh).transpose(1, 2).reshape(1, n, dim)
+            x = x + self.attn["proj"](attended)
+            m = self.ln2(x)
+            x = x + self.mlp["fc2"](nn.functional.gelu(self.mlp["fc1"](m), approximate="tanh"))
+            return x
+
+    class _TinyLM(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.tok_emb = nn.Embedding(vocab, dim)
+            self.pos_emb = nn.Embedding(ctx, dim)
+            self.blocks = nn.ModuleList([_Block()])
+            self.ln_f = nn.LayerNorm(dim)
+            self.lm_head = nn.Linear(dim, vocab, bias=False)
+
+        def forward(self, ids: torch.Tensor) -> torch.Tensor:
+            x = self.tok_emb(ids) + self.pos_emb.weight[: ids.shape[1]]
+            for blk in self.blocks:
+                x = blk(x)
+            return cast("torch.Tensor", self.lm_head(self.ln_f(x)))
+
+    return _TinyLM()
+
+
+def load_base_tensors(model: torch.nn.Module, checkpoint_dir: Path) -> str:
     """Load ``checkpoint_dir``'s safetensors weights into the torch model.
 
     Real fine-tuning starts from the base weights, not a fresh init.
@@ -141,7 +196,7 @@ def train_tiny_lm(
     base_checkpoint: Path | None = None,
     val_text: str | None = None,
     should_continue: Callable[[], bool] | None = None,
-) -> tuple[TorchModule, float, int, float | None]:
+) -> tuple[torch.nn.Module, float, int, float | None]:
     """Seeded AdamW over random ctx-windows of the byte-encoded corpus.
 
     Returns ``(model, final_loss, trained_tokens, val_loss)``; the token
@@ -170,7 +225,8 @@ def train_tiny_lm(
         logits = model(window[:, :-1])
         loss = nn.functional.cross_entropy(logits[0], window[0, 1:])
         opt.zero_grad()
-        loss.backward()  # type: ignore[no-untyped-call, unused-ignore]
+        backward = cast(Callable[[], None], loss.backward)
+        backward()
         opt.step()
         final_loss = float(loss.item())
         done += 1
@@ -179,7 +235,7 @@ def train_tiny_lm(
     return model, final_loss, done * DEFAULT_CTX, val_loss_of(model, val_text, seed)
 
 
-def val_loss_of(model: TorchModule, val_text: str | None, seed: int) -> float | None:
+def val_loss_of(model: torch.nn.Module, val_text: str | None, seed: int) -> float | None:
     """Mean CE over a fixed seeded window sample of the val text."""
     if not val_text:
         return None
@@ -201,7 +257,7 @@ def val_loss_of(model: TorchModule, val_text: str | None, seed: int) -> float | 
     return sum(losses) / len(losses) if losses else None
 
 
-def save_weights(out_dir: Path, model: TorchModule) -> tuple[str, int]:
+def save_weights(out_dir: Path, model: torch.nn.Module) -> tuple[str, int]:
     """Write ``weights.safetensors``; return (sha256, n_params)."""
     import numpy as np
     from safetensors.numpy import save_file
@@ -273,7 +329,7 @@ def write_modelcard(
     :func:`stamp_measured_eval_delta`, so a produced ft card's gate
     verdict is always computed from measured pass rates.
     """
-    from fx1.modelcard import ModelCard, eval_fixture_placeholder_delta
+    from fx1.modelcard import EvalDelta, ModelCard
 
     card_path = out_dir / "modelcard.json"
     ModelCard(
@@ -281,9 +337,16 @@ def write_modelcard(
         corpus_sha256=corpus_sha256,
         corpus_receipt_range=corpus_receipt_range,
         training_manifest_sha256=training_manifest_sha256,
-        eval_delta=eval_delta if eval_delta is not None else eval_fixture_placeholder_delta(),
+        eval_delta=eval_delta
+        if eval_delta is not None
+        else EvalDelta(
+            domain_pass_rate_base=0.5,
+            domain_pass_rate_candidate=0.51,
+            general_pass_rate_base=0.9,
+            general_pass_rate_candidate=0.9,
+            honesty_gate_candidate=True,
+        ),
         known_limits=known_limits,
-        fixture_only=eval_delta is None,
     ).save(card_path)
     return card_path
 

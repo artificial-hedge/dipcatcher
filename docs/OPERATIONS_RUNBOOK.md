@@ -20,26 +20,20 @@ uv run dipcatcher doctor --config configs/research.yaml
 uv run dipcatcher verify-research
 ```
 
-Do not proceed when `data_manifest` or `research_receipt` is `invalid`,
+Do not proceed when `data_manifest` or `research_receipt` is not `ok`,
 `live_allowed` is true in an unexpected profile, or research verification reports errors.
-A fresh checkout is missing both files, so this check exits 1 until a receipt
-exists. Run `uv run python examples/01_receipt_round_trip.py` first. That is
-the required-family SYNTHETIC smoke. Unset, `dipcatcher research` runs the
-full optional battery.
 
 ## Reproducible research
 
 Use the configured source and retain the generated receipt:
 
 ```bash
-uv run python examples/01_receipt_round_trip.py
+uv run dipcatcher research --config configs/research.yaml
+uv run dipcatcher verify-research
 ```
 
-That example is the bounded 23-family check (`DIPCATCHER_RESEARCH_REQUIRED_ONLY=1`).
 The receipt binds configuration, dataset content, Git/worktree state, runtime
 packages, point-in-time status, and the versioned 23-family benchmark catalog.
-`uv run dipcatcher research --config configs/research.yaml` without that
-environment variable runs the full optional battery.
 Synthetic output is diagnostic evidence only; it is not a live-performance
 claim.
 
@@ -120,8 +114,13 @@ publication, preserve the run directory and resume from the last valid
 
 ## Deployment
 
-See [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md). "Deployment"
-here means three research/simulation surfaces:
+There is **no hosted live-trading deployment**. `dipcatcher live` is the
+operator desk: shadow by default, loopback for a SYNTHETIC rehearsal, and a
+drop folder for an operator-owned bridge ([LIVE_DESK.md](LIVE_DESK.md)). A
+gateway config can add an Alpaca paper session; the live host is refused
+([LIVE_TRADING.md](LIVE_TRADING.md)). Neither path satisfies institutional
+condition 2 or claims live performance. "Deployment" here means three
+research/simulation surfaces:
 
 1. **Research harness (local or container).** `make sync` installs the locked
    environment. `Dockerfile` builds the research API image (non-root uid
@@ -131,15 +130,18 @@ here means three research/simulation surfaces:
    the image and waits for its healthcheck.
 2. **fx-1 harness service.** `uv run fx1 harness serve --host … --port …`;
    launch, `--state-dir` durability, managed keys, drain, and the
-   failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). No GitHub
-   Release wheel is published. `install.sh` installs a wheel only when you
-   pass `--wheel` or `FXI_INSTALL_URL`. A remote wheel **requires the
-   `FXI_WHEEL_SHA256` checksum pin** (unpinned downloads are refused;
-   verified before pip install, fail-closed on mismatch), and
-   `--requirements FILE` locks the dependencies to a hashed requirements file
-   — see [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
+   failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). Release
+   artifacts install through the hardened `install.sh`; the **recommended
+   release practice is the `FXI_WHEEL_SHA256` checksum pin** (verified before
+   pip install, fail-closed on mismatch, warn on unpinned downloads) — see
+   [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
 3. **Windows remote research/SOTA fleet** (`D:\dipcatcher`) — see
    "Windows remote-fleet operations" below.
+4. **Armed order gateway** (`dipcatcher live`). Default venue is in-process
+   loopback. Alpaca paper and Alpaca live send orders only after arming,
+   pre-trade allow, and environment credentials. A fill is broker accounting,
+   not a research result. `live kill` latches this gateway; it does not cancel
+   orders already accepted by the broker. Use `live cancel` and `live flatten`.
 
 Deploy gates: `make lint`, `make typecheck`, `make test`,
 `make evidence-audit`, plus for the fx-1 service `fx1 harness selftest` and
@@ -148,11 +150,10 @@ Deploy gates: `make lint`, `make typecheck`, `make test`,
 **Known gate status (2026-10-08):**
 
 - `fx1 harness selftest` is **GREEN** (re-verified 2026-10-08 after the
-  `quant_fund.schemas.receipt_v2_leaf` facade fix — call-time delegators
-  replaced stubs that shadowed the PEP 562 lazy binding and returned `None`
-  to every caller): `uv run fx1 harness selftest` exits `0`, 16/16 checks
-  including `job_receipt_verifies: ok:true`. Exit `0` remains the deploy
-  criterion.
+  `quant_fund.schemas.receipt` facade fix — call-time delegators replaced
+  stubs that shadowed the PEP 562 lazy binding and returned `None` to every
+  caller): `uv run fx1 harness selftest` exits `0`, 16/16 checks including
+  `job_receipt_verifies: ok:true`. Exit `0` remains the deploy criterion.
 - `make test` under pytest-xdist `-n auto` reproducibly segfaults in native
   code on the memory/disk-pressured lab box (resource-pressure fault is the
   leading theory; see `INFLIGHT` w1714). Targeted `-n0` runs are the current
@@ -208,29 +209,22 @@ Preparedness drills (self-attacking; they must keep failing loudly):
 
 Two distinct key systems — do not conflate them.
 
-**A. Repo gate-signing keys (Ed25519).** The committed
-`quality/gate_quorum.json` registry governs current pin and checkpoint
-signatures. Authorized quorum-member rotation, in order:
+**A. Repo gate-signing keys (Ed25519, `GATE_SIGNING_KEY`).** They sign the
+integrity pins and the checkpoint. Authorized rotation, in order:
 
-1. Prepare the new `gate_quorum.v1` registry and the outgoing quorum's
-   signer key files out of band.
-2. Run `dipcatcher quorum-rotate --registry <new-registry.json> --key-file
-   <outgoing-key>` (repeat `--key-file` until the outgoing threshold is met).
-   This records the signed predecessor-to-successor link and installs the new
-   registry.
-3. Run `make stamp-epochs`, then `make sign-pins` with the incoming registered
-   signer pairs in `GATE_QUORUM_KEYS`.
-4. Run `make anchor-pins` at a quiet point. Later epoch stamps stale these
-   RFC 3161 anchors.
-5. Run `make checkpoint` with incoming registered signer pairs in
-   `GATE_SIGNING_KEY`, then `uv run dipcatcher verify-repo` and
-   `make checkpoint-chain`.
+1. Export both `GATE_SIGNING_KEY` and `GATE_SIGNING_KEY_NEW` (new key handed
+   over out of band).
+2. `make rotate-key` — records the rotation as a dual-signed link
+   (predecessor + successor), then re-signs the pins and checkpoint.
+3. `make anchor-pins` — RFC 3161 timestamp-anchors `quality/epoch_heads.json`
+   and `quality/crown_jewels.json` via FreeTSA (network). Quiet points only:
+   any later `make stamp-epochs` stales the anchors.
+4. `make verify-rotations` — must pass: dual-signed links, spine-anchored
+   genesis, live key is the chain terminus.
+5. `make checkpoint-chain` — the full spine must still walk cleanly.
 
-`make rotate-key` rotates the legacy single-key trust root in
-`quality/gate_signing.pub`; it does not change the committed quorum registry.
-
-Regenerating keys, pins, or signatures without the Lead and the required
-quorum keys is forbidden; signed state (`quality/checkpoint.json`,
+Regenerating keys, pins, or signatures without the Lead and
+`GATE_SIGNING_KEY` is forbidden; signed state (`quality/checkpoint.json`,
 `gate_pins.sig`, `*.sig`, pin and anchor files) is immutable to ordinary
 lanes.
 
@@ -271,25 +265,6 @@ carrier), `make admission-gate` (sequentially admit each diff-changed
 receipt), `make proof-integrity` / `make proof-verify` (signer/recorder
 integrity; bundle, sidecar, signature and metric verification).
 
-**Replay sweep CI budget (VT-2M).** On GitHub Actions the `evidence-audit` job
-runs `make replay-sweep` after the corpus gates. Tape-backed carriers skip as
-`inputs_not_verified`; the synthetic `mcs_vol` drill
-(`data/manifests/replay/mcs_vol.json` → `scripts/mcs_vol_drill.py`) is the
-lane that actually executes. The producer uses a smaller deterministic grid
-(24 walk-forward origins, min_history 80, same seed/shard/stride/models as
-the original 96/200 pin) so the replay stays under 150s under load. The
-committed `receipts/mcs_vol_drill.json` is unchanged; the carrier records
-`claims_equal: false` with drift `lane_evolution` (see
-`quality/evidence_migrations/`). Receipt-embedded vol lanes (`vol_bench_*`)
-replay through `dipcatcher vol-bench`; their content-addressed artifacts
-depend on `quant_fund.utils.portable_fp` and on
-`replay_proof._replay_child_env`, which scrubs the parent environment and
-pins `HOME`/`TMPDIR` under `<run_cwd>/.replay_lane_tmp/` plus
-`GIT_CEILING_DIRECTORIES` at the lane root. CI uploads
-`$RUNNER_TEMP/replay_coverage.json` and `data/metadata/replay/` as
-`evidence-replay-sweep`, and verify-repo / tamper-drill / fuzz-drill receipts
-from `$RUNNER_TEMP/evidence-receipts/` as `evidence-integrity-drills`.
-
 Third-party audit without repo access: `make witness-bundle` then
 `make verify-bundle BUNDLE=auditor_bundle.json`; `make evidence-bundle
 BUNDLE_DIR=…` then `make bundle-verify BUNDLE_DIR=…`; single-artifact chain
@@ -303,26 +278,15 @@ touching any covered directory:
 
 1. `make stamp-epochs` — re-stamp every corpus-epoch chain + the head pin
    (`quality/epoch_heads.json`).
-2. `make sign-pins` — Ed25519-sign the pins. With `quality/gate_quorum.json`
-   committed it runs `dipcatcher quorum-sign` (needs `GATE_QUORUM_KEYS`);
-   otherwise lone-key `dipcatcher sign-pins` (needs `GATE_SIGNING_KEY` or
-   `--key-file`), which refuses (exit 2) under a quorum registry.
+2. `make sign-pins` — Ed25519-sign the pins (needs `GATE_SIGNING_KEY` or
+   `--key-file`).
 3. `make anchor-pins` — RFC 3161-anchor both pin files (network; quiet
    points).
 4. `make checkpoint` — sign the pin state into `quality/checkpoint.json`
-   (needs registered signer pairs in `GATE_SIGNING_KEY`, or invoke
-   `dipcatcher checkpoint` with repeatable `--key-file` options). Run **last**:
-   it binds the current signature.
+   (needs `GATE_SIGNING_KEY`). Run **last**: it binds the current signature.
 5. Optional: `make anchor-checkpoint` (RFC 3161 anchor of the checkpoint),
    `make witness-checkpoint` (public Rekor witness; needs
    `WITNESS_SIGNING_KEY`), verified offline by `make verify-witness`.
-
-Key hygiene: signing keys reach these commands (and `attest-release`) only
-through a key file (`--key-file`, `attest-release --key`) or the env vars
-above, inline or naming a key file. A raw seed is never accepted as a
-command-line value (it leaks via `ps` and shell history). On POSIX a key file
-with any group/other mode bit is refused (exit 2): `chmod 600` it, and rotate
-the key if anyone else could have read it.
 
 Verification sequence — any failure is an integrity alarm, not a formatting
 problem:
@@ -1593,170 +1557,3 @@ DATA_CONTRACTS. Off inventing. No commits.
 **Snaps vs n_session:** **7/7 GREEN** (not INFLIGHT).
 
 DATA_CONTRACTS. Off inventing. No commits.
-
-## dipcatcher chat: operation and support
-
-This section is how to run and inspect the chat. It does not change the
-research procedures above. Command behavior and the honesty contract are
-in [DIP_CONCIERGE.md](DIP_CONCIERGE.md). No live model was authenticated
-for this section. Checks used a loopback HTTP stub. Do not tell an
-operator that fx1 or fx1-lite answered, or quote a latency, price, or
-context window, from these notes.
-
-### Start and stop
-
-| Situation | Command | What to expect |
-|---|---|---|
-| Person at a terminal | `dipcatcher` or `dipcatcher chat --model fx1-lite` | Prompt `<model> › `. `/exit` or a second Ctrl-C leaves. ASCII stdout uses `>` and a `|` banner. |
-| Script or CI | `dipcatcher exec "…"` | Answer on stdout, footer and errors on stderr. `--json` is one document on stdout; the footer was also on stderr in a local `--json` run. `--data PATH` is repeatable. |
-| Redirected bare CLI | `dipcatcher` | Preface plus lab help. Stdin is not read. Exit 0. |
-| Lab only | `quant` | Lab help, no chat preface. |
-| Compatible launcher | `fxi` | Same concierge. Closed stdin prints the banner and exits on EOF. |
-
-`dipcatcher chat` and `dipcatcher resume` on a pipe exit 2 and name the
-terminal requirement. Use `exec` for scripts.
-
-Ctrl-C at an idle chat prompt prints `press Ctrl-C again to exit, or /exit`.
-A second Ctrl-C exits. That pair was observed on a pseudo-terminal. When a
-background job is running, the console requests cancel instead of exiting;
-that branch was not exercised with a live job here. While a job is active
-the POSIX line reader is cbreak, so that line has no history and no arrow
-keys. Ctrl-D on an empty prompt exits (`fxi` with stdin closed printed the
-banner and exited).
-
-Chat closed by SIGHUP exits 129. Chat closed by SIGTERM exits 143. Those
-are `install_terminal_stop` when the signals still have the default
-disposition. This section did not signal a live chat. A terminal stop
-cancels the running step and does not launch a replacement.
-
-### Where state lives
-
-Default root is `~/.fx1`. `FX1_CONFIG_DIR` replaces it. Keep support
-bundles from that tree; do not copy it into a ticket without redacting.
-
-| Path | Contents | Mode observed on Linux |
-|---|---|---|
-| `$FX1_CONFIG_DIR/credentials.json` | Both models' keys and completion URLs | `0600` file, directory `0700` |
-| `$FX1_SESSION_DIR` or `$FX1_CONFIG_DIR/sessions` | One JSON file per chat | export via `sessions export` is `0600` |
-| `$FX1_CONFIG_DIR/jobs` | Job ledger. Reconcile does not restart work | |
-| `$FX1_CONFIG_DIR/runs/<run_id>/` | One `/superpower` attempt | `0700` |
-| `$FX1_CONFIG_DIR/logs/<session-id>.jsonl` | Local telemetry. Not uploaded | |
-| `$FX1_CONFIG_DIR/history` | Chat history JSON. `/keys` lines are not stored | `0600` |
-| session `attachments` and `datasets` | Files attached with `/data`. `datasets` drops a row whose sha256 no longer matches | inside the session JSON |
-
-Session lookup order is `$FX1_SESSION_DIR`, then `$FX1_CONFIG_DIR/sessions`,
-then `~/.fx1/sessions`. An interrupted job is not restarted. Confirm with
-`dipcatcher sessions show <id>`: `job_state: interrupted` and
-`job_resume: manual`. `/sessions` quarantines a corrupt session file and
-keeps listing the others. A newer schema is reported and left in place.
-
-`/data attach` reads only a regular CSV or Parquet inside `<cwd>/data`.
-Copy the file there. A symlink that leaves `data/` is refused
-(`dataset path must stay inside data/`). The sha256 is checked again
-before a run. A changed file prints
-`dataset changed since attach; /data inspect <n> then re-attach` and the
-run does not start. `/runs` lists the job ledger and does not restart a
-job. `/new` clears attachments. `/resume` restores them.
-
-If `models check` prints `credentials directory must not be a symlink`
-(exit 2 when `FX1_CONFIG_DIR` itself is a symlink), or
-`ensure_private_dir` reports `refusing to follow symlink directory` plus
-the path it was given, set `FX1_CONFIG_DIR` and `FX1_SESSION_DIR` to the
-resolved real directory. That is the failure when an ancestor (`/tmp`,
-`/var`, or the home directory on some machines) is a symlink. macOS was
-not executed here. The ancestor message was observed by calling
-`ensure_private_dir` on a directory under a symlink, not by a macOS run.
-
-Windows restricts the credentials file with `icacls`. That was not run
-here. If store health says `Windows ACL was not applied to the credentials
-store`, the file is not private yet. The Windows console is blocking
-input; background progress appears after the next submitted line.
-
-### Endpoint support
-
-Ask for presence, never the key.
-
-```sh
-dipcatcher models list
-dipcatcher models check
-dipcatcher models check --live --json --timeout-s 30
-```
-
-`models check` without `--live` prints `offline configuration check;
-nothing was contacted`. Exit 5 when a selected model has no endpoint.
-`--live` places one call per configured model. Exit 0 only when each
-served id matches the requested id. Exit 1 on a failed call or
-`identity_mismatch`. The JSON note says the record is not a release claim.
-Unset rows show host `api.moonshot.ai` because that is the built-in URL
-constant, not because an endpoint is configured (`status` `unset`).
-
-Precedence is stored profile, then `DIPCATCHER_FX1_*` or
-`DIPCATCHER_FX1_LITE_*`, then `MOONSHOT_API_KEY` / `FX1_BASE_URL`.
-`/keys set <model>` is the interactive write. `exec` will not run
-`/keys set`.
-
-Plain HTTP is rejected unless the host is a literal loopback address
-(`127.0.0.1`, not the name `localhost`). Userinfo and query strings are
-rejected and are not echoed.
-
-### Exec exit codes
-
-| Code | Meaning | Support note |
-|---|---|---|
-| 0 | Answer | Footer on stderr is usage and latency for that call, not a service SLO. |
-| 1 | Model or tool error | Read stderr. Auth text already says `/keys set <model>`. |
-| 2 | Usage | Unknown model, empty `--approve`, missing prompt. |
-| 3 | Honesty gate withheld the answer | Not a result. Status `withheld`. |
-| 4 | `--timeout-s` or a usage ceiling | Status `timeout` or `budget`. Not a dollar cap. |
-| 5 | No endpoint | Status `no_endpoint`. |
-| 130 | SIGINT or SIGHUP | `exec --help` text: `interrupted (SIGINT or SIGHUP)`. Not the chat's 129. |
-| 143 | SIGTERM | `exec --help` text: `terminated (SIGTERM)`. |
-
-### Diagnostics
-
-`/diagnostics` inside chat, or the same text from a support session, is
-local and presence-only. `DIPCATCHER_LOG` is `off`, `error`, `info`
-(default), or `debug`. Unknown values fall back to `info`. Logs omit
-prompt and answer text. `/diagnostics --bundle PATH` writes a zip, mode
-`0600`, refuses to overwrite, and does not upload it.
-
-The credentials line in the text report is redacted because the slot name
-matches the secret filter. Sessions, jobs, logs, and history show `ok` or
-`absent`.
-
-### Evidence commands
-
-These write local JSON. They do not close gates P1–P7. Read
-`DIPCATCHER_RELEASE_EVIDENCE.md` before quoting
-a number. `EVIDENCE_DIR` defaults to `data/dipcatcher-evidence`.
-
-| Target | What it runs | How to read the file |
-|---|---|---|
-| `make dipcatcher-journeys` | `pytest tests/fx1/journeys` | The gate report is the pytest result. A frozen file exists. This is not the five-user trial. |
-| `make dipcatcher-journeys-pty` | `scripts/dipcatcher_journeys_pty.py` | `dipcatcher.journeys.v1`. `pass_rate` 1.0 still leaves P1 open. |
-| `make dipcatcher-relevance` | `scripts/dipcatcher_relevance.py` | `dipcatcher.relevance.v1`. `ok` true does not rate the expert rubric. |
-| `make dipcatcher-evidence` | latency `--runs 30 --events 200`, soak `--duration-s 60`, wheel smoke | `dipcatcher.latency.v1` (`p5_gate_closed` stays false), `dipcatcher.soak.v1` (`reference_24h` false), `dipcatcher.release_smoke.v1` (`not_covered` lists signing, rollback, macOS/Windows). |
-| `make dipcatcher-gate` | ruff, `mypy --strict src/fx1 src/dipcatcher_cli`, `dipcatcher-test`, both journey targets, relevance | Exit 0 would still not be P7. Signed artifacts and the platform matrix are not in that target. |
-
-`make -n dipcatcher-evidence` on this tree prints the three script lines
-above. The soak artifact cited in the evidence table is a 120-second run,
-not this 60-second target.
-
-A blackholed handshake is capped at `min(read timeout, 15 s)`. The read
-timeout default remains 90 s. This section did not time a dropped
-handshake. Connection refused is a separate, immediate `network` error.
-
-### What not to claim
-
-- Do not mark a stub or offline check as proof that either hosted model
-  is up.
-- Do not restart a job that the ledger marked interrupted. Resume reloads
-  the transcript only.
-- Do not quote Sharpe, Sortino, Calmar, P&L, or NAV as a research result.
-  A withheld answer is the gate working.
-- A 24-hour soak, a five-user trial, authenticated smoke for both models,
-  the macOS/Windows matrix, signed artifacts, and a rollback drill are
-  open. They are not implied by a local stub session.
-- Do not treat a green `make dipcatcher-evidence` as P5 or P6. Read
-  `p5_gate_closed` and `reference_24h`.
-- Do not restart a job from `/runs`. It is read-only.

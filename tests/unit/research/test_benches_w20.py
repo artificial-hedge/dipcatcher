@@ -5,9 +5,8 @@ test re-runs each numpy bench once and compares bit-for-bit.
 
 ``arl_mm`` (torch-gated) may return ``{}`` without the ``nn`` extra — the
 clean-blob contract holds on whatever it emits (wave-12/16 precedent).
-Numpy science assertions are directional at the shrunk fixtures. The
-``arl_mm`` battery checks finite left-tail scores and Hawkes clustering;
-the signed tail win stays on the slow lane bench. Lane suites in
+Science assertions are
+DIRECTIONAL at the shrunk fixtures; the lane suites in
 tests/unit/{execution,models,metrics} pin the tight windows.
 """
 
@@ -92,16 +91,6 @@ def test_numpy_blobs_are_clean_and_finite(blob_name: str, request: pytest.Fixtur
     assert all(np.isfinite(v) for v in blob.values())
 
 
-def test_arl_mm_missing_nn_extra_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A torch-less environment must not abort the research scorecard."""
-
-    def _raise(*_args: object, **_kwargs: object) -> dict[str, float]:
-        raise ImportError("the ARL market maker needs the optional 'nn' extra (torch)")
-
-    monkeypatch.setattr("quant_fund.execution.arl_mm.arl_mm_bench", _raise)
-    assert bench_arl_mm() == {}
-
-
 @pytest.mark.parametrize("blob_name", list(_SOFT_BLOBS))
 def test_soft_blobs_are_clean(blob_name: str, request: pytest.FixtureRequest) -> None:
     blob = request.getfixturevalue(blob_name)
@@ -134,9 +123,9 @@ def test_hidden_markov_equilibrium_calibration(
     # §5.5 calibration: the pricing ODE and boundary residuals are at
     # machine/band tolerance, the vol curve peaks at the printed p*,
     # the affine risk-free range matches the paper's band, and the
-    # closed-form vs MC pricing gaps are within MC error. Keys keep the
-    # synthetic_ prefix the bench emits.
+    # closed-form vs MC pricing gaps are within MC error.
     blob = hidden_markov_equilibrium
+    # The lane bench prefixes every diagnostic with synthetic_.
     assert blob["synthetic_ode_residual_max"] < 1e-6
     assert blob["synthetic_bc_residual_max"] < 1e-6
     assert blob["synthetic_phi_min"] > 0.0 and blob["synthetic_phi_min"] < blob["synthetic_phi_max"]
@@ -190,25 +179,15 @@ def test_liquidity_tail_lob_tail_shift(
 
 @pytest.mark.skipif(not _HAS_TORCH, reason="torch extra absent")
 def test_arl_mm_left_tail_improvement(arl_mm: dict[str, float]) -> None:
-    # The research battery's pinned seed is a correctness fixture: the
-    # Hawkes flow stays clustered (Fano above the Poisson control) and the
-    # left-tail scores are finite. It does not win q05 versus the baseline
-    # (measured improvement is negative; the environment-improvement
-    # fraction is 1/3). The signed left-tail win stays on the slow lane
-    # bench at its own seed.
+    # Yang & Xu 2026: the ARL maker improves the left tail vs the
+    # non-adversarial baseline on the pooled adversarial grid, and the
+    # Hawkes flow fixture stays clustered (Fano > Poisson control).
     blob = arl_mm
     if not blob:
         pytest.skip("arl_mm bench emitted {} (torch unavailable at runtime)")
-    assert "live_pnl_claim" not in blob
+    assert blob["synthetic_arl_left_tail_q05_improvement"] > 0.0
+    assert blob["synthetic_arl_left_tail_env_improvement_frac"] > 0.5
     assert blob["synthetic_hawkes_fano_factor"] > blob["synthetic_hawkes_fano_factor_poisson"]
-    assert blob["synthetic_hawkes_fano_factor_poisson"] > 0.0
-    for key in (
-        "synthetic_arl_left_tail_q05_improvement",
-        "synthetic_arl_left_tail_es05_improvement",
-        "synthetic_arl_left_tail_env_improvement_frac",
-    ):
-        assert key in blob
-        assert np.isfinite(blob[key])
 
 
 def test_numpy_benches_are_deterministic(

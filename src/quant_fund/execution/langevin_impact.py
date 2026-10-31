@@ -72,7 +72,8 @@ evidence. Per-path execution PnL-like quantities are namespaced
 NOT surfaced by ``impact_curve``/``regime_scan``/``bench_langevin_impact``
 report blobs. Impact is reported in log-price (displacement) units
 ``p_0 = sigma_X sqrt(tau_0)``, matching the paper's normalization — a
-model-implied displacement, not a Sharpe-family performance metric.
+model-implied displacement, not a Sharpe-family performance metric. No
+live-trading claims and no broker connectivity are made.
 
 Composition notes. This lane composes, never re-implements:
 ``execution/almgren_chriss.slice_trades`` converts worked-order holdings to

@@ -11,7 +11,7 @@ loadable through ``models.base`` unchanged.
 
 Fail-closed at every layer: a missing identity parameter is a ``TypeError``, a
 partial identity block is an :class:`ArtifactManifestError` on verification,
-and :mod:`quant_fund.research.promotion_receipt` refuses to compose a promotion
+and :mod:`quant_fund.proof.promotion_receipt` refuses to compose a promotion
 receipt without a verified identity. Dataset identity cannot be omitted
 silently by accident and cannot be asserted without the materialized sources.
 

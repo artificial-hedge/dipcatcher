@@ -8,7 +8,9 @@ from pathlib import Path
 
 import typer
 
-ls_app = typer.Typer(help="Lightspeed engines (TQQQ rotation, nautica momentum). Research only.")
+ls_app = typer.Typer(
+    help="Lightspeed engines (TQQQ rotation, nautica momentum). Research only; no live broker."
+)
 
 
 def _as_map(value: object) -> Mapping[str, object]:

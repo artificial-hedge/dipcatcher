@@ -41,7 +41,7 @@ from typing import Any, cast
 import numpy as np
 import numpy.typing as npt
 
-from fx1.modelcard import ModelCard, synthetic_fixture_from_env
+from fx1.modelcard import ModelCard
 
 _F32 = npt.NDArray[np.float32]
 
@@ -230,40 +230,6 @@ class EngineCompletion:
     token_ids: list[int]
 
 
-def _enforce_card_gates(
-    card: ModelCard, *, enforce_ship_gate: bool, synthetic_fixture: bool
-) -> None:
-    """Refuse to serve a card that fails the fixture, opt-in, or ship gates.
-
-    ``enforce_ship_gate=False`` is the measurement path, not a serving path:
-    an eval must be able to load the candidate checkpoint before the real
-    eval_delta it is about to measure exists. The artifact layer always
-    verifies; only the card verdict is bypassed, and callers must never
-    serve through an engine built this way.
-    """
-    placeholder = card.eval_delta.is_placeholder
-    if synthetic_fixture and not placeholder:
-        raise RuntimeError("SYNTHETIC fixture mode only serves the placeholder eval_delta card")
-    if not synthetic_fixture and card.fixture_only:
-        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
-
-        require_nonfixture_or_test_opt_in(card)
-    if (
-        enforce_ship_gate
-        and not card.ship_eligible
-        and not synthetic_fixture
-        and not card.fixture_only
-    ):
-        detail = " (placeholder eval_delta is not measured evidence)" if placeholder else ""
-        raise RuntimeError(
-            f"{card.version} failed the ship gate{detail}; refusing to serve its weights"
-        )
-    if not synthetic_fixture:
-        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
-
-        require_nonfixture_or_test_opt_in(card)
-
-
 class LocalWeightsEngine:
     """A verified fx-1 checkpoint dir, loaded and queryable.
 
@@ -283,24 +249,16 @@ class LocalWeightsEngine:
     engine built this way.
     """
 
-    def __init__(
-        self,
-        checkpoint_dir: str | Path,
-        *,
-        enforce_ship_gate: bool = True,
-        synthetic_fixture: bool = False,
-        allow_synthetic_fixture: bool = False,
-    ) -> None:
-        synthetic_fixture = synthetic_fixture or allow_synthetic_fixture
+    def __init__(self, checkpoint_dir: str | Path, *, enforce_ship_gate: bool = True) -> None:
         root = Path(checkpoint_dir)
         card_path = root / CARD_FILENAME
         if not card_path.is_file():
             raise FileNotFoundError(f"no model card at {card_path}")
         card = ModelCard.load(card_path)
-        _enforce_card_gates(
-            card, enforce_ship_gate=enforce_ship_gate, synthetic_fixture=synthetic_fixture
-        )
-        self.evidence_class = "SYNTHETIC" if synthetic_fixture else "measured"
+        if enforce_ship_gate and not card.eval_delta.ship_eligible:
+            raise RuntimeError(
+                f"{card.version} failed the ship gate; refusing to serve its weights"
+            )
         manifest = self._load_manifest(root)
         weights_rel = manifest["weights_file"]
         weights_path = (root / weights_rel).resolve()
@@ -325,8 +283,7 @@ class LocalWeightsEngine:
                 f"weights vocab {self.model.vocab} does not match the byte tokenizer "
                 f"({VOCAB_SIZE}); this engine serves byte-level fx-1 checkpoints only"
             )
-        public_id = getattr(card, "public_model_id", None)
-        self.served_model = public_id if isinstance(public_id, str) and public_id else card.version
+        self.served_model = card.version
         self.weights_sha256 = sha
 
     @staticmethod
@@ -400,7 +357,6 @@ class LocalWeightsEngine:
                 "weights_sha256": self.weights_sha256,
                 "n_params": self.model.n_params,
                 "tokenizer": "byte-level-259",
-                **({"evidence_class": "SYNTHETIC"} if self.evidence_class == "SYNTHETIC" else {}),
             },
         }
 
@@ -596,6 +552,7 @@ def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: boo
 def main(argv: list[str] | None = None) -> int:
     """``python -m fx1.serve.local_engine`` — the FX1_LOCAL_SERVE_CMD target."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--checkpoint-dir", type=Path, default=None)
     parser.add_argument("--host", default=_DEFAULT_HOST)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument(
@@ -603,30 +560,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="do not exit when the spawning process dies (standalone daemon mode)",
     )
-    parser.add_argument(
-        "--synthetic-fixture",
-        action="store_true",
-        help=(
-            "Serve the labelled SYNTHETIC fixture card (placeholder eval_delta). "
-            "Refused for any other card. Also set by FX1_SYNTHETIC_FIXTURE=1."
-        ),
-    )
     args = parser.parse_args(argv)
-    if not (args.synthetic_fixture or synthetic_fixture_from_env()):
-        from fx1.serve.release_gate import require_loopback_engine_bind
-
-        require_loopback_engine_bind(args.host)
-    env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "").strip()
-    if not env_dir:
-        parser.error("FX1_CHECKPOINT_DIR is required")
-    root = Path(env_dir)
-    from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
-
-    engine = LocalWeightsEngine(
-        root,
-        enforce_ship_gate=enforce_ship_gate_from_env(),
-        synthetic_fixture=args.synthetic_fixture or synthetic_fixture_from_env(),
-    )
+    env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "")
+    root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
+    if args.checkpoint_dir is None and not env_dir:
+        parser.error("a checkpoint dir is required (--checkpoint-dir or FX1_CHECKPOINT_DIR)")
+    engine = LocalWeightsEngine(root)
     print(
         f"fx1 local weights engine: serving {engine.served_model} "
         f"({engine.model.n_params} params, sha256 {engine.weights_sha256[:16]}…) "

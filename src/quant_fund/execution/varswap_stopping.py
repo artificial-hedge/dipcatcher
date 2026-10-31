@@ -55,7 +55,7 @@ stationary-Gamma CDF levels (reachability percentiles), smooth-pasting
 residuals, second-order/maximum checks, and comparative-static signs.  No
 Sharpe/Sortino/P&L/NAV-style quantity is computed or reported; any simulated
 value used by tests or ``bench_varswap_stopping`` is a SYNTHETIC correctness
-check (labelled ``synthetic_*``), never market evidence.
+check (labelled ``synthetic_*``), never market evidence.  No live-trading
 claims: the thresholds are mathematical rules, not broker instructions.
 Fail-closed throughout: degenerate parameters (non-positive speeds, vols,
 termination rate; violated Feller ``nu > 1``), non-finite inputs, a broken

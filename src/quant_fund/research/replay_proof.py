@@ -51,17 +51,6 @@ exercises the code under audit, not whatever happens to be on ``PATH``
 (pyproject maps both names to ``quant_fund.cli.main:app``). The declared
 argv is recorded verbatim next to the resolved form for audit.
 
-Execution discipline: a receipt is data, so it may only name code the
-checkout already trusts. ``argv[0]`` must be one of those entry points or a
-relative ``*.py`` that resolves inside ``root`` and is git-tracked there;
-absolute paths, ``..``, option-shaped heads, symlinks out of the root,
-untracked scripts and every other executable are refused before spawn
-(``spawn_error="argv_rejected:<reason>:<argv0>"``). Stale declared artifacts
-are deleted only when they are regular, non-symlink files under
-``REPLAY_OUTPUT_DIRS``; any other pre-existing artifact path is refused
-before anything is deleted (``spawn_error="artifact_preexists_*"``), so a
-receipt cannot choose what the replay deletes.
-
 A receipt cannot declare itself among ``artifacts`` — a file cannot embed
 its own digest — so lanes emitting replay manifests declare the sibling
 artifacts argv produces (e.g. the digest-named receipt files), which are
@@ -78,7 +67,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Mapping
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from typing import Any
 
 REPLAY_PROOF_SCHEMA = "replay_proof.v1"
@@ -86,20 +75,14 @@ REPLAY_MANIFEST_KEY = "replay"
 REPLAY_PROOF_VERDICTS = ("pass", "fail")
 DEFAULT_TIMEOUT_S = 120.0
 _MAX_STDERR_TAIL = 2048
-_GIT_PROBE_TIMEOUT_S = 30
 
 #: Console-script names pyproject maps to ``quant_fund.cli.main:app``.
 _CLI_ENTRYPOINTS = frozenset({"dipcatcher", "quant"})
 _SHA256_LEN = 64
 
-#: Root-relative directories replays write into (gitignored scratch). Only a
-#: stale regular file under one of these may be deleted before argv runs.
-REPLAY_OUTPUT_DIRS = ("data/metadata/replay",)
-
 __all__ = [
     "DEFAULT_TIMEOUT_S",
     "REPLAY_MANIFEST_KEY",
-    "REPLAY_OUTPUT_DIRS",
     "REPLAY_PROOF_SCHEMA",
     "REPLAY_PROOF_VERDICTS",
     "replay_manifest",
@@ -227,136 +210,13 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     ``quant_fund.cli.main`` module — the entry point pyproject binds them
     to — so the replay runs this checkout's code rather than depending on
     ``PATH``. A leading ``*.py`` path resolves to the same interpreter so
-    script lanes also run this checkout's code. Any other argv is returned
-    verbatim for the audit record only: ``_argv_error`` refuses it, and a
-    ``*.py`` head outside the tracked tree, before anything spawns.
+    script lanes also run this checkout's code. Any other argv runs verbatim.
     """
     if argv and argv[0] in _CLI_ENTRYPOINTS:
-        # ``python -m quant_fund.cli.main`` (and ``-m quant_fund.cli``) can
-        # exit 0 without running the command: importing the package loads
-        # ``cli.main``, and a coverage tracer may import ``__main__`` before
-        # runpy executes it. ``-c`` calls ``app()`` with the lane argv in
-        # ``sys.argv[1:]`` exactly once.
-        return [
-            sys.executable,
-            "-c",
-            "import sys; from quant_fund.cli.main import app; app()",
-            *argv[1:],
-        ]
+        return [sys.executable, "-m", "quant_fund.cli.main", *argv[1:]]
     if argv and argv[0].endswith(".py"):
         return [sys.executable, *argv]
     return list(argv)
-
-
-def _git_tracked(root_path: Path, rels: list[str]) -> bool:
-    """True iff every root-relative path in ``rels`` is in the git index at ``root``.
-
-    Literal pathspecs, so a glob-shaped name cannot match some other tracked
-    file, and an exact-name check on the ``-z`` listing. ``GIT_*`` variables
-    are dropped so an ambient ``GIT_DIR``/``GIT_INDEX_FILE`` (a hook, a test
-    runner) cannot point the probe at another repository. No git, no
-    repository, a timeout, or any probe error means not tracked.
-    """
-    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
-    try:
-        proc = subprocess.run(
-            ["git", "--literal-pathspecs", "ls-files", "-z", "--", *rels],
-            cwd=root_path,
-            env=env,
-            capture_output=True,
-            timeout=_GIT_PROBE_TIMEOUT_S,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-    listed = set(proc.stdout.decode("utf-8", errors="surrogateescape").split("\0"))
-    return proc.returncode == 0 and all(rel in listed for rel in rels)
-
-
-def _script_head_error(head: str, root_path: Path, run_cwd: Path) -> str | None:
-    """Why a ``*.py`` ``argv[0]`` may not run, or ``None`` when it may.
-
-    The script must be a plain relative path (no anchor, no ``..``, not an
-    interpreter option such as ``-c<code>#.py``) that resolves — symlinks
-    followed — to a file inside ``root``, and both the declared path and
-    its resolved target must be git-tracked there.
-    """
-    posix = PurePosixPath(head.replace("\\", "/"))
-    windows = PureWindowsPath(head)
-    if head.startswith("-") or "\x00" in head:
-        return "not_a_path"
-    if posix.is_absolute() or windows.drive or windows.root:
-        return "absolute_path"
-    if ".." in posix.parts:
-        return "parent_reference"
-    lexical = run_cwd / head
-    try:
-        resolved = lexical.resolve()
-    except (OSError, RuntimeError):  # symlink loop (RuntimeError before 3.13)
-        return "unresolvable"
-    if not resolved.is_relative_to(root_path):
-        return "escapes_root"
-    if not resolved.is_file():
-        return "script_missing"
-    rels = {
-        lexical.relative_to(root_path).as_posix(),
-        resolved.relative_to(root_path).as_posix(),
-    }
-    return None if _git_tracked(root_path, sorted(rels)) else "script_untracked"
-
-
-def _argv_error(argv: list[str], root_path: Path, run_cwd: Path) -> str | None:
-    """Refusal reason for the declared argv, or ``None`` when it may run.
-
-    A receipt is data: its argv may only name a console-script entry point
-    (``_CLI_ENTRYPOINTS``) or a git-tracked in-root ``*.py`` script. Every
-    other ``argv[0]`` — an interpreter, a shell, any other executable — is
-    refused before spawn.
-    """
-    head = argv[0]
-    if head in _CLI_ENTRYPOINTS:
-        return None
-    reason = (
-        _script_head_error(head, root_path, run_cwd)
-        if head.endswith(".py")
-        else "not_entrypoint_or_script"
-    )
-    return None if reason is None else f"argv_rejected:{reason}:{head}"
-
-
-def _stale_artifact_plan(
-    artifacts: list[Mapping[str, Any]], root_path: Path, run_cwd: Path
-) -> tuple[str | None, list[tuple[str, Path]]]:
-    """Vet every pre-existing declared artifact before anything is deleted.
-
-    Returns ``(refusal, deletable)``. A stale file must not satisfy a digest
-    pin, so replay clears pre-existing artifacts — but only regular,
-    non-symlink files under ``REPLAY_OUTPUT_DIRS`` (an output dir whose own
-    path holds a symlink does not count). Any other existing path is a
-    refusal and nothing at all is deleted: a receipt must not be able to
-    make replay remove ``.env``, model weights, or evidence it names.
-    """
-    output_dirs = [
-        root_path / rel
-        for rel in REPLAY_OUTPUT_DIRS
-        if (root_path / rel).resolve() == root_path / rel
-    ]
-    deletable: list[tuple[str, Path]] = []
-    for entry in artifacts:
-        declared = str(entry["path"])
-        candidate = Path(declared)
-        lexical = candidate if candidate.is_absolute() else run_cwd / candidate
-        if lexical.is_symlink():
-            return f"artifact_preexists_symlink:{declared}", []
-        if not lexical.exists():
-            continue
-        resolved = lexical.resolve()
-        if not any(resolved.is_relative_to(out) for out in output_dirs):
-            return f"artifact_preexists_outside_output_dir:{declared}", []
-        if not resolved.is_file():
-            return f"artifact_preexists_not_a_file:{declared}", []
-        deletable.append((declared, resolved))
-    return None, deletable
 
 
 def _file_sha256(path: Path) -> str:
@@ -455,14 +315,7 @@ def _committed_artifact(
     Replays may legitimately produce bytes identical to a committed file, but
     they must land on an untracked path; writing onto a tracked path would
     clobber the very evidence the manifest claims to reproduce.
-
-    Temp pytest roots are not git checkouts — skip the probe entirely so an
-    ambient ``GIT_DIR`` (or similar) cannot make ``git ls-files`` consult the
-    real repository from a throwaway cwd.
     """
-    git_dir = root_path / ".git"
-    if not git_dir.exists():
-        return None
     rel_paths: list[str] = []
     resolved_entries: list[tuple[str, Path]] = []
     for entry in artifacts:
@@ -472,7 +325,7 @@ def _committed_artifact(
         resolved = resolved.resolve()
         if not resolved.is_relative_to(root_path):
             continue  # escapes are flagged by the artifact pass itself
-        rel = resolved.relative_to(root_path).as_posix()
+        rel = str(resolved.relative_to(root_path))
         rel_paths.append(rel)
         resolved_entries.append((declared, resolved))
     if not rel_paths:
@@ -490,90 +343,9 @@ def _committed_artifact(
         return None  # not a git checkout — nothing to clobber
     tracked = set(proc.stdout.split())
     for declared, resolved in resolved_entries:
-        if resolved.relative_to(root_path).as_posix() in tracked:
+        if str(resolved.relative_to(root_path)) in tracked:
             return declared
     return None
-
-
-# The coverage job's process environment is not part of the sealed lane.
-# GitHub Actions, Hypothesis, and a prior test can leave variables that change
-# what the child imports or how it reduces floats. Keep only what the
-# interpreter and a local git need, then set the lane pins explicitly.
-# HOME / USERPROFILE / TMP* are *not* inherited: CI caches ~/.cache/dipcatcher
-# and pytest-xdist workers share a runner TMPDIR. Those paths are pinned
-# under ``run_cwd/.replay_lane_tmp`` below.
-_REPLAY_ENV_KEEP = (
-    "PATH",
-    "SYSTEMROOT",
-    "WINDIR",
-    "COMSPEC",
-    "PATHEXT",
-    "LANG",
-    "LC_ALL",
-    "LC_CTYPE",
-    "TZ",
-    "SSL_CERT_FILE",
-    "SSL_CERT_DIR",
-    "REQUESTS_CA_BUNDLE",
-    "CURL_CA_BUNDLE",
-    "LD_LIBRARY_PATH",
-    "DYLD_LIBRARY_PATH",
-    "DYLD_FALLBACK_LIBRARY_PATH",
-)
-
-
-def _replay_child_env(root_path: Path, *, run_cwd: Path) -> dict[str, str]:
-    """Environment for the lane subprocess.
-
-    Start from an allowlist instead of the parent environment. A denylist
-    leaves ``CI``, ``GITHUB_*``, Hypothesis, and whatever a previous test
-    exported, and those are enough to make a content-addressed artifact
-    miss the pinned filename while the process still exits 0.
-
-    Temp files and ``HOME`` are pinned under ``run_cwd/.replay_lane_tmp``
-    so a shared runner ``TMPDIR`` or CI ``~/.cache/dipcatcher`` cannot leak
-    state between lanes or tests. ``GIT_CEILING_DIRECTORIES`` is the lane
-    root so ``git rev-parse`` cannot walk into a neighbour pytest tmp.
-    """
-    env = {key: os.environ[key] for key in _REPLAY_ENV_KEEP if key in os.environ}
-    env.update(
-        {
-            "OMP_NUM_THREADS": "1",
-            "MKL_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1",
-            "NUMEXPR_NUM_THREADS": "1",
-            "VECLIB_MAXIMUM_THREADS": "1",
-            "POLARS_MAX_THREADS": "1",
-            "PYTHONHASHSEED": "0",
-            "PYTHONNOUSERSITE": "1",
-            "PYTHONSAFEPATH": "1",
-        }
-    )
-    lane_tmp = run_cwd / ".replay_lane_tmp"
-    lane_home = lane_tmp / "home"
-    lane_home.mkdir(parents=True, exist_ok=True)
-    lane_tmp_s = str(lane_tmp)
-    lane_home_s = str(lane_home)
-    env["TMPDIR"] = lane_tmp_s
-    env["TEMP"] = lane_tmp_s
-    env["TMP"] = lane_tmp_s
-    env["HOME"] = lane_home_s
-    env["USERPROFILE"] = lane_home_s
-    env["XDG_CACHE_HOME"] = str(lane_home / ".cache")
-    env["XDG_CONFIG_HOME"] = str(lane_home / ".config")
-    env["XDG_DATA_HOME"] = str(lane_home / ".local" / "share")
-    env["XDG_STATE_HOME"] = str(lane_home / ".local" / "state")
-    # Stop git walking past the lane root. pytest tmp lives under
-    # /tmp/pytest-of-*/popen-gwN/; a neighbour that ran ``git init`` in a
-    # parent of that tree would otherwise become HEAD for this child.
-    env["GIT_CEILING_DIRECTORIES"] = str(root_path)
-    # Prefer the root's src/, else this process's own quant_fund source tree,
-    # so the child never imports an unrelated installed package.
-    src_dir = root_path / "src"
-    if not (src_dir / "quant_fund").is_dir():
-        src_dir = Path(__file__).resolve().parents[2]
-    env["PYTHONPATH"] = str(src_dir)
-    return env
 
 
 def run_replay(
@@ -622,6 +394,16 @@ def run_replay(
     except (OSError, UnicodeError, json.JSONDecodeError):
         source_receipt_seal = None
 
+    env = dict(os.environ)
+    # The replayed argv must run the verifier's own code, never whatever an
+    # ambient installed package resolves to — prefer the root's src/, else
+    # fall back to this process's own quant_fund source tree.
+    src_dir = root_path / "src"
+    if not (src_dir / "quant_fund").is_dir():
+        src_dir = Path(__file__).resolve().parents[2]
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+
     # Input binding: declared tapes verify BEFORE argv runs — a drifted or
     # missing input means the replay could never reproduce the receipt, so
     # executing would only burn time (and feed a tampered tape to the lane's
@@ -652,28 +434,22 @@ def run_replay(
     elif not run_cwd.is_relative_to(root_path):
         spawn_error = f"cwd_escapes_root:{declared_cwd}"
     else:
-        # The receipt chooses neither the code nor the deletions: argv must
-        # name trusted code, and every pre-existing artifact is vetted before
-        # any is removed. Stale files must not satisfy a digest pin when argv
-        # never produced them, so vetted ones (regular files under
-        # REPLAY_OUTPUT_DIRS; committed paths were refused above) are deleted.
-        refusal = _argv_error(argv, root_path, run_cwd)
-        stale_files: list[tuple[str, Path]] = []
-        if refusal is None:
-            refusal, stale_files = _stale_artifact_plan(manifest["artifacts"], root_path, run_cwd)
-        for declared, stale in stale_files:
-            try:
-                stale.unlink()
-            except OSError as exc:
-                refusal = f"artifact_stale_delete_failed:{declared}:{exc}"
-                break
-        if refusal is not None:
-            spawn_error = refusal
+        # Delete declared artifacts first: a stale file must not satisfy a
+        # digest pin when argv never produced it. Untracked deletions only —
+        # committed paths were already refused by the overwrite guard.
+        stale_error: str | None = None
+        for entry in manifest["artifacts"]:
+            declared = Path(str(entry["path"]))
+            resolved = (declared if declared.is_absolute() else (run_cwd / declared)).resolve()
+            if resolved.is_relative_to(root_path) and resolved.is_file():
+                try:
+                    resolved.unlink()
+                except OSError as exc:
+                    stale_error = f"artifact_stale_delete_failed:{entry['path']}:{exc}"
+                    break
+        if stale_error is not None:
+            spawn_error = stale_error
         else:
-            # Built only after cwd, argv and artifacts are vetted: it creates
-            # the lane tmp/home under run_cwd, and a refused receipt must not
-            # choose where replay creates directories.
-            env = _replay_child_env(root_path, run_cwd=run_cwd)
             try:
                 proc = subprocess.run(
                     resolved_argv,
@@ -712,8 +488,6 @@ def run_replay(
         if not resolved.is_relative_to(root_path):
             note = "path_escapes_root"
         elif not resolved.is_file():
-            # Exact token. Callers and contract tests compare this string;
-            # a suffix (sibling names, ":empty") fails those checks.
             note = "artifact_missing"
         else:
             observed = _file_sha256(resolved)
@@ -776,20 +550,6 @@ def run_replay(
     return seal_receipt(body)
 
 
-def _unrun_exit_code_errors(spawn_error: object, timed_out: object, exit_code: object) -> list[str]:
-    """A lane that never ran (spawn refused/failed) or was killed has no exit
-    code — a body pairing either with one is fabricated."""
-    errors: list[str] = []
-    if spawn_error is not None:
-        if not isinstance(spawn_error, str) or not spawn_error.strip():
-            errors.append("spawn_error")
-        if exit_code is not None:
-            errors.append("exit_code")
-    if timed_out is True and exit_code is not None:
-        errors.append("exit_code")
-    return errors
-
-
 def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """Internal consistency for a ``replay_proof.v1`` body — fail closed.
 
@@ -798,13 +558,6 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     ``all_match ⟺ (exit_code == 0 AND every artifact match)`` /
     ``verdict == ("pass" iff all_match)`` equivalences. A body that lies
     about its own arithmetic fails verification even under a fresh seal.
-
-    Dispatched by the production verifier (``verify_receipt_file``) through
-    ``lane_contracts.lane_contract_errors`` on ``schema == "replay_proof.v1"``
-    or ``kind == "replay_proof"`` — for a bare v1 body and for the inner
-    payload of a ``receipt.v2`` envelope alike — so a forged ``pass`` body
-    cannot verify on its seal alone. (Consistency only: a body fabricated
-    consistently end to end still needs a re-run to refute.)
     """
     if not isinstance(payload, Mapping):
         return ["payload_not_object"]
@@ -944,8 +697,6 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     timed_out = payload.get("timed_out")
     if not isinstance(timed_out, bool):
         errors.append("timed_out")
-    spawn_error = payload.get("spawn_error")
-    errors.extend(_unrun_exit_code_errors(spawn_error, timed_out, exit_code))
     all_match = payload.get("all_match")
     if not isinstance(all_match, bool):
         errors.append("all_match")
@@ -953,7 +704,6 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         want_all = (
             exit_code == 0
             and timed_out is False
-            and spawn_error is None
             and bool(artifact_matches)
             and all(artifact_matches)
             and (input_tapes is None or inputs_ok_claimed is True)

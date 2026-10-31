@@ -91,18 +91,20 @@ def test_receipts_declare_non_live_evidence() -> None:
         # live-P&L claim. Sealed real-corpus drills (data_label=yahoo_eod and
         # friends) and META audit envelopes are evidence without the flag.
         assert payload.get("live_pnl_claim") is not True, path.name
-        # prereg_seal.v1 sidecars bind another file's sha256 and are not
-        # receipt envelopes. forward_record_preregistration.v1 carries that
-        # seal under ``_seal`` and is a dated declaration, not a live claim.
-        nested = payload.get("_seal")
-        nested_seal = isinstance(nested, dict) and nested.get("schema") == "prereg_seal.v1"
+        # ``*.seal.json`` is a prereg tamper sidecar (schema + file hash),
+        # not an evidence claim. Honesty lives on the sealed document.
+        if path.name.endswith(".seal.json") or payload.get("schema") == "prereg_seal.v1":
+            continue
+        honesty = payload.get("honesty")
+        # Forward pre-registrations keep the flag inside ``honesty``; the
+        # content hash covers that block, so it is the marker.
+        honesty_research = isinstance(honesty, dict) and honesty.get("research_only") is True
         assert (
             payload.get("research_only") is True
             or isinstance(payload.get("data_label"), str)
             or payload.get("dev_only") is True
             or payload.get("level") == "research"
-            or payload.get("schema") == "prereg_seal.v1"
-            or nested_seal
+            or honesty_research
         ), f"{path.name}: no non-live-evidence marker"
 
 

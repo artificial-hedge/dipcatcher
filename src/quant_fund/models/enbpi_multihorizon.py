@@ -42,7 +42,7 @@ EnbPI's ``max(10, ceil(1/alpha_h) + 1)`` floor), degenerate LOO sets, test
 windows too short to evaluate joint coverage, and non-finite inputs all
 raise. Querying an unfitted model raises ``RuntimeError``. Honesty: only
 coverage / width diagnostics are exposed; SYNTHETIC tests of this module are
-correctness tests, never market evidence.
+correctness tests, never market evidence; no live-trading claims.
 """
 
 from __future__ import annotations

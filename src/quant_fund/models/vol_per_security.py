@@ -110,8 +110,11 @@ class KeyedReturnPanel:
         _validate_panel(self.keys, self.times, self.returns, self.labels)
 
     def key_names(self) -> tuple[str, ...]:
-        """Sorted unique keys — the explicit key axis."""
-        return tuple(sorted({str(key) for key in np.asarray(self.keys)}))
+        """First-seen unique keys — the explicit key axis in panel row order."""
+        seen: dict[str, None] = {}
+        for key in np.asarray(self.keys):
+            seen.setdefault(str(key), None)
+        return tuple(seen)
 
     def key_returns(self, key: str) -> Array:
         """All returns of one key in strictly increasing time order."""
@@ -216,17 +219,14 @@ def _validate_time_axis(keys: NDArray[Any], times: NDArray[Any]) -> None:
 
 
 def _finite_history(history: Array, min_obs: int) -> Array:
-    """Trailing returns must be entirely finite.
-
-    A non-finite hole fails the key. Dropping those points and forecasting
-    the remainder would publish a variance for a broken tape. A short finite
-    history fails the same way, as ``insufficient_observations``.
-    """
+    """Trailing returns for one key. Non-finite values fail that key; they are
+    not dropped. A short all-finite history fails as insufficient observations."""
     values = np.asarray(history, dtype=float).reshape(-1)
+    if values.size and not np.all(np.isfinite(values)):
+        n_bad = int(values.size - np.isfinite(values).sum())
+        raise PerKeyVolError(f"non_finite_returns:{n_bad}")
     if values.size < min_obs:
         raise PerKeyVolError(f"insufficient_observations:{values.size}<{min_obs}")
-    if not np.all(np.isfinite(values)):
-        raise PerKeyVolError("non_finite_returns")
     return values
 
 

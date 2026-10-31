@@ -9,7 +9,7 @@ queue-adjusted quote-exposure imbalance (Eqs. 12-13), categorical projection
 deviations from the paper's NoisyNet/PER).
 
 Everything is **labeled SYNTHETIC** correctness validation at TINY training
-budgets — never market evidence. The tiny-budget tests
+budgets — never market evidence, no live-trading claim. The tiny-budget tests
 assert the plumbing and that a trained policy completes sessions with bounded
 inventory; they do NOT assert that the trained policy beats GLFT (that
 comparison lives in the ``slow``-marked benchmark test / ``rl_mm_benchmark``,

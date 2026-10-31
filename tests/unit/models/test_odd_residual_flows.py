@@ -11,7 +11,7 @@ et al. (2020, ICML, NGBoost baseline).
 
 All data here is SYNTHETIC (seeded heteroskedastic streams, adapted from the
 paper's Appendix C DGP) — algorithmic correctness evidence, never market
-evidence. Proper scores only (CRPS, log score, PIT,
+evidence; no live-trading claims. Proper scores only (CRPS, log score, PIT,
 point MAE). Torch-dependent tests skip cleanly when the nn extra is absent;
 the numpy core and all input-contract edges run without torch.
 """

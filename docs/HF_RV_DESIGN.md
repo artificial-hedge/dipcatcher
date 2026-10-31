@@ -86,21 +86,10 @@ estimate; the function returns both `rv_5min` (with jumps) and `rv_5min_jump_cle
 
 ### Tick subsampling
 
-For sources with multi-tick bars (CLS FX is mid-frequency),
-`apply_tick_subsample=True` (the default) reports a Zhang–Mykland–Aït-Sahalia
-sparse-scale realized variance. `stride` phase-offset grids (default 5) each
-sum every `stride` consecutive log-returns into complete blocks. Each grid's
-sum of squares estimates integrated variance; `rv_5min` is their average, so
-microstructure-noise variance falls by about `stride` while the estimator
-stays on the integrated-variance scale. Random deletion of fine returns is
-not this estimator: it scales realized variance by about `1/stride`.
-
-`n_obs` on that path is the longest grid's block count. Jump detection still
-runs on the fine 5-min grid (Lee–Mykland, α = 0.99); flagged fine returns
-are zeroed before `rv_5min_jump_clean` is aggregated on the same grids.
-Bipower variation stays on the fine grid. `rng_seed` remains on the frozen
-signature and does not reshuffle the sample — an integer seed cannot change
-the grids, and a non-integer seed fails closed.
+For sources with multi-tick bars (CLS FX is mid-frequency), apply
+5-tick sub-sampling with a deterministic seed derived from `asof` to avoid
+microstructure-noise inflation. This is opt-in via the
+`apply_tick_subsample=True` parameter (default).
 
 ## 4. PIT gate (parallel to Wave 119)
 
@@ -137,23 +126,31 @@ sigma, fail-closed on missing intraday.
 
 ## 6. Test surface
 
-### Synthetic / PIT / fail-closed / authority
+### Synthetic intraday
 
-Landed coverage lives in `tests/unit/test_hf_rv.py` (plus scaffolding in
-`tests/unit/test_hf_rv_scaffolding.py`). The intended cases remain:
+- Synthetic unit test (not landed) — Brownian motion + sparse jumps,
+  expect `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.
+- Jump detection accuracy: at SNR=10, ≥ 95% true-positive rate; at SNR=1,
+  ≤ 5% false-positive rate (Lee–Mykland operating characteristics).
+- BPV consistency: `RV - BPV ≥ 0` on synthesized jumpy series.
 
-- Synthetic intraday: Brownian motion + sparse jumps; expect
-  `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.
-  Jump detection at SNR=10 ≥ 95% TPR; at SNR=1 ≤ 5% FPR. BPV consistency:
-  `RV - BPV ≥ 0` on synthesized jumpy series.
-- PIT contamination: a bar with `available_time > asof` is dropped and
-  receipt-stamped; null `available_time` yields `HFRVResult(honest=False)`.
-- Fail-closed for missing intraday: empty bars, single-bar windows, 100%
-  holes → `HFRVResult(honest=False)` and no `market_risk_overlay=hf_rv`
-  stamp.
-- Source authority: CLS + Binance both available → CLS wins, receipt
-  records `primary=cls, secondary=binance`. Source missing →
-  `hf_rv_source_missing` stamp + `honest=False`.
+### PIT contamination
+
+- PIT unit test (not landed) — feed a bar with
+  `available_time > asof`, expect drop + receipt stamp. Feed null
+  `available_time`, expect `HFRVResult(honest=False)`.
+
+### Fail-closed for missing intraday
+
+- Fail-closed unit test (not landed) — empty bars, single-bar
+  windows, 100% holes, expect `HFRVResult(honest=False)` and no
+  `market_risk_overlay=hf_rv` stamp.
+
+### Source authority
+
+- Source-authority unit test (not landed) — CLS + Binance both
+  available → CLS wins, receipt records `primary=cls, secondary=binance`.
+- Source missing → `hf_rv_source_missing` stamp + `honest=False`.
 
 ## 7. Open questions
 
@@ -174,14 +171,14 @@ Landed coverage lives in `tests/unit/test_hf_rv.py` (plus scaffolding in
    co-RV we'd need a 2-bar frame with aligned `event_time`. Deferred.
 5. **Receipt schema** — `HFRVResult` is a Python dataclass, but receipts
    are JSON. Do we serialize via `dataclasses.asdict` or define a
-   stable JSON schema? Recommend the latter, as a pinned schema under
-   `quality/` once the HF-RV lane lands a sealed receipt.
+   stable JSON schema? Recommend the latter, as a quality JSON schema that is not in the tree yet.
 
 ## 8. Honest reporting (per AGENTS.md)
 
 - The resulting HF-RV-fed overlay will be evaluated using **proper scores**:
   pinball, CRPS, QLIKE, Brier, ECE, Kupiec, HMM likelihood.
 - **No** Sharpe / Sortino / Calmar / P&L / NAV headlines.
+- **No** live-trading claims.
 - **No** synthetic data labeled as live.
 - Receipts are immutable; the HF-RV result hash is part of the receipt
   ledger.
@@ -201,21 +198,23 @@ Landed coverage lives in `tests/unit/test_hf_rv.py` (plus scaffolding in
 from dataclasses import dataclass
 import pandas as pd
 
+
 @dataclass
 class HFRVResult:
-    rv_5min: float                  # realized variance, 5-min grid
-    bpv: float                      # bipower variation
-    jump_stat: float                # max |Lee-Mykland| over the window
-    n_jumps: int                    # count of bars flagged as jumps
-    rv_5min_jump_clean: float       # RV excluding flagged bars
-    n_obs: int                      # # of 5-min bars used
+    rv_5min: float  # realized variance, 5-min grid
+    bpv: float  # bipower variation
+    jump_stat: float  # max |Lee-Mykland| over the window
+    n_jumps: int  # count of bars flagged as jumps
+    rv_5min_jump_clean: float  # RV excluding flagged bars
+    n_obs: int  # # of 5-min bars used
     asof: pd.Timestamp
-    available_time: pd.Timestamp    # latest observable restatement
-    source: str                     # 'cls' / 'binance' / 'imf'
-    source_secondary: str | None    # cross-check source if present
+    available_time: pd.Timestamp  # latest observable restatement
+    source: str  # 'cls' / 'binance' / 'imf'
+    source_secondary: str | None  # cross-check source if present
     clock_drift_seconds: float
-    holes_count: int                # single-bar holes interpolated
-    honest: bool                    # fail-closed flag (False = not used)
+    holes_count: int  # single-bar holes interpolated
+    honest: bool  # fail-closed flag (False = not used)
+
 
 def compute_hf_rv(
     bars: pd.DataFrame,

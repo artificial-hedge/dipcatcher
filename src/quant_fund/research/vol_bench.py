@@ -39,7 +39,6 @@ from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.evalues import LossEProcess
 from quant_fund.research.garch_benchmark import build_origins
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
-from quant_fund.utils.portable_fp import stable_exp_array
 from quant_fund.utils.reproducibility import git_revision
 
 Array = NDArray[np.float64]
@@ -178,7 +177,7 @@ def rough_vol(n: int, seed: int) -> VolShard:
         raise ValueError("rough-vol shard needs n + burn >= 50")
     logvol = simulate_fou(total, float(config["hurst"]), seed=int(seed))
     logvol = (logvol - logvol.mean()) / max(float(logvol.std()), 1e-12)
-    cond_var = float(config["base_var"]) * stable_exp_array(float(config["vol_of_logvol"]) * logvol)
+    cond_var = float(config["base_var"]) * np.exp(float(config["vol_of_logvol"]) * logvol)
     cond_var = np.clip(cond_var, _VARIANCE_FLOOR, None)
     returns, rv, parkinson = _fill_bars(cond_var[burn:], rng)
     return VolShard("rough_vol", returns, rv, parkinson, config)
@@ -690,7 +689,6 @@ def _atomic_write_text(path: Path, content: str) -> None:
             suffix=".tmp",
             mode="w",
             encoding="utf-8",
-            newline="\n",
             delete=False,
         ) as temporary:
             temporary_path = Path(temporary.name)

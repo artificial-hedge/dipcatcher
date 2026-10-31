@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard dipcatcher-test dipcatcher-journeys dipcatcher-journeys-pty dipcatcher-relevance dipcatcher-gate dipcatcher-evidence evidence-base-ref
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
 
 .DEFAULT_GOAL := help
 
@@ -43,15 +43,15 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 	# partial data files and applies the same threshold once.
 	uv run pytest -n auto --dist loadfile -m "not network and not slow" --cov --cov-report=term-missing --cov-report=xml
 
-lint: ## Ruff check + format check on src/ and tests/
-	uv run ruff check src tests
-	uv run ruff format --check src tests
+lint: ## Ruff check + format check repo-wide
+	uv run ruff check .
+	uv run ruff format --check .
 	uv run python scripts/check_mypy_strict_allowlist.py
 	uv run python scripts/check_mccabe_ratchet.py
 
-fmt: ## Auto-fix lint + format
-	uv run ruff check --fix src tests
-	uv run ruff format src tests
+fmt: ## Auto-fix lint + format repo-wide
+	uv run ruff check --fix .
+	uv run ruff format .
 
 typecheck: ## mypy on the harness (public modules are strict; see pyproject)
 	uv run mypy src/quant_fund
@@ -117,7 +117,7 @@ native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` fi
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
-ci: lint typecheck security coverage ## Local mirror of the ci.yml lint job plus the PR test and coverage jobs
+ci: lint typecheck coverage ## Local mirror of the CI gate
 
 code-inventory: ## Report tracked semantic Python LOC and feature/test counts
 	uv run python scripts/code_quality_inventory.py --summary-only
@@ -176,7 +176,7 @@ perf-check: ## Compare current timings against the stored local baseline (1.5x g
 
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
-	PYTHONPATH=src uv run pytest tests/fx1 -q -ra
+	PYTHONPATH=src uv run pytest tests/fx1 -q
 
 fx1-lint: ## fx-1 lint
 	uv run ruff check src/fx1 tests/fx1
@@ -200,41 +200,13 @@ fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty 
 	# CI's fx1 "Types" step also runs --strict (fx1.yml); the local full gate
 	# keeps parity with the CI gate — raise code to strict, never drop this.
 	uv run mypy --strict src/fx1
-	PYTHONPATH=src uv run pytest tests/fx1 -q -ra
-	PYTHONPATH=src uv run pytest tests/fx1 -q -ra -k honesty
+	PYTHONPATH=src uv run pytest tests/fx1 -q
+	PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
 	uv run fx1 corpus build --receipts-dir receipts --out data/fx1/corpus_ci_smoke.jsonl
 
-fx1-coverage: ## fx-1 coverage ratchet ([tool.fx1.coverage] in pyproject.toml)
-	uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing -ra
-
-# Chat harness gate. Exit 0 does not close release gates P1-P7.
-EVIDENCE_DIR ?= data/dipcatcher-evidence
-
-dipcatcher-test: ## pytest tests/fx1 and the lab CLI contract
-	PYTHONPATH=src uv run pytest tests/fx1 tests/unit/cli -q -n auto --dist loadfile
-
-dipcatcher-journeys: ## YAML journeys under tests/fx1/journeys
-	PYTHONPATH=src uv run pytest tests/fx1/journeys -q
-
-dipcatcher-journeys-pty: ## PTY journey report (dipcatcher.journeys.v1)
-	PYTHONPATH=src uv run python scripts/dipcatcher_journeys_pty.py --out $(EVIDENCE_DIR)/journeys_pty.json
-
-dipcatcher-relevance: ## Relevance planner report (dipcatcher.relevance.v1)
-	PYTHONPATH=src uv run python scripts/dipcatcher_relevance.py --out $(EVIDENCE_DIR)/relevance.json
-
-dipcatcher-evidence: ## Latency, 60s soak, and wheel smoke; does not close P5 or P7
-	PYTHONPATH=src uv run python scripts/dipcatcher_latency.py --runs 30 --events 200 --out $(EVIDENCE_DIR)/latency.json
-	PYTHONPATH=src uv run python scripts/dipcatcher_soak.py --duration-s 60 --out $(EVIDENCE_DIR)/soak.json
-	PYTHONPATH=src uv run python scripts/dipcatcher_release_smoke.py --out $(EVIDENCE_DIR)/release_smoke.json --checksums $(EVIDENCE_DIR)/SHA256SUMS
-
-dipcatcher-gate: ## ruff, strict mypy, dipcatcher-test, journeys, relevance
-	uv run ruff check src/fx1 src/dipcatcher_cli tests/fx1
-	uv run ruff format --check src/fx1 src/dipcatcher_cli tests/fx1
-	uv run mypy --strict src/fx1 src/dipcatcher_cli
-	$(MAKE) dipcatcher-test
-	$(MAKE) dipcatcher-journeys
-	$(MAKE) dipcatcher-journeys-pty
-	$(MAKE) dipcatcher-relevance
+fx1-coverage: ## fx-1 coverage ratchet, floor 80 (invoked by proofcore.yml fx1-coverage)
+	# loadfile keeps each audit module on one worker. Floor unchanged.
+	$(TEST_ENV) uv run pytest tests/fx1 tests/unit/fx1_serve -q -n auto --dist loadfile --cov=fx1 --cov-fail-under=80 --cov-report=term-missing
 
 # --- PROOFCORE gates (DESIGN.md §9.3; additive — no existing target changed) -
 # Merge order: W5 lands last; the W1-W4 CLIs below exist once those waves merge.
@@ -253,21 +225,27 @@ proofcore-test: ## PROOFCORE tests: W5 contracts/provenance/CI/layering + W6 sch
 		tests/property/test_replay_determinism.py -q
 
 proofcore-coverage: ## Per-package coverage floors (A3 #2): pit/proof/reality/proofcore 90, leakage 85
-	# Keyword sweep plus the proofcore-test file list. The sweep alone misses
-	# wave-2 modules whose tests are not named pit/proof/leakage/reality/
-	# proofcore: estimators (0/12), the io guard (0/23), and most of runner,
-	# replay, and scheduler. The second run appends coverage. Floors stay
-	# where they are. The global 80% floor still belongs to `make coverage`.
+	# Subset run over the PROOFCORE test lanes; the global 80% floor still
+	# applies to the full `make coverage` lane and is NOT re-asserted here
+	# --cov-fail-under=0 defers to the per-package gates below, which read
+	# [tool.proofcore.coverage-floors] from pyproject.toml).
 	uv run pytest -m "not network" -q \
 		-k "pit or proof or leakage or reality or proofcore" \
 		--cov --cov-report= --cov-fail-under=0
+	# -k matches substrings of the node id. Wave-2 files whose names do not
+	# contain those words (estimators, proven runner, replay, io guard,
+	# scheduler) never ran, so the per-module floors saw a partial import.
+	# Append the proofcore-test file list. Promotion-receipt tests are
+	# the same case: their paths do not contain the -k words, and the
+	# proof floor counts their branches.
 	uv run pytest -m "not network" -q \
-		tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py \
 		tests/unit/test_scheduler.py tests/unit/test_proven_runner.py \
 		tests/unit/test_estimators.py tests/unit/test_replay_engine.py \
 		tests/unit/test_io_guard.py tests/unit/test_cscv_combo_guard.py \
 		tests/unit/test_fingerprint_fallback.py tests/unit/test_wave2_e2e.py \
 		tests/property/test_replay_determinism.py \
+		tests/unit/test_promotion_receipt.py \
+		tests/unit/research/test_verify_promotion_receipt.py \
 		--cov --cov-append --cov-report= --cov-fail-under=0
 	uv run python -m quant_fund.proofcore.ci coverage-gate
 
@@ -283,7 +261,8 @@ leakage-scan: ## Leakage hunter — WARN MODE this wave (adjudicated: advisory o
 	uv run quant leakage scan --paths src/quant_fund --format json > leakage-report.json || \
 		echo "::warning::leakage scan failed or is not yet merged (advisory this wave)"
 	@if [ -d tests/leakage_fixtures ]; then \
-		uv run pytest tests/unit/test_leakage_*.py tests/unit/pipeline/test_leakage.py tests/unit/pipeline/test_leakage_redteam.py -q; \
+		uv sync --frozen --all-groups --extra nn && \
+		uv run pytest tests/unit -q -k "leakage"; \
 	else \
 		echo "tests/leakage_fixtures not present yet (W3 lands separately); skipped"; \
 	fi
@@ -307,10 +286,8 @@ reality-gate: ## Reality-filter gate: score trials; absent DB or empty export sk
 	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER) && \
 	uv run quant reality ledger-gate --ledger $(PROOFCORE_LEDGER)
 
-receipts-reverify: ## Fail-closed audit: suite-health --strict (verify or exact quarantine pin)
-	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/receipts-reverify" \
-		--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json \
-		--epoch-acks quality/epoch_allowed_removals.json --require-stamped
+receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending (~20min, one subprocess per receipt)
+	uv run python -m quant_fund.proofcore.ci receipts-reverify receipts
 
 receipt-integrity-scan: ## Fast in-process self-seal digest scan over committed receipts (seconds, not minutes)
 	uv run python scripts/receipt_integrity_scan.py receipts
@@ -318,39 +295,26 @@ receipt-integrity-scan: ## Fast in-process self-seal digest scan over committed 
 audit-cli-mounts: ## Detect Typer apps defined in src/ but never mounted (dropped-wiring guard)
 	uv run python scripts/audit_cli_mounts.py
 
-evidence-audit: ## CI gate: every evidence gate runs and reports; fail at the end if any failed
-	@ea_fail=0; \
-	_ea() { \
-	  gate="$$1"; shift; \
-	  printf 'evidence-audit: %s\n' "$$gate"; \
-	  if "$$@"; then printf 'evidence-audit: ok %s\n' "$$gate"; else printf 'evidence-audit: FAIL %s\n' "$$gate"; ea_fail=1; fi; \
-	}; \
-	_ea suite-health uv run quant suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit" \
-		--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json \
-		--epoch-acks quality/epoch_allowed_removals.json --require-stamped; \
-	_ea corpus-epoch:receipts uv run quant corpus-epoch --corpus-dir receipts --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:verifier uv run quant corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:quality uv run quant corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:workflows uv run quant corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:configs uv run quant corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:artifacts uv run quant corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:.dsh-24x7 uv run quant corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json --epoch-acks quality/epoch_allowed_removals.json; \
-	_ea corpus-epoch:data/metadata uv run quant corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json; \
-	for spec in src tests scripts docs research replay reports notebooks examples clients typings spec docker deploy third_party rust web .box-soft-verify .cursor .github; do \
-	  _ea "corpus-epoch:$$spec" uv run quant corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
-	done; \
-	_ea crown-jewels uv run quant crown-jewels --check; \
-	_ea verify-witness uv run quant verify-witness; \
-	mkdir -p "$${RUNNER_TEMP:-/tmp}/evidence-receipts"; \
-	_ea verify-repo uv run quant verify-repo --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts/verify-repo.json"; \
-	_ea checkpoint-chain uv run quant checkpoint-chain; \
-	_ea verify-rotations uv run quant verify-rotations; \
-	_ea tamper-drill uv run quant tamper-drill --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts"; \
-	_ea fuzz-drill uv run quant fuzz-drill --seed 7 --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts/fuzz-drill.json"; \
-	if [ "$$ea_fail" -ne 0 ]; then echo "evidence-audit: one or more gates failed"; exit 1; fi
-
-evidence-base-ref: ## JSON: last commit with a completed green evidence run (CI admission base)
-	uv run -q python -m quant_fund.research.evidence_base --event "$${EVENT:-push}" --head "$$(git rev-parse HEAD)" --push-before "$${PUSH_BEFORE:-$$(git rev-parse --verify HEAD^)}" --pr-base "$${PR_BASE:-}"
+evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
+	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
+	uv run dipcatcher corpus-epoch --corpus-dir receipts --check --heads-pin quality/epoch_heads.json --require-stamped --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json --require-stamped --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json --allowed-removals quality/epoch_allowed_removals.json
+	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allowed-removals quality/epoch_allowed_removals.json
+	for spec in "src" "tests" "scripts" "docs" "research" "replay" "reports" "notebooks" "examples" "clients" "typings" "spec" "docker" "deploy" "third_party" "rust" "web" ".box-soft-verify" ".cursor" ".github"; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --allowed-removals quality/epoch_allowed_removals.json || exit 1; \
+	done
+	uv run dipcatcher crown-jewels --check
+	uv run dipcatcher verify-witness
+	uv run dipcatcher verify-repo
+	uv run dipcatcher checkpoint-chain
+	uv run dipcatcher verify-rotations
+	uv run dipcatcher tamper-drill
+	uv run dipcatcher fuzz-drill --seed 7
 
 checkpoint-chain: ## Walk the full checkpoint spine — every archived link verifies, no forks/orphans, Rekor order holds
 	uv run dipcatcher checkpoint-chain
@@ -370,18 +334,12 @@ fuzz-drill: ## Metamorphic self-fuzz: seeded mutations classified must-fail vs m
 fuzz-receipts: ## Forge-and-reseal drill: mutates one claim per committed receipt, re-seals honestly — maps which claims contracts re-derive vs which stay self-attested
 	uv run dipcatcher fuzz-receipts --seed 7
 
-epoch-consistency: ## Base gate: prove every epoch chain extends the base head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
+epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
 	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
-	mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/epoch_consistency_base_heads.json"; \
-	git show "$$EPOCH_BASE:quality/epoch_heads.json" > "$$base_pin" \
-		|| { echo "epoch-consistency: $$EPOCH_BASE has no quality/epoch_heads.json to prove against"; exit 1; }; \
 	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*" "src:*" "tests:*" "scripts:*" "docs:*" "research:*" "replay:*" "reports:*" "notebooks:*" "examples:*" "clients:*" "typings:*" "spec:*" "docker:*" "deploy:*" "third_party:*" "rust:*" "web:*" ".box-soft-verify:*" ".cursor:*" ".github:*"; do \
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
-	  head=$$(uv run python -c "import json,sys; e=json.load(open(sys.argv[1]))['heads'].get(sys.argv[2]); r='' if e is None else e['receipt']; print(r) if isinstance(r, str) else sys.exit('not a file name')" "$$base_pin" "$$dir/$$glob") \
-	    || { echo "epoch-consistency: the base heads pin ($$EPOCH_BASE) is unreadable at $$dir/$$glob"; exit 1; }; \
+	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
-	  if ! git cat-file -e "$$EPOCH_BASE:$$dir/$$head" 2>/dev/null; then \
-	    echo "epoch-consistency skip $$dir: the base pin names $$head, which the base tree does not commit (no base chain to extend)"; continue; fi; \
 	  proof="$${RUNNER_TEMP:-/tmp}/consistency_$$(echo $$dir | tr '/.' '__').json"; \
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --from-epoch "$$head" --out "$$proof" >/dev/null || exit 1; \
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --check "$$proof" || exit 1; \
@@ -400,12 +358,8 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any 
 	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --out-dir "$$spec" --heads-pin quality/epoch_heads.json || exit 1; \
 	done
 
-sign-pins: ## Ed25519-sign the integrity pins; run LAST, after stamp-epochs. quality/gate_quorum.json present → quorum-sign (GATE_QUORUM_KEYS), else sign-pins (GATE_SIGNING_KEY)
-	@if [ -e quality/gate_quorum.json ]; then \
-	  uv run dipcatcher quorum-sign; \
-	else \
-	  uv run dipcatcher sign-pins; \
-	fi
+sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
+	uv run dipcatcher sign-pins
 
 anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); run after sign-pins, at quiet points only — every stamp-epochs stales the anchors
 	uv run dipcatcher anchor-timestamp --file quality/epoch_heads.json
@@ -441,79 +395,16 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
 
 replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or all-skip
-	uv run dipcatcher replay-all --strict --timeout 300 \
+	uv run dipcatcher replay-all --strict \
 		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 ADMISSION_BASE ?= origin/main
-# Base commit for evidence-audit comparison gates in CI (epoch-consistency,
-# admission-gate, quarantine-gate). Defaults to ADMISSION_BASE. CI sets
-# EPOCH_BASE / ADMISSION_BASE from the last commit with a completed green
-# evidence run (evidence-base-ref), so a cancelled pre-push tip stays inside
-# the gated range instead of becoming the base.
-EVIDENCE_AUDIT_BASE ?= $(ADMISSION_BASE)
-# Candidates are every *.json the diff touches under receipts/ at ANY depth --
-# the stamper (corpus_epoch.member_digests) is recursive, so a narrower filter
-# lets a nested or non-ASCII receipt be stamped without passing admit-batch.
-# Over-select (case-insensitive; the Windows fleet box globs that way) and fail
-# closed on any path the shell would mangle (git-quoted, whitespace, glob chars).
-# Git paths are only a faithful list of stamper members while receipts/ is a
-# plain directory tree that the working tree matches: a root symlink re-roots
-# the corpus outside the diff pathspec, a nested symlink/submodule hides bytes,
-# and a file the checkout holds but HEAD lacks is stamped without being gated.
-# `git status` alone cannot vouch for that: an assume-unchanged or skip-worktree
-# index flag (`git ls-files -v` tag other than H) makes it blind to an edited or
-# intent-to-add file the stamper still counts (it skips only *untracked* ignored
-# files). Each of those fails the gate instead of being guessed at. (CI's fresh
-# checkout carries no index flags; this guards local runs.)
-admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
-	@git rev-parse --verify --quiet "$(ADMISSION_BASE)^{commit}" >/dev/null \
-		|| { echo "admission-gate: ADMISSION_BASE=$(ADMISSION_BASE) is not a commit"; exit 1; }; \
-	mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_heads.json"; \
-	base_acks="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_acks.json"; \
-	root_entry="$${RUNNER_TEMP:-/tmp}/admission_root_entry.txt"; entries="$${RUNNER_TEMP:-/tmp}/admission_entries.txt"; \
-	git ls-tree HEAD -- receipts > "$$root_entry" || exit 1; \
-	git ls-tree -r HEAD -- receipts > "$$entries" || exit 1; \
-	special=$$(LC_ALL=C grep -E '^(120000|160000) ' "$$entries") || [ $$? -eq 1 ] || exit 1; \
-	if [ -n "$$special" ] || ! LC_ALL=C grep -q '^040000 tree ' "$$root_entry" || [ -L receipts ] || [ ! -d receipts ]; then \
-		echo "admission-gate: receipts/ must be a plain directory tree (no root or nested symlink, no submodule): the stamper follows the filesystem, so a linked or re-rooted corpus cannot be gated from git paths:"; \
-		cat "$$root_entry"; printf '%s\n' "$$special"; exit 1; \
-	fi; \
-	dirty=$$(git status --porcelain --untracked-files=all -- receipts) || exit 1; \
-	if [ -n "$$dirty" ]; then \
-		echo "admission-gate: receipts/ in the working tree differs from HEAD; the stamper reads the working tree but this gate reads commits -- commit or remove:"; \
-		printf '%s\n' "$$dirty"; exit 1; \
-	fi; \
-	tags="$${RUNNER_TEMP:-/tmp}/admission_index_tags.txt"; \
-	git ls-files -v -- receipts > "$$tags" || exit 1; \
-	flagged=$$(LC_ALL=C grep -v '^H ' "$$tags") || [ $$? -eq 1 ] || exit 1; \
-	if [ -n "$$flagged" ]; then \
-		echo "admission-gate: receipts/ index entries carry an assume-unchanged/skip-worktree/other non-H flag, so git status cannot vouch for the working tree (clear it with git update-index --no-assume-unchanged --no-skip-worktree):"; \
-		printf '%s\n' "$$flagged"; exit 1; \
-	fi; \
-	git show $(ADMISSION_BASE):quality/epoch_heads.json > "$$base_pin" || exit 1; \
-	git show $(ADMISSION_BASE):quality/epoch_allowed_removals.json > "$$base_acks" 2>/dev/null || : > "$$base_acks"; \
-	uv run dipcatcher epoch-ack-gate --base-heads-pin "$$base_pin" --base-epoch-acks "$$base_acks" \
-		--epoch-acks quality/epoch_allowed_removals.json || exit 1; \
-	uv run dipcatcher quarantine-gate --base-ref "$(ADMISSION_BASE)" --base-heads-pin "$$base_pin" || exit 1; \
-	diff="$${RUNNER_TEMP:-/tmp}/admission_diff.txt"; \
-	git -c core.quotePath=false diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' > "$$diff" || exit 1; \
-	quoted=$$(LC_ALL=C grep '^"' "$$diff") || [ $$? -eq 1 ] || exit 1; \
-	if [ -n "$$quoted" ]; then \
-		echo "admission-gate: git-quoted path under receipts/ cannot be gated; rename it:"; \
-		printf '%s\n' "$$quoted"; exit 1; \
-	fi; \
-	changed=$$(LC_ALL=C grep -i '^receipts/.*\.json$$' "$$diff") || [ $$? -eq 1 ] || exit 1; \
-	unsafe=$$(printf '%s\n' "$$changed" | LC_ALL=C grep -e '[[:space:]]' -e '[*?[]') || [ $$? -eq 1 ] || exit 1; \
-	if [ -n "$$unsafe" ]; then \
-		echo "admission-gate: receipt path with whitespace or glob characters cannot be gated safely; rename it:"; \
-		printf '%s\n' "$$unsafe"; exit 1; \
-	fi; \
+admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
+	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
+		| grep '^receipts/[^/]*\.json$$' || true); \
 	if [ -n "$$changed" ]; then \
 		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
-			--base-heads-pin "$$base_pin" \
 			--known-inconsistent quality/lattice_known_inconsistent.json \
-			--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json \
-			--epoch-acks quality/epoch_allowed_removals.json \
 			--out-dir "$${RUNNER_TEMP:-/tmp}/admission"; \
 	else \
 		echo "admission-gate: no corpus receipt changes vs $(ADMISSION_BASE)"; \

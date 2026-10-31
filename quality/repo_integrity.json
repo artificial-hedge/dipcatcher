@@ -9,11 +9,8 @@
       "signed": true
     },
     "crown_jewels": {
-      "errors": [
-        "jewel_mutated:src/quant_fund/research/repo_integrity.py",
-        "jewel_mutated:src/quant_fund/research/timestamp_anchor.py"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:.box-soft-verify": {
       "errors": [],
@@ -32,12 +29,8 @@
       "ok": true
     },
     "epoch:.github/workflows": {
-      "errors": [
-        "epoch_head_missing:'corpus_epoch_f23aebac5f5c530a.json'",
-        "epoch_head_rollback:'corpus_epoch_f23aebac5f5c530a.json'",
-        "head_member_digest_drift:'ci.yml'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:artifacts": {
       "errors": [],
@@ -48,11 +41,8 @@
       "ok": true
     },
     "epoch:configs": {
-      "errors": [
-        "epoch_head_missing:'corpus_epoch_5398ad70ef4ee4af.json'",
-        "epoch_head_rollback:'corpus_epoch_5398ad70ef4ee4af.json'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:data/metadata": {
       "errors": [],
@@ -67,12 +57,8 @@
       "ok": true
     },
     "epoch:docs": {
-      "errors": [
-        "epoch_head_missing:'corpus_epoch_a7b7f5c1b40d945f.json'",
-        "epoch_head_rollback:'corpus_epoch_a7b7f5c1b40d945f.json'",
-        "head_member_digest_drift:'PROD_READINESS_STATUS.md'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:examples": {
       "errors": [],
@@ -83,11 +69,8 @@
       "ok": true
     },
     "epoch:quality": {
-      "errors": [
-        "epoch_head_missing:'corpus_epoch_cee173641980a142.json'",
-        "epoch_head_rollback:'corpus_epoch_cee173641980a142.json'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:receipts": {
       "errors": [],
@@ -110,41 +93,20 @@
       "ok": true
     },
     "epoch:scripts": {
-      "errors": [
-        "epoch_head_missing:'corpus_epoch_f3c6c3c54c38b5ab.json'",
-        "epoch_head_rollback:'corpus_epoch_f3c6c3c54c38b5ab.json'",
-        "head_member_digest_drift:'fx1_goldenpath.py'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:spec": {
       "errors": [],
       "ok": true
     },
     "epoch:src": {
-      "errors": [
-        "head_member_digest_drift:'fx1/serve/backends.py'",
-        "head_member_digest_drift:'fx1/serve/local_engine.py'",
-        "head_member_digest_drift:'quant_fund/cli/research_cmds.py'",
-        "head_member_digest_drift:'quant_fund/research/replay_sweep.py'",
-        "head_member_digest_drift:'quant_fund/research/repo_integrity.py'",
-        "head_member_digest_drift:'quant_fund/research/timestamp_anchor.py'",
-        "unstamped_member:'fx1/serve/ship_gate_env.py'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:tests": {
-      "errors": [
-        "head_member_digest_drift:'fx1/test_audit_fixes_wave3.py'",
-        "head_member_digest_drift:'fx1/test_goldenpath.py'",
-        "head_member_digest_drift:'unit/microstructure/test_session_receipt_keys_cli_echo.py'",
-        "head_member_digest_drift:'unit/research/test_replay_sweep.py'",
-        "head_member_digest_drift:'unit/research/test_research_agent.py'",
-        "head_member_digest_drift:'unit/research/test_timestamp_anchor.py'",
-        "member_removed:'formal/_test_sm_probe.py'@'corpus_epoch_46d2bddbbb636e99.json'",
-        "member_removed:'test_hf_rv_scaffolding.py'@'corpus_epoch_fcc60804cbd6a56b.json'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:third_party": {
       "errors": [],
@@ -171,11 +133,8 @@
       "ok": true
     },
     "pin_signatures": {
-      "errors": [
-        "pin_drift:quality/crown_jewels.json",
-        "pin_drift:quality/epoch_heads.json"
-      ],
-      "ok": false,
+      "errors": [],
+      "ok": true,
       "signed": true
     },
     "quorum_rotations": {
@@ -193,28 +152,9 @@
       "fresh": {
         "quality/checkpoint.json": false,
         "quality/crown_jewels.json": false,
-        "quality/epoch_heads.json": false,
-        "receipts/forward_record_preregistration_v1.json.seal.json": true
+        "quality/epoch_heads.json": false
       },
-      "ok": true,
-      "staleness": {
-        "quality/checkpoint.json": {
-          "age_s": 1666250,
-          "stale": true
-        },
-        "quality/crown_jewels.json": {
-          "age_s": 1666375,
-          "stale": true
-        },
-        "quality/epoch_heads.json": {
-          "age_s": 1666267,
-          "stale": true
-        },
-        "receipts/forward_record_preregistration_v1.json.seal.json": {
-          "age_s": 930342,
-          "stale": false
-        }
-      }
+      "ok": true
     },
     "witness": {
       "errors": [],
@@ -223,7 +163,7 @@
   },
   "kind": "repo_integrity",
   "mode": "full",
-  "ok": false,
+  "ok": true,
   "params": {
     "corpora": [
       "receipts",
@@ -257,11 +197,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "704275062ca953e5f0d9adeb538bfe3eeee78bfa92a96b9ced1957a5a35d719b",
-    "epoch_heads_sha256": "9028f0f42fd9a56e06aed03356d05a399878b9a4119db3a49a5d14af94f8bbd4",
+    "crown_jewels_sha256": "20913a2277d00745a2c3515a30cd0d3ab4c5b1c987dca926c99ce7b1e1f65e5d",
+    "epoch_heads_sha256": "a0b2dba883bd4316803649ae30fad0d7f01b47b3ab80984f06e8a8d063153ef8",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "2c2ffb61a17865aacfa858a184209dc93eda34fa8112b6e78351b8b159f5b8af",
+  "receipt_sha256": "45b1f3bcbb089962458a74904bf610750849c90a4d583cd1e8c39fda5138ef92",
   "schema": "repo_integrity.v1"
 }

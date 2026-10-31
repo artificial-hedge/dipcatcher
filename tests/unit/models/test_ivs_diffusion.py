@@ -6,7 +6,7 @@ arb-free SVI); Gneiting & Raftery (2007, energy score); Rockafellar & Uryasev
 (2000/2002, ES/CVaR); Black & Scholes (1973).
 
 All data here is SYNTHETIC (seeded SVI-with-leverage stream) — correctness
-evidence for the algorithm, never market evidence.
+evidence for the algorithm, never market evidence; no live-trading claims.
 Torch tests skip cleanly when the nn extra is absent.
 """
 

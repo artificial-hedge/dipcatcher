@@ -505,7 +505,7 @@ def markout_bench(
     ``sim_seconds`` sizes each synthetic arm's event path (real tape covers
     the full session). Returns the sealed ``markout.v1`` receipt dict —
     ``data_label='MIXED'``: real tape (LOBSTER AMZN 2012-06-21 sample) plus
-    SYNTHETIC ZI arms; research-only.
+    SYNTHETIC ZI arms; research-only, no live-trading claim.
     """
     tape_dir = Path(tape_dir)
     msg, ob = _tape_paths(tape_dir, ticker)
@@ -564,7 +564,7 @@ def markout_bench(
             "markout differs from the tape's by more than half the tape value. "
             "toxicity_half_life_s is the first horizon whose pooled signed mean "
             "exceeds its own standard-error floor (std/sqrt(n)); None when no "
-            "horizon clears it. Research-only."
+            "horizon clears it. Research-only; no live-trading claim."
         ),
         "git_revision": git_revision(),
         "data_label": "MIXED",

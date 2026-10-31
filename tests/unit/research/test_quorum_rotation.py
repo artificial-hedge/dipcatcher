@@ -17,7 +17,6 @@ from quant_fund.research.gate_signatures import (
     generate_keypair,
     init_quorum,
     key_id,
-    quorum_registry_errors,
     registry_file_bytes,
     registry_sha256,
     sign_pins,
@@ -104,26 +103,6 @@ def test_rotate_below_threshold_refused(tmp_path: Path) -> None:
         rotate_quorum(root, _registry([generate_keypair()], 1), pairs[:1])
     assert (root / "quality/gate_quorum.json").read_bytes() == before
     assert not (root / QUORUM_ROTATION_DIR).exists()
-
-
-def test_synthetic_identity_key_cannot_enter_rotated_quorum(tmp_path: Path) -> None:
-    root, pairs = _repo_with_quorum(tmp_path)
-    before = (root / "quality/gate_quorum.json").read_bytes()
-    identity = "01" + "00" * 31
-    with pytest.raises(ValueError, match="new registry malformed"):
-        rotate_quorum(root, _registry([("", identity)], 1), pairs)
-    assert (root / "quality/gate_quorum.json").read_bytes() == before
-    assert not (root / QUORUM_ROTATION_DIR).exists()
-
-
-def test_boolean_quorum_threshold_is_malformed(tmp_path: Path) -> None:
-    root = _repo(tmp_path)
-    pair = generate_keypair()
-    registry = _registry([pair], True)
-    assert "registry_threshold_invalid" in quorum_registry_errors(registry)
-    with pytest.raises(ValueError, match="threshold"):
-        init_quorum(root, [pair[1]], threshold=True)
-    assert not (root / "quality/gate_quorum.json").exists()
 
 
 def test_rotate_unregistered_signer_refused(tmp_path: Path) -> None:

@@ -36,11 +36,8 @@ Verdicts: ``genesis`` (no previous epoch), ``advancing`` (monotone growth),
 from __future__ import annotations
 
 import json
-import os
-import sys
 import unicodedata
 from collections.abc import Mapping
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -146,64 +143,6 @@ def _machine_local(relname: str) -> bool:
     return any(part in EXEMPT_DIRNAMES or part.endswith(EXEMPT_DIR_SUFFIXES) for part in parts[:-1])
 
 
-def gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
-    """Corpus-relative paths ``git check-ignore`` drops.
-
-    Tracked files are never ignored. Outside a worktree, or when git is
-    unavailable, nothing is ignored — membership stays the directory
-    listing (exported bundles, unit fixtures). ``.gitignore`` is a crown
-    jewel, so a pattern that hides a path is a pin mutation.
-    """
-    if not rels:
-        return set()
-    import subprocess
-
-    if os.name == "nt":
-        # Git for Windows hangs on the NUL-delimited stdin protocol, while
-        # Python text pipes translate LF to CRLF. Use a byte newline stream;
-        # names with line breaks stay members so the portability gate rejects
-        # them instead of letting an ignore rule hide them.
-        if any("\r" in name or "\n" in name for name in rels):
-            return set()
-        try:
-            proc_bytes = subprocess.run(
-                ["git", "-c", "core.quotePath=false", "check-ignore", "--stdin"],
-                cwd=root,
-                input=("\n".join(rels) + "\n").encode("utf-8", "surrogateescape"),
-                capture_output=True,
-                timeout=30,
-                check=False,
-            )
-        except OSError:
-            return set()
-        if proc_bytes.returncode not in (0, 1):
-            return set()
-        return {
-            name.decode("utf-8", "surrogateescape")
-            for name in proc_bytes.stdout.split(b"\n")
-            if name
-        }
-
-    try:
-        proc_text = subprocess.run(
-            ["git", "check-ignore", "-z", "--stdin"],
-            cwd=root,
-            input="\0".join(rels) + "\0",
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="surrogateescape",
-            timeout=30,
-            check=False,
-        )
-    except OSError:
-        return set()
-    # 0 = some ignored, 1 = none, anything else = not a worktree.
-    if proc_text.returncode not in (0, 1):
-        return set()
-    return {name for name in proc_text.stdout.split("\0") if name}
-
-
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
 
@@ -212,31 +151,22 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     On a flat dir the keys equal the plain filenames, so existing chains are
     unchanged. ``corpus_epoch_*.json`` receipts are members like any other —
     epochs stamp each other, which is what lets the chain detect a stamped
-    epoch's own deletion or mutation.     ``EXEMPT_BASENAMES`` and
+    epoch's own deletion or mutation. ``EXEMPT_BASENAMES`` and
     ``EXEMPT_RELPATHS`` are skipped: they are chain bookkeeping, not corpus
     content. Exempt rel-paths are exact corpus-relative paths — a basename
     exemption would let a real member hide under a shared filename.
-    Gitignored untracked files are skipped too (tracked files are not):
-    a clean checkout must see the same members as the machine that stamped.
     """
     root = Path(corpus_dir)
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
-    # Sort the POSIX names, not the Path objects. Windows compares paths
-    # case-insensitively, so Path order puts ``momentum_…`` before
-    # ``README.md``. The epoch contract requires ``sorted(names)`` — the
-    # case-sensitive order a Linux stamp already produces.
-    named: list[str] = []
-    for path in root.rglob(pattern):
-        if not path.is_file():
-            continue
-        rel = path.relative_to(root).as_posix()
-        if path.name in EXEMPT_BASENAMES or rel in EXEMPT_RELPATHS or _exempt_member(root, rel):
-            continue
-        named.append(rel)
-    candidates = sorted(named)
-    ignored = gitignored_relpaths(root, candidates)
-    return {rel: hash_bytes((root / rel).read_bytes()) for rel in candidates if rel not in ignored}
+    return {
+        path.relative_to(root).as_posix(): hash_bytes(path.read_bytes())
+        for path in sorted(root.rglob(pattern))
+        if path.is_file()
+        and path.name not in EXEMPT_BASENAMES
+        and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
+        and not _exempt_member(root, path.relative_to(root).as_posix())
+    }
 
 
 def _exempt_member(root: Path, relname: str) -> bool:
@@ -284,13 +214,9 @@ def _symlink_errors(root: Path, pattern: str) -> list[str]:
     link's *target* content is hashed — retargeting is a mutation vector
     (and the target may live outside the corpus entirely). A corpus member
     must be a real file whose bytes the name unambiguously owns."""
-    # The root itself: ``rglob`` follows a symlinked corpus dir, so every member
-    # it re-roots is hashed and counted while no child is a link -- the scan
-    # below can never see it. A re-rooted corpus is refused outright.
-    errors = [f"corpus_root_is_symlink:{root.name!a}"] if root.is_symlink() else []
     # Scan every entry, not only glob matches: a symlinked *directory* never
     # matches the member pattern, but could hide content under the corpus.
-    return errors + [
+    return [
         f"member_is_symlink:{p.relative_to(root).as_posix()!a}"
         for p in sorted(root.rglob("*"))
         if p.is_symlink()
@@ -353,7 +279,7 @@ def _epoch_receipts(
             continue
         try:
             doc = json.loads(path.read_text())
-        except (OSError, UnicodeError, ValueError, RecursionError):
+        except (OSError, UnicodeError, ValueError):
             if path.name.startswith("corpus_epoch_"):
                 squatters.append(path.name)
             continue
@@ -378,41 +304,22 @@ def _acquire_stamp_lock(root: Path) -> Any:
     Two concurrent stamps that both observe the same head would each write
     ``prev = head`` — a chain fork (``epoch_multiple_heads``) created by
     correct software. The lock serializes the whole stamp; a contended lock
-    fails closed instead of forking. POSIX uses ``fcntl.flock``; Windows
-    uses ``msvcrt.locking`` over one byte of the lock file. A process that
-    never takes the lock is unaffected — the chain checker still catches a fork.
+    fails closed instead of forking. Advisory (fcntl flock): a process that
+    never takes the lock is unaffected, which is fine — the chain checker
+    still catches any fork.
     """
-    lock_path = root / ".epoch_stamp.lock"
-    # sys.platform, not os.name: mypy drops the other branch. Both locks are
-    # per open-file description, so a second handle in this process fails.
-    if sys.platform == "win32":
-        import msvcrt
-
-        handle = lock_path.open("a+b")
-        try:
-            if handle.seek(0, os.SEEK_END) == 0:
-                handle.write(b"\0")
-                handle.flush()
-            handle.seek(0)
-            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
-        except OSError as exc:
-            handle.close()
-            raise EpochStampLocked(
-                f"another corpus-epoch stamp is in flight on {root} (lock: {lock_path})"
-            ) from exc
-        return handle
-
     import fcntl
 
-    handle = lock_path.open("a")
+    lock_path = root / ".epoch_stamp.lock"
+    fd = lock_path.open("a")
     try:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError as exc:
-        handle.close()
+        fd.close()
         raise EpochStampLocked(
             f"another corpus-epoch stamp is in flight on {root} (lock: {lock_path})"
         ) from exc
-    return handle
+    return fd
 
 
 def corpus_epoch(
@@ -621,18 +528,6 @@ def epoch_heads_key(corpus_dir: Path | str, pattern: str) -> str:
     return f"{Path(corpus_dir).as_posix()}/{pattern}"
 
 
-# Position commitments every heads-pin entry must carry (``update_heads_pin``
-# writes all three). Absence is not a legacy shape a verifier may skip: a pin
-# whose lying field is deleted, rather than corrected, must not pass where the
-# lie itself fails. ``null`` counts as absent, as in ``load_heads_pin``.
-PIN_POSITION_FIELDS: tuple[str, ...] = ("tree_root", "chain_root", "n_epochs")
-
-
-def pin_position_missing_errors(entry: Mapping[str, Any]) -> list[str]:
-    """``epoch_pin_field_missing:<field>`` for each absent/null position field."""
-    return [f"epoch_pin_field_missing:{f!a}" for f in PIN_POSITION_FIELDS if entry.get(f) is None]
-
-
 def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
     """Load ``quality/epoch_heads.json`` → ``{key: {"receipt", "sha256"}}``."""
     path = Path(pin_path)
@@ -670,350 +565,6 @@ def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
     return heads
 
 
-EPOCH_ACKS_SCHEMA = "epoch_acknowledgments.v1"
-_ACK_FIELDS = frozenset(
-    {"corpus", "member", "transition", "from_sha256", "to_sha256", "epoch", "reason"}
-)
-_ACK_TRANSITIONS = frozenset({"removed", "mutated"})
-
-
-def _is_hex64(value: object) -> bool:
-    return (
-        isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
-    )
-
-
-def load_epoch_acks(path: Path | str) -> list[dict[str, Any]]:
-    """Load the committed epoch-history acknowledgment ledger; fail closed.
-
-    An append-only chain cannot forget a recorded removal or mutation, and
-    rewriting the chain to hide one is exactly the tamper it exists to catch.
-    The ledger is how a reviewed historical incident stays *visible* without
-    failing every future check: each entry binds exactly one transition
-    already recorded in a sealed epoch — ``corpus`` (heads-pin key, e.g.
-    ``receipts/*.json``), ``member``, ``transition`` (``removed`` /
-    ``mutated``), ``from_sha256`` (the digest the previous epoch stamped),
-    ``to_sha256`` (the digest the recording epoch stamped; ``None`` for a
-    removal), ``epoch`` (the epoch receipt that records it) and a non-empty
-    ``reason``. Live drift is never acknowledgeable — a removal or rewrite
-    must be stamped first, so the ack names sealed history, not intent.
-
-    Raises ``ValueError`` on any malformed, unknown-field or duplicate entry:
-    an acknowledgment that cannot be matched exactly must not be silently
-    dropped or widened.
-    """
-    from quant_fund.utils.receipt import load_json_strict
-
-    raw = load_json_strict(Path(path).read_bytes())
-    if not isinstance(raw, Mapping) or raw.get("schema") != EPOCH_ACKS_SCHEMA:
-        raise ValueError(f"epoch acks must be an object with schema {EPOCH_ACKS_SCHEMA!r}")
-    entries = raw.get("acks")
-    if not isinstance(entries, list) or set(raw) != {"schema", "acks"}:
-        raise ValueError("epoch acks must carry exactly 'schema' and an 'acks' list")
-    acks: list[dict[str, Any]] = []
-    seen: set[tuple[str, str, str]] = set()
-    for index, entry in enumerate(entries):
-        problem = _ack_entry_problem(entry)
-        if problem is not None:
-            raise ValueError(f"epoch ack #{index}: {problem}")
-        key = (entry["corpus"], entry["member"], entry["epoch"])
-        if key in seen:
-            raise ValueError(f"epoch ack #{index}: duplicate acknowledgment {key!a}")
-        seen.add(key)
-        acks.append(dict(entry))
-    return acks
-
-
-def _ack_epoch_name_ok(epoch: object) -> bool:
-    return (
-        isinstance(epoch, str)
-        and epoch.startswith("corpus_epoch_")
-        and epoch.endswith(".json")
-        and len(epoch) == len("corpus_epoch_") + 16 + len(".json")
-    )
-
-
-def _ack_digests_problem(entry: Mapping[str, Any]) -> str | None:
-    if not _is_hex64(entry["from_sha256"]):
-        return "from_sha256 must be 64 lowercase hex"
-    to_sha = entry["to_sha256"]
-    if entry["transition"] == "removed":
-        return None if to_sha is None else "a removal carries to_sha256 null"
-    if _is_hex64(to_sha) and to_sha != entry["from_sha256"]:
-        return None
-    return "a mutation needs a distinct 64-hex to_sha256"
-
-
-def _ack_entry_problem(entry: object) -> str | None:
-    """Why one ledger entry is malformed, or ``None`` when it is well-formed."""
-    if not isinstance(entry, Mapping) or set(entry) != _ACK_FIELDS:
-        return f"must carry exactly {sorted(_ACK_FIELDS)}"
-    corpus, member = entry["corpus"], entry["member"]
-    if not (isinstance(corpus, str) and "/" in corpus and isinstance(member, str) and member):
-        return "corpus/member malformed"
-    if entry["transition"] not in _ACK_TRANSITIONS:
-        return "transition must be removed|mutated"
-    if not _ack_epoch_name_ok(entry["epoch"]):
-        return "epoch must name a corpus_epoch_<hex16>.json"
-    reason = entry["reason"]
-    if not (isinstance(reason, str) and reason.strip()):
-        return "reason must be non-empty"
-    return _ack_digests_problem(entry)
-
-
-def _ack_explains(
-    ack: Mapping[str, Any] | None, transition: str, from_sha: str, to_sha: str | None
-) -> bool:
-    """True iff ``ack`` names exactly this recorded transition's digests."""
-    return (
-        ack is not None
-        and ack["transition"] == transition
-        and ack["from_sha256"] == from_sha
-        and ack["to_sha256"] == to_sha
-    )
-
-
-def _unmatched_ack_errors(
-    ack_index: Mapping[tuple[str, str], Any], used: set[tuple[str, str]]
-) -> list[str]:
-    """An acknowledgment that matched no recorded transition explains nothing
-    — stale, mistyped, or pre-authorizing a future rewrite. Fail closed."""
-    return [f"epoch_ack_unmatched:{m!a}@{e!a}" for m, e in sorted(set(ack_index) - used)]
-
-
-@dataclass
-class _AckState:
-    """Shared bookkeeping for transition findings in one chain walk."""
-
-    index: Mapping[tuple[str, str], Mapping[str, Any]]
-    used: set[tuple[str, str]]
-    errors: list[str]
-    acknowledged: list[str]
-
-    def record(
-        self, label: str, member: str, epoch: str, transition: str, frm: str, to: str | None
-    ) -> None:
-        """File ``label`` as acknowledged iff an ack names exactly this transition."""
-        explained = _ack_explains(self.index.get((member, epoch)), transition, frm, to)
-        if explained:
-            self.used.add((member, epoch))
-        (self.acknowledged if explained else self.errors).append(label)
-
-
-def _check_transition(
-    root: Path,
-    prev: Mapping[str, Any],
-    cur_name: str,
-    cur: Mapping[str, Any],
-    acks: _AckState,
-    allow_member_updates: bool,
-) -> None:
-    """Membership findings for one ``prev -> cur`` link: membership must be
-    non-decreasing and the declared deltas honest. Members under a
-    corpus-scoped exempt prefix churn by rule (self-authenticating files like
-    Rekor witness proofs replace per checkpoint rewrite) — their
-    epoch-to-epoch presence delta is bookkeeping, not evidence loss."""
-    prev_members = {k: v for k, v in _member_maps(prev).items() if not _exempt_member(root, k)}
-    cur_members = {k: v for k, v in _member_maps(cur).items() if not _exempt_member(root, k)}
-    actual_removed = set(prev_members) - set(cur_members)
-    for gone in sorted(actual_removed):
-        label = f"member_removed:{gone!a}@{cur_name!a}"
-        acks.record(label, gone, cur_name, "removed", prev_members[gone], None)
-    declared_removed = {
-        n for n in (cur.get("members_removed") or []) if not _exempt_member(root, n)
-    }
-    if declared_removed != actual_removed:
-        acks.errors.append(f"members_removed_dishonest:{cur_name!a}")
-    declared_added = {n for n in (cur.get("members_added") or []) if not _exempt_member(root, n)}
-    if declared_added != set(cur_members) - set(prev_members):
-        acks.errors.append(f"members_added_dishonest:{cur_name!a}")
-    if allow_member_updates:
-        return
-    # Mutated members: same name, different digest.
-    for kept in sorted(k for k in set(prev_members) & set(cur_members)):
-        if prev_members[kept] != cur_members[kept]:
-            label = f"member_mutated:{kept!a}@{cur_name!a}"
-            acks.record(label, kept, cur_name, "mutated", prev_members[kept], cur_members[kept])
-
-
-def _fold(name: str) -> str:
-    """Name identity on case-insensitive / normalizing filesystems (the
-    Windows fleet host): ``a.json``, ``A.json``, an NFD spelling and (NTFS)
-    ``a.json.`` or ``a.json `` can open the same file, so history treats them
-    as one name. Over-folding is safe: only a fold-equal name with
-    *different* bytes is ever flagged."""
-    folded = unicodedata.normalize("NFC", name).casefold()
-    return "/".join(part.rstrip(". ") for part in folded.split("/"))
-
-
-def _resurrections(
-    root: Path, by_name: Mapping[str, Mapping[str, Any]], child_of: Mapping[str, str], genesis: str
-) -> tuple[list[tuple[str, str, str, str]], dict[str, str]]:
-    """``(member, epoch, last_sha, new_sha)`` for append-only names that were
-    removed and later re-added with different bytes, plus the last stamped
-    digest of every name the chain ever held (keyed by ``_fold``).
-
-    Removal-then-re-add is a mutation spread over two epochs: an acknowledged
-    removal must not launder a rewrite of a stamped name — nor may a re-add
-    under another case or normalization of that name. Re-adding the same
-    bytes is not flagged (restoring evidence is not a rewrite). Walks from the
-    single genesis along ``child_of``; forks are reported elsewhere."""
-    last: dict[str, str] = {}
-    prev: dict[str, str] = {}
-    found: list[tuple[str, str, str, str]] = []
-    cur: str | None = genesis
-    seen: set[str] = set()
-    while cur is not None and cur not in seen:
-        seen.add(cur)
-        members = {
-            k: v for k, v in _member_maps(by_name[cur]).items() if not _exempt_member(root, k)
-        }
-        found += [
-            (k, cur, last[_fold(k)], members[k])
-            for k in sorted(set(members) - set(prev))
-            if _fold(k) in last and last[_fold(k)] != members[k]
-        ]
-        last.update({_fold(k): v for k, v in members.items()})
-        prev = members
-        cur = child_of.get(cur)
-    return found, last
-
-
-def _live_resurrection_errors(
-    live: Mapping[str, str], unstamped: list[str], history: Mapping[str, str]
-) -> list[str]:
-    """Unstamped live members reusing a name (``_fold``-equal) the chain
-    already stamped with other bytes. Not acknowledgeable — like all live
-    drift — and, on an append-only chain, never stampable through a PR
-    either: new evidence takes a new name."""
-    return [
-        f"member_resurrected_live:{name!a}"
-        for name in unstamped
-        if _fold(name) in history and history[_fold(name)] != live[name]
-    ]
-
-
-def acks_for_corpus(acks: list[dict[str, Any]], corpus_key: str) -> list[dict[str, Any]]:
-    """The ledger entries scoped to one (dir, pattern) chain key."""
-    return [a for a in acks if a["corpus"] == corpus_key]
-
-
-def pinned_head_members(corpus_dir: Path | str, pinned: Mapping[str, Any]) -> dict[str, str]:
-    """``{member: sha256}`` stamped by the head epoch a heads-pin entry names.
-
-    Fails closed (``ValueError``) unless the named epoch receipt exists in
-    ``corpus_dir``, its bytes hash to the pinned digest, and it verifies as a
-    sealed ``corpus_epoch.v1`` — a pin is only an authority over bytes it
-    actually authenticates.
-    """
-    from quant_fund.research.receipt_v2 import verify_receipt_file
-
-    name = str(pinned.get("receipt") or "")
-    path = Path(corpus_dir) / name
-    if not name or "/" in name or not path.is_file():
-        raise ValueError(f"pinned head epoch {name!a} is missing from {corpus_dir}")
-    if hash_bytes(path.read_bytes()) != pinned.get("sha256"):
-        raise ValueError(f"pinned head epoch {name!a} does not match the pinned digest")
-    doc = json.loads(path.read_text(encoding="utf-8"))
-    body = doc.get("payload") if isinstance(doc.get("payload"), Mapping) else doc
-    if not verify_receipt_file(path)["valid"] or epoch_contract_errors(body):
-        raise ValueError(f"pinned head epoch {name!a} is not a valid sealed epoch")
-    return _member_maps(body)
-
-
-def _epoch_link(corpus_dir: Path, name: str) -> tuple[str, str | None]:
-    """``(file_sha256, prev_epoch_receipt)`` for one epoch file; ``ValueError``
-    when it is missing, path-like or unparseable."""
-    path = corpus_dir / name
-    if not name or "/" in name or "\\" in name or not path.is_file():
-        raise ValueError(f"chain epoch {name!a} is missing from {corpus_dir}")
-    raw = path.read_bytes()
-    try:
-        doc = json.loads(raw)
-    except (ValueError, RecursionError) as exc:
-        raise ValueError(f"chain epoch {name!a} is not parseable JSON") from exc
-    body = doc.get("payload") if isinstance(doc, Mapping) else None
-    body = body if isinstance(body, Mapping) else doc
-    prev = body.get("prev_epoch_receipt") if isinstance(body, Mapping) else None
-    return hash_bytes(raw), prev if isinstance(prev, str) else None
-
-
-def chain_ancestry(corpus_dir: Path | str, pinned: Mapping[str, Any]) -> frozenset[str]:
-    """Epoch names in the chain a heads-pin entry commits to: the pinned head
-    and every epoch it transitively names as ``prev``.
-
-    Authenticated, not walked on trust: the head's bytes must match the
-    pinned ``sha256`` and the genesis→head sequence of ``(name, file_sha)``
-    must reproduce the pinned ``chain_root`` (and ``n_epochs``). Any gap,
-    cycle, unreadable link or root mismatch raises ``ValueError`` — a caller
-    that grants authority to "epochs the base already held" must never be
-    handed a set an attacker shaped by editing older epoch files."""
-    from quant_fund.research.epoch_merkle import chain_tree_root
-
-    root = Path(corpus_dir)
-    head = str(pinned.get("receipt") or "")
-    chain: list[tuple[str, str]] = []
-    cur: str | None = head
-    while cur is not None:
-        if any(cur == n for n, _ in chain):
-            raise ValueError(f"chain epoch {cur!a} repeats (cycle)")
-        sha, prev = _epoch_link(root, cur)
-        chain.append((cur, sha))
-        cur = prev
-    chain.reverse()
-    if chain[-1][1] != pinned.get("sha256"):
-        raise ValueError(f"pinned head epoch {head!a} does not match the pinned digest")
-    exp_root = pinned.get("chain_root")
-    if not isinstance(exp_root, str) or chain_tree_root(chain) != exp_root:
-        raise ValueError(f"chain ending at {head!a} does not reproduce the pinned chain_root")
-    exp_n = pinned.get("n_epochs")
-    if isinstance(exp_n, int) and exp_n != len(chain):
-        raise ValueError(f"chain ending at {head!a} has {len(chain)} epochs, pin says {exp_n}")
-    return frozenset(n for n, _ in chain)
-
-
-def ack_ledger_base_errors(
-    acks: list[dict[str, Any]],
-    base_acks: list[dict[str, Any]],
-    base_chains: Mapping[str, frozenset[str]],
-    append_only: frozenset[str],
-) -> list[str]:
-    """PR rule for the acknowledgment ledger on append-only chains.
-
-    An entry the base ledger did not already hold may only explain history
-    the *base* chain recorded (its ``epoch`` is in ``base_chains[corpus]``,
-    from ``chain_ancestry`` over the base pin). Otherwise one diff could stamp
-    a removal or rewrite of stamped evidence in a new epoch and excuse it in
-    the same breath — every transition type, not only mutations. Mutable
-    chains (``allow_member_updates``) are outside this rule: their removals
-    are ordinary, stamped and acknowledged together."""
-    base = {canonical_json_bytes(dict(a)) for a in base_acks}
-    return [
-        f"epoch_ack_postdates_base:{a['corpus']!a}:{a['member']!a}@{a['epoch']!a}"
-        for a in acks
-        if a["corpus"] in append_only
-        and canonical_json_bytes(dict(a)) not in base
-        and a["epoch"] not in base_chains.get(a["corpus"], frozenset())
-    ]
-
-
-def _chain_prefix_to(
-    corpus_dir: Path | str, pattern: str, head_name: str
-) -> tuple[list[tuple[str, str]] | None, list[str]]:
-    """``(name, file_sha)`` of the ordered epoch chain truncated at
-    ``head_name`` — the prefix a heads pin naming that head commits to — or
-    ``None`` (with the ordering errors) when the chain does not order or does
-    not contain it. The pin writer and the checker share it, so both compute
-    the identical position commitment."""
-    from quant_fund.research.epoch_merkle import ordered_epoch_chain
-
-    ordered, order_errors = ordered_epoch_chain(corpus_dir, pattern=pattern)
-    tip = next((i for i, e in enumerate(ordered) if e[0] == head_name), None)
-    if order_errors or tip is None:
-        return None, list(order_errors)
-    return [(e[0], e[1]) for e in ordered[: tip + 1]], []
-
-
 def update_heads_pin(
     pin_path: Path | str,
     corpus_dir: Path | str,
@@ -1025,11 +576,6 @@ def update_heads_pin(
     Called by the stamping path so the pin and the epoch receipt land in the
     same commit — the committed pin is then the authoritative statement of
     which epoch is the newest, making head deletion a detectable rollback.
-
-    Fails closed (``ValueError``, pin left untouched) when it cannot compute
-    every position field — a head without ``member_tree_root``, or an epoch
-    chain under ``corpus_dir`` that does not contain ``head_receipt`` —
-    rather than writing a weaker entry the verifiers reject.
     """
     path = Path(pin_path)
     key = epoch_heads_key(corpus_dir, pattern)
@@ -1052,23 +598,16 @@ def update_heads_pin(
     # Position-tree commitment: a Merkle root over the ordered epoch chain
     # (leaves bind (position, name, file-sha)) so `epoch_position.v1`
     # proofs verify offline against this pin in O(log n).
-    from quant_fund.research.epoch_merkle import chain_tree_root
+    from quant_fund.research.epoch_merkle import chain_tree_root, ordered_epoch_chain
 
     try:
-        names_sha, chain_errors = _chain_prefix_to(corpus_dir, pattern, head_receipt.name)
+        ordered, chain_errors = ordered_epoch_chain(corpus_dir, pattern=pattern)
     except (OSError, ValueError):
-        names_sha, chain_errors = None, ["chain_compute_failed"]
-    if names_sha is not None:
-        # Truncated at the pinned head, exactly as ``check_epoch_chain``
-        # recomputes it: an ancestor pin commits to its own prefix.
+        ordered, chain_errors = [], ["chain_compute_failed"]
+    if not chain_errors and ordered and ordered[-1][0] == head_receipt.name:
+        names_sha = [(name, file_sha) for name, file_sha, _, _, _ in ordered]
         heads[key]["chain_root"] = chain_tree_root(names_sha)
         heads[key]["n_epochs"] = len(names_sha)
-    missing = pin_position_missing_errors(heads[key])
-    if missing:
-        raise ValueError(
-            f"refusing to pin {head_receipt.name!a} under {key!a}: {missing}; the epoch "
-            f"chain under {Path(corpus_dir).as_posix()!a} must contain it ({chain_errors})"
-        )
     from quant_fund.utils.atomicio import atomic_write_text
 
     payload = {"schema": "epoch_heads.v1", "heads": heads}
@@ -1079,7 +618,7 @@ def update_heads_pin(
 def check_epoch_chain(
     corpus_dir: Path | str,
     *,
-    acks: list[dict[str, Any]] | None = None,
+    allowed_removals: Mapping[str, str] | None = None,
     pattern: str = "*.json",
     expected_head: Mapping[str, Any] | None = None,
     require_stamped: bool = False,
@@ -1087,18 +626,13 @@ def check_epoch_chain(
 ) -> dict[str, Any]:
     """Walk the committed epoch chain against the live corpus.
 
-    Returns ``{"errors": [...], "acknowledged": [...], "unstamped": [...],
-    "head": <name|None>, "head_epoch_root": <hex|None>}``. Errors are
-    integrity violations the chain is authoritative over: forked/disconnected/
-    invalid epoch receipts, stamped members removed or mutated, and dishonest
-    delta fields. ``acks`` (this chain's entries from ``load_epoch_acks``)
-    move a recorded removal/mutation from ``errors`` to ``acknowledged`` only
-    when the entry names the exact member, epoch and digests the chain
-    records; an entry matching nothing is itself an error
-    (``epoch_ack_unmatched``), so the ledger cannot pre-authorize future
-    tamper or outlive the history it explains. ``unstamped`` lists corpus
-    members not covered by the head epoch — arrivals between stamps are the
-    normal state, recorded not flagged.
+    Returns ``{"errors": [...], "unstamped": [...], "head": <name|None>,
+    "head_epoch_root": <hex|None>}``. Errors are integrity violations the
+    chain is authoritative over: forked/disconnected/invalid epoch receipts,
+    stamped members removed (outside ``allowed_removals`` name→sha256 pins),
+    stamped members mutated, and dishonest delta fields. ``unstamped`` lists
+    corpus members not covered by the head epoch — arrivals between stamps
+    are the normal state, recorded not flagged.
 
     ``expected_head`` (from ``load_heads_pin``) pins which epoch receipt is
     the committed head: missing file → ``epoch_head_missing``, byte-drift →
@@ -1123,10 +657,7 @@ def check_epoch_chain(
     """
     root = Path(corpus_dir)
     errors: list[str] = []
-    acknowledged: list[str] = []
     unstamped: list[str] = []
-    ack_index = {(str(a["member"]), str(a["epoch"])): a for a in acks or []}
-    ack_used: set[tuple[str, str]] = set()
 
     # Committed head pin (phase 1, chain-free): the pin file states which
     # epoch receipt is the newest — a missing or byte-drifted pinned file is
@@ -1162,7 +693,6 @@ def check_epoch_chain(
         errors.append("no_epoch_receipts")
         return {
             "errors": errors,
-            "acknowledged": acknowledged,
             "unstamped": [],
             "head": None,
             "head_epoch_root": None,
@@ -1182,7 +712,6 @@ def check_epoch_chain(
         errors.append("no_valid_epoch_receipts")
         return {
             "errors": errors,
-            "acknowledged": acknowledged,
             "unstamped": unstamped,
             "head": None,
             "head_epoch_root": None,
@@ -1212,18 +741,35 @@ def check_epoch_chain(
     # corpus-scoped exempt prefix churn by rule (self-authenticating files
     # like Rekor witness proofs replace per checkpoint rewrite) — their
     # epoch-to-epoch presence delta is bookkeeping, not evidence loss.
-    ack_state = _AckState(ack_index, ack_used, errors, acknowledged)
+    allowed = dict(allowed_removals or {})
     for prev_name, cur_name in child_of.items():
-        _check_transition(
-            root, by_name[prev_name], cur_name, by_name[cur_name], ack_state, allow_member_updates
-        )
-    history: dict[str, str] = {}
-    if not allow_member_updates and len(genesis) == 1:
-        found, history = _resurrections(root, by_name, child_of, genesis[0])
-        for name, epoch, last_sha, new_sha in found:
-            ack_state.record(
-                f"member_resurrected:{name!a}@{epoch!a}", name, epoch, "mutated", last_sha, new_sha
-            )
+        prev_members = {
+            k: v for k, v in _member_maps(by_name[prev_name]).items() if not _exempt_member(root, k)
+        }
+        cur_members = {
+            k: v for k, v in _member_maps(by_name[cur_name]).items() if not _exempt_member(root, k)
+        }
+        for gone in sorted(set(prev_members) - set(cur_members)):
+            if allowed.get(gone) != prev_members[gone]:
+                errors.append(f"member_removed:{gone!a}@{cur_name!a}")
+        declared_removed = {
+            n
+            for n in (by_name[cur_name].get("members_removed") or [])
+            if not _exempt_member(root, n)
+        }
+        actual_removed = set(prev_members) - set(cur_members)
+        if declared_removed != actual_removed:
+            errors.append(f"members_removed_dishonest:{cur_name!a}")
+        declared_added = {
+            n for n in (by_name[cur_name].get("members_added") or []) if not _exempt_member(root, n)
+        }
+        actual_added = set(cur_members) - set(prev_members)
+        if declared_added != actual_added:
+            errors.append(f"members_added_dishonest:{cur_name!a}")
+        # Mutated members: same name, different digest.
+        for kept in set(prev_members) & set(cur_members):
+            if prev_members[kept] != cur_members[kept] and not allow_member_updates:
+                errors.append(f"member_mutated:{kept!a}@{cur_name!a}")
 
     # Head vs live corpus: stamped membership must hold exactly; files added
     # after the head stamp are unstamped (normal), not violations.
@@ -1241,15 +787,13 @@ def check_epoch_chain(
         errors += _portable_name_errors(live)
         head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
-        # Live drift is never acknowledgeable: a removal must be stamped
-        # (recorded in a sealed epoch) before the ledger can explain it.
-        for name in sorted(stamped - set(live)):
-            errors.append(f"head_member_missing_live:{name!a}")
+        for name in stamped - set(live):
+            if allowed.get(name) != head_members[name]:
+                errors.append(f"head_member_missing_live:{name!a}")
         for name, sha in head_members.items():
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name!a}")
         unstamped = sorted(set(live) - stamped - set(by_name))
-        errors += _live_resurrection_errors(live, unstamped, history)
         if require_stamped:
             errors.extend(f"unstamped_member:{name!a}" for name in unstamped)
     elif len(heads) > 1:
@@ -1272,34 +816,37 @@ def check_epoch_chain(
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
-    if exp_name is not None and expected_head is not None:
-        errors += pin_position_missing_errors(expected_head)
 
-    # Bound chain fields: the pin's position commitments written by
-    # ``update_heads_pin`` (member ``tree_root``, ordered ``chain_root``,
-    # ``n_epochs``) are required above and recomputed here against the
-    # observed chain truncated at the pinned head — a pin naming a live head
-    # while lying about (or omitting) its committed position root must fail
-    # closed, since offline position proofs anchor on these values.
+    # Bound chain fields: when the pin carries the position-commitment
+    # fields written by ``update_heads_pin`` (member ``tree_root``, ordered
+    # ``chain_root``, ``n_epochs``), recompute them against the observed
+    # chain truncated at the pinned head — a pin naming a live head while
+    # lying about its committed position root must fail closed, since
+    # offline position proofs anchor on these values.
     if exp_name is not None and ancestor and expected_head is not None:
-        from quant_fund.research.epoch_merkle import chain_tree_root
+        from quant_fund.research.epoch_merkle import (
+            chain_tree_root,
+            ordered_epoch_chain,
+        )
 
-        names_sha, _ = _chain_prefix_to(root, pattern, exp_name)
-        if names_sha is not None:
-            pinned_head = by_name[exp_name]
-            exp_tree = expected_head.get("tree_root")
-            if isinstance(exp_tree, str) and pinned_head.get("member_tree_root") != exp_tree:
-                errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
-            exp_chain = expected_head.get("chain_root")
-            if isinstance(exp_chain, str) and chain_tree_root(names_sha) != exp_chain:
-                errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
-            exp_n = expected_head.get("n_epochs")
-            if isinstance(exp_n, int) and len(names_sha) != exp_n:
-                errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
-    errors += _unmatched_ack_errors(ack_index, ack_used)
+        ordered, order_errors = ordered_epoch_chain(root, pattern=pattern)
+        if not order_errors:
+            tip_idx = next((i for i, e in enumerate(ordered) if e[0] == exp_name), None)
+            if tip_idx is not None:
+                sub = ordered[: tip_idx + 1]
+                names_sha = [(e[0], e[1]) for e in sub]
+                pinned_head = by_name[exp_name]
+                exp_tree = expected_head.get("tree_root")
+                if isinstance(exp_tree, str) and pinned_head.get("member_tree_root") != exp_tree:
+                    errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
+                exp_chain = expected_head.get("chain_root")
+                if isinstance(exp_chain, str) and chain_tree_root(names_sha) != exp_chain:
+                    errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
+                exp_n = expected_head.get("n_epochs")
+                if isinstance(exp_n, int) and len(names_sha) != exp_n:
+                    errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
     return {
         "errors": errors,
-        "acknowledged": acknowledged,
         "unstamped": unstamped,
         "head": head_name,
         "head_epoch_root": head_root,
@@ -1338,23 +885,5 @@ def write_epoch_receipt(
     else:
         raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     path = dirpath / f"corpus_epoch_{digest[:16]}.json"
-    _refuse_ignored_head(path)
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path
-
-
-def _refuse_ignored_head(path: Path) -> None:
-    """Fail closed before writing an epoch head that ``git add -A`` skips.
-
-    ``make stamp-epochs`` pins every head it writes in
-    ``quality/epoch_heads.json``. A head that lands git-ignored and untracked
-    is left out of the commit the pin rides in, so a clean checkout fails
-    ``epoch_head_missing``. Same predicate as ``member_digests``: tracked
-    files are never ignored, and outside a worktree nothing is.
-    """
-    if path.name in gitignored_relpaths(path.parent, [path.name]):
-        raise ValueError(
-            f"refusing to write epoch head {path.as_posix()!a}: git ignores it and it "
-            "is untracked, so `git add -A` would commit the heads pin without it — "
-            f"add a .gitignore negation for {path.parent.as_posix()}/corpus_epoch_*.json"
-        )

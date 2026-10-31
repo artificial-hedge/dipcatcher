@@ -23,8 +23,8 @@ References
   games: closed-loop McKean-Vlasov systems and the Nash certainty
   equivalence principle." *IEEE TAC* 51, 1188–1213.
 
-The implementation is a SYNTHETIC research tool. Output is a mathematical
-object only.
+The implementation is a SYNTHETIC research tool: no live-trading claims,
+no broker connectivity; output is a mathematical object only.
 """
 
 from __future__ import annotations
@@ -74,7 +74,8 @@ class MFGConfig(NamedTuple):
 class MFGSolution(NamedTuple):
     """Equilibrium solution of the trade-crowding MFG.
 
-    All attributes are SYNTHETIC mathematical objects — no market data.
+    All attributes are SYNTHETIC mathematical objects — no market data,
+    no live-trading claims.
 
     Attributes
     ----------
@@ -361,7 +362,8 @@ def solve_mfg_trade_crowding(cfg: MFGConfig) -> MFGSolution:
 
     Returns
     -------
-    MFGSolution (SYNTHETIC only — mathematical object, not market evidence).
+    MFGSolution (SYNTHETIC only — mathematical object, not market
+    evidence or live-trading advice).
     """
     _validate_config(cfg)
 

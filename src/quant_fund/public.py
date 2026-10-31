@@ -168,7 +168,8 @@ class ResearchRun:
 
     Scalar fields and hypothesis rows are the in-memory notebook.
     ``families``, ``rankers``, ``scorecard``, and ``provenance`` match the
-    receipt JSON: non-finite floats are null. This is research evidence.
+    receipt JSON: non-finite floats are null. This is research evidence,
+    not a live-trading result.
     """
 
     schema_version: int
@@ -273,7 +274,7 @@ def run_research(config: AppConfig) -> ResearchRun:
     """Run the research harness and return a typed snapshot.
 
     Receipts on disk are the harness receipts. The returned snapshot does
-    not add a claim of its own.
+    not add a live-trading claim.
     """
     return _research_run(_run_research(config))
 

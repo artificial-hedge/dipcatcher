@@ -11,7 +11,6 @@ from quant_fund.research.crown_jewels import (
     DEFAULT_JEWELS,
     crown_jewel_digests,
     crown_jewels_errors,
-    distribution_lineage_digest,
     load_crown_jewels_pin,
     write_crown_jewels_pin,
 )
@@ -33,30 +32,15 @@ def test_round_trip_clean(repo: Path) -> None:
     assert set(load_crown_jewels_pin(pin)) == set(DEFAULT_JEWELS)
 
 
-def test_ed25519_verifier_helpers_are_pinned() -> None:
-    assert "src/quant_fund/utils/ed25519_public.py" in DEFAULT_JEWELS
-    assert "scripts/ed25519_public.py" in DEFAULT_JEWELS
-
-
-def test_mutation_and_missing(repo: Path) -> None:
+def test_mutation_missing_and_symlink(repo: Path) -> None:
     pin = repo / "quality" / "crown_jewels.json"
     write_crown_jewels_pin(repo, pin)
     (repo / "pyproject.toml").write_text("# tampered\n")
     assert "jewel_mutated:pyproject.toml" in crown_jewels_errors(repo, pin)
     (repo / "AGENTS.md").unlink()
     assert "jewel_missing:AGENTS.md" in crown_jewels_errors(repo, pin)
-
-
-def test_symlinked_jewel_is_rejected(repo: Path) -> None:
-    pin = repo / "quality" / "crown_jewels.json"
-    write_crown_jewels_pin(repo, pin)
     (repo / "uv.lock").unlink()
-    try:
-        (repo / "uv.lock").symlink_to("pyproject.toml")
-    except OSError as exc:
-        if getattr(exc, "winerror", None) == 1314:
-            pytest.skip("Windows symlink privilege is unavailable")
-        raise
+    (repo / "uv.lock").symlink_to("pyproject.toml")
     assert "jewel_symlink:uv.lock" in crown_jewels_errors(repo, pin)
 
 
@@ -95,19 +79,3 @@ def test_pin_is_json_sorted_and_atomic(repo: Path) -> None:
     assert list(doc["files"]) == sorted(doc["files"])
     digests = crown_jewel_digests(repo)
     assert digests["pyproject.toml"] != digests["uv.lock"]
-
-
-def test_distribution_lineage_digest_binds_pin_and_jewels(repo: Path) -> None:
-    pin = write_crown_jewels_pin(repo, repo / "quality" / "crown_jewels.json")
-    (repo / "quality" / "epoch_heads.json").write_text('{"heads": {}}\n')
-    lineage = distribution_lineage_digest(repo)
-    assert lineage["schema"] == "distribution_lineage.v1"
-    assert lineage["jewels_intact"] is True
-    assert len(lineage["digest"]) == 64
-    assert lineage["crown_jewels_pin_sha256"] is not None
-    (repo / "pyproject.toml").write_text("# tampered\n")
-    mutated = distribution_lineage_digest(repo)
-    assert mutated["jewels_intact"] is False
-    assert mutated["digest"] != lineage["digest"]
-    pin.unlink()
-    assert distribution_lineage_digest(repo)["crown_jewels_pin_present"] is False

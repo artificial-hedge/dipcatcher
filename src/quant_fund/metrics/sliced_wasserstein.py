@@ -69,7 +69,7 @@ doi:10.1007/s10851-014-0506-3).
 
 Honesty: outputs are distributional distances, calibrated test p-values and
 barycenter point clouds — proper diagnostic quantities for SYNTHETIC or
-research data. No Sharpe/Sortino/P&L content
+research data. No Sharpe/Sortino/P&L content; no live-trading claims
 (AGENTS.md honesty contract).
 
 Conventions: numpy/scipy core, functional API with a frozen-dataclass result

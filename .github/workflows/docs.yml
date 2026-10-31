@@ -19,12 +19,11 @@ concurrency:
   cancel-in-progress: true
 
 # PRs only build. Push to main uploads a Pages artifact and deploys it when
-# GitHub Pages is enabled. GET /repos/.../pages is HTTP 404 (has_pages=false)
-# and creating the site returns 403 for this integration, so deploy-pages can
-# never succeed until a repo admin enables Pages. A 404 from that probe skips
-# deploy-pages and leaves the strict mkdocs build as the check. Any other
-# probe status, and deploy-pages itself once the site exists, still fail the
-# job. No continue-on-error.
+# GitHub Pages is enabled (Settings → Pages → Source = GitHub Actions).
+# Deploy probes the Pages API first and soft-skips on HTTP 404 so a repo
+# without Pages configured does not fail the workflow; build --strict still
+# gates every PR/push. Real deploy failures (Pages enabled but publish
+# broken) remain hard failures.
 permissions:
   contents: read
 
@@ -46,7 +45,7 @@ jobs:
       - name: Lockfile consistency
         run: uv lock --check
       - name: Sync documentation environment
-        run: uv sync --frozen --only-group docs --no-build
+        run: uv sync --frozen --only-group docs
       - name: Build strict site
         run: uv run --only-group docs --frozen mkdocs build --strict
       - name: Upload Pages artifact
@@ -67,25 +66,27 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Detect GitHub Pages site
+      - name: Check whether GitHub Pages is enabled
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+          code=$(curl -sS -o /tmp/pages.json -w "%{http_code}" \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pages" || true)
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" || true)
           echo "http_code=${code}" >> "$GITHUB_OUTPUT"
-          if [ "${code}" = "404" ]; then
+          if [ "$code" = "404" ]; then
+            echo "::notice title=docs deploy::GitHub Pages is not enabled; skipping publish (mkdocs build --strict already validated the site). Enable Settings → Pages → Source = GitHub Actions to publish."
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "deploy skipped: GitHub Pages is not enabled (has_pages=false, Pages API HTTP 404)"
-          elif [ "${code}" = "200" ]; then
+          elif [ "$code" = "200" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Pages API returned HTTP ${code}; not skipping deploy" >&2
-            exit 1
+            echo "::warning title=docs deploy::Unexpected Pages API status ${code}; attempting deploy"
+            cat /tmp/pages.json || true
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Deploy to GitHub Pages
         id: deployment

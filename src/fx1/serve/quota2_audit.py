@@ -185,8 +185,8 @@ _H_ANTH_REMAINING = "anthropic-ratelimit-requests-remaining"
 _H_ANTH_RESET = "anthropic-ratelimit-requests-reset"
 _RATE_WINDOW_CONST = "_RATE_WINDOW_S"
 _REAL_WINDOW_S = 60.0
-_TINY_WINDOW_S = 2.0
-_WINDOW_RECOVER_S = 2.2
+_TINY_WINDOW_S = 0.05
+_WINDOW_RECOVER_S = 0.08
 
 _U6 = {"prompt_tokens": 2, "completion_tokens": 4, "total_tokens": 6}
 
@@ -254,7 +254,6 @@ def _client(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
-            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: backend_map[name](),
             state_dir=state_dir if state_dir is not None else isolated / "state",
@@ -341,51 +340,6 @@ def _keys_mod() -> ModuleType:
     import fx1.serve.keys as keys_mod  # noqa: PLC0415
 
     return keys_mod
-
-
-class _ManualClock:
-    """Stand-in for ``time.time`` that moves only when the probe advances it.
-
-    A wall sleep loses to a slow client: two calls can outlast a 50 ms
-    window, and the call that must be refused is admitted instead.
-    """
-
-    def __init__(self) -> None:
-        self.t = 1_700_000_000.0
-
-    def __call__(self) -> float:
-        return self.t
-
-    def advance(self, seconds: float) -> None:
-        self.t += seconds
-
-
-@contextmanager
-def _bound_store_clock(clock: Callable[[], float]) -> Iterator[None]:
-    """Give stores ``create_app`` builds this clock, then restore the class.
-
-    ``fx1.serve.api`` binds ``ApiKeyStore`` at import. Patching the name
-    on ``fx1.serve.keys`` does not change that binding. The constructor
-    default is the ``time.time`` object captured when the class was
-    defined, so assigning ``time.time`` later never reaches the store.
-    """
-    import fx1.serve.api as api_mod  # noqa: PLC0415
-    from fx1.serve.keys import ApiKeyStore  # noqa: PLC0415
-
-    class _ClockedStore(ApiKeyStore):
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            kwargs.setdefault("clock", clock)
-            super().__init__(*args, **kwargs)
-
-    # ApiKeyStore is not in api.__all__. Attribute access fails strict
-    # mypy, and getattr/setattr on a constant name fails ruff B009/B010.
-    namespace = vars(api_mod)
-    previous = namespace["ApiKeyStore"]
-    namespace["ApiKeyStore"] = _ClockedStore
-    try:
-        yield
-    finally:
-        namespace["ApiKeyStore"] = previous
 
 
 def _rl_headers(resp: Any) -> dict[str, str]:
@@ -793,37 +747,33 @@ def _window_edge_probes() -> dict[str, Any]:
     # elapsed boundary — a sliding window would still hold the second
     # call's slot. Window 1.2s; call1 at t≈0, call2 at t≈0.7 (full),
     # call3 at t≈1.4 — past the anchor, inside call2's sliding expiry.
-    clock = _ManualClock()
     saved_window = float(getattr(keys_mod, _RATE_WINDOW_CONST))
     try:
-        with _bound_store_clock(clock):
-            setattr(keys_mod, _RATE_WINDOW_CONST, 1.2)
-            client, _ = _client(
-                {"byok": lambda: _MeterBackend("byok-model", dict(_U6))}, api_key=_ROOT
-            )
-            w_raw, w_id = _mint(client, root_h, rpm=2)
-            w_h = {_H_KEY: w_raw}
-            assert _complete(client, w_h).status_code == 200
-            clock.advance(0.7)
-            assert _complete(client, w_h).status_code == 200
-            clock.advance(0.7)
-            third = _complete(client, w_h)
-            # sliding would report remaining 0 (call2's slot still live);
-            # the declared fixed anchor drops the whole occupancy
-            out["window_fixed_anchor_drops_whole"] = (
-                third.status_code == 200 and third.headers.get(_H_RL_REMAINING) == "1"
-            )
-            w_card = _usage_card(client, root_h, w_id)
-            out["window_recovery_card_fresh"] = w_card["window_remaining"] == 1
+        setattr(keys_mod, _RATE_WINDOW_CONST, 1.2)
+        client, _ = _client({"byok": lambda: _MeterBackend("byok-model", dict(_U6))}, api_key=_ROOT)
+        w_raw, w_id = _mint(client, root_h, rpm=2)
+        w_h = {_H_KEY: w_raw}
+        assert _complete(client, w_h).status_code == 200
+        time.sleep(0.7)
+        assert _complete(client, w_h).status_code == 200
+        time.sleep(0.7)
+        third = _complete(client, w_h)
+        # sliding would report remaining 0 (call2's slot still live);
+        # the declared fixed anchor drops the whole occupancy
+        out["window_fixed_anchor_drops_whole"] = (
+            third.status_code == 200 and third.headers.get(_H_RL_REMAINING) == "1"
+        )
+        w_card = _usage_card(client, root_h, w_id)
+        out["window_recovery_card_fresh"] = w_card["window_remaining"] == 1
 
-            # --- expiry re-admits and the surfaces report the fresh count
-            setattr(keys_mod, _RATE_WINDOW_CONST, _TINY_WINDOW_S)
-            e_raw, e_id = _mint(client, root_h, rpm=1)
-            e_h = {_H_KEY: e_raw}
-            first = _complete(client, e_h)
-            denied = _complete(client, e_h)
-            clock.advance(_WINDOW_RECOVER_S)
-            third2 = _complete(client, e_h)
+        # --- expiry re-admits and the surfaces report the fresh count
+        setattr(keys_mod, _RATE_WINDOW_CONST, _TINY_WINDOW_S)
+        e_raw, e_id = _mint(client, root_h, rpm=1)
+        e_h = {_H_KEY: e_raw}
+        first = _complete(client, e_h)
+        denied = _complete(client, e_h)
+        time.sleep(_WINDOW_RECOVER_S)
+        third2 = _complete(client, e_h)
         out["window_expiry_readmits"] = (
             first.status_code == 200 and denied.status_code == 429 and third2.status_code == 200
         )
@@ -1025,24 +975,19 @@ def _metering_probes() -> dict[str, Any]:
         and f_card["tokens_used"] == 0
     )
 
-    # --- a retried sequence bills only the admitted calls: admit, refuse,
-    # then admit again once the window has reset — two uses, two charges
+    # --- a retried sequence bills only the admitted calls: refuse →
+    # admit → refuse nets exactly one use and one charge
     keys_mod = _keys_mod()
     saved = float(getattr(keys_mod, _RATE_WINDOW_CONST))
-    clock = _ManualClock()
     try:
         setattr(keys_mod, _RATE_WINDOW_CONST, _TINY_WINDOW_S)
-        with _bound_store_clock(clock):
-            timed, _ = _client(
-                {"byok": lambda: _MeterBackend("byok-model", dict(_U6))}, api_key=_ROOT
-            )
-            t_raw, t_id = _mint(timed, root_h, rpm=1)
-            t_h = {_H_KEY: t_raw}
-            first = _complete(timed, t_h)
-            denied = _complete(timed, t_h)
-            clock.advance(_WINDOW_RECOVER_S)
-            second = _complete(timed, t_h)
-            t_card = _usage_card(timed, root_h, t_id)
+        t_raw, t_id = _mint(client, root_h, rpm=1)
+        t_h = {_H_KEY: t_raw}
+        first = _complete(client, t_h)
+        denied = _complete(client, t_h)
+        time.sleep(_WINDOW_RECOVER_S)
+        second = _complete(client, t_h)
+        t_card = _usage_card(client, root_h, t_id)
         out["retry_sequence_bills_admitted_only"] = (
             first.status_code == 200
             and denied.status_code == 429

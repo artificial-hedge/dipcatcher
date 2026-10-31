@@ -18,7 +18,6 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
-from quant_fund.utils.portable_fp import stable_convolve, stable_pow_array
 from quant_fund.utils.series import finite_series
 
 Array = NDArray[np.float64]
@@ -113,10 +112,10 @@ def simulate_fou(
     # Fractional integration kernel for W^H increments:
     # w_k ~ k^{H - 1/2} (discretized power kernel).
     m = 2 * n
-    w = stable_pow_array(np.arange(1, m + 1, dtype=float), H - 0.5)
+    w = np.arange(1, m + 1, dtype=float) ** (H - 0.5)
     w /= np.sqrt((w**2).sum() / m)  # normalize to unit variance scale
     e = rng.normal(size=m)
-    conv = stable_convolve(e, w)[:m]  # causal convolution
+    conv = np.convolve(e, w)[:m]  # causal convolution
     x = conv[m - n :] * nu
     return np.asarray(x - x.mean() + theta)
 

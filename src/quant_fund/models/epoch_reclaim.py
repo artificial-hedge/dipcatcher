@@ -58,7 +58,5 @@ def _ebr_trace(rng: np.random.RandomState) -> bool:
 
 def bench_epoch_reclaim(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    ok = sum(
-        _ebr_trace(np.random.RandomState(rng.randint(2**31, dtype=np.int64))) for _ in range(25)
-    )
+    ok = sum(_ebr_trace(np.random.RandomState(rng.randint(2**31))) for _ in range(25))
     return {"synthetic_ebr_safe": ok / 25}

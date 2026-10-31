@@ -86,7 +86,7 @@ def test_committed_sealed_receipts_fail_under_body_mutation() -> None:
     sealed = _sealed_receipts()
     assert sealed, "no sealed committed receipts found — fuzz has nothing to mutate"
     for receipt_path in sealed:
-        original = json.loads(receipt_path.read_text(encoding="utf-8"))
+        original = json.loads(receipt_path.read_text())
         assert verify_receipt_payload(original, receipt_path)["valid"]
         for index, mutated in enumerate(_structured_mutations(original)):
             result = verify_receipt_payload(mutated, receipt_path)
@@ -135,11 +135,11 @@ def test_resealed_forgery_fails_on_fleet_eval(path: tuple[Any, ...], replacement
     targets = [
         path_
         for path_ in _sealed_receipts()
-        if json.loads(path_.read_text(encoding="utf-8")).get("schema") == "fleet_eval.v1"
+        if json.loads(path_.read_text()).get("schema") == "fleet_eval.v1"
     ]
     assert targets, "committed fleet_eval.v1 receipt missing"
     for receipt_path in targets:
-        payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+        payload = json.loads(receipt_path.read_text())
         forged = seal_receipt(_set_path(payload, path, replacement))
         assert forged["receipt_sha256"] != payload["receipt_sha256"]
         assert not verify_receipt_payload(forged, receipt_path)["valid"]

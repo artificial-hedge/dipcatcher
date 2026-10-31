@@ -97,7 +97,7 @@ reconstructed after those changes disappear. The index is not a digital
 signature or an independent attestation of past worktree contents. Source
 entitlements, vendor adjustments, historical availability reconstruction,
 survivorship, undisclosed experiments, and prior holdout inspection remain
-disclosed limitations.
+disclosed limitations. Passing verification never authorizes live trading.
 
 An optional `robustness` object may be stamped beside the notebook with
 `extensions_schema_version` 1. Notebooks that omit both keys stay valid.

@@ -14,12 +14,16 @@ All data is synthetic; no performance claims are made.
 
 from __future__ import annotations
 
+import os
+
+os.environ.setdefault("TZ", "UTC")
+os.environ.setdefault("LC_ALL", "C")
+
 import json
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -32,13 +36,6 @@ from quant_fund.proofcore.contracts import (
     sha256_hex_json,
 )
 from tests.unit.test_replay_engine import fake_executor, mint_fixture
-
-
-@pytest.fixture(autouse=True)
-def _replay_determinism_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("TZ", "UTC")
-    monkeypatch.setenv("LC_ALL", "C")
-
 
 _SETTINGS = settings(
     max_examples=25,

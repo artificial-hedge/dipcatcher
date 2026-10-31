@@ -13,16 +13,12 @@ import typer
 from .app import app
 from .support import _cfg, _collect_param_value
 
-_LAKE_PARTS = ("raw", "bronze", "silver", "gold", "metadata")
-
 
 @app.command()
 def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
-    from quant_fund.cli._app import _resolve_config_path
     from quant_fund.pipeline.doctor import doctor as run_doctor
 
-    resolved = _resolve_config_path(config)
-    info = run_doctor(str(resolved))
+    info = run_doctor(str(config))
     for k, v in info.items():
         typer.echo(f"{k}: {v}")
     # Research-only Kyle/OFI dump path (CLI hint; not a live gate).
@@ -35,43 +31,31 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
         "(session soft-verify dispatcher; research_only, no Sharpe)"
     )
     typer.echo(
-        "ls: dipcatcher ls hunt|book|race|confirm (frozen Lightspeed engines; research_only)"
+        "ls: dipcatcher ls hunt|book|race|confirm "
+        "(frozen Lightspeed engines; research_only, no live broker)"
     )
-    healthy = _lake_healthy(info)
-    _echo_northset(resolved, healthy=healthy)
-    if not healthy:
-        raise typer.Exit(code=1)
-
-
-def _lake_healthy(info: dict[str, object]) -> bool:
-    # Doctor reports absence. It does not create lake directories.
-    required = [info.get(f"dir_{part}") in {"ok", "created"} for part in _LAKE_PARTS]
-    return bool(
+    cfg = _cfg(config)
+    ns = cfg.northset
+    typer.echo(
+        f"northset.shape_floors: depth_shape_finite_floor={ns.depth_shape_finite_floor} "
+        f"concentration_top_finite_floor={ns.concentration_top_finite_floor} "
+        f"queue_priority_finite_floor={ns.queue_priority_finite_floor} "
+        f"side_notional_finite_floor={ns.side_notional_finite_floor} "
+        f"tob_size_share_finite_floor={ns.tob_size_share_finite_floor} "
+        f"(shape_columns_ensured is a receipt stamp when synth ensure runs)"
+    )
+    required = [
+        info.get(f"dir_{part}") == "ok" for part in ("raw", "bronze", "silver", "gold", "metadata")
+    ]
+    healthy = (
         all(required)
         and info.get("data_manifest") == "ok"
         and info.get("research_receipt") == "ok"
         and info.get("core_imports") == "ok"
         and info.get("live") != "REJECTED"
     )
-
-
-def _echo_northset(config: Path, *, healthy: bool) -> None:
-    cfg = _cfg(config) if healthy else _load_only(config)
-    floors = cfg.northset
-    typer.echo(
-        f"northset.shape_floors: depth_shape_finite_floor={floors.depth_shape_finite_floor} "
-        f"concentration_top_finite_floor={floors.concentration_top_finite_floor} "
-        f"queue_priority_finite_floor={floors.queue_priority_finite_floor} "
-        f"side_notional_finite_floor={floors.side_notional_finite_floor} "
-        f"tob_size_share_finite_floor={floors.tob_size_share_finite_floor} "
-        f"(shape_columns_ensured is a receipt stamp when synth ensure runs)"
-    )
-
-
-def _load_only(config: Path) -> Any:
-    from quant_fund.config import load_config
-
-    return load_config(config)
+    if not healthy:
+        raise typer.Exit(code=1)
 
 
 def get_logger(**binds: Any) -> Any:
@@ -228,7 +212,7 @@ def membership_coverage_cmd(
 
     For each anchor date, finds the first panel session on or after that day
     and prints the fraction of index members with at least one real bar.
-    Research diagnostic only.
+    Research diagnostic only — not a live-trading claim.
     """
     import json
 

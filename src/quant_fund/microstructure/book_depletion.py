@@ -26,7 +26,7 @@ inside ``microstructure.zi_lob_simulator.ZILobSimulator``:
 
 Honesty: every output is a SYNTHETIC correctness diagnostic on the simulator,
 never market evidence. No Sharpe/P&L keys, ``live_pnl_claim`` is always
-``False``.
+``False``, and there is no broker connectivity or live-trading claim.
 
 References:
 - Cont, Stoikov, Talreja (2010). A stochastic model for order book dynamics.

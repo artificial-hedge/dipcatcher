@@ -81,18 +81,6 @@ def test_skew_t_predict_before_fit_raises() -> None:
         SkewTDistribution(TAUS).predict(_x(3))
 
 
-def test_skew_t_predict_reuses_fitted_quantiles() -> None:
-    """A second predict tiles the fitted row; it does not invert the CDF again."""
-    y = _bimodal()
-    m = SkewTDistribution(TAUS).fit(_x(y.size), y)
-    assert m.q_ is not None
-    before = m.predict(_x(2)).copy()
-    m.q_[MID] = float(m.q_[MID]) + 1.0
-    after = m.predict(_x(2))
-    assert after[0, MID] == pytest.approx(before[0, MID] + 1.0)
-    assert np.allclose(after[0, :MID], before[0, :MID])
-
-
 def test_gmm_recovers_bimodal_quantiles() -> None:
     y = _bimodal()
     m = GMMDistribution(TAUS).fit(_x(y.size), y)

@@ -9,7 +9,7 @@ deterministic-seed reproducibility.
 
 Honesty: every panel here is seeded SYNTHETIC data — a correctness fixture,
 never market evidence.  Only proper scores appear (QLIKE, pinball); no
-Sharpe/Sortino/Calmar/P&L/NAV.
+Sharpe/Sortino/Calmar/P&L/NAV, no live-trading or profitability claims.
 """
 
 from __future__ import annotations
@@ -267,12 +267,11 @@ def test_ewma_forecast_matches_the_documented_recursion() -> None:
     model = PerSecurityVol("ewma", lam=0.94, min_obs=20).fit(panel)
     history = panel.key_returns("S00")
     lam = 0.94
-    # ``ewma_variance`` stores the forecast that has not yet consumed return t
-    # (``var[t]`` uses ``r[t-1]``). The per-key one-step forecast takes one
-    # more RiskMetrics step with the last observed return.
     var = history[0] ** 2
     for value in history[1:-1]:
         var = lam * var + (1.0 - lam) * value**2
+    # One-step RiskMetrics update uses the last observed return. The loop
+    # above stops before it (``history[1:-1]``), matching ``ewma_variance``.
     expected = lam * var + (1.0 - lam) * history[-1] ** 2
     assert np.allclose(model.forecast("S00")["variance"][0], expected)
 
@@ -343,9 +342,7 @@ def test_statuses_are_reported_per_key() -> None:
     panel = _synthetic_keyed_panel(keys=("G1", "B1"), key_lengths={"G1": 120, "B1": 3})
     model = PerSecurityVol("ewma", min_obs=20).fit(panel)
     batch = model.forecast_keys()
-    # key_names() is sorted, so B1 precedes G1.
-    assert batch.keys == ("B1", "G1")
-    assert batch.status == ("failed:insufficient_observations:3<20", "ok")
+    assert batch.status == ("ok", "failed:insufficient_observations:3<20")
 
 
 # ---------------------------------------------------------------------------
@@ -429,13 +426,12 @@ def test_per_security_artifact_admits_only_per_security_consumers() -> None:
 def test_pooled_artifact_rejects_per_security_consumers_symmetrically() -> None:
     from quant_fund.models.volatility import GARCHVol
 
+    # Default GARCHVol is the univariate series token. The pooled date-level
+    # artifact is the overlay scope, and only that token admits
+    # date_level_portfolio consumers.
     pooled = GARCHVol(series_scope="date_level_equal_weight_cross_section")
     with pytest.raises(ValueError, match="consumable only by date_level_portfolio"):
         pooled.assert_consumer_scope("per_security")
-    # The default univariate series is not a pooled overlay.
-    default = GARCHVol()
-    with pytest.raises(ValueError, match="univariate_return_series"):
-        default.assert_consumer_scope("per_security")
 
 
 # ---------------------------------------------------------------------------

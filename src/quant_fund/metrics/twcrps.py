@@ -22,8 +22,6 @@ from collections.abc import Callable
 import numpy as np
 from numpy.typing import NDArray
 
-from quant_fund.utils.absdiff import ensemble_crps
-
 Array = NDArray[np.float64]
 
 _LEG_NODES, _LEG_WEIGHTS = np.polynomial.legendre.leggauss(48)
@@ -41,7 +39,10 @@ def _check_ens(ens: Array, y: float) -> Array:
 def crps_ensemble(ens: Array, y: float) -> float:
     """Standard ensemble CRPS: E|X - y| - 0.5 E|X - X'|."""
     e = _check_ens(ens, y)
-    return ensemble_crps(y, e)
+    m = e.size
+    term1 = np.mean(np.abs(e - y))
+    term2 = float(np.sum(np.abs(e[:, None] - e[None, :]))) / (2.0 * m * m)
+    return float(term1 - term2)
 
 
 def _twcrps(

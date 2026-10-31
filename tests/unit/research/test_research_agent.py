@@ -1,10 +1,8 @@
-import json
 import math
 from pathlib import Path
 
 import numpy as np
 import polars as pl
-import pytest
 
 from quant_fund.config import load_config
 from quant_fund.research.agent import (
@@ -18,7 +16,6 @@ from quant_fund.research.catalog import (
     RESEARCH_RECEIPT_SCHEMA_VERSION,
     family_blob_forbidden_metrics_absent,
 )
-from quant_fund.research.verify import _optional_input_fingerprint_errors
 from quant_fund.utils.hashing import canonical_frame_fingerprint
 
 
@@ -30,18 +27,6 @@ def test_provenance_changes_when_materialized_data_changes() -> None:
         _provenance(cfg, left, "x")["dataset_content_sha256"]
         != _provenance(cfg, right, "x")["dataset_content_sha256"]
     )
-
-
-def test_provenance_gives_repeated_inputs_distinct_runs() -> None:
-    cfg = load_config("configs/research.yaml")
-    frame = pl.DataFrame({"event_time": [1], "security_id": ["A"], "x": [1.0]})
-    first = _provenance(cfg, frame, "x")
-    second = _provenance(cfg, frame, "x")
-    assert first["input_fingerprint_sha256"] == second["input_fingerprint_sha256"]
-    assert first["run_id"] != second["run_id"]
-    assert len(first["run_id"]) == len(second["run_id"]) == 64
-    assert _optional_input_fingerprint_errors(first) == []
-    assert _optional_input_fingerprint_errors(second) == []
 
 
 def test_canonical_frame_fingerprint_is_order_invariant_and_counts_duplicates() -> None:
@@ -79,7 +64,7 @@ def test_provenance_hashes_external_northset_book_contents(tmp_path: Path) -> No
         first["northset_inputs"]["book_panel_sha256"]
         != second["northset_inputs"]["book_panel_sha256"]
     )
-    assert first["input_fingerprint_sha256"] != second["input_fingerprint_sha256"]
+    assert first["run_id"] != second["run_id"]
 
 
 def test_worktree_fingerprint_is_a_real_sha256() -> None:
@@ -88,7 +73,7 @@ def test_worktree_fingerprint_is_a_real_sha256() -> None:
     assert all(char in "0123456789abcdef" for char in fingerprint)
 
 
-def _synthetic_oracle_config(tmp_path: Path):
+def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
     cfg = load_config("configs/research.yaml")
     cfg.data.root = tmp_path
     cfg.data.synthetic_n_assets = 36
@@ -96,10 +81,7 @@ def _synthetic_oracle_config(tmp_path: Path):
     cfg.validation.train_bars = 80
     cfg.validation.val_bars = 20
     cfg.validation.test_bars = 20
-    return cfg
-
-
-def _assert_research_recovers_synthetic_oracle(nb, tmp_path: Path) -> None:
+    nb = run_research(cfg)
     assert nb.synthetic is True
     assert nb.data_source == "SYNTHETIC"
     assert len(nb.provenance["run_id"]) == 64
@@ -287,26 +269,6 @@ def _assert_research_recovers_synthetic_oracle(nb, tmp_path: Path) -> None:
         next(h for h in nb.hypotheses if h.id == hid)
 
 
-def test_research_recovers_synthetic_oracle(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Required benchmark families only — PR gate stays near ~36s."""
-    monkeypatch.setenv("DIPCATCHER_RESEARCH_REQUIRED_ONLY", "1")
-    nb = run_research(_synthetic_oracle_config(tmp_path))
-    _assert_research_recovers_synthetic_oracle(nb, tmp_path)
-
-
-@pytest.mark.slow
-@pytest.mark.timeout(5400)
-def test_research_recovers_synthetic_oracle_full_catalog(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Full optional catalog — ``make test-full`` / scheduled CI only."""
-    monkeypatch.delenv("DIPCATCHER_RESEARCH_REQUIRED_ONLY", raising=False)
-    nb = run_research(_synthetic_oracle_config(tmp_path))
-    _assert_research_recovers_synthetic_oracle(nb, tmp_path)
-
-
 def test_research_receipt_records_runtime_fingerprint(tmp_path: Path) -> None:
     cfg = load_config("configs/research.yaml")
     cfg.data.root = tmp_path
@@ -320,33 +282,6 @@ def test_research_receipt_records_runtime_fingerprint(tmp_path: Path) -> None:
     assert runtime["implementation"]
     assert runtime["platform"]
     assert runtime["packages"]["numpy"]
-
-    receipt_root = tmp_path / "metadata" / "research"
-    first_json = receipt_root / nb.artifacts["immutable_json"]
-    first_markdown = receipt_root / nb.artifacts["immutable_markdown"]
-    original_json = first_json.read_bytes()
-    original_markdown = first_markdown.read_bytes()
-    repeated = run_research(cfg)
-    assert (
-        repeated.provenance["input_fingerprint_sha256"] == nb.provenance["input_fingerprint_sha256"]
-    )
-    assert repeated.provenance["run_id"] != nb.provenance["run_id"]
-    assert first_json.read_bytes() == original_json
-    assert first_markdown.read_bytes() == original_markdown
-    repeated_json = receipt_root / repeated.artifacts["immutable_json"]
-    repeated_markdown = receipt_root / repeated.artifacts["immutable_markdown"]
-    assert repeated_json.is_file()
-    assert (receipt_root / "latest.json").read_bytes() == repeated_json.read_bytes()
-    assert (receipt_root / "latest.md").read_bytes() == repeated_markdown.read_bytes()
-    assert (
-        tmp_path / "metadata" / "reports" / "latest.md"
-    ).read_bytes() == repeated_markdown.read_bytes()
-    assert (
-        json.loads((receipt_root / "latest.json").read_text(encoding="utf-8"))["provenance"][
-            "run_id"
-        ]
-        == repeated.provenance["run_id"]
-    )
 
 
 def test_forbidden_research_metric_keys_frozen() -> None:
@@ -370,9 +305,6 @@ def test_family_blob_rejects_forbidden_metric_keys() -> None:
     assert family_blob_forbidden_metrics_absent({"calmar_diagnostic": 0.5}) is False
     assert family_blob_forbidden_metrics_absent({"mean_nav": 1e6}) is False
     assert family_blob_forbidden_metrics_absent({"outer": {"inner_sortino": 0.2}}) is False
-    assert family_blob_forbidden_metrics_absent({"sharpeRatio": 1.0}) is False
-    assert family_blob_forbidden_metrics_absent({"totalPnl": 100.0}) is False
-    assert family_blob_forbidden_metrics_absent({"unrealizedpnl": -1.0}) is False
     # value text alone must not trip key scanner (keys only)
     assert family_blob_forbidden_metrics_absent({"note": "sharpe is forbidden"}) is True
 

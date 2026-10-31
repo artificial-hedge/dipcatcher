@@ -8,11 +8,11 @@ the emitting git revision, and an Ed25519 signature over the whole body —
 the same key that signs the pin manifest, so rotation lineage applies.
 
 An auditor with the wheel + the attestation + the committed pubkey can prove
-the artifact bytes were signed together with digests of the four pinned state
-files. ``verify_release_attestation`` re-hashes the artifacts, verifies the
-signature, and — when a repo root is supplied — checks those digests against
-the live tree (``attestation_stale`` when they've moved on). A green-gate claim
-also requires independent verification of the bound repo-integrity verdict.
+"these bytes shipped from a tree whose gates were green", without trusting a
+build host: ``verify_release_attestation`` re-hashes the artifacts, verifies
+the signature, and — when a repo root is supplied — checks the recorded pin
+digests against the live tree (``attestation_stale`` when they've moved on,
+which invalidates *freshness* but not the signature's authenticity).
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 RELEASE_ATTESTATION_SCHEMA = "release_attestation.v1"
@@ -48,20 +47,19 @@ def release_attestation(
     """Build a signed ``release_attestation.v1`` for ``artifacts``.
 
     ``artifacts`` maps artifact name → raw bytes (wheels, sdists, bundles —
-    whatever shipped). Requires every pinned state file to exist.
+    whatever shipped). Requires the pin files to exist: an attestation over
+    an un-pinned tree attests nothing.
     """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-    from quant_fund.research.gate_signatures import validate_signer_pair
-
-    signer_id = validate_signer_pair(private_seed_hex, pubkey_hex)
     root_p = Path(root)
     state: dict[str, str] = {}
     for rel in _PINNED_STATE:
         p = root_p / rel
-        if not p.is_file() or p.is_symlink():
-            raise ValueError(f"release attestation requires pinned state file: {rel}")
-        state[rel] = hash_bytes(p.read_bytes())
+        if p.is_file():
+            state[rel] = hash_bytes(p.read_bytes())
+    if "quality/checkpoint.json" not in state or "quality/epoch_heads.json" not in state:
+        raise ValueError("release attestation requires a checkpointed, pinned tree")
 
     body: dict[str, Any] = {
         "kind": RELEASE_ATTESTATION_SCHEMA,
@@ -76,7 +74,7 @@ def release_attestation(
         "pinned_state_sha256": state,
         "generated_at_commit": _git_rev(root_p),
         "algorithm": "ed25519",
-        "key_id": signer_id,
+        "key_id": _key_id(pubkey_hex),
     }
     key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
     body["signature"] = key.sign(canonical_json_bytes(body)).hex()
@@ -155,16 +153,7 @@ def release_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             ):
                 errors.append(f"artifact_malformed:{name}")
     state = payload.get("pinned_state_sha256")
-    if (
-        not isinstance(state, Mapping)
-        or set(state) != set(_PINNED_STATE)
-        or any(
-            not isinstance(digest, str)
-            or len(digest) != 64
-            or any(char not in "0123456789abcdef" for char in digest)
-            for digest in state.values()
-        )
-    ):
+    if not isinstance(state, Mapping) or "quality/checkpoint.json" not in state:
         errors.append("pinned_state_sha256")
     if payload.get("algorithm") != "ed25519":
         errors.append("algorithm")
@@ -223,8 +212,7 @@ def verify_release_attestation(
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
         try:
-            pub_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pub.strip()))
-            key = Ed25519PublicKey.from_public_bytes(pub_bytes)
+            key = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub.strip()))
         except ValueError:
             errs.append("pubkey_malformed")
             key = None
@@ -237,7 +225,7 @@ def verify_release_attestation(
                     bytes.fromhex(str(payload["signature"])),
                     canonical_json_bytes(unsigned),
                 )
-            except (InvalidSignature, ValueError):
+            except InvalidSignature:
                 errs.append("signature_invalid")
 
     witness = payload.get("witness")

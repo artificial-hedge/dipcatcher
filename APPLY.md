@@ -22,7 +22,7 @@ Then: `fx1 sources list` → `fx1 sources describe wind` →
 ## Full contents (v1–v7)
 
 - **Turnover**: fx-1 identity (pyproject/README/CLI), dipcatcher as harness.
-- **Harness**: 24-command fail-closed registry, four roles.
+- **Harness**: 23-command fail-closed registry, four roles.
 - **Data**: receipts/notebooks/ledgers/traces corpora, quality gates,
   frozen splits, hash-chained corpus ledger.
 - **Datasources (v7)**: 18 professional sources behind one honesty-gated

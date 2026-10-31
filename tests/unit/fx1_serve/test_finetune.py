@@ -33,7 +33,6 @@ def _runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
 def _client(tmp_path: Path, runner: Any = _runner) -> TestClient:
     return TestClient(
         create_app(
-            public_release=False,
             backend_resolver=lambda *a, **k: _B(),
             ft_runner=runner,
             ft_dir=tmp_path / "ft",
@@ -281,7 +280,6 @@ def test_model_registry_routes_local_fx1(tmp_path: Path):
 
     client = TestClient(
         create_app(
-            public_release=False,
             backend_resolver=spy,
             ft_runner=_ckpt_runner,
             ft_dir=tmp_path / "ft",
@@ -535,7 +533,7 @@ def test_batch_webhook_fires_on_completion(tmp_path: Path, hook_server: str):
 
 
 def test_batch_webhook_fires_on_expiry(tmp_path: Path, hook_server: str):
-    app = create_app(public_release=False, backend_resolver=lambda *a, **k: _B())
+    app = create_app(backend_resolver=lambda *a, **k: _B())
     c = TestClient(app, raise_server_exceptions=False)
     from fx1.serve.api import _BatchCounts, _BatchRecord  # noqa: PLC0415
 
@@ -673,7 +671,6 @@ def _real_client(tmp_path: Path, state_dir: Path | None = None) -> TestClient:
     """A TestClient over the DEFAULT runner — the real tiny-LM trainer."""
     return TestClient(
         create_app(
-            public_release=False,
             backend_resolver=lambda *a, **k: _B(),
             ft_dir=None if state_dir is not None else tmp_path / "ft",
             state_dir=state_dir,
@@ -831,7 +828,7 @@ def test_real_trainer_completed_survives_restart(tmp_path: Path):
     # replay. This one runs the REAL backend resolver (no stub), so the
     # ft: completion exercises the measured card's ship gate on the wire.
     c2 = TestClient(
-        create_app(public_release=False, backend_resolver=None, state_dir=state),
+        create_app(backend_resolver=None, state_dir=state),
         raise_server_exceptions=False,
     )
     got = c2.get(f"/v1/fine_tuning/jobs/{job['id']}").json()
@@ -879,7 +876,7 @@ def test_real_trainer_nonterminal_journal_recovers_failed(tmp_path: Path):
     assert rec is not None and rec.job.status == "failed"
 
 
-def test_local_fx1_attach_refuses_foreign_weights(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_local_fx1_attach_refuses_foreign_weights(tmp_path: Path):
     """An engine advertising weights whose sha differs from the backend's
     manifest pin is refused — attaching would silently serve the wrong model."""
     _needs_nn()
@@ -888,7 +885,6 @@ def test_local_fx1_attach_refuses_foreign_weights(tmp_path: Path, monkeypatch: p
     from fx1.serve.backends import LocalFx1Backend
     from fx1.serve.local_engine import LocalWeightsEngine, _EngineHTTPServer, _Handler
 
-    monkeypatch.setenv("FX1_ALLOW_TEST_FIXTURE", "1")
     engine = LocalWeightsEngine(_BASE_CKPT)
     srv: ThreadingHTTPServer = _EngineHTTPServer(("127.0.0.1", 0), _Handler)
     srv.engine = engine
@@ -906,7 +902,7 @@ def test_local_fx1_attach_refuses_foreign_weights(tmp_path: Path, monkeypatch: p
         manifest["weights_sha256"] = "0" * 64
         (other / "weights.manifest.json").write_text(json.dumps(manifest))
         bad = LocalFx1Backend(other, serve_url=url)
-        with pytest.raises(RuntimeError, match="did not prove the checkpoint weights SHA-256"):
+        with pytest.raises(RuntimeError, match="did not verify"):
             bad.complete([{"role": "user", "content": "hi"}])
     finally:
         srv.shutdown()

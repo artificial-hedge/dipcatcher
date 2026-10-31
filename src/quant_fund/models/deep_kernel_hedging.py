@@ -91,7 +91,7 @@ be evaluated under friction via
 Honesty: everything here runs on SYNTHETIC simulated paths. Outputs are
 risk measures (variance / CVaR) of simulated hedged P&L — algorithmic
 correctness evidence, never market evidence. No Sharpe/Sortino/P&L
-headline (AGENTS.md honesty contract). Comparisons
+headline; no live-trading claims (AGENTS.md honesty contract). Comparisons
 on the training batch are in-sample; evaluate strategies on fresh
 independently seeded paths for an honest train/eval split.
 

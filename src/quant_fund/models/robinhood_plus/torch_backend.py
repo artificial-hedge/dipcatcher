@@ -2,16 +2,11 @@
 
 Torch, einops, huggingface_hub, and safetensors are the ``[nn]`` extra.
 CI does not download Hub checkpoints. ``allow_network=false`` (default) only
-loads local directories. A Hub fetch (``allow_network=true``) is allowed only
-for the ``VARIANT_HUB`` repo ids, at their pinned 40-hex commits — never a
-moving branch or an unpinned repo. This module never silently falls back to
-numpy.
+loads local directories. This module never silently falls back to numpy.
 """
 
 from __future__ import annotations
 
-import os
-import re
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -38,63 +33,10 @@ from quant_fund.models.robinhood_plus.engine import (
 from quant_fund.models.robinhood_plus.predictor import empty_forecast, path_forecast_from_paths
 
 _PREDICTOR_CACHE: dict[tuple[Any, ...], Any] = {}
-_COMMIT_SHA = re.compile(r"[0-9a-f]{40}")
-# Revision label for weights read from a local directory: it carries no Hub
-# commit, so none is claimed.
-LOCAL_REVISION = "local"
 
 
 class RobinhoodPlusTorchError(RuntimeError):
     """Torch / pretrained-weight failures. Callers must not swallow these."""
-
-
-def _is_local_dir(source: str) -> bool:
-    """The local-source test ``ModelHubMixin.from_pretrained`` itself applies.
-
-    huggingface_hub reads ``source`` from disk only when ``os.path.isdir``;
-    any other string, an existing regular file included, is a Hub repo id.
-    A looser test (``exists``) would let a stray file at a repo-id-shaped
-    path skip the pin and be labeled ``local``.
-    """
-    return os.path.isdir(source)
-
-
-def _hub_kwargs(source: str, hub_id: str, hub_rev: str) -> dict[str, str]:
-    """``from_pretrained`` kwargs for one weight source. Fails closed.
-
-    A local directory loads as-is. Anything else is a Hub fetch, allowed only
-    for the pinned ``VARIANT_HUB`` id at its 40-hex commit.
-    """
-    if _is_local_dir(source):
-        return {}
-    if source != hub_id or not _COMMIT_SHA.fullmatch(hub_rev):
-        raise RobinhoodPlusTorchError(
-            f"refusing unpinned Hub fetch of {source!r}: only {hub_id!r} at its "
-            "pinned 40-hex commit may be downloaded; pass a local directory otherwise"
-        )
-    return {"revision": hub_rev}
-
-
-def kronos_weight_revisions(
-    variant: str,
-    *,
-    tokenizer_path: str | None = None,
-    model_path: str | None = None,
-) -> dict[str, str]:
-    """Hub commit each weight source loads at (``local`` for a local directory).
-
-    Recorded in forecast diagnostics. Runs before these pins were enforced
-    did not record a revision.
-    """
-    spec = VARIANT_HUB[variant]
-    tok_id = str(spec["tokenizer"])
-    model_id = str(spec["model"])
-    tok = _hub_kwargs(tokenizer_path or tok_id, tok_id, str(spec["tokenizer_rev"]))
-    model = _hub_kwargs(model_path or model_id, model_id, str(spec["model_rev"]))
-    return {
-        "tokenizer_revision": tok.get("revision", LOCAL_REVISION),
-        "model_revision": model.get("revision", LOCAL_REVISION),
-    }
 
 
 def torch_available() -> bool:
@@ -178,13 +120,11 @@ def load_pretrained_predictor(
     model_id = model_path or str(spec["model"])
     default_context = {"mini": 2048, "small": 512, "base": 512}[variant]
     context = int(max_context if max_context is not None else default_context)
-    if not allow_network and not (_is_local_dir(tok_id) and _is_local_dir(model_id)):
+    if not allow_network and (not Path(tok_id).exists() or not Path(model_id).exists()):
         raise RobinhoodPlusTorchError(
             "torch backend refused Hub download (allow_network=false); "
             f"pass local tokenizer/model directories (got {tok_id!r}, {model_id!r})"
         )
-    tok_kwargs = _hub_kwargs(tok_id, str(spec["tokenizer"]), str(spec["tokenizer_rev"]))
-    model_kwargs = _hub_kwargs(model_id, str(spec["model"]), str(spec["model_rev"]))
     if not torch_available():
         raise RobinhoodPlusTorchError(
             "robinhood+ torch backend requires the optional [nn] extra (torch)"
@@ -198,8 +138,8 @@ def load_pretrained_predictor(
             "https://github.com/shiyu-coder/Kronos into third_party/kronos_src "
             "and keep model/ on PYTHONPATH"
         ) from exc
-    tokenizer = KronosTokenizer.from_pretrained(tok_id, **tok_kwargs)
-    model = Kronos.from_pretrained(model_id, **model_kwargs)
+    tokenizer = KronosTokenizer.from_pretrained(tok_id)
+    model = Kronos.from_pretrained(model_id)
     return KronosPredictor(model, tokenizer, device=device, max_context=context, clip=clip)
 
 
@@ -291,9 +231,6 @@ def forecast_cross_section_torch(
         raise RobinhoodPlusTorchError("torch robinhood+ panel missing event_time")
     predictor = _cached_predictor(config)
     cfg = config.robinhood_plus
-    revisions = kronos_weight_revisions(
-        cfg.variant.value, tokenizer_path=cfg.tokenizer_path, model_path=cfg.model_path
-    )
     hist = frame.filter(pl.col("event_time") <= asof)
     if "available_time" in hist.columns:
         hist = hist.filter(pl.col("available_time") <= asof)
@@ -359,7 +296,6 @@ def forecast_cross_section_torch(
                 "price_space": PRICE_SPACE,
                 "lookback": float(kline.shape[0]),
                 "variant": cfg.variant.value,
-                **revisions,
             },
         )
         out[security_id] = RobinhoodPlusNameForecast(security_id=security_id, forecast=forecast)

@@ -21,26 +21,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 import typer
 
-# Bound on first ledger touch. Importing this module to mount the subcommand
-# must not load the PROOFCORE schema graph (that is most of ``dipcatcher --help``).
-RealityFilterError: Any = None
-TrialLedgerRow: Any = None
-
-
-def _bind_contracts() -> None:
-    global RealityFilterError, TrialLedgerRow
-    if RealityFilterError is not None:
-        return
-    from quant_fund.proofcore.contracts import RealityFilterError as filter_error
-    from quant_fund.proofcore.contracts import TrialLedgerRow as ledger_row
-
-    RealityFilterError = filter_error
-    TrialLedgerRow = ledger_row
-
+from quant_fund.proofcore.contracts import RealityFilterError, TrialLedgerRow
 
 reality_app = typer.Typer(
     help="Reality filter: deflated-Sharpe / CSCV-PBO / FDR honesty diagnostics over the trial ledger."
@@ -59,7 +43,6 @@ def count_ledger_rows(path: Path) -> int:
     Does not validate row schemas. A missing file is an error, not an empty
     ledger. Blank lines are ignored, matching :func:`_load_ledger`.
     """
-    _bind_contracts()
     if not path.is_file():
         raise RealityFilterError(f"ledger not found: {path}")
     with path.open("r", encoding="utf-8") as fh:
@@ -93,7 +76,6 @@ def empty_ledger_skip_message(path: Path) -> str:
 
 
 def _load_ledger(path: Path) -> list[TrialLedgerRow]:
-    _bind_contracts()
     if not path.is_file():
         raise RealityFilterError(f"ledger not found: {path}")
     rows: list[TrialLedgerRow] = []
@@ -132,7 +114,6 @@ def preflight(
     in, and export would write 0 rows. Does not change filter thresholds.
     ``trial-report`` and ``ledger-gate`` still fail closed on an empty file.
     """
-    _bind_contracts()
     if db is None and ledger is None:
         typer.echo("REALITY_FILTER_ERROR: pass --db or --ledger", err=True)
         raise typer.Exit(code=2)
@@ -161,7 +142,6 @@ def trial_report(
     out: Path | None = typer.Option(None, "--out", help="Optional JSONL/JSON export path."),
 ) -> None:
     """Build the RealityReport for a trial ledger and print the verdict."""
-    _bind_contracts()
     from quant_fund.reality.report import DISCLAIMER, build_reality_report
 
     try:
@@ -186,7 +166,6 @@ def ledger_gate(
     s_blocks: int = typer.Option(16, "--s-blocks", help="CSCV block count (even)."),
 ) -> None:
     """Exit 0 iff the ledger's reality verdict is 'pass', else exit 1."""
-    _bind_contracts()
     from quant_fund.reality.report import build_reality_report
 
     try:

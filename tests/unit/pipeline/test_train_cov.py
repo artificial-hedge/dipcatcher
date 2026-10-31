@@ -19,6 +19,7 @@ import pytest
 
 from quant_fund.config import load_config
 from quant_fund.config.models import ValidationConfig
+from quant_fund.models.base import save_joblib_artifact
 from quant_fund.models.calibration import ProbabilityCalibrator
 from quant_fund.models.deep_rl import PolicyGradientTrace
 from quant_fund.models.quantile_bandit import QuantileBanditTrace
@@ -64,7 +65,7 @@ from quant_fund.pipeline.train import (
 )
 from quant_fund.schemas.errors import PointInTimeError
 from quant_fund.validation.walk_forward import Fold
-from tests.support.panel_sources import materialize_panel_sources
+from tests.support.panel_sources import materialize_panel_sources, save_bound_stub
 
 D0 = datetime(2020, 1, 1, tzinfo=UTC)
 
@@ -1283,7 +1284,7 @@ def test_train_reinforcement_auto_records_policy_gradient_unavailable(
         if model_name == "policy_gradient":
             raise ImportError("torch is not installed")
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        _save_with_identity(
+        save_bound_stub(
             config,
             {"policy": LinUCBRanker(1), "policy_name": model_name, "features": ["f0"]},
             path,
@@ -1306,11 +1307,7 @@ def test_train_reinforcement_auto_propagates_non_pg_import_error(
         if model_name == "thompson":
             raise ImportError("unexpected missing dependency")
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        _save_with_identity(
-            config,
-            {"policy": LinUCBRanker(1), "policy_name": model_name},
-            path,
-        )
+        save_joblib_artifact({"policy": LinUCBRanker(1), "policy_name": model_name}, path)
         return {"path": str(path), "metrics": {"mean_advantage_vs_uniform": 0.01}}
 
     monkeypatch.setattr(train_module, "train_reinforcement", fake_train)
@@ -1332,7 +1329,7 @@ def test_train_reinforcement_auto_no_viable_and_malformed_artifact(
 
     def malformed_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        _save_with_identity(config, {"not_a_policy": True}, path)
+        save_joblib_artifact({"not_a_policy": True}, path)
         return {"path": str(path), "metrics": {"mean_advantage_vs_uniform": 0.01}}
 
     monkeypatch.setattr(train_module, "train_reinforcement", malformed_train)
@@ -1389,15 +1386,7 @@ def test_train_policy_gradient_no_evaluable_dates_fail_closed(
 def test_train_robinhood_plus_persists_engine_card(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    panel = _stub_panel().with_columns(
-        pl.lit(100.0).alias("open_split_adjusted"),
-        pl.col("high").alias("high_split_adjusted"),
-        pl.col("low").alias("low_split_adjusted"),
-        pl.lit(100.0).alias("close_split_adjusted"),
-        pl.lit(1_000.0).alias("volume"),
-    )
-    monkeypatch.setattr("quant_fund.pipeline.train.families.panel", lambda *a, **k: panel)
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: panel)
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: _stub_panel())
     monkeypatch.setattr(
         "quant_fund.models.robinhood_plus.bench.bench_robinhood_plus",
         lambda frame, config: {"mean_ic": 0.07, "n_ok": 3, "ic_n_dates": 2},
@@ -1414,9 +1403,6 @@ def test_train_robinhood_plus_persists_engine_card(
 
     with pytest.raises(ValueError, match="unknown robinhood_plus model"):
         train_robinhood_plus(cfg, "not_a_decoder")
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: _stub_panel())
-    with pytest.raises(ValueError, match="K-line columns"):
-        train_robinhood_plus(cfg, "hierarchical_markov")
 
 
 # --- train_family --------------------------------------------------------------
@@ -1807,30 +1793,7 @@ def test_train_ranking_auto_selects_best_finite_ic(
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"ranker_{model_name}.joblib"
         model = RidgeRanker().fit(np.ones((4, 2)), np.arange(4, dtype=float))
-        # train_ranking_auto copies the winner via identity_from_artifact.
-        from quant_fund.pipeline.artifact_manifest import (
-            identity_for_training,
-            save_training_artifact,
-        )
-
-        label = str(config.train.ranking_target)
-        frame = pl.DataFrame(
-            {
-                "event_time": [
-                    datetime(2020, 1, 1, tzinfo=UTC),
-                    datetime(2020, 1, 2, tzinfo=UTC),
-                ],
-                label: [0.01, 0.02],
-            }
-        )
-        identity = identity_for_training(
-            frame,
-            config=config,
-            label=label,
-            features=["ret_1"],
-            label_horizon_bars=1,
-        )
-        save_training_artifact(model, path, identity=identity)
+        save_bound_stub(config, model, path)
         ic = {"ridge": 0.05, "elasticnet": 0.02, "neural": float("nan"), "ensemble": 0.04}[
             model_name
         ]
@@ -1890,7 +1853,7 @@ def test_train_calibration_auto_selects_lowest_brier(
             np.linspace(0.05, 0.95, 12),
             (np.linspace(0.05, 0.95, 12) > 0.5).astype(float),
         )
-        _save_with_identity(config, calibrator, path)
+        save_bound_stub(config, calibrator, path)
         brier = {"isotonic": 0.11, "platt": 0.09}[model_name]
         return {"path": str(path), "metrics": {"oos_brier": brier}}
 
@@ -1915,7 +1878,7 @@ def test_train_distribution_auto_selects_lowest_pinball(
 
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
-        _save_with_identity(config, {"model": model_name}, path)
+        save_bound_stub(config, {"model": model_name}, path)
         return {
             "path": str(path),
             "metrics": {
@@ -1944,28 +1907,7 @@ def test_train_volatility_auto_selects_lowest_qlike(
 
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
-        # The real production path uses save_training_artifact (with an
-        # identity block); the test fake must do the same so
-        # train_volatility_auto's downstream identity_from_artifact() call
-        # can verify the saved artifact.
-        from quant_fund.pipeline.artifact_manifest import (
-            identity_for_training,
-            save_training_artifact,
-        )
-
-        df = _stub_panel()
-        identity = identity_for_training(
-            df,
-            config=config,
-            label=config.train.volatility_target,
-            features=["vol_20", "vol_ewma", "vol_parkinson", "ret_1", "vol_of_vol"],
-            label_horizon_bars=1,
-        )
-        save_training_artifact(
-            {"model": model_name},
-            path,
-            identity=identity,
-        )
+        save_bound_stub(config, {"model": model_name}, path)
         return {
             "path": str(path),
             "metrics": {"qlike": qlike[model_name], "n_oos_rows": 20.0},
@@ -2008,41 +1950,34 @@ def test_train_alpha_mean_branch(tmp_path: Path, stub_train) -> None:
     assert Path(result["path"]).name == "alpha_mean.joblib"
 
 
+class _PersistedFakeHMM:
+    """Module-level stand-in so the regime artifact can be joblib-pickled."""
+
+    labels = {"states": 3}
+
+    def __init__(self, *_args: object) -> None:
+        pass
+
+    def fit(self, _x: object) -> _PersistedFakeHMM:
+        return self
+
+    def aic_bic(self, _x: object) -> dict[str, float]:
+        return {"avg_ll": -1.25}
+
+    def save(self, path: Path) -> None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_bytes(b"hmm")
+
+
 def test_train_regime_hmm_scores_heldout_likelihood(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     stub_train(_stub_panel())
-    monkeypatch.setattr(train_module, "GaussianHMMRegime", _ModuleLevelFakeHMM)
+    monkeypatch.setattr(train_module, "GaussianHMMRegime", _PersistedFakeHMM)
     result = train_regime(_cfg(tmp_path), "hmm")
     assert result["metrics"]["oos_avg_ll"] == -1.25
     assert result["labels"] == {"states": 3}
     assert Path(result["path"]).is_file()
-
-
-class _ModuleLevelFakeHMM:
-    """Module-level stand-in for ``GaussianHMMRegime`` so pickle can resolve it.
-
-    A class defined inside a test function lives at
-    ``<locals>.<ClassName>`` which the standard pickle module cannot
-    import. Hoisting it to module scope lets joblib round-trip the
-    artifact; the production code never instantiates this class — it
-    only monkeypatches ``train_module.GaussianHMMRegime`` to point at it.
-    """
-
-    labels = {"states": 3}
-
-    def __init__(self, *_args) -> None:
-        pass
-
-    def fit(self, _x):  # noqa: ANN001, ANN202
-        return self
-
-    def aic_bic(self, _x):  # noqa: ANN001, ANN202
-        return {"avg_ll": -1.25}
-
-    def save(self, path):  # noqa: ANN001
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        Path(path).write_bytes(b"hmm")
 
 
 def test_train_regime_hmm_no_evaluable_fold_fail_closed(
@@ -2185,27 +2120,3 @@ def test_train_regime_threshold_branch(tmp_path: Path, stub_train) -> None:
     result = train_regime(_cfg(tmp_path), "threshold")
     assert result["metrics"] == {}
     assert Path(result["path"]).name == "regime_threshold.joblib"
-
-
-def _save_with_identity(config, payload, path):
-    """Save a joblib artifact with the same identity block the production path uses.
-
-    The auto-select dispatch (``train_*_auto``) reads back the saved
-    artifact via ``identity_from_artifact``; without the identity block,
-    the verify call raises and the auto-select fails. This helper makes
-    the test fake match the production flow without re-implementing the
-    identity computation in every test.
-    """
-    from quant_fund.pipeline.artifact_manifest import (
-        identity_for_training,
-        save_training_artifact,
-    )
-
-    identity = identity_for_training(
-        _stub_panel(),
-        config=config,
-        label=config.train.volatility_target,
-        features=["vol_20", "vol_ewma", "vol_parkinson", "ret_1", "vol_of_vol"],
-        label_horizon_bars=1,
-    )
-    save_training_artifact(payload, path, identity=identity)

@@ -54,7 +54,5 @@ def _oracle_trace(rng: np.random.RandomState) -> bool:
 
 def bench_hazard_pointer(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    ok = sum(
-        _oracle_trace(np.random.RandomState(rng.randint(2**31, dtype=np.int64))) for _ in range(30)
-    )
+    ok = sum(_oracle_trace(np.random.RandomState(rng.randint(2**31))) for _ in range(30))
     return {"synthetic_hazard_safety": ok / 30}

@@ -63,8 +63,8 @@ distribution if its dispersion is wrong.
    the "best-coupling" W1.
 
 Honesty: outputs are distributional distances and transport costs — proper
-scoring/diagnostic quantities. No Sharpe/Sortino/P&L content
-(AGENTS.md honesty contract).
+scoring/diagnostic quantities. No Sharpe/Sortino/P&L content; no
+live-trading claims (AGENTS.md honesty contract).
 
 Conventions: numpy core, frozen-dataclass-free functional API (stateless
 distances), fail-closed edges (ValueError on empty, non-finite, mismatched

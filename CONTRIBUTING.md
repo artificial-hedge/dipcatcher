@@ -1,10 +1,8 @@
 # Contributing
 
-**fx-1** is the model program; **dipcatcher** (`src/quant_fund`) is the harness
-that builds, evaluates, and verifies it. No fine-tuned fx-1 weights are
-published, and `fx1.__version__` is the harness API. Read `AGENTS.md` first —
-it documents the gates, the honesty contract, and the lab's work-tracking
-conventions.
+**fx-1** is the model; **dipcatcher** (`src/quant_fund`) is the harness that
+builds, evaluates, and verifies it. Read `AGENTS.md` first — it documents the
+gates, the honesty contract, and the lab's work-tracking conventions.
 
 > **Proprietary repository.** This codebase is licensed under the
 > [`LICENSE`](LICENSE) at the repository root, not an open-source license.
@@ -41,7 +39,9 @@ honesty check to make a run pass — fix the code or report the blocker.
    `tests/fx1/test_honesty_inheritance.py` confirm.
 2. SYNTHETIC results are correctness tests, always labeled SYNTHETIC, and
    never market evidence.
-3. `receipts/` and all signed state are immutable evidence — never edit,
+3. **No live-trading claims.** This is research infrastructure: no broker
+   connectivity, no order placement, nothing presented as live performance.
+4. `receipts/` and all signed state are immutable evidence — never edit,
    never delete; every research claim should be reproducible from a
    receipt hash.
 

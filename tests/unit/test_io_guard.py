@@ -140,8 +140,7 @@ def test_enforce_blocks_bare_worker_thread(parquet_file: Path) -> None:
     with install_io_guard("enforce"), proven_run(object(), object()), decision_window(T0):
         thread = threading.Thread(target=worker)
         thread.start()
-        thread.join(timeout=15)
-        assert not thread.is_alive(), "worker read blocked the shard"
+        thread.join()
     assert errors == ["blocked"]
 
 

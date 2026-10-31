@@ -385,7 +385,7 @@ def _client(api_key: str | None = None, **create_kw: Any) -> tuple[TestClient, M
             os.environ.pop(_API_KEY_ENV, None)
         else:
             os.environ[_API_KEY_ENV] = api_key
-        app = api_mod.create_app(public_release=False, **create_kw)
+        app = api_mod.create_app(**create_kw)
         return _TC(app, raise_server_exceptions=False), api_mod
     finally:
         if saved is None:

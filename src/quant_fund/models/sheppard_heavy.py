@@ -143,16 +143,13 @@ def synth_heavy(
     r = np.empty(t)
     s2 = np.empty(t)
     s2[0] = 0.01
-    # Draw r[0] before the loop. np.empty leaves r[0] uninitialized, and the
-    # recurrence reads it at i == 1. That heap byte is not stable across
-    # allocators, so two calls in one process were not equal on macOS.
-    r[0] = np.sqrt(s2[0]) * rng.standard_normal()
     hi = t * [False]
     hi[int(t * break_at) :] = [True] * (t - int(t * break_at))
     for i in range(1, t):
         omega = 0.0002 if not hi[i] else 0.0008
         s2[i] = omega + 0.08 * r[i - 1] ** 2 + 0.9 * s2[i - 1]
         r[i] = np.sqrt(s2[i]) * rng.standard_normal()
+    r[0] = np.sqrt(s2[0]) * rng.standard_normal()
     # realized measure: unbiased but noisy proxy of s2 (x2 noise)
     z2 = rng.standard_normal(t) ** 2
     rm = s2 * (0.7 + 0.6 * z2)

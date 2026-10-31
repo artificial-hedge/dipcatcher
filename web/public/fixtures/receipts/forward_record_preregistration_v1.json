@@ -1,0 +1,69 @@
+{
+  "_seal": {
+    "content_sha256": "b62151e486c97d233bbd2b0d9c071e85ae0a3af6c57253fa99eb0a156ddbd59e",
+    "schema": "prereg_seal.v1",
+    "sealed_at": "2026-10-07T00:00:00+00:00"
+  },
+  "admission_rule": {
+    "material_effect_bps": 5.0,
+    "primary_test": "one-sided H0: E[D_t] <= 0 vs H1: E[D_t] > 0, alpha=0.05, single fixed analysis",
+    "referee": "frozen validation/agent_referee.py betting referee (post-submission-only)",
+    "required_eligible_paired_sessions": 1400,
+    "semantics": "anytime-valid admission at every stopping time; no optional-stopping inflation"
+  },
+  "costs": {
+    "borrow_bps_per_year": 50.0,
+    "commission_bps": 1.0,
+    "fills": "next_open",
+    "financing": 0.0,
+    "half_spread_bps": 5.0,
+    "impact_coefficient": 0.1,
+    "participation_limit": 0.1
+  },
+  "declaration_date": "2026-10-07",
+  "declaration_timezone": "Asia/Calcutta",
+  "grid": {
+    "comparator": "frozen equal-weight",
+    "strategy": "frozen momentum-20",
+    "trials": "single primary comparison; no mid-collection tuning"
+  },
+  "holdout_statement": {
+    "holdout_2025": "SPENT",
+    "reason": "The vendor pool already has results for the 2025 holdout and discloses survivorship bias. The 2025 holdout is spent and cannot be reused as new forward evidence."
+  },
+  "honesty": {
+    "broker_connectivity_claim": false,
+    "live_pnl_claim": false,
+    "live_trading_claim": false,
+    "note": "Forward record is simulated/shadow evidence only. No live orders, no live P&L, no profitability claim.",
+    "research_only": true,
+    "synthetic_substitution": false
+  },
+  "not_yet_collected": true,
+  "recorded": [
+    "externally timestamped inputs and decision cutoff",
+    "intended signed quantities and simulated orders",
+    "fills (including partials), rejects and reasons",
+    "positions, cash, costs, NAV and net-return accounting",
+    "kill-switch state",
+    "software/config/data hashes and broker-state cursor",
+    "immutable receipt chain"
+  ],
+  "schema": "forward_record_preregistration.v1",
+  "splits": {
+    "forward": "first accepted decision must occur on a LATER market date than the recorded freeze",
+    "warmup": "all historical bars on/before 2026-09-18 (warmup only, already inspected)"
+  },
+  "status": "NOT_YET_COLLECTED",
+  "universe": {
+    "kind": "static_complete_universe",
+    "membership_selection_bias": "recorded in selection_basis; fixed-universe experiment",
+    "names": "static 424-name US universe frozen at the warmup boundary"
+  },
+  "window": {
+    "end": null,
+    "label": "forward_2026H2",
+    "note": "Named forward window. It is NOT YET COLLECTED. Freeze and externally timestamp this record BEFORE the first forward close.",
+    "start": "2026-07-01"
+  }
+}

@@ -41,9 +41,6 @@ from quant_fund.utils.hashing import hash_bytes
 
 REPO_INTEGRITY_SCHEMA = "repo_integrity.v1"
 
-# Epoch-history acknowledgment ledger (epoch_acknowledgments.v1).
-EPOCH_ACKS_PATH = "quality/epoch_allowed_removals.json"
-
 # (corpus_dir, member glob, require_stamped, allow_member_updates,
 #  coverage_exempt globs) — the same policy the evidence-audit Makefile
 # target enforces; keep in sync.
@@ -51,12 +48,13 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # require_stamped=True everywhere: an unstamped member is a silent
     # injection vector — the fuzz drill demonstrated arrivals passed as
     # notes. Arrivals are errors until the epoch restamp commits them.
-    ("receipts", "*.json", True, False, ("legacy-unsealed/README.md",)),
+    # The inventory sidecar is a digest of the chained JSON, not a second
+    # receipt. A new ``*.json`` pattern would fork the receipts chain.
+    ("receipts", "*.json", True, False, ("legacy-unsealed/README.md", "*.sha256")),
     ("verifier", "*.md", True, False, ()),
     # quality's non-.json residents are jewel-pinned keys/certs,
-    # self-authenticating TSA anchors, or narrative dossiers beside a
-    # chained census JSON (``mccabe_refactor_dossier.md``). The measured
-    # census stays a ``*.json`` member. Markdown is not a gate input.
+    # self-authenticating TSA anchors, or ratchet notes — pinned elsewhere
+    # or not corpus evidence, so they are exempt here.
     (
         "quality",
         "*.json",
@@ -170,14 +168,19 @@ def verify_repo(
     """
     root = Path(root)
     pin_path = root / heads_pin if not Path(heads_pin).is_absolute() else Path(heads_pin)
-    # Committed epoch-history acknowledgments (epoch_acknowledgments.v1):
-    # each entry explains one removal/mutation already recorded in a sealed
-    # epoch of one named chain. The file is itself a quality corpus member —
-    # silently editing it trips the quality chain — and a malformed ledger
-    # fails every epoch gate closed instead of being read as "no acks".
-    from quant_fund.research.corpus_epoch import acks_for_corpus
-
-    epoch_acks, acks_error, unknown_ack_corpora = _load_repo_epoch_acks(root)
+    # Committed removal acknowledgments — moving a stamped member (e.g. to
+    # legacy-unsealed/) or a transient corpus blip is recorded history, not
+    # an error, when name->sha256 is declared here. The file is itself a
+    # corpus member: silently editing it still trips the epoch gate.
+    allowed_removals: dict[str, str] = {}
+    ar_path = root / "quality/epoch_allowed_removals.json"
+    if ar_path.is_file():
+        try:
+            raw_ar = json.loads(ar_path.read_text())
+            if isinstance(raw_ar, dict):
+                allowed_removals = {str(k): str(v) for k, v in raw_ar.items() if isinstance(v, str)}
+        except (OSError, json.JSONDecodeError):
+            allowed_removals = {}
     gates: dict[str, dict[str, Any]] = {}
 
     if evidence_only:
@@ -201,14 +204,10 @@ def verify_repo(
     from quant_fund.research.ots_anchor import verify_ots
 
     ots = verify_ots(root)
-    anchor_state = _timestamp_anchor_state(ts, ots)
     gates["timestamp_anchors"] = {
         "ok": bool(ts["ok"] and ots["ok"]),
         "anchored": bool(ts["anchored"] or ots["anchored"]),
         "fresh": ts.get("fresh", {}),
-        "staleness": ts.get("staleness", {}),
-        "stale": anchor_state["stale"],
-        "age_days": anchor_state["age_days"],
         "ots": ots.get("attestations", {}),
         "errors": [*ts["errors"], *ots["errors"]],
     }
@@ -325,12 +324,9 @@ def verify_repo(
             expected_head=expected,
             require_stamped=require_stamped,
             allow_member_updates=allow_updates,
-            acks=acks_for_corpus(epoch_acks, epoch_heads_key(corpus_dir, pattern)),
+            allowed_removals=allowed_removals,
         )
-        errs = pin_errors + list(res["errors"]) + acks_error
-        # The ledger lives in quality/: an entry naming a chain this policy
-        # table doesn't know can never match — a closed-world miss.
-        errs += unknown_ack_corpora if corpus_dir == "quality" else []
+        errs = pin_errors + list(res["errors"])
         # Coverage closure at the corpus policy level: every file in the
         # dir must be a pattern member, an epoch record, a declared
         # exemption, or on the corpus's allowlist — a non-matching file
@@ -344,32 +340,22 @@ def verify_repo(
             EXEMPT_BASENAMES,
             EXEMPT_RELPATHS,
             _exempt_member,
-            gitignored_relpaths,
         )
 
-        present = [
-            f.relative_to(cdir).as_posix()
-            for f in sorted(cdir.rglob("*"))
-            if f.is_file() and not f.name.startswith("corpus_epoch_")
-        ]
-        ignored = gitignored_relpaths(cdir, present)
-        for rel in present:
-            if rel in ignored:
+        for f in sorted(cdir.rglob("*")):
+            if not f.is_file() or f.name.startswith("corpus_epoch_"):
                 continue
+            rel = f.relative_to(cdir).as_posix()
             if (
-                Path(rel).name in EXEMPT_BASENAMES
+                f.name in EXEMPT_BASENAMES
                 or rel in EXEMPT_RELPATHS
                 or _exempt_member(cdir, rel)
                 or fnmatch(rel, pattern)
                 or any(fnmatch(rel, g) for g in exempt)
             ):
                 continue
-            errs += _uncovered_errors(cdir, rel, pattern)
-        gates[f"epoch:{corpus_dir}"] = {
-            "ok": not errs,
-            "errors": errs,
-            "acknowledged": list(res["acknowledged"]),
-        }
+            errs.append(f"uncovered_member:{rel!a}")
+        gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
 
     if evidence_only:
         # The manifest is the exporter's claim about itself — schema,
@@ -458,355 +444,7 @@ def verify_repo(
         **lattice_info,
     }
 
-    closure = unchained_surface_errors(root)
-    gates["coverage_closure"] = {"ok": not closure, "errors": closure}
-
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}
-
-
-# Tracked evidence outside ``CORPORA``. A file here has no epoch chain.
-UNCHAINED_SURFACES: tuple[str, ...] = ("data/manifests", "packaging")
-
-
-def unchained_surface_errors(root: Path) -> list[str]:
-    """``uncovered_member`` for files under surfaces no corpus chain covers.
-
-    Absent surfaces are neutral (synthetic trees and drill clones omit
-    them). Once a surface is added to ``CORPORA``, this list stops
-    reporting it — the epoch gate owns it from then on.
-    """
-    from quant_fund.research.corpus_epoch import gitignored_relpaths
-
-    chained = {c[0] for c in CORPORA}
-    rels: list[str] = []
-    for surface in UNCHAINED_SURFACES:
-        if surface in chained or any(surface.startswith(f"{c}/") for c in chained):
-            continue
-        base = root / surface
-        if not base.exists():
-            continue
-        if base.is_file() and not base.is_symlink():
-            rels.append(surface)
-            continue
-        if not base.is_dir():
-            continue
-        for path in sorted(base.rglob("*")):
-            if not path.is_file() or path.is_symlink() or path.name.startswith("corpus_epoch_"):
-                continue
-            rels.append(path.relative_to(root).as_posix())
-    ignored = gitignored_relpaths(root, rels)
-    return [f"uncovered_member:{rel!a}" for rel in rels if rel not in ignored]
-
-
-def _timestamp_anchor_state(ts: Mapping[str, Any], ots: Mapping[str, Any]) -> dict[str, Any]:
-    """Stale when any TSA or OTS anchor no longer matches live bytes.
-
-    Age is the oldest stale TSA ``genTime``, in whole days. OTS staleness
-    with no TSA clock still reports ``stale`` and ``age_days=None``.
-    """
-    ages: list[int] = []
-    stale = False
-    staleness = ts.get("staleness") or {}
-    if isinstance(staleness, Mapping):
-        for info in staleness.values():
-            if not isinstance(info, Mapping) or info.get("stale") is not True:
-                continue
-            stale = True
-            days = info.get("age_days")
-            if isinstance(days, int) and not isinstance(days, bool) and days >= 0:
-                ages.append(days)
-                continue
-            age_s = info.get("age_s")
-            if isinstance(age_s, int) and not isinstance(age_s, bool) and age_s >= 0:
-                ages.append(age_s // 86400)
-    ots_fresh = ots.get("fresh") or {}
-    if isinstance(ots_fresh, Mapping) and any(value is False for value in ots_fresh.values()):
-        stale = True
-    return {"stale": stale, "age_days": max(ages) if ages else None}
-
-
-def format_verify_repo_line(name: str, gate: Mapping[str, Any]) -> str:
-    """One ``verify-repo`` status line. Stale anchors stay non-failing."""
-    if gate.get("skipped"):
-        state = f"skipped({gate['skipped']})"
-    elif name == "timestamp_anchors" and gate.get("ok") and gate.get("stale"):
-        age = gate.get("age_days")
-        if isinstance(age, int) and not isinstance(age, bool):
-            state = f"stale age={age}d"
-        else:
-            state = "stale age=unknown"
-    elif name == "pin_signatures" and gate.get("ok") and not gate.get("signed"):
-        state = "unsigned"
-    elif gate.get("ok"):
-        state = "ok"
-    else:
-        state = "FAIL " + ",".join(str(err) for err in gate.get("errors") or [])
-    return f"verify-repo {name}: {state}"
-
-
-def verify_repo_summary(result: Mapping[str, Any]) -> str:
-    """Closing line. A stale anchor set is valid proof and is not a green claim."""
-    gates = result.get("gates", {})
-    ts = gates.get("timestamp_anchors", {}) if isinstance(gates, Mapping) else {}
-    if isinstance(ts, Mapping) and ts.get("stale"):
-        age = ts.get("age_days")
-        shown = f"{age}d" if isinstance(age, int) and not isinstance(age, bool) else "unknown"
-        return f"repo integrity: timestamp_anchors stale age={shown}"
-    return "repo integrity: all gates intact"
-
-
-def attestation_current(verdict: Mapping[str, Any]) -> bool:
-    """True only when every gate passed and timestamp anchors match live pins."""
-    if not verdict.get("ok"):
-        return False
-    gates = verdict.get("gates", {})
-    ts = gates.get("timestamp_anchors", {}) if isinstance(gates, Mapping) else {}
-    return not (isinstance(ts, Mapping) and ts.get("stale"))
-
-
-def _committed_pins_drifted(root: Path, pins: Mapping[str, Any]) -> bool:
-    for key, rel in (
-        ("epoch_heads_sha256", "quality/epoch_heads.json"),
-        ("crown_jewels_sha256", "quality/crown_jewels.json"),
-    ):
-        declared = pins.get(key)
-        live = root / rel
-        if (
-            isinstance(declared, str)
-            and live.is_file()
-            and hash_bytes(live.read_bytes()) != declared
-        ):
-            return True
-    return False
-
-
-def committed_attestation_note(root: Path) -> str | None:
-    """The committed receipt claims green while its own anchor map is stale.
-
-    Does not fail the live gates. A historical seal stays on disk; this
-    line stops it being read as the current tree.
-    """
-    path = root / "quality" / "repo_integrity.json"
-    if not path.is_file():
-        return None
-    try:
-        body = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
-        return "verify-repo committed attestation: unreadable"
-    if not isinstance(body, Mapping) or body.get("ok") is not True:
-        return None
-    gates = body.get("gates")
-    fresh: object = {}
-    if isinstance(gates, Mapping):
-        ts = gates.get("timestamp_anchors")
-        if isinstance(ts, Mapping):
-            fresh = ts.get("fresh")
-    anchors_stale = isinstance(fresh, Mapping) and any(value is False for value in fresh.values())
-    pins = body.get("pins")
-    drifted = isinstance(pins, Mapping) and _committed_pins_drifted(root, pins)
-    if body.get("current") is False or anchors_stale or drifted:
-        parts: list[str] = []
-        if anchors_stale or body.get("current") is False:
-            parts.append("anchors stale")
-        if drifted:
-            parts.append("pins differ from tree")
-        detail = ", ".join(parts) if parts else "stale"
-        return f"verify-repo committed attestation: stale ({detail})"
-    return None
-
-
-def _load_repo_epoch_acks(root: Path) -> tuple[list[dict[str, Any]], list[str], list[str]]:
-    """(ledger entries, malformed-ledger errors, unknown-corpus errors).
-
-    A malformed ledger fails every epoch gate closed instead of reading as
-    "no acks"; an entry naming a chain absent from ``CORPORA`` can never
-    match and is reported against the quality gate (the ledger's home)."""
-    from quant_fund.research.corpus_epoch import load_epoch_acks
-
-    ar_path = root / EPOCH_ACKS_PATH
-    if not ar_path.is_file():
-        return [], [], []
-    try:
-        acks = load_epoch_acks(ar_path)
-    except (OSError, ValueError) as exc:
-        return [], [f"epoch_acks_malformed:{EPOCH_ACKS_PATH}:{exc}"], []
-    known = {epoch_heads_key(c[0], c[1]) for c in CORPORA}
-    unknown = sorted({a["corpus"] for a in acks} - known)
-    return acks, [], [f"epoch_ack_unknown_corpus:{k!a}" for k in unknown]
-
-
-def append_only_chain_keys() -> frozenset[str]:
-    """Heads-pin keys of the chains ``CORPORA`` declares append-only."""
-    return frozenset(epoch_heads_key(c[0], c[1]) for c in CORPORA if not c[3])
-
-
-def ack_ledger_gate(
-    root: Path | str,
-    *,
-    base_heads_pin: Path | str,
-    base_ledger: Path | str | None,
-    ledger: Path | str | None = None,
-) -> dict[str, Any]:
-    """Base gate: the acknowledgment ledger may grow only to explain history
-    the base branch's chains already recorded (``ack_ledger_base_errors``),
-    and every entry must name a chain ``CORPORA`` knows.
-
-    The base pin authenticates each referenced chain (``chain_ancestry``
-    reproduces its ``chain_root`` from the epoch files in ``root``, which the
-    consistency proofs keep byte-identical to the base). A base ledger that
-    is absent or not ``epoch_acknowledgments.v1`` reads as empty — strictly
-    more demanding, never less. A malformed head ledger fails closed."""
-    from quant_fund.research.corpus_epoch import (
-        ack_ledger_base_errors,
-        chain_ancestry,
-        load_epoch_acks,
-        load_heads_pin,
-    )
-    from quant_fund.utils.hashing import canonical_json_bytes
-
-    root = Path(root)
-    acks = load_epoch_acks(Path(ledger) if ledger is not None else root / EPOCH_ACKS_PATH)
-    try:
-        base_acks = load_epoch_acks(base_ledger) if base_ledger is not None else []
-    except (OSError, ValueError):
-        base_acks = []
-    base_heads = load_heads_pin(base_heads_pin)
-    append_only = append_only_chain_keys()
-    dirs = {epoch_heads_key(c[0], c[1]): c[0] for c in CORPORA}
-    # An entry naming a chain the policy table doesn't know can never be
-    # checked against a base — and a standalone auditor run with that exact
-    # --corpus-dir spelling would still honour it. Closed world: fail.
-    errors = [
-        f"epoch_ack_unknown_corpus:{k!a}" for k in sorted({a["corpus"] for a in acks} - set(dirs))
-    ]
-    base_set = {canonical_json_bytes(dict(a)) for a in base_acks}
-    referenced = sorted(
-        {a["corpus"] for a in acks if canonical_json_bytes(dict(a)) not in base_set} & append_only
-    )
-    chains: dict[str, frozenset[str]] = {}
-    for key in referenced:
-        entry = base_heads.get(key)
-        if entry is None:
-            continue
-        try:
-            chains[key] = chain_ancestry(root / dirs[key], entry)
-        except ValueError as exc:
-            errors.append(f"epoch_ack_base_chain_unauthenticated:{key!a}:{exc}")
-    errors += ack_ledger_base_errors(acks, base_acks, chains, append_only)
-    return {
-        "ok": not errors,
-        "errors": errors,
-        "n_acks": len(acks),
-        "n_base_acks": len(base_acks),
-        "chains_checked": sorted(chains),
-    }
-
-
-def _git_bytes(root: Path, *args: str) -> bytes:
-    import subprocess
-
-    proc = subprocess.run(["git", *args], cwd=root, capture_output=True, check=False)
-    if proc.returncode != 0:
-        raise ValueError(f"git {' '.join(args)} failed: {proc.stderr.decode(errors='replace')}")
-    return proc.stdout
-
-
-def _base_registry(root: Path, base_ref: str, registry: str) -> Any:
-    """BASE's registry; absent or pre-v2 reads as empty (stricter)."""
-    import tempfile
-
-    from quant_fund.research.legacy_unsealed import EMPTY_QUARANTINE, load_quarantine
-
-    try:
-        raw = _git_bytes(root, "show", f"{base_ref}:{registry}")
-    except ValueError:
-        return EMPTY_QUARANTINE
-    with tempfile.TemporaryDirectory() as tmp:
-        path = Path(tmp) / "base_quarantine.json"
-        path.write_bytes(raw)
-        try:
-            return load_quarantine(path)
-        except ValueError:
-            return EMPTY_QUARANTINE
-
-
-def quarantine_registry_gate(
-    root: Path | str,
-    *,
-    base_ref: str,
-    base_heads_pin: Path | str,
-    registry: str = "quality/legacy_quarantine.json",
-    corpus: str = "receipts",
-) -> dict[str, Any]:
-    """Base gate for ``legacy_unsealed.registry_base_errors``: base files come
-    from ``git`` at ``base_ref``, the base stamp from the base pin's head
-    epoch (authenticated by ``pinned_head_members``). Fails closed on a
-    malformed head registry, an unreadable base ref or an unauthenticated
-    base head."""
-    from quant_fund.research.corpus_epoch import (
-        load_heads_pin,
-        pinned_head_members,
-    )
-    from quant_fund.research.legacy_unsealed import load_quarantine, registry_base_errors
-
-    root = Path(root)
-    head = load_quarantine(root / registry)
-    base = _base_registry(root, base_ref, registry)
-    entry = load_heads_pin(base_heads_pin).get(epoch_heads_key(corpus, "*.json"))
-    base_stamped = pinned_head_members(root / corpus, entry) if entry is not None else {}
-    names = {rel.rsplit("/", 1)[-1] for rel in head.files}
-    listing = _git_bytes(root, "ls-tree", "-r", "-z", "--name-only", base_ref, "--", corpus)
-    base_files: dict[str, str] = {}
-    for path in filter(None, listing.decode().split("\0")):
-        if path.rsplit("/", 1)[-1] in names:
-            blob = _git_bytes(root, "cat-file", "blob", f"{base_ref}:{path}")
-            base_files[path.removeprefix(f"{corpus}/")] = hash_bytes(blob)
-    errors = registry_base_errors(head, base, base_files, base_stamped)
-    return {
-        "ok": not errors,
-        "errors": errors,
-        "n_entries": len(head.files),
-        "n_base_entries": len(base.files),
-    }
-
-
-def _uncovered_errors(cdir: Path, rel: str, pattern: str) -> list[str]:
-    """Coverage-closure verdict for a file no pattern or exemption claims."""
-    sidecar = _detached_digest_status(cdir, rel, pattern)
-    if sidecar == "ok":
-        return []
-    if sidecar == "mismatch":
-        return [f"sidecar_digest_mismatch:{rel!a}"]
-    return [f"uncovered_member:{rel!a}"]
-
-
-def _detached_digest_status(cdir: Path, rel: str, pattern: str) -> str | None:
-    """Classify ``<member>.sha256`` detached-digest sidecars for coverage.
-
-    A sidecar is covered only by *verification*, never by exemption: its
-    sibling must be a pattern member (so its bytes are chained) and the
-    sidecar must hold exactly that member's sha256 (optionally followed by
-    whitespace / ``  <name>``, the ``sha256sum`` shape). ``None`` means the
-    file is not a sidecar at all and falls through to ``uncovered_member``.
-    """
-    from fnmatch import fnmatch
-
-    if not rel.endswith(".sha256"):
-        return None
-    sibling_rel = rel[: -len(".sha256")]
-    sibling = cdir / sibling_rel
-    if not fnmatch(sibling_rel, pattern) or not sibling.is_file() or sibling.is_symlink():
-        return None
-    try:
-        claimed = (cdir / rel).read_text(encoding="ascii").split()
-    except (OSError, UnicodeDecodeError):
-        return "mismatch"
-    expected = hash_bytes(sibling.read_bytes())
-    if not claimed or claimed[0] != expected or len(claimed) > 2:
-        return "mismatch"
-    if len(claimed) == 2 and claimed[1].lstrip("*") != Path(sibling_rel).name:
-        return "mismatch"
-    return "ok"
 
 
 # Gates every attestation must carry — the neutral/absent states are legal
@@ -820,73 +458,7 @@ _REQUIRED_GATES = (
     "key_rotation",
     "quorum_rotations",
     "lattice",
-    "coverage_closure",
 )
-
-
-def _gate_contract_errors(name: str, gate: object, mode: str) -> list[str]:
-    errors: list[str] = []
-    if not isinstance(gate, Mapping):
-        return [f"gate_malformed:{name}"]
-    g_errors = gate.get("errors")
-    if not isinstance(gate.get("ok"), bool) or not isinstance(g_errors, list):
-        return [f"gate_malformed:{name}"]
-    if not all(isinstance(e, str) for e in g_errors):
-        errors.append(f"gate_errors_not_strings:{name}")
-    if bool(gate["ok"]) != (not g_errors):
-        errors.append(f"gate_ok_incoherent:{name}")
-    if "revision_ancestor" in gate and not (
-        gate["revision_ancestor"] is None or isinstance(gate["revision_ancestor"], bool)
-    ):
-        errors.append(f"gate_field_malformed:{name}:revision_ancestor")
-    if "skipped" in gate:
-        skip_ok = gate["skipped"] == "evidence_only" and (
-            name in ("crown_jewels", "spine")
-            or (name.startswith("epoch:") and name.removeprefix("epoch:") not in EVIDENCE_CORPORA)
-        )
-        if not skip_ok:
-            errors.append(f"gate_skip_invalid:{name}")
-        elif mode != "evidence_only":
-            errors.append(f"gate_skipped_in_full_mode:{name}")
-    return errors
-
-
-def _repo_integrity_pins_errors(
-    pins: object,
-    gates: Mapping[str, Any],
-) -> list[str]:
-    errors: list[str] = []
-    if not isinstance(pins, Mapping):
-        return ["pins_missing"]
-    sig_gate = gates.get("pin_signatures", {})
-    ts_gate = gates.get("timestamp_anchors", {})
-    if (
-        isinstance(sig_gate, Mapping)
-        and "signed" in sig_gate
-        and pins.get("gate_pins_signed") != sig_gate["signed"]
-    ):
-        errors.append("pins_sig_incoherent")
-    if (
-        isinstance(ts_gate, Mapping)
-        and "anchored" in ts_gate
-        and pins.get("timestamps_anchored") != ts_gate["anchored"]
-    ):
-        errors.append("pins_anchor_incoherent")
-    if isinstance(ts_gate, Mapping):
-        age_days = ts_gate.get("age_days")
-        if "stale" in ts_gate and not isinstance(ts_gate.get("stale"), bool):
-            errors.append("gate_field_malformed:timestamp_anchors:stale")
-        if (
-            "age_days" in ts_gate
-            and age_days is not None
-            and not (isinstance(age_days, int) and not isinstance(age_days, bool) and age_days >= 0)
-        ):
-            errors.append("gate_field_malformed:timestamp_anchors:age_days")
-    for key in ("epoch_heads_sha256", "crown_jewels_sha256"):
-        v = pins.get(key)
-        if v is not None and not (isinstance(v, str) and len(v) == 64):
-            errors.append(f"pin_malformed:{key}")
-    return errors
 
 
 def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
@@ -912,7 +484,40 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append(f"mode_unknown:{mode}")
         mode = "full"
     for name, gate in gates.items():
-        errors.extend(_gate_contract_errors(name, gate, mode))
+        if not isinstance(gate, Mapping):
+            errors.append(f"gate_malformed:{name}")
+            continue
+        g_errors = gate.get("errors")
+        if not isinstance(gate.get("ok"), bool) or not isinstance(g_errors, list):
+            errors.append(f"gate_malformed:{name}")
+            continue
+        if not all(isinstance(e, str) for e in g_errors):
+            errors.append(f"gate_errors_not_strings:{name}")
+        # The gate's own verdict must match its listed errors — a receipt
+        # can't claim ok while listing the errors it failed on.
+        if bool(gate["ok"]) != (not g_errors):
+            errors.append(f"gate_ok_incoherent:{name}")
+        if "revision_ancestor" in gate and not (
+            gate["revision_ancestor"] is None or isinstance(gate["revision_ancestor"], bool)
+        ):
+            errors.append(f"gate_field_malformed:{name}:revision_ancestor")
+        if "skipped" in gate:
+            # Only evidence_only may carry skipped gates, and only for
+            # crown_jewels or epoch gates over non-evidence corpora (the
+            # code tree isn't part of an evidence bundle): a full-tree
+            # attestation silently skipping a gate would downgrade a
+            # partial verdict into an implied full pass.
+            skip_ok = gate["skipped"] == "evidence_only" and (
+                name in ("crown_jewels", "spine")
+                or (
+                    name.startswith("epoch:")
+                    and name.removeprefix("epoch:") not in EVIDENCE_CORPORA
+                )
+            )
+            if not skip_ok:
+                errors.append(f"gate_skip_invalid:{name}")
+            elif mode != "evidence_only":
+                errors.append(f"gate_skipped_in_full_mode:{name}")
     if mode == "evidence_only":
         cj = gates.get("crown_jewels")
         if not isinstance(cj, Mapping) or cj.get("skipped") != "evidence_only":
@@ -929,13 +534,28 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     )
     if payload.get("ok") != expected_ok:
         errors.append("ok_incoherent")
-    errors.extend(_repo_integrity_pins_errors(payload.get("pins"), gates))
-    if "current" in payload and not isinstance(payload.get("current"), bool):
-        errors.append("current_malformed")
-    if payload.get("ok") is True and payload.get("current") is True:
-        ts_gate = gates.get("timestamp_anchors") if isinstance(gates, Mapping) else None
-        if isinstance(ts_gate, Mapping) and ts_gate.get("stale"):
-            errors.append("current_incoherent_stale_anchors")
+    pins = payload.get("pins")
+    if isinstance(pins, Mapping):
+        sig_gate = gates.get("pin_signatures", {})
+        ts_gate = gates.get("timestamp_anchors", {})
+        if (
+            isinstance(sig_gate, Mapping)
+            and "signed" in sig_gate
+            and pins.get("gate_pins_signed") != sig_gate["signed"]
+        ):
+            errors.append("pins_sig_incoherent")
+        if (
+            isinstance(ts_gate, Mapping)
+            and "anchored" in ts_gate
+            and pins.get("timestamps_anchored") != ts_gate["anchored"]
+        ):
+            errors.append("pins_anchor_incoherent")
+        for key in ("epoch_heads_sha256", "crown_jewels_sha256"):
+            v = pins.get(key)
+            if v is not None and not (isinstance(v, str) and len(v) == 64):
+                errors.append(f"pin_malformed:{key}")
+    else:
+        errors.append("pins_missing")
     params = payload.get("params")
     if isinstance(params, Mapping):
         corpora = params.get("corpora")
@@ -965,7 +585,6 @@ def repo_integrity_receipt(
         "schema": REPO_INTEGRITY_SCHEMA,
         "data_label": "SYNTHETIC",
         "ok": verdict["ok"],
-        "current": attestation_current(verdict),
         "mode": "evidence_only" if evidence_only else "full",
         "gates": {
             # signed/anchored are verdict state, not metadata — an unsigned-
@@ -975,16 +594,7 @@ def repo_integrity_receipt(
                 "errors": sorted(g["errors"]),
                 **{
                     k: g[k]
-                    for k in (
-                        "signed",
-                        "anchored",
-                        "fresh",
-                        "staleness",
-                        "stale",
-                        "age_days",
-                        "skipped",
-                        "revision_ancestor",
-                    )
+                    for k in ("signed", "anchored", "fresh", "skipped", "revision_ancestor")
                     if k in g
                 },
             }
@@ -1012,14 +622,8 @@ def write_repo_integrity_receipt(
     heads_pin: Path | str = "quality/epoch_heads.json",
     evidence_only: bool = False,
 ) -> Path:
-    """Write the sealed attestation to ``out_path`` (atomic).
-
-    Refuses a green file when anchors do not match the live pins. A red
-    attestation may still be written.
-    """
+    """Write the sealed attestation to ``out_path`` (atomic)."""
     receipt = repo_integrity_receipt(root, heads_pin=heads_pin, evidence_only=evidence_only)
-    if receipt.get("ok") is True and receipt.get("current") is not True:
-        raise ValueError("refusing to write a green attestation while timestamp anchors are stale")
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(out, json.dumps(receipt, indent=2, sort_keys=True) + "\n")

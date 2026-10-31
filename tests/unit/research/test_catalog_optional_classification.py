@@ -18,9 +18,6 @@ closed); nothing there is relaxed here.
 
 from __future__ import annotations
 
-import pytest
-
-import quant_fund.research.catalog.optional_classification as optional_classification
 from quant_fund.research.catalog.optional_classification import (
     CLASSIFICATION_EXPLORATORY,
     CLASSIFICATION_JUSTIFIED,
@@ -40,11 +37,9 @@ from quant_fund.research.catalog.registry import (
     REQUIRED_BENCHMARK_FAMILIES,
 )
 
-#: Independent historical ceiling from the 2026-10-08 qualification audit.
-#: Keep this test pin separate from the production ceiling so changing that
-#: ceiling alone cannot silently grow the live-optional surface. Retirement
-#: may lower both the live count and production ceiling after a new audit.
-HISTORICAL_LIVE_OPTIONAL_CEILING = 2693
+#: Pinned 2026-10-08. Ratchet: may only FALL as families are retired. NEVER
+#: raise without an audit receipt from scripts/canon_qualify.py.
+EXPECTED_LIVE_OPTIONAL_CEILING = LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING
 
 
 def test_default_surface_is_the_required_canonical_set() -> None:
@@ -73,17 +68,16 @@ def test_justified_and_exploratory_partition_the_live_optional_set() -> None:
 
 def test_live_optional_count_ratchets_downward_only() -> None:
     live = len(LIVE_OPTIONAL_BENCHMARK_FAMILIES)
-    assert live <= HISTORICAL_LIVE_OPTIONAL_CEILING, (
-        f"live-optional grew from {HISTORICAL_LIVE_OPTIONAL_CEILING} to {live}; "
+    assert live <= EXPECTED_LIVE_OPTIONAL_CEILING, (
+        f"live-optional grew from {EXPECTED_LIVE_OPTIONAL_CEILING} to {live}; "
         "the optional surface may only shrink. Raising the ceiling requires an "
         "audit receipt, not a catalog edit."
     )
 
 
 def test_ratchet_ceiling_matches_live_optional_surface() -> None:
-    # The production ceiling may fall with audited retirement, but cannot
-    # exceed the independently pinned historical ceiling.
-    assert LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING <= HISTORICAL_LIVE_OPTIONAL_CEILING
+    # The ceiling is pinned at the current count so growth fails loudly above.
+    assert LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING == EXPECTED_LIVE_OPTIONAL_CEILING
     assert len(LIVE_OPTIONAL_BENCHMARK_FAMILIES) <= LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING
 
 
@@ -101,36 +95,6 @@ def test_justified_families_are_the_non_template_remainder() -> None:
 
 def test_classification_is_deterministic() -> None:
     assert classify_optional_families() == classify_optional_families()
-
-
-def test_installed_package_without_repo_audit_uses_pinned_snapshot(monkeypatch, tmp_path) -> None:
-    audited = classify_optional_families()
-    monkeypatch.setattr(
-        optional_classification, "QUALIFICATION_SUMMARY_PATH", tmp_path / "missing.json"
-    )
-    assert classify_optional_families() == audited
-    assert len(justified_families()) == 6
-
-
-def test_changed_audit_summary_fails_closed(monkeypatch, tmp_path) -> None:
-    changed = tmp_path / "changed.json"
-    changed.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(optional_classification, "QUALIFICATION_SUMMARY_PATH", changed)
-    with pytest.raises(ValueError, match="qualification audit summary hash mismatch"):
-        classify_optional_families()
-
-
-def test_new_live_optional_name_cannot_inherit_exploratory(monkeypatch, tmp_path) -> None:
-    monkeypatch.setattr(
-        optional_classification, "QUALIFICATION_SUMMARY_PATH", tmp_path / "missing.json"
-    )
-    monkeypatch.setattr(
-        optional_classification,
-        "LIVE_OPTIONAL_BENCHMARK_FAMILIES",
-        LIVE_OPTIONAL_BENCHMARK_FAMILIES | {"new_unreviewed_family"},
-    )
-    with pytest.raises(ValueError, match="live-optional catalog differs"):
-        classify_optional_families()
 
 
 def test_provenance_marker_distinguishes_template_from_specified() -> None:

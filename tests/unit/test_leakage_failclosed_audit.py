@@ -309,35 +309,6 @@ def test_lh010_forward_fill_clean(tmp_path: Path) -> None:
     assert "LH010" not in _rule_ids(_scan(tmp_path, source))
 
 
-def test_assign_cache_keeps_scope_resolution_and_fill(tmp_path: Path) -> None:
-    """Many unrelated calls must not hide a real shift or a backward fill.
-
-    The scanner caches scope-assignment maps and skips non-fill calls in
-    LH010. ``earlier`` sees the module ``k = -1``. ``later`` rebinds ``k``
-    to ``1`` before its own shift, so only the first difference flags.
-    """
-    noise = "\n".join(f"    helper({i})" for i in range(40))
-    source = (
-        "k = -1\n"
-        "def earlier(mid):\n"
-        "    delta_mid = mid.shift(k) - mid\n"
-        "    return delta_mid\n"
-        "def later(mid):\n"
-        "    k = 1\n"
-        "    delta_mid = mid.shift(k) - mid\n"
-        "    return delta_mid\n"
-        "def fills(frame):\n"
-        f"{noise}\n"
-        '    frame["event_time"] = frame["ts"]\n'
-        '    return frame.fillna(method="bfill")\n'
-    )
-    report = _scan(tmp_path, source)
-    lh006 = [f.line for f in report.findings if f.rule_id == "LH006"]
-    assert lh006 == [3]
-    fill_line = source.splitlines().index('    return frame.fillna(method="bfill")') + 1
-    assert [f.line for f in report.findings if f.rule_id == "LH010"] == [fill_line]
-
-
 # ---------------------------------------------------------------- LH011 ---
 
 

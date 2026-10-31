@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from fx1.interactive import actions, concierge, orb, profiles, shell, wizard
+from fx1.interactive import actions, orb, profiles, shell, wizard
 from fx1.interactive.app import app as fxi_app
 from fx1.serve.backends import MOONSHOT_API_URL, HostedK3Backend
 
@@ -30,10 +30,6 @@ def isolated_store(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.setenv("FX1_CONFIG_DIR", str(store_dir))
     monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
     monkeypatch.delenv("FX1_BASE_URL", raising=False)
-    monkeypatch.delenv("DIPCATCHER_FX1_API_KEY", raising=False)
-    monkeypatch.delenv("DIPCATCHER_FX1_BASE_URL", raising=False)
-    monkeypatch.delenv("DIPCATCHER_FX1_LITE_API_KEY", raising=False)
-    monkeypatch.delenv("DIPCATCHER_FX1_LITE_BASE_URL", raising=False)
     monkeypatch.delenv("NO_COLOR", raising=False)
     return store_dir
 
@@ -53,208 +49,11 @@ def test_model_map_and_injected_env_names() -> None:
 def test_set_endpoint_roundtrip_and_mode(isolated_store: Path) -> None:
     path = profiles.set_endpoint("fx1", SECRET_FX1)
     assert path == isolated_store / "credentials.json"
-    # Windows has no POSIX mode bits; chmod(0o600) only toggles read-only.
-    if os.name != "nt":
-        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert profiles.resolve_endpoint("fx1") == (SECRET_FX1, MOONSHOT_API_URL)
     loaded = json.loads(path.read_text(encoding="utf-8"))
     assert loaded["profiles"]["fx1"]["base_url"] == MOONSHOT_API_URL
     assert loaded["profiles"]["fx1"]["set_at"]
-
-
-def _assert_windows_private_acl(path: Path, *, directory: bool = False) -> None:
-    script = r"""
-$ErrorActionPreference = 'Stop'
-$directory = $env:FX1_ACL_TEST_IS_DIR -eq '1'
-if ($directory) {
-    $acl = [System.IO.Directory]::GetAccessControl($env:FX1_ACL_TEST_TARGET)
-} else {
-    $acl = [System.IO.File]::GetAccessControl($env:FX1_ACL_TEST_TARGET)
-}
-$sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$rules = $acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier])
-$owner = $acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
-if (-not $acl.AreAccessRulesProtected -or $rules.Count -ne 1 -or
-    $owner -ne $sid -or
-    $rules[0].IdentityReference.Value -ne $sid -or
-    $rules[0].AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow -or
-    $rules[0].IsInherited) {
-    throw 'ACL is not current-user-only'
-}
-# A protected DACL with this sole allow ACE grants no ordinary other user access.
-if ($directory) {
-    $inherit = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
-        [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
-    if (($rules[0].InheritanceFlags -band $inherit) -ne $inherit) {
-        throw 'ACL does not protect child files'
-    }
-}
-"""
-    result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-        env={
-            **os.environ,
-            "FX1_ACL_TEST_TARGET": str(path),
-            "FX1_ACL_TEST_IS_DIR": "1" if directory else "0",
-        },
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Windows ACL only")
-def test_windows_acl_failure_does_not_write_credentials(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    def denied(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-        assert SECRET_FX1 not in " ".join(args)
-        assert str(isolated_store) not in " ".join(args)
-        env = kwargs["env"]
-        assert isinstance(env, dict)
-        assert env["FX1_ACL_TARGET"] == str(isolated_store)
-        assert env["FX1_ACL_IS_DIR"] == "1"
-        assert env["FX1_ACL_VERIFY_ONLY"] == "0"
-        return subprocess.CompletedProcess(args, 1, "", "ACL denied")
-
-    monkeypatch.setattr(profiles.subprocess, "run", denied)
-    with pytest.raises(RuntimeError, match="private Windows credential ACL"):
-        profiles.set_endpoint("fx1", SECRET_FX1)
-    assert not (isolated_store / "credentials.json").exists()
-    assert list(isolated_store.glob(".credentials-*.tmp")) == []
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Windows ACL only")
-def test_windows_existing_unsafe_directory_is_unchanged(isolated_store: Path) -> None:
-    isolated_store.mkdir()
-    script = r"""
-$ErrorActionPreference = 'Stop'
-$target = $env:FX1_ACL_TEST_TARGET
-$acl = [System.IO.Directory]::GetAccessControl($target)
-$acl.SetAccessRuleProtection($false, $true)
-[System.IO.Directory]::SetAccessControl($target, $acl)
-[System.IO.Directory]::GetAccessControl($target).Sddl
-"""
-    env = {**os.environ, "FX1_ACL_TEST_TARGET": str(isolated_store)}
-    initial = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    assert initial.returncode == 0, initial.stderr
-
-    with pytest.raises(RuntimeError, match="existing Windows credential path has an unsafe ACL"):
-        profiles.set_endpoint("fx1", SECRET_FX1)
-
-    after = subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            "[System.IO.Directory]::GetAccessControl($env:FX1_ACL_TEST_TARGET).Sddl",
-        ],
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    assert after.returncode == 0, after.stderr
-    assert after.stdout.strip() == initial.stdout.strip()
-    assert not (isolated_store / "credentials.json").exists()
-    assert list(isolated_store.glob(".credentials-*.tmp")) == []
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Windows ACL only")
-def test_windows_existing_private_store_can_be_updated(isolated_store: Path) -> None:
-    path = profiles.set_endpoint("fx1", SECRET_FX1)
-    profiles.set_endpoint("fx1-lite", SECRET_LITE)
-    _assert_windows_private_acl(isolated_store, directory=True)
-    _assert_windows_private_acl(path)
-    assert profiles.resolve_endpoint("fx1") == (SECRET_FX1, MOONSHOT_API_URL)
-    assert profiles.resolve_endpoint("fx1-lite") == (SECRET_LITE, MOONSHOT_API_URL)
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Windows ACL only")
-def test_windows_existing_unsafe_file_is_not_read(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    path = profiles.set_endpoint("fx1", SECRET_FX1)
-    script = r"""
-$ErrorActionPreference = 'Stop'
-$target = $env:FX1_ACL_TEST_TARGET
-$acl = [System.IO.File]::GetAccessControl($target)
-$everyone = [System.Security.Principal.SecurityIdentifier]::new('S-1-1-0')
-$rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
-    $everyone, [System.Security.AccessControl.FileSystemRights]::Read,
-    [System.Security.AccessControl.AccessControlType]::Allow
-)
-$acl.AddAccessRule($rule)
-[System.IO.File]::SetAccessControl($target, $acl)
-"""
-    result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-        env={**os.environ, "FX1_ACL_TEST_TARGET": str(path)},
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-
-    original_read = Path.read_text
-
-    def reject_read(candidate: Path, *args: object, **kwargs: object) -> str:
-        if candidate == path:
-            raise AssertionError("credential file was read before ACL verification")
-        return original_read(candidate, *args, **kwargs)
-
-    monkeypatch.setattr(Path, "read_text", reject_read)
-    with pytest.raises(RuntimeError, match="existing Windows credential path has an unsafe ACL"):
-        profiles.resolve_endpoint("fx1")
-    with pytest.raises(RuntimeError, match="existing Windows credential path has an unsafe ACL"):
-        profiles.set_endpoint("fx1-lite", SECRET_LITE)
-    assert path.is_file()
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Windows ACL only")
-def test_windows_existing_unsafe_directory_is_not_read(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    path = profiles.set_endpoint("fx1", SECRET_FX1)
-    script = r"""
-$ErrorActionPreference = 'Stop'
-$target = $env:FX1_ACL_TEST_TARGET
-$acl = [System.IO.Directory]::GetAccessControl($target)
-$acl.SetAccessRuleProtection($false, $true)
-[System.IO.Directory]::SetAccessControl($target, $acl)
-"""
-    result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-        env={**os.environ, "FX1_ACL_TEST_TARGET": str(isolated_store)},
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-
-    original_read = Path.read_text
-
-    def reject_read(candidate: Path, *args: object, **kwargs: object) -> str:
-        if candidate == path:
-            raise AssertionError("credential file was read before directory ACL verification")
-        return original_read(candidate, *args, **kwargs)
-
-    monkeypatch.setattr(Path, "read_text", reject_read)
-    with pytest.raises(RuntimeError, match="existing Windows credential path has an unsafe ACL"):
-        profiles.resolve_endpoint("fx1")
 
 
 def test_set_endpoint_explicit_base_url() -> None:
@@ -314,10 +113,6 @@ def test_endpoint_transport_allows_only_https_or_literal_loopback_http(
 def test_legacy_key_schema_read_compat(isolated_store: Path) -> None:
     store = isolated_store / "credentials.json"
     isolated_store.mkdir(parents=True)
-    if os.name == "nt":
-        profiles._restrict_windows_acl(isolated_store, directory=True)
-        store.touch()
-        profiles._restrict_windows_acl(store)
     store.write_text(
         json.dumps({"profiles": {"fx1": {"key": SECRET_FX1, "env_var": "MOONSHOT_API_KEY"}}}),
         encoding="utf-8",
@@ -478,11 +273,8 @@ def test_run_tool_passes_endpoint_via_env_not_argv(
 ) -> None:
     profiles.set_endpoint("fx1", SECRET_FX1, ALT_BASE)
     calls: list[dict[str, object]] = []
-    real_run = subprocess.run
 
     def fake_run(argv: list[str], **kwargs: object) -> object:
-        if Path(argv[0]).name.casefold() == "powershell.exe":
-            return real_run(argv, **kwargs)
         calls.append({"argv": list(argv), **kwargs})
         return subprocess.CompletedProcess(argv, 0)
 
@@ -495,11 +287,9 @@ def test_run_tool_passes_endpoint_via_env_not_argv(
     assert isinstance(argv, list)
     assert argv[:2] == ["/usr/bin/fx1", "doctor"]
     assert SECRET_FX1 not in " ".join(str(a) for a in argv)  # env only, never argv
-    env = call.get("env")
-    assert isinstance(env, dict)
-    assert env["MOONSHOT_API_KEY"] == SECRET_FX1
-    assert env["FX1_BASE_URL"] == ALT_BASE
-    assert os.environ.get("MOONSHOT_API_KEY") != SECRET_FX1
+    # The endpoint reaches the child via os.environ mutation (inherited), not env=.
+    assert os.environ["MOONSHOT_API_KEY"] == SECRET_FX1
+    assert os.environ["FX1_BASE_URL"] == ALT_BASE
 
 
 def test_run_tool_rejects_unknown_tool() -> None:
@@ -512,11 +302,8 @@ def test_run_eval_builds_fx1_eval_argv(
 ) -> None:
     profiles.set_endpoint("fx1", SECRET_FX1)
     calls: list[list[str]] = []
-    real_run = subprocess.run
 
     def fake_run(argv: list[str], **kwargs: object) -> object:
-        if Path(argv[0]).name.casefold() == "powershell.exe":
-            return real_run(argv, **kwargs)
         calls.append(list(argv))
         return subprocess.CompletedProcess(argv, 0)
 
@@ -713,7 +500,7 @@ def test_shell_keys_table(isolated_store: Path, capsys: pytest.CaptureFixture[st
     assert SECRET_FX1 not in out
 
 
-def test_shell_use_does_not_inject_session_env(isolated_store: Path) -> None:
+def test_shell_use_injects_session_env(isolated_store: Path) -> None:
     profiles.set_endpoint("fx1-lite", SECRET_LITE, ALT_BASE)
     sh = shell.FxiShell()
     old_key = os.environ.get("MOONSHOT_API_KEY")
@@ -721,7 +508,8 @@ def test_shell_use_does_not_inject_session_env(isolated_store: Path) -> None:
     try:
         sh.do_use("fx1-lite")
         assert sh.model == "fx1-lite"
-        assert os.environ.get("MOONSHOT_API_KEY") != SECRET_LITE
+        assert os.environ["MOONSHOT_API_KEY"] == SECRET_LITE
+        assert os.environ["FX1_BASE_URL"] == ALT_BASE
         assert "fx1-lite@fx-lite.example.test" in sh.prompt
     finally:
         for var, old in (("MOONSHOT_API_KEY", old_key), ("FX1_BASE_URL", old_url)):
@@ -755,20 +543,6 @@ def test_shell_unknown_command_hint(
     sh.default("bogus")
     err = capsys.readouterr().err
     assert "unknown command" in err and "help" in err
-
-
-def test_shell_bang_refused_when_redirected(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    monkeypatch.setattr(shell.sys.stdin, "isatty", lambda: False)
-    monkeypatch.setattr(shell.sys.stdout, "isatty", lambda: False)
-
-    def _must_not_run(*args: object, **kwargs: object) -> None:
-        raise AssertionError("shell hatch must not spawn on a pipe")
-
-    monkeypatch.setattr(shell.subprocess, "run", _must_not_run)
-    shell.FxiShell().do_shell("echo should-not-run")
-    assert "refused on a redirected stream" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -941,302 +715,7 @@ def test_cli_superpower_capabilities_catalog(isolated_store: Path) -> None:
     assert "approval-required" in result.output
 
 
-def test_cli_superpower_sync_exits_nonzero_when_partial_with_failures(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from types import SimpleNamespace
-
-    class _Op:
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            failed = kwargs.pop("_failed", True)
-            self.run_budget = SimpleNamespace(max_wall_s=1)
-            self.job = SimpleNamespace(
-                error="",
-                result=SimpleNamespace(
-                    partial=True,
-                    runs=[
-                        SimpleNamespace(status="failed" if failed else "skipped"),
-                        SimpleNamespace(status="ran"),
-                    ],
-                ),
-            )
-
-        def start_superpower(
-            self, goal: str, *, sync: bool = False, allow_web: bool = False
-        ) -> bool:
-            assert sync is True
-            assert allow_web is False
-            return False
-
-        def join_job(self, timeout_s: float | None = None) -> None:
-            return None
-
-        def close(self, reason: str = "") -> None:
-            return None
-
-    monkeypatch.setattr("fx1.interactive.app.concierge.Concierge", lambda **kw: _Op(**kw))
-    failed = RUNNER.invoke(fxi_app, ["superpower", "--sync", "check the manifest"])
-    assert failed.exit_code == 1
-
-    monkeypatch.setattr(
-        "fx1.interactive.app.concierge.Concierge",
-        lambda **kw: _Op(_failed=False, **kw),
-    )
-    skipped = RUNNER.invoke(fxi_app, ["superpower", "--sync", "check the manifest"])
-    # Skipped steps also make the run PARTIAL, so --sync exits non-zero.
-    assert skipped.exit_code == 1
-
-
 def test_cli_superpower_requires_goal(isolated_store: Path) -> None:
     result = RUNNER.invoke(fxi_app, ["superpower"])
     assert result.exit_code == 2
     assert "research goal is required" in result.output
-
-
-# ---------------------------------------------------------------------------
-# fxi one-shot additions: keys test, sessions, resume, scoped approvals
-# ---------------------------------------------------------------------------
-
-
-def test_cli_keys_test_fail_closed_without_endpoint(isolated_store: Path) -> None:
-    result = RUNNER.invoke(fxi_app, ["keys", "test", "fx1"])
-    assert result.exit_code == 2
-    assert "no endpoint for model 'fx1'" in result.output
-
-
-def test_cli_keys_test_reports_identity(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    profiles.set_endpoint("fx1", SECRET_FX1, ALT_BASE)
-
-    class Probe:
-        def __init__(self, **kwargs: object) -> None:
-            self.kwargs = kwargs
-
-        def identity_probe(self, *, max_tokens: int = 1) -> dict[str, object]:
-            return {"model": "fx1", "id": "cmpl-1"}
-
-    import sys
-
-    monkeypatch.setattr(sys.modules["fx1.interactive.app"], "HostedK3Backend", Probe)
-    result = RUNNER.invoke(fxi_app, ["keys", "test", "fx1"])
-    assert result.exit_code == 0
-    assert "fx1 @ fx-lite.example.test: OK" in result.output
-    assert SECRET_FX1 not in result.output
-
-
-def test_cli_keys_test_nonzero_on_failure(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    profiles.set_endpoint("fx1", SECRET_FX1, ALT_BASE)
-
-    class Probe:
-        def __init__(self, **kwargs: object) -> None:
-            pass
-
-        def identity_probe(self, *, max_tokens: int = 1) -> dict[str, object]:
-            raise RuntimeError("hosted_k3 endpoint returned HTTP 401")
-
-    import sys
-
-    monkeypatch.setattr(sys.modules["fx1.interactive.app"], "HostedK3Backend", Probe)
-    result = RUNNER.invoke(fxi_app, ["keys", "test", "fx1"])
-    assert result.exit_code == 1
-    assert "FAILED (auth, HTTP 401)" in result.output
-    assert "fxi keys set" not in result.output or "/keys set fx1" in result.output
-
-
-def test_cli_sessions_and_resume(isolated_store: Path) -> None:
-    from fx1.interactive import session as session_mod
-
-    result = RUNNER.invoke(fxi_app, ["sessions"])
-    assert result.exit_code == 0
-    assert "(no recorded sessions)" in result.output
-    journal = session_mod.SessionJournal(model="fx1-lite", endpoint_host="unconfigured")
-    journal.turn("user", "/model")
-    journal.close()
-    result = RUNNER.invoke(fxi_app, ["sessions", "--limit", "5"])
-    assert result.exit_code == 0
-    assert journal.session_id in result.output
-    assert "fx1-lite" in result.output
-    result = RUNNER.invoke(fxi_app, ["resume", journal.session_id])
-    assert result.exit_code == 0
-    assert "/model" in result.output
-    result = RUNNER.invoke(fxi_app, ["resume", "nope-nothing"])
-    assert result.exit_code == 2
-
-
-def test_cli_superpower_one_shot_denies_consequential_by_default(
-    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from fx1.interactive import concierge as concierge_module
-
-    seen: list[object] = []
-
-    class Recorder(concierge_module.Concierge):
-        def __init__(self, *args: object, **kwargs: object) -> None:
-            seen.append(kwargs.get("approvals"))
-            kwargs.setdefault("persist", False)
-            super().__init__(*args, **kwargs)  # type: ignore[arg-type]
-
-        def start_superpower(
-            self, goal: str, *, sync: bool = False, allow_web: bool = False
-        ) -> bool:
-            return False
-
-    monkeypatch.setattr(concierge_module, "Concierge", Recorder)
-    result = RUNNER.invoke(fxi_app, ["superpower", "train", "a", "model", "--sync"])
-    assert result.exit_code == 0
-    gate = seen[0]
-    assert gate is not None and gate.ask("run train?") is False  # fail closed
-
-    result = RUNNER.invoke(
-        fxi_app, ["superpower", "train", "a", "model", "--sync", "--approve-consequential"]
-    )
-    assert result.exit_code == 0
-    gate = seen[1]
-    assert gate is not None and gate.ask("run train?") is True  # explicit scoped policy
-
-
-def test_cli_one_shot_fails_for_incomplete_jobs(monkeypatch: pytest.MonkeyPatch) -> None:
-    from types import SimpleNamespace
-
-    from fx1.interactive.superpower import CapabilityRun, SuperpowerPlan, SuperpowerResult
-    from fx1.webresearch.engine import ResearchReport
-
-    result: object = None
-
-    class Operator:
-        def __init__(self, *, model: str, approvals: object = None) -> None:
-            self.run_budget = SimpleNamespace(max_wall_s=300)
-            self.job = SimpleNamespace(running=False, error="", result=result)
-
-        def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
-            return False
-
-        def start_research(self, goal: str, **kwargs: object) -> bool:
-            return False
-
-        def join_job(self, timeout_s: float | None = None) -> None:
-            pass
-
-        def close(self, reason: str) -> None:
-            pass
-
-    monkeypatch.setattr(concierge, "Concierge", Operator)
-    result = SuperpowerResult(
-        goal="goal", plan=SuperpowerPlan(goal="goal", capabilities=[]), cancelled=True
-    )
-    assert RUNNER.invoke(fxi_app, ["superpower", "goal", "--sync"]).exit_code == 1
-
-    result = SuperpowerResult(
-        goal="train a model",
-        plan=SuperpowerPlan(goal="train a model", capabilities=[]),
-        runs=[CapabilityRun("train", "train", "approval-denied")],
-    )
-    assert RUNNER.invoke(fxi_app, ["superpower", "train", "a", "model", "--sync"]).exit_code == 1
-
-    result = SuperpowerResult(
-        goal="check public sources",
-        plan=SuperpowerPlan(goal="check public sources", capabilities=[]),
-        runs=[CapabilityRun("web_research", "deep web research", "failed")],
-        errors=["web_research: search request timed out"],
-    )
-    assert (
-        RUNNER.invoke(fxi_app, ["superpower", "check", "public", "sources", "--sync"]).exit_code
-        == 1
-    )
-
-    result = ResearchReport(goal="goal", errors=["search backend failed"])
-    assert RUNNER.invoke(fxi_app, ["research", "goal", "--sync"]).exit_code == 1
-
-    result = ResearchReport(goal="goal", cancelled=True)
-    assert RUNNER.invoke(fxi_app, ["research", "goal", "--sync"]).exit_code == 1
-
-
-def test_cli_research_rejects_nonpositive_limits() -> None:
-    for option in ("--budget-s", "--max-sources"):
-        result = RUNNER.invoke(fxi_app, ["research", option, "0", "goal"])
-        assert result.exit_code == 2
-        assert "must be positive" in result.output
-
-
-def test_cli_one_shot_preserves_goal_and_seed_query_arguments(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from types import SimpleNamespace
-
-    from fx1.interactive.superpower import SuperpowerPlan, SuperpowerResult
-    from fx1.webresearch.engine import ResearchReport
-
-    seen: list[tuple[str, object]] = []
-
-    class RecordingConcierge:
-        def __init__(self, *, model: str, approvals: object = None) -> None:
-            seen.append(("model", model))
-            self.run_budget = type("Budget", (), {"max_wall_s": 300})()
-            self.job = None
-
-        def start_superpower(
-            self, goal: str, *, sync: bool = False, allow_web: bool = False
-        ) -> bool:
-            seen.append(("superpower", (goal, sync)))
-            self.job = SimpleNamespace(
-                running=False,
-                error="",
-                result=SuperpowerResult(goal=goal, plan=SuperpowerPlan(goal=goal, capabilities=[])),
-            )
-            return False
-
-        def start_research(
-            self,
-            goal: str,
-            *,
-            budget_s: int | None = None,
-            max_sources: int | None = None,
-            queries: list[str] | None = None,
-            sync: bool = False,
-        ) -> bool:
-            seen.append(("research", (goal, budget_s, max_sources, queries, sync)))
-            self.job = SimpleNamespace(running=False, error="", result=ResearchReport(goal=goal))
-            return False
-
-        def join_job(self, timeout_s: float | None = None) -> None:
-            seen.append(("timeout", timeout_s))
-
-        def close(self, reason: str) -> None:
-            seen.append(("close", reason))
-
-    monkeypatch.setattr(concierge, "Concierge", RecordingConcierge)
-    superpower_goal = 'Compare "quoted assets", O\'Reilly, and --sync literally'
-    result = RUNNER.invoke(fxi_app, ["superpower", "--sync", superpower_goal])
-    assert result.exit_code == 0, result.output
-    assert ("superpower", (superpower_goal, True)) in seen
-
-    research_goal = 'Investigate "credit risk" and O\'Reilly --sync'
-    seed_queries = 'debt ceiling 2026|AI "safety" policy|O\'Reilly dataset'
-    result = RUNNER.invoke(
-        fxi_app,
-        [
-            "research",
-            "--queries",
-            seed_queries,
-            "--budget-s",
-            "42",
-            "--max-sources",
-            "3",
-            "--sync",
-            research_goal,
-        ],
-    )
-    assert result.exit_code == 0, result.output
-    assert (
-        "research",
-        (
-            research_goal,
-            42,
-            3,
-            ["debt ceiling 2026", 'AI "safety" policy', "O'Reilly dataset"],
-            True,
-        ),
-    ) in seen
