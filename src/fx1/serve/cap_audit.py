@@ -539,6 +539,11 @@ def _local_headers(ckpt: str) -> dict[str, str]:
 def _verdict(resp: Any) -> str:
     """Stable per-cell verdict: ``status[:error.code]`` — the wire's own
     words, so the matrix records what the config actually answered."""
+    # A successful async submission can already carry a terminal job.error
+    # when the worker beats response serialization. That is job data, not
+    # an HTTP refusal; the terminal outcome is measured by separate probes.
+    if resp.status_code < 400:
+        return str(resp.status_code)
     try:
         body = resp.json()
     except (ValueError, json.JSONDecodeError):
