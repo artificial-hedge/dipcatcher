@@ -34,8 +34,15 @@ class ResearchTrace(BaseModel):
         description="Proper scores only — headline metrics are rejected"
     )
     verdict: GateVerdict | None = None
-    receipt_sha256: str = Field(min_length=64, max_length=64)
+    receipt_sha256: str = Field(pattern=r"^[0-9a-fA-F]{64}$")
     recorded_utc: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+    @field_validator("hypothesis", "config_diff", "bench_command")
+    @classmethod
+    def _text_is_present(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("research trace text must be non-blank")
+        return value
 
     @field_validator("scores")
     @classmethod
@@ -108,8 +115,10 @@ def validate_trace_scores(scores: dict[str, float]) -> None:
     too — ``crps_realizedpnl`` and ``pinball_navtotal`` are not proper
     scores, even though an exact token match misses them. Allowed score
     tokens win the substring check (``sharpness`` legitimately contains
-    ``sharpe``).
+    ``sharpe``). An empty map is not a set of scores.
     """
+    if not isinstance(scores, dict) or not scores:
+        raise ValueError("scores must contain at least one proper score")
     for key, value in scores.items():
         norm = key.lower().replace("-", "_")
         tokens = set(norm.split("_"))
@@ -126,5 +135,5 @@ def validate_trace_scores(scores: dict[str, float]) -> None:
                 f"score key {key!r} is not a recognized proper score; "
                 "fx-1 traces carry scientific scores only"
             )
-        if not math.isfinite(value):
+        if isinstance(value, bool) or not math.isfinite(value):
             raise ValueError(f"score {key!r} is not finite: {value!r}")
