@@ -67,3 +67,24 @@ def test_no_change_no_invalidation(tmp_path):
     (tmp_path / "a.json").write_text(json.dumps({"kind": "trade_decomp"}))
     rep = invalidation_report([], tmp_path)
     assert rep["ok"] and rep["n_invalidated"] == 0
+    assert rep["unreadable"] == []
+
+
+def test_unreadable_receipt_fails_the_scan(tmp_path):
+    (tmp_path / "a.json").write_text("{")
+    (tmp_path / "b.json").write_text(json.dumps({"kind": "repo_integrity"}))
+    diff = config_diff(
+        {"cost": {"half_spread_bps": 5.0}},
+        {"cost": {"half_spread_bps": 9.0}},
+    )
+    rep = invalidation_report(diff, tmp_path)
+    assert rep["unreadable"] == ["a.json"]
+    assert rep["invalidated"] == []
+    assert rep["ok"] is False
+
+
+def test_unreadable_receipt_fails_even_without_a_diff(tmp_path):
+    (tmp_path / "a.json").write_bytes(b"\xff")
+    rep = invalidation_report([], tmp_path)
+    assert rep["unreadable"] == ["a.json"]
+    assert rep["ok"] is False

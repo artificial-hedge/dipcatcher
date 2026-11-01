@@ -296,9 +296,9 @@ def verify_timestamps(
             ]
             if tsa_cert.is_file():
                 cmd += ["-untrusted", str(tsa_cert)]
-            res = subprocess.run(cmd, capture_output=True, check=False)
-            chain[label] = "chain_verified" if res.returncode == 0 else "chain_failed"
-            if res.returncode != 0:
+            verified = _openssl_chain_ok(cmd)
+            chain[label] = "chain_verified" if verified else "chain_failed"
+            if not verified:
                 errors.append(f"chain_verify_failed:{label}")
         else:
             chain[label] = "chain_unchecked"
@@ -311,9 +311,32 @@ def verify_timestamps(
     }
 
 
+_OPENSSL_PROBE_TIMEOUT_S = 10
+_OPENSSL_VERIFY_TIMEOUT_S = 30
+
+
+def _openssl_chain_ok(cmd: list[str]) -> bool:
+    """True only when openssl verifies the chain inside the time budget."""
+    try:
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            check=False,
+            timeout=_OPENSSL_VERIFY_TIMEOUT_S,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return res.returncode == 0
+
+
 def _openssl_available() -> bool:
     try:
-        res = subprocess.run(["openssl", "ts", "-help"], capture_output=True, check=False)
+        res = subprocess.run(
+            ["openssl", "ts", "-help"],
+            capture_output=True,
+            check=False,
+            timeout=_OPENSSL_PROBE_TIMEOUT_S,
+        )
         return res.returncode in (0, 1)
-    except OSError:
+    except (OSError, subprocess.TimeoutExpired):
         return False
