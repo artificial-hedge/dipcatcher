@@ -240,6 +240,12 @@ def verify_evidence_report_sidecar(path: str | Path) -> dict[str, Any]:
     Mirrors the ``/monitoring/drift`` integrity gate: the report bytes must
     match their sidecar digest or the report is ``invalid``/``hash_mismatch``.
     A missing/unreadable report or sidecar is ``invalid`` (never trusted).
+
+    The ``reason`` distinguishes *why* the check failed, because
+    ``UnicodeDecodeError`` and ``json.JSONDecodeError`` are both
+    ``ValueError`` subclasses: a single broad ``except ValueError`` would
+    label a corrupt-but-hash-matching report as ``hash_mismatch`` and send
+    an operator chasing the wrong defect.
     """
     report_path = Path(path)
     sidecar = report_path.with_name(f"{report_path.name}.sha256")
@@ -247,14 +253,20 @@ def verify_evidence_report_sidecar(path: str | Path) -> dict[str, Any]:
         return {"status": "invalid", "reason": "missing", "valid": False}
     try:
         expected = sidecar.read_text(encoding="ascii").strip()
+    except FileNotFoundError:
+        return {"status": "invalid", "reason": "missing_sidecar", "valid": False}
+    except (OSError, UnicodeDecodeError):
+        return {"status": "invalid", "reason": "unreadable_sidecar", "valid": False}
+    try:
         actual = hashlib.sha256(report_path.read_bytes()).hexdigest()
-        if expected != actual:
-            return {"status": "invalid", "reason": "hash_mismatch", "valid": False}
-        evidence = json.loads(report_path.read_text(encoding="utf-8"))
-    except ValueError:
+    except OSError:
+        return {"status": "invalid", "reason": "unreadable_report", "valid": False}
+    if expected != actual:
         return {"status": "invalid", "reason": "hash_mismatch", "valid": False}
+    try:
+        evidence = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return {"status": "invalid", "valid": False}
+        return {"status": "invalid", "reason": "corrupt_report", "valid": False}
     status = (
         str(evidence.get("status", "insufficient_evidence"))
         if isinstance(evidence, dict)
