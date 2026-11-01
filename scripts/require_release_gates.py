@@ -225,24 +225,28 @@ def _token_from_env() -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Release preflight: read the tagged SHA and repo from trusted CI env.
+
+    ``release.yml`` sets ``GITHUB_SHA`` and ``GITHUB_REPOSITORY``; we do not
+    accept fixture JSON or filesystem paths on the CLI (Sonar S8707).
+    """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--sha", required=True)
-    parser.add_argument("--repo", default="")
-    parser.add_argument("--runs-json", default="")
+    parser.add_argument(
+        "--sha",
+        default=os.environ.get("GITHUB_SHA", ""),
+        help="Commit to gate (defaults to GITHUB_SHA from Actions).",
+    )
+    parser.add_argument(
+        "--repo",
+        default=os.environ.get("GITHUB_REPOSITORY", ""),
+        help="owner/repo (defaults to GITHUB_REPOSITORY from Actions).",
+    )
     args = parser.parse_args(argv)
     try:
-        if args.runs_json and args.repo:
-            raise ReleaseGateError("pass only one of --repo or --runs-json")
-        if args.runs_json:
-            raw = args.runs_json.strip()
-            if not raw.startswith(("[", "{")):
-                raise ReleaseGateError("--runs-json must be inline JSON (object or array)")
-            payload = json.loads(raw)
-            runs = load_runs_from_json(payload)
-        elif args.repo:
-            runs = load_runs_from_github(args.repo, args.sha, _token_from_env())
-        else:
-            raise ReleaseGateError("pass --repo (live) or --runs-json (dry-run)")
+        repo = args.repo.strip()
+        if not repo:
+            raise ReleaseGateError("GITHUB_REPOSITORY or --repo is required")
+        runs = load_runs_from_github(repo, args.sha, _token_from_env())
         ok, reason = evaluate_release_gates(args.sha, runs)
         if not ok:
             print(f"FAIL: {reason}", file=sys.stderr)

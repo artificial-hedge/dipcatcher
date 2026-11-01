@@ -49,11 +49,8 @@ jobs:
         # Without --all-extras, weights_direct_ran fails and the lane is red
         # even though the harness itself is healthy.
         run: uv sync --locked --all-groups --all-extras --no-build
-      # Gates are invoked through their Make targets so the CI gate and
-      # `make fx1-test` / `make fx1-lint` cannot drift (same commands, same
-      # flags, same testpaths).
       - name: Lint
-        run: make fx1-lint
+        run: uv run --locked --no-build --no-binary-package fx-1 ruff check src/fx1 tests/fx1
       - name: Types
         run: |
           uv run --locked --no-build --no-binary-package fx-1 mypy src/fx1
@@ -63,7 +60,7 @@ jobs:
       - name: Tests
         run: |
           set -o pipefail
-          make fx1-test 2>&1 | tee "$RUNNER_TEMP/fx1-test.log"
+          PYTHONPATH=src uv run --locked --no-build --no-binary-package fx-1 pytest tests/fx1 -q 2>&1 | tee "$RUNNER_TEMP/fx1-test.log"
           python3 - <<'PY'
           import os
           import re

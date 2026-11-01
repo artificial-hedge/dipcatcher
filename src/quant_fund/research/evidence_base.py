@@ -333,15 +333,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--push-before", default="")
     parser.add_argument("--pr-base", default="")
     parser.add_argument("--repo", default="")
-    parser.add_argument("--commits-json", default="")
     args = parser.parse_args(argv)
     try:
-        if args.commits_json:
-            raw = args.commits_json.strip()
-            if not raw.startswith("["):
-                raise ValueError("--commits-json must be inline JSON array")
-            commits = _parse_commits_payload(json.loads(raw))
-        elif args.event == "pull_request":
+        if args.event == "pull_request":
             commits = []
         else:
             repo = args.repo or os.environ.get("GITHUB_REPOSITORY", "")
