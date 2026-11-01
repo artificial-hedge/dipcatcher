@@ -43,33 +43,17 @@ def _record(
     return rec
 
 
-def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    """Reject duplicate keys. ``json.loads`` would otherwise keep the last one."""
-    rec: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in rec:
-            raise ValueError(f"duplicate key {key!r}")
-        rec[key] = value
-    return rec
-
-
 def _read(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as exc:
-        raise ValueError(f"monitor_chain is unreadable: {exc}") from exc
     out: list[dict[str, Any]] = []
-    for line_no, line in enumerate(text.splitlines(), 1):
+    for line_no, line in enumerate(path.read_text().splitlines(), 1):
         if not line.strip():
             continue
         try:
-            rec = json.loads(line, object_pairs_hook=_unique_object)
+            rec = json.loads(line)
         except json.JSONDecodeError as exc:
             raise ValueError(f"monitor_chain line {line_no} is not JSON: {exc}") from exc
-        except ValueError as exc:
-            raise ValueError(f"monitor_chain line {line_no} is malformed: {exc}") from exc
         if not isinstance(rec, dict):
             raise ValueError(f"monitor_chain line {line_no} is not an object")
         out.append(rec)

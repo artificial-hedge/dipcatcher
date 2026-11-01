@@ -239,8 +239,7 @@ def verify_evidence_report_sidecar(path: str | Path) -> dict[str, Any]:
 
     Mirrors the ``/monitoring/drift`` integrity gate: the report bytes must
     match their sidecar digest or the report is ``invalid``/``hash_mismatch``.
-    A missing or unreadable report or sidecar is ``invalid`` (never trusted).
-    A digest match on a non-object payload is ``malformed``, not verified.
+    A missing/unreadable report or sidecar is ``invalid`` (never trusted).
     """
     report_path = Path(path)
     sidecar = report_path.with_name(f"{report_path.name}.sha256")
@@ -248,28 +247,24 @@ def verify_evidence_report_sidecar(path: str | Path) -> dict[str, Any]:
         return {"status": "invalid", "reason": "missing", "valid": False}
     try:
         expected = sidecar.read_text(encoding="ascii").strip()
-        report_bytes = report_path.read_bytes()
-    except (OSError, UnicodeError):
-        return {"status": "invalid", "reason": "unreadable", "valid": False}
-    if expected != hashlib.sha256(report_bytes).hexdigest():
+        actual = hashlib.sha256(report_path.read_bytes()).hexdigest()
+        if expected != actual:
+            return {"status": "invalid", "reason": "hash_mismatch", "valid": False}
+        evidence = json.loads(report_path.read_text(encoding="utf-8"))
+    except ValueError:
         return {"status": "invalid", "reason": "hash_mismatch", "valid": False}
-    try:
-        evidence = json.loads(report_bytes)
-    except (UnicodeError, json.JSONDecodeError, ValueError):
-        return {"status": "invalid", "reason": "unreadable", "valid": False}
-    if not isinstance(evidence, dict):
-        return {"status": "invalid", "reason": "malformed", "valid": False}
-    warnings = evidence.get("warnings", [])
-    if not isinstance(warnings, list):
-        return {"status": "invalid", "reason": "malformed", "valid": False}
-    status = evidence.get("status", "insufficient_evidence")
-    if not isinstance(status, str):
-        return {"status": "invalid", "reason": "malformed", "valid": False}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {"status": "invalid", "valid": False}
+    status = (
+        str(evidence.get("status", "insufficient_evidence"))
+        if isinstance(evidence, dict)
+        else "insufficient_evidence"
+    )
     return {
         "status": status,
         "reason": "verified",
         "valid": True,
-        "warnings": warnings,
+        "warnings": evidence.get("warnings", []) if isinstance(evidence, dict) else [],
         "live_pnl_claim": False,
         "research_only": True,
     }

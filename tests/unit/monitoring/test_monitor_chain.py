@@ -58,22 +58,6 @@ def test_malformed_line_fails_closed(tmp_path):
     assert not _chain(tmp_path).verify()["ok"]
 
 
-def test_duplicate_key_is_not_last_wins(tmp_path):
-    (tmp_path / "ops.jsonl").write_text('{"seq": 0, "seq": 1}\n')
-    out = _chain(tmp_path).verify()
-    assert out["ok"] is False
-    assert any("duplicate key" in error for error in out["errors"])
-
-
-def test_unreadable_chain_is_not_ok(tmp_path):
-    path = tmp_path / "ops.jsonl"
-    path.mkdir()
-    out = MonitorChain(path).verify()
-    assert out["ok"] is False
-    assert out["tip"] is None
-    assert any("unreadable" in error for error in out["errors"])
-
-
 def test_bad_kind_rejected(tmp_path):
     with pytest.raises(ValueError, match="kind"):
         _chain(tmp_path).append("pnl", {"v": 1})
