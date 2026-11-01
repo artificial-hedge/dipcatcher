@@ -107,6 +107,12 @@ class LiveLedger:
         """Apply a fill once. A later venue fill replaces an ``order:`` provisional."""
         if fill.side not in {"buy", "sell"}:
             raise ValueError("fill side must be buy or sell")
+        _finite_positive(fill.quantity, "fill quantity")
+        _finite_positive(fill.price, "fill price")
+        if fill.fill_time_ns < 0:
+            raise ValueError("fill_time_ns must be non-negative")
+        if not fill.fill_id or not fill.client_order_id or not fill.symbol:
+            raise ValueError("fill_id, client_order_id, and symbol must be non-empty")
         if fill.fill_id in self._fills:
             self._duplicate_fills += 1
             return "duplicate_fill"

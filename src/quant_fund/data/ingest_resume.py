@@ -74,6 +74,10 @@ class IngestCheckpoint:
     def ingest(self, batch: Batch) -> str:
         """Commit a batch idempotently; replaying a batch is a no-op duplicate."""
         if batch.batch_id in self._committed:
+            if self._committed[batch.batch_id] != batch.rows:
+                raise IngestJournalError(
+                    f"batch {batch.batch_id!r} was already committed with a different row count"
+                )
             return "duplicate"
         self._append(batch)
         self._committed[batch.batch_id] = int(batch.rows)

@@ -346,6 +346,8 @@ class AlpacaBroker:
         self._credentials = credentials
         self._transport = transport or urllib_transport
         self._timeout = float(timeout)
+        if not math.isfinite(self._timeout) or self._timeout <= 0.0:
+            raise LiveGateError("broker timeout must be finite and positive")
         self._marks: dict[str, float] = {}
 
     @property
