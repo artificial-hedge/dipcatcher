@@ -48,6 +48,26 @@ def _manifest_path(path: Path) -> Path:
     return Path(path).with_name(f"{Path(path).name}.manifest.json")
 
 
+def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _read_manifest_json(manifest: Path) -> Any:
+    """Load a manifest. Undecodable bytes and duplicate keys are malformed."""
+    try:
+        return json.loads(
+            manifest.read_text(encoding="utf-8"),
+            object_pairs_hook=_object_without_duplicate_keys,
+        )
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"model artifact manifest is malformed: {manifest}") from exc
+
+
 def _manifest_payload(path: Path, payload: Any) -> dict[str, Any]:
     metadata: Any = None
     if hasattr(payload, "metadata") and callable(payload.metadata):
@@ -118,10 +138,7 @@ def _verify_manifest(path: Path, payload: Any) -> None:
     manifest = _manifest_path(path)
     if not manifest.is_file():
         return
-    try:
-        record = json.loads(manifest.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"model artifact manifest is malformed: {manifest}") from exc
+    record = _read_manifest_json(manifest)
     if not isinstance(record, dict) or record.get("schema") != "model_artifact.v1":
         raise ValueError(f"model artifact manifest is malformed: {manifest}")
     if record.get("artifact") != path.name or record.get("sha256") != _sha256_file(path):
@@ -145,7 +162,7 @@ def artifact_identity(path: Path) -> dict[str, Any]:
     if not manifest.is_file():
         raise ValueError(f"model artifact manifest is missing: {manifest}")
     payload = load_joblib_artifact(artifact)
-    record = json.loads(manifest.read_text(encoding="utf-8"))
+    record = _read_manifest_json(manifest)
     return {
         "artifact_sha256": _sha256_file(artifact),
         "manifest_valid": True,
