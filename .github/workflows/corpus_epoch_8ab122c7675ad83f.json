@@ -1,0 +1,112 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "5f1126ed3c78bc22e2d82ccd2c80445c9d6e28590111ba197d46832f01c94dcb",
+  "inputs_sha256": "85aea1dd791381ada017aa48c8e8a36213276055188eea2c6c7f88bb2d3974e3",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "07b26db90978d8dd032bd01f8923b409fccdf0e826cdbbf0fd2dc449b822b951",
+  "members": [
+    {
+      "name": "adversarial-properties.yml",
+      "sha256": "b9780b1fb517a14efcd9c57b0bb82c330ddecc8c6ff6f37f1a33e2b1613cbd4d"
+    },
+    {
+      "name": "arch_guards.yml",
+      "sha256": "d39c39074c0fc912986404f1aa78a51c0fe18e79f4d08f0a24887884688a12e3"
+    },
+    {
+      "name": "atlas.yml",
+      "sha256": "b3a6ad15be0e2efbd19cc3c2f9526f790502d7ac456eece9e0d311ca5df35303"
+    },
+    {
+      "name": "ci.yml",
+      "sha256": "892ff67a4149a311cc034c8be26764e2191d624609221dc6ac64fbe822be62fd"
+    },
+    {
+      "name": "codeql.yml",
+      "sha256": "63a39349a7f4eded24b76ddadd2adab11ff674526557920e2f904c2607cbf86f"
+    },
+    {
+      "name": "dependency-audit.yml",
+      "sha256": "77452a6b4369b10a5ff02db68347e58ca9f95cc884574c0e323309c5d7dc832e"
+    },
+    {
+      "name": "dependency-review.yml",
+      "sha256": "8cf7a3486450f95ceb81dec67691f099beaa3fa64b8282736eb9a7f1d490ba75"
+    },
+    {
+      "name": "docs.yml",
+      "sha256": "588e2813a960a8e89be8eaabb6cdbecd001c7423614145ede41f7150394816d8"
+    },
+    {
+      "name": "full-coverage.yml",
+      "sha256": "54d2739ed89c3b44673afc95a6e2eeac0b9a8a8f472d49c3c50275844bc824d0"
+    },
+    {
+      "name": "fx1.yml",
+      "sha256": "b68eb2e873b375d624e6887bd83a8a6f18cfc60bf1c13cfa9cefb6b6460603f2"
+    },
+    {
+      "name": "matrix.yml",
+      "sha256": "b701db95d9a0ba882280ff1941118bf299da11e8a1cf6552a7a95183d7b8712f"
+    },
+    {
+      "name": "perf-baseline.yml",
+      "sha256": "3616d2ad9ee886d006abe2b64bc3c3101e67230c0a52e76f94eda1fe1cd81d38"
+    },
+    {
+      "name": "proofcore.yml",
+      "sha256": "bf84a2525a243b226feb77218d73fb92b600ec256c75855f72dc6bc9505b11e3"
+    },
+    {
+      "name": "property-nightly.yml",
+      "sha256": "bcf8698633d286f980960d7c595b6215faaa86fd6040927253b741898770df08"
+    },
+    {
+      "name": "release.yml",
+      "sha256": "33b8cbb4b518db64b7d727e85ec736a6a9a7110fbaef22b4addcfd216abb02f0"
+    },
+    {
+      "name": "replay_viz.yml",
+      "sha256": "fbc9dbfdfba6b51f1745ce93a1d197704f502499f81fcbb8d5de5a8abab5619b"
+    },
+    {
+      "name": "reproduce_sota.yml",
+      "sha256": "39c5561d32c1391a350c2eeac740ad50d3a12912df8859c5fae0c76584be7221"
+    },
+    {
+      "name": "scorecard.yml",
+      "sha256": "bc41c491a6abe3b1e27c293f85cb091613d59d1febe37a43359dd1c28ca5ecaf"
+    },
+    {
+      "name": "secret-scan.yml",
+      "sha256": "18d5cd1786229c13d11b72f1748b31dac0f6693240c969f15a8006deafd162fe"
+    },
+    {
+      "name": "simtest.yml",
+      "sha256": "c077dad94babf63ca2ca2d93a9d00a46c0b87ee74e14ef1b0067ac6048a221c5"
+    },
+    {
+      "name": "web_explorer.yml",
+      "sha256": "d29cf1abf63dca19e629aca7c456071ce4b14cb8e2a2277c097a221d548d6f48"
+    },
+    {
+      "name": "witness_monitor.yml",
+      "sha256": "4778b91dc155123acbe8596157a8da70f822aac879a440d2324cdfde8b7eb0d2"
+    }
+  ],
+  "members_added": [],
+  "members_removed": [],
+  "n_members": 22,
+  "params": {
+    "head_sha": "fc48195763891682f9e7876008160dc6b59dad65",
+    "pattern": "*.yml"
+  },
+  "prev_epoch_receipt": "corpus_epoch_aa4a9729ce1d0ab6.json",
+  "prev_epoch_sha256": "07e3616d942db1b2d52322d4444cc55aa34b57174cd9b780f1e383f5f57ceabf",
+  "receipt_sha256": "8ab122c7675ad83fa89091b8da014c6848942ac9e58d08dd73a9cddb98aaba63",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

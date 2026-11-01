@@ -347,7 +347,7 @@ jobs:
           shard_file="$RUNNER_TEMP/ci-shard.txt"
           args=(
             -q
-            -n auto
+            -n 2
             --dist loadfile
             -m "$MARKER"
           )

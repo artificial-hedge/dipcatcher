@@ -2,7 +2,7 @@
   "files": {
     ".dockerignore": "aaad980da213d13988c6b30865d830885efe0666475f95d7a8b664160c53d5eb",
     ".env.example": "3601a96a5af0539c0f7e9358d984be5c9e01cc4d8ac81da6f6e31d6c7b2f0cc7",
-    ".gitattributes": "4647900616924f756ba8a9aaadaa3bdd6e908f7819276182326af73727e73436",
+    ".gitattributes": "2f70586fb02d4f0cf0ddb161faffccb028566b6d1583d229ea8dccfeca07d013",
     ".github/codeql/codeql-config.yml": "acb715120442b5aa3eb9ff6e1541ead7a6c5b7a75966a380285e211ed4d80fe4",
     ".github/dependabot.yml": "0377bba62c89d512c9d0535d4d1b401797e66cabe82ef042b3e17af7290968ee",
     ".gitignore": "5b3c66fad5567c518ad7ed34c8dd6d32e0089490bfdcdf463d4ade7b55c80fbe",
