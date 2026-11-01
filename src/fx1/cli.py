@@ -329,7 +329,11 @@ def harness_describe_operation(
     """Print the exact input/output schema of one registered operation."""
     from fx1.operations.registry import get_operation
 
-    typer.echo(json.dumps(get_operation(operation_id).describe(), indent=2))
+    try:
+        operation = get_operation(operation_id)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc.args[0]), param_hint="operation_id") from exc
+    typer.echo(json.dumps(operation.describe(), indent=2))
 
 
 _OPERATION_ARGUMENT_MAX_BYTES = 2_000_000
@@ -379,7 +383,12 @@ def harness_execute_operation(
         ) from exc
     from fx1.operations.registry import execute_operation
 
-    result = execute_operation(operation_id, payload, workspace_root=resolved_root)
+    try:
+        result = execute_operation(operation_id, payload, workspace_root=resolved_root)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc.args[0]), param_hint="operation_id") from exc
+    except (ValueError, OSError, RecursionError) as exc:
+        raise typer.BadParameter(f"cannot execute operation: {exc}") from exc
     typer.echo(json.dumps(result, indent=2))
 
 
@@ -1182,7 +1191,7 @@ def harness_selftest(
         "golden path.",
     ),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
-    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", min=1e-9, help=_TIMEOUT_HELP),
     state_dir: str | None = typer.Option(
         None,
         "--state-dir",
@@ -1197,6 +1206,8 @@ def harness_selftest(
     idempotent replay, the async job lifecycle, sealed-receipt verify,
     drain, and in-process parity. Remote mode runs read-only checks only.
     Exits 0 when every check passes, 2 otherwise — usable as a deploy gate."""
+    if remote is not None and state_dir is not None:
+        raise typer.BadParameter("not valid with --remote", param_hint="--state-dir")
     from fx1.selftest import run_selftest
 
     report = run_selftest(
