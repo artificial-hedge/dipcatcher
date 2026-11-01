@@ -36,12 +36,12 @@ class ModelCard(BaseModel):
 
     version: str = Field(pattern=r"^fx-1\.v\d+\.\d+$")
     base_model: str = "moonshotai/Kimi-K3"
-    base_checkpoint_sha256: str | None = None
-    corpus_sha256: str = Field(min_length=64, max_length=64)
+    base_checkpoint_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    corpus_sha256: str = Field(min_length=64, max_length=64, pattern=r"^[0-9a-f]{64}$")
     corpus_receipt_range: str = Field(
         description="First..last receipt SHA-256 prefix covered by the corpus"
     )
-    training_manifest_sha256: str = Field(min_length=64, max_length=64)
+    training_manifest_sha256: str = Field(min_length=64, max_length=64, pattern=r"^[0-9a-f]{64}$")
     eval_delta: EvalDelta
     license_tier: str = "internal_research"
     known_limits: list[str] = Field(default_factory=list)
