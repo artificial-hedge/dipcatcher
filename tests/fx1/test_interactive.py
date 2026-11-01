@@ -297,6 +297,47 @@ def test_run_tool_rejects_unknown_tool() -> None:
         actions.run_tool("rm", ["-rf"], "fx1")
 
 
+def test_run_tool_timeout_fails_closed(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profiles.set_endpoint("fx1", SECRET_FX1, ALT_BASE)
+
+    def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        timeout = kwargs["timeout"]
+        assert isinstance(timeout, (int, float)) and not isinstance(timeout, bool)
+        assert timeout == actions._TOOL_TIMEOUT_S
+        raise subprocess.TimeoutExpired(argv, float(timeout))
+
+    monkeypatch.setattr(actions.subprocess, "run", fake_run)
+    monkeypatch.setattr(actions.shutil, "which", lambda name: f"/usr/bin/{name}")
+    with pytest.raises(RuntimeError, match="exceeded"):
+        actions.run_tool("fx1", ["doctor"], "fx1")
+
+
+def test_shell_timeout_and_nonzero_are_reported(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sh = shell.FxiShell()
+
+    def boom(cmd: str, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        timeout = kwargs["timeout"]
+        assert isinstance(timeout, (int, float)) and not isinstance(timeout, bool)
+        assert kwargs["shell"] is True
+        assert timeout == shell._SHELL_TIMEOUT_S
+        raise subprocess.TimeoutExpired(cmd, float(timeout))
+
+    monkeypatch.setattr(shell.subprocess, "run", boom)
+    sh.do_shell("sleep 999")
+    assert "timed out" in capsys.readouterr().err
+
+    def failed(cmd: str, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(cmd, 3)
+
+    monkeypatch.setattr(shell.subprocess, "run", failed)
+    sh.do_shell("false")
+    assert "shell exited 3" in capsys.readouterr().err
+
+
 def test_run_eval_builds_fx1_eval_argv(
     isolated_store: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -34,6 +34,7 @@ def _git_revision(repo_root: Path) -> tuple[str, bool]:
             cwd=repo_root,
             capture_output=True,
             text=True,
+            timeout=15,
             check=True,
         ).stdout.strip()
         dirty = bool(
@@ -42,11 +43,12 @@ def _git_revision(repo_root: Path) -> tuple[str, bool]:
                 cwd=repo_root,
                 capture_output=True,
                 text=True,
+                timeout=15,
                 check=True,
             ).stdout.strip()
         )
         return sha, dirty
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.SubprocessError):
         return "unknown", True
 
 

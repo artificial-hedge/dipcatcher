@@ -1335,6 +1335,22 @@ def test_sim_live_git_sha_failure_falls_back(
     assert result.exit_code == 0, result.output
 
 
+def test_sim_live_git_sha_timeout_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    def boom(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert kwargs["timeout"] == 15
+        raise subprocess.TimeoutExpired(["git"], 15)
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    cfg = _data_config(tmp_path)
+    _patch_sim_live(monkeypatch)
+    result = runner.invoke(app, ["sim-live", "--config", str(cfg), "--out", str(tmp_path / "o")])
+    assert result.exit_code == 0, result.output
+
+
 def test_sim_live_without_book_stats_skips_leaderboard(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

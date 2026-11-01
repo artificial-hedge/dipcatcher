@@ -1883,10 +1883,12 @@ class LocalFx1Backend(_UsageTracker):
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
-            # ``kill`` only sends the signal.  Reap the child as well so a
-            # stubborn engine cannot remain as a zombie until this process
-            # exits (and so its OS handles are released on Windows).
-            proc.wait()
+            # ``kill`` only sends the signal. Reap under the same deadline so
+            # a child that survives SIGKILL cannot pin process teardown.
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired as exc:
+                raise RuntimeError("local fx-1 engine did not exit within 5s after kill") from exc
 
     def __enter__(self) -> LocalFx1Backend:
         return self
