@@ -141,6 +141,10 @@ class UploadStore:
         state_dir: Path | None = None,
         ttl_s: int = UPLOAD_TTL_S,
     ) -> None:
+        if max_entries < 1:
+            raise ValueError("max_entries must be positive")
+        if max_bytes < 1:
+            raise ValueError("max_bytes must be positive")
         self._lock = threading.Lock()
         self._max = max_entries
         self._max_bytes = max_bytes

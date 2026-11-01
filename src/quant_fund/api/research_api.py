@@ -415,6 +415,13 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         ),
     )
 
+    @app.exception_handler(OSError)
+    async def evidence_io_error(_request: Request, _exc: OSError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "evidence store temporarily unavailable"},
+        )
+
     @app.middleware("http")
     async def research_api_auth(request: Request, call_next: Any) -> Any:
         """Loopback-only by default; X-API-Key when RESEARCH_API_KEY is set."""
