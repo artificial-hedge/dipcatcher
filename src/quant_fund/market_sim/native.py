@@ -134,6 +134,9 @@ def _compiler_flags() -> list[str]:
     )
 
 
+_COMPILE_TIMEOUT_S = 120.0
+
+
 def _compile(source: Path, dest: Path) -> None:
     cmd = [
         _compiler(),
@@ -142,7 +145,18 @@ def _compile(source: Path, dest: Path) -> None:
         str(dest),
         str(source),
     ]
-    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=_COMPILE_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"matching core compile exceeded {_COMPILE_TIMEOUT_S:g}s\ncommand: {' '.join(cmd)}"
+        ) from exc
     if proc.returncode != 0:
         raise RuntimeError(
             "matching core failed to compile\n"

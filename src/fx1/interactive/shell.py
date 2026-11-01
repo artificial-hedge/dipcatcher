@@ -22,6 +22,9 @@ from fx1.interactive import actions, profiles
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
 
+# Operator escape hatch. Bounded so a hung ``!`` command cannot pin the REPL.
+_SHELL_TIMEOUT_S = 120.0
+
 _HELP = """\
 keys                              list model endpoints (presence-only)
 keys set <model>                  store an API key + base URL (prompted, not echoed)
@@ -270,7 +273,18 @@ class FxiShell(cmd.Cmd):
         if not arg.strip():
             self._say_error(ValueError("usage: !<shell command>"))
             return
-        subprocess.run(arg, shell=True, check=False)  # noqa: S602  # nosec B602 — explicit operator escape hatch
+        try:
+            proc = subprocess.run(  # noqa: S602  # nosec B602 — explicit operator escape hatch
+                arg,
+                shell=True,
+                check=False,
+                timeout=_SHELL_TIMEOUT_S,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            self._say_error(exc)
+            return
+        if proc.returncode:
+            typer.secho(f"shell exited {proc.returncode}", err=True, fg=typer.colors.RED)
 
     do_bang = do_shell
 

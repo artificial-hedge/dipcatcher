@@ -144,6 +144,7 @@ def export_evidence_bundle(
             cwd=root,
             capture_output=True,
             text=True,
+            timeout=15,
             check=True,
         )
         commit = proc.stdout.strip()

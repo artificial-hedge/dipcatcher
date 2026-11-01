@@ -436,11 +436,15 @@ def sim_live(
     try:
         git_sha = (
             subprocess.run(
-                ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=False
+                ["git", "rev-parse", "--short", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
             ).stdout.strip()
             or None
         )
-    except OSError:
+    except (OSError, subprocess.SubprocessError):
         git_sha = None
     champion_policy = QuantilePolicy(
         mode=mode,
