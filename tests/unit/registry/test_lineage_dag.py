@@ -77,6 +77,14 @@ def test_orphans_and_external(tmp_path: Path):
     assert len(dag["orphan_receipts"]) == 1  # x has no edges
 
 
+def test_unreadable_receipt_opens_the_dag(tmp_path: Path):
+    (tmp_path / "bad.json").write_text("{")
+    dag = lineage_dag(tmp_path)
+    assert dag["unreadable"] == [str(tmp_path / "bad.json")]
+    assert dag["verdict"] == "open"
+    assert f"{tmp_path / 'bad.json'}:unreadable" in dag["dangling_inputs"]
+
+
 def test_bench_sealed(tmp_path: Path):
     _receipt(tmp_path / "p.json", "producer")
     _receipt(tmp_path / "c.json", "consumer", inputs_sha256="ee" * 32)

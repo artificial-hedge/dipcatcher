@@ -102,6 +102,30 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     }
 
 
+def test_allowed_removals_loader_fails_closed(tmp_path: Path) -> None:
+    from quant_fund.research.repo_integrity import _load_allowed_removals
+
+    missing = tmp_path / "missing.json"
+    assert _load_allowed_removals(missing) == ({}, None)
+    bad = tmp_path / "bad.json"
+    bad.write_text("{", encoding="utf-8")
+    assert _load_allowed_removals(bad) == ({}, "allowed_removals_unreadable")
+    bad.write_text("[]", encoding="utf-8")
+    assert _load_allowed_removals(bad) == ({}, "allowed_removals_malformed")
+    bad.write_text(json.dumps({"a.json": 1}), encoding="utf-8")
+    assert _load_allowed_removals(bad) == ({}, "allowed_removals_malformed")
+    bad.write_text(json.dumps({"a.json": "ab"}), encoding="utf-8")
+    assert _load_allowed_removals(bad) == ({"a.json": "ab"}, None)
+
+
+def test_verify_repo_unreadable_allowlist_is_a_gate(tmp_path: Path) -> None:
+    root = _git_repo(tmp_path)
+    (root / "quality" / "epoch_allowed_removals.json").write_text("{", encoding="utf-8")
+    res = verify_repo(root)
+    assert res["ok"] is False
+    assert res["gates"]["epoch_allowed_removals"]["errors"] == ["allowed_removals_unreadable"]
+
+
 def test_verify_repo_fails_on_any_gate(tmp_path: Path) -> None:
     root = _git_repo(tmp_path)
     (root / "pyproject.toml").write_text("tampered")

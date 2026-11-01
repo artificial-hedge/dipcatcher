@@ -1026,7 +1026,7 @@ src/quant_fund/research/replay_proof.py:run_replay 31
 src/quant_fund/research/replay_sweep.py:replay_coverage_contract_errors 24
 src/quant_fund/research/replay_sweep.py:run_replay_sweep 10
 src/quant_fund/research/repo_integrity.py:repo_integrity_contract_errors 30
-src/quant_fund/research/repo_integrity.py:verify_repo 35
+src/quant_fund/research/repo_integrity.py:verify_repo 33
 src/quant_fund/research/script_receipts.py:band_search_contract_errors 11
 src/quant_fund/research/script_receipts.py:deps_hygiene_contract_errors 17
 src/quant_fund/research/script_receipts.py:dip_bench_contract_errors 13
