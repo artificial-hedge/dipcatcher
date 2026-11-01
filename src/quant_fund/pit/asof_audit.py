@@ -34,6 +34,7 @@ from quant_fund.pit.corrections import (
     SECURITY_ID_COL,
     RestatementPolicy,
 )
+from quant_fund.pit.frame import VaultUnavailableError
 from quant_fund.pit.vault import PitVault
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -115,6 +116,7 @@ def asof_storm_audit(
         "strict_monotone": 0,
         "future_leak": 0,
         "latest_supersedes": 0,
+        "probe_error": 0,
     }
     probes = 0
     times = sorted(
@@ -127,7 +129,8 @@ def asof_storm_audit(
         try:
             latest = vault.asof("panel", t, policy=RestatementPolicy.LATEST_KNOWN)
             strict = vault.asof("panel", t, policy=RestatementPolicy.STRICT_FIRST)
-        except Exception:  # noqa: BLE001 — no version knowable yet; probe is vacuous
+        except Exception:  # noqa: BLE001 — a failed probe invalidates the audit
+            violations["probe_error"] += 1
             continue
         probes += 1
         # invariant 1: watermark
@@ -170,8 +173,10 @@ def asof_storm_audit(
                 pre = _rows_keyed(f_pre)
                 if (s, e) in pre and pre[(s, e)][1] == keyed_end[(s, e)][1]:
                     violations["latest_supersedes"] += 1
-            except Exception:  # noqa: BLE001 — nothing knowable before ka; fine
+            except VaultUnavailableError:
                 pass
+            except Exception:  # noqa: BLE001 — unexpected read failures invalidate the audit
+                violations["probe_error"] += 1
     # future-leak fuzz: pin one correction far ahead; probe just before it
     future_ka = horizon_end + timedelta(hours=48)
     vault.restate(
@@ -182,7 +187,8 @@ def asof_storm_audit(
     for t in times:
         try:
             f = vault.asof("panel", t, policy=RestatementPolicy.LATEST_KNOWN).frame
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 — a failed probe invalidates the audit
+            violations["probe_error"] += 1
             continue
         if (f["value"] == 999.0).any():
             violations["future_leak"] += 1

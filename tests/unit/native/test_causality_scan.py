@@ -40,3 +40,16 @@ def test_bench_sealed_and_deterministic():
     assert r1["data_label"] == "SYNTHETIC"
     assert r1["claim"]["n_leaks"] == 0
     assert r1 == r2
+
+
+def test_bench_probe_error_is_not_causal(monkeypatch):
+    import quant_fund.native.causality_scan as mod
+
+    monkeypatch.setattr(
+        mod,
+        "causality_scan",
+        lambda seed=0: {"broken": {"status": "error", "error": "boom"}},
+    )
+    receipt = mod.causality_bench()
+    assert receipt["claim"]["verdict"] == "error"
+    assert receipt["claim"]["n_leaks"] == 0

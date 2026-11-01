@@ -84,7 +84,8 @@ def causality_bench(seed: int = 0) -> dict[str, Any]:
     """Sealed receipt over the reference kernel set."""
     report = causality_scan(seed=seed)
     leaks = {k: v for k, v in report.items() if v.get("status") == "LEAK"}
-    verdict = "causal" if not leaks else "leak"
+    incomplete = {k: v for k, v in report.items() if v.get("status") != "causal"}
+    verdict = "leak" if leaks else "error" if incomplete or not report else "causal"
     payload: dict[str, Any] = {
         "kind": "causality_scan",
         "schema": "causality_scan.v1",
