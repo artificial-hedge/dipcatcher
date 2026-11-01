@@ -262,8 +262,14 @@ class OrderFillLedger:
     # -- declaration (broker-reported) state, for drift alarms --
 
     def declare_state(self, *, cash: float, positions: dict[str, float]) -> None:
-        self._declared_cash = float(cash)
-        self._declared_positions = {str(k): float(v) for k, v in positions.items()}
+        declared_cash = float(cash)
+        declared_positions = {str(k): float(v) for k, v in positions.items()}
+        if not math.isfinite(declared_cash):
+            raise OrderLedgerError("declared cash must be finite")
+        if any(not math.isfinite(quantity) for quantity in declared_positions.values()):
+            raise OrderLedgerError("declared positions must be finite")
+        self._declared_cash = declared_cash
+        self._declared_positions = declared_positions
 
     # -- reconciliation --
 
