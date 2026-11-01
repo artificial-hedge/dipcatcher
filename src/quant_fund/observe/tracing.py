@@ -103,7 +103,11 @@ def _export(current: Span) -> None:
         record_error("otel_export")
         return
     body = json.dumps(_otlp(current)).encode("utf-8")
-    port = parsed.port
+    try:
+        port = parsed.port
+    except ValueError:
+        record_error("otel_export")
+        return
     if port is None:
         port = 443 if parsed.scheme == "https" else 80
     path = parsed.path or "/"
