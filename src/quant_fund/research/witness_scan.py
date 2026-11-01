@@ -162,7 +162,7 @@ def scan_witness_log(
         uuids = _entry_uuids(pub_file.read_bytes(), rekor_url, timeout)
     except Exception as exc:  # noqa: BLE001 — online lane reports, not raises
         return {
-            "ok": True,
+            "ok": False,
             "online": False,
             "scanned": 0,
             "foreign": [],
