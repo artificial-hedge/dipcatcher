@@ -31,6 +31,23 @@ MAX_PAGES = 10
 PER_PAGE = 100
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _read_json_file_under_repo(path_arg: str) -> Any:
+    """Load JSON from a path that must stay inside the repository root."""
+
+    root = _repo_root().resolve()
+    candidate = Path(path_arg)
+    resolved = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
+    if not resolved.is_relative_to(root):
+        raise ReleaseGateError(f"runs-json path escapes repository root: {path_arg!r}")
+    if not resolved.is_file():
+        raise ReleaseGateError(f"runs-json file not found: {path_arg!r}")
+    return json.loads(resolved.read_text(encoding="utf-8"))
+
+
 class ReleaseGateError(Exception):
     """Raised when the SHA must not be signed."""
 
@@ -239,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
             if raw.lstrip().startswith(("[", "{")):
                 payload = json.loads(raw)
             else:
-                payload = json.loads(Path(raw).read_text(encoding="utf-8"))
+                payload = _read_json_file_under_repo(raw)
             runs = load_runs_from_json(payload)
         elif args.repo:
             runs = load_runs_from_github(args.repo, args.sha, _token_from_env())
