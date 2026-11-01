@@ -193,6 +193,7 @@ def stamp_timestamp(
     import urllib.request
 
     from quant_fund.utils.atomicio import atomic_write_bytes, atomic_write_text
+    from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_bounded
 
     root_path = Path(root)
     target_rel = Path(target)
@@ -207,7 +208,7 @@ def stamp_timestamp(
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        token = resp.read()
+        token = read_bounded(resp, timeout=timeout, max_bytes=DEFAULT_MAX_BODY)
     # Fail closed: never register a token that doesn't commit to this digest.
     if extract_imprint(token) != bytes.fromhex(digest):
         raise ValueError("tsr token does not commit to the file digest")

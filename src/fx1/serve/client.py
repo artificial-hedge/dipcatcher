@@ -55,6 +55,7 @@ from fx1.sdk import (
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
+from quant_fund.utils.net_timeout import require_timeout
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -296,8 +297,7 @@ class HarnessClient:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValueError(f"base_url must be http(s)://host[:port], got {base_url!r}")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
+        timeout_s = require_timeout(timeout_s, name="timeout_s")
         if max_retries < 0:
             raise ValueError(f"max_retries must be >= 0, got {max_retries}")
         if retry_backoff_s <= 0:
