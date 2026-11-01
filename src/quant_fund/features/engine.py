@@ -40,6 +40,55 @@ _BASE_FEATURE_REQUIRED = (
     "low_split_adjusted",
 )
 
+_PRICE_COLUMNS = (
+    "close_total_return",
+    "close",
+    "open_split_adjusted",
+    "close_split_adjusted",
+    "high_split_adjusted",
+    "low_split_adjusted",
+)
+
+# Bool is an int subclass in the type system, but it is not a price dtype.
+_NUMERIC_DTYPES = frozenset(
+    {
+        pl.Float32,
+        pl.Float64,
+        pl.Int8,
+        pl.Int16,
+        pl.Int32,
+        pl.Int64,
+        pl.UInt8,
+        pl.UInt16,
+        pl.UInt32,
+        pl.UInt64,
+    }
+)
+
+
+def _require_usable_ohlcv(bars: pl.DataFrame) -> None:
+    """Reject prices and volume that would leak NaN or inf into returns.
+
+    Polars ``is_finite`` is null on nulls, so nulls are tested on their own.
+    Warmup nulls in derived returns stay allowed; only the inputs are refused.
+    """
+    for name in (*_PRICE_COLUMNS, "volume"):
+        if bars.schema[name] not in _NUMERIC_DTYPES:
+            raise ValueError(f"{name} must be numeric, got {bars.schema[name]}")
+    checks: list[pl.Expr] = []
+    for name in _PRICE_COLUMNS:
+        column = pl.col(name)
+        checks.append(column.is_null() | (~column.is_finite()) | (column <= 0))
+    volume = pl.col("volume")
+    checks.append(volume.is_null() | (~volume.is_finite()) | (volume < 0))
+    bad = pl.any_horizontal(checks).fill_null(True)
+    n_bad = int(bars.select(bad.sum()).item() or 0)
+    if n_bad:
+        raise ValueError(
+            "OHLCV prices must be finite and positive and volume finite "
+            f"and non-negative; {n_bad} rows are not"
+        )
+
 
 def compute_base_features(bars: pl.DataFrame, config: AppConfig) -> pl.DataFrame:
     if bars.height == 0:
@@ -47,6 +96,7 @@ def compute_base_features(bars: pl.DataFrame, config: AppConfig) -> pl.DataFrame
     missing = [c for c in _BASE_FEATURE_REQUIRED if c not in bars.columns]
     if missing:
         raise ValueError(f"bars missing required OHLCV columns: {missing}")
+    _require_usable_ohlcv(bars)
     lam = config.features.ewma_lambda
     df = bars.sort(["security_id", "event_time"])
     df = df.with_columns(
