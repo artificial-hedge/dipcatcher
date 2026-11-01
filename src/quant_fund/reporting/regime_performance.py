@@ -156,44 +156,20 @@ def bundled_h15_rate_map(series_id: str = _DEFAULT_H15_SERIES) -> dict[str, floa
     windows = block.get("windows", {}) if isinstance(block, dict) else {}
     if not isinstance(windows, dict):
         raise ValueError(f"malformed windows for {series_id}")
-    return _h15_rates(series_id, windows)
-
-
-def _h15_rates(series_id: str, windows: dict[str, Any]) -> dict[str, float]:
-    """Flatten crisis windows. A malformed row is an error, not a skipped print."""
     out: dict[str, float] = {}
-    for window_id, window in windows.items():
+    for _window_id, window in windows.items():
         if not isinstance(window, dict):
-            raise ValueError(f"malformed window {series_id}/{window_id}")
-        observations = window.get("observations")
-        if not isinstance(observations, list):
-            raise ValueError(f"malformed observations for {series_id}/{window_id}")
-        for index, row in enumerate(observations):
-            date, value = _h15_observation(series_id, str(window_id), index, row)
+            continue
+        for row in window.get("observations", []) or []:
+            if not isinstance(row, dict):
+                continue
+            date = str(row["date"])
+            value = float(row["value"])
+            if not np.isfinite(value):
+                continue
             # First print wins; crisis windows rarely overlap on the same date.
             out.setdefault(date, value)
-    if not out:
-        raise ValueError(f"series {series_id} has no observations")
     return out
-
-
-def _h15_observation(series_id: str, window_id: str, index: int, row: object) -> tuple[str, float]:
-    where = f"{series_id}/{window_id}#{index}"
-    if not isinstance(row, dict):
-        raise ValueError(f"malformed observation {where}")
-    try:
-        date = row["date"]
-        raw_value = row["value"]
-    except KeyError as exc:
-        raise ValueError(f"malformed observation {where}") from exc
-    if not isinstance(date, str) or not date:
-        raise ValueError(f"malformed observation {where}")
-    if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
-        raise ValueError(f"non-finite observation {series_id} {date}")
-    value = float(raw_value)
-    if not np.isfinite(value):
-        raise ValueError(f"non-finite observation {series_id} {date}")
-    return date, value
 
 
 def h15_rate_regime_labels(

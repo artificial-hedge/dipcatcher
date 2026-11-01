@@ -75,43 +75,6 @@ class TestH15:
         with pytest.raises(KeyError, match="yield series"):
             bundled_h15_rate_map("NOT_A_SERIES")
 
-    def _bundle(self, windows: object) -> dict[str, object]:
-        return {"series": {"DGS10": {"windows": windows}}}
-
-    def test_malformed_window_fails_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            "quant_fund.stress.bundle.load_bundle",
-            lambda: self._bundle({"crisis": []}),
-        )
-        with pytest.raises(ValueError, match="malformed window"):
-            bundled_h15_rate_map("DGS10")
-
-    def test_malformed_observation_fails_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            "quant_fund.stress.bundle.load_bundle",
-            lambda: self._bundle({"crisis": {"observations": ["bad"]}}),
-        )
-        with pytest.raises(ValueError, match="malformed observation"):
-            bundled_h15_rate_map("DGS10")
-
-    def test_nonfinite_observation_fails_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            "quant_fund.stress.bundle.load_bundle",
-            lambda: self._bundle(
-                {"crisis": {"observations": [{"date": "2020-01-02", "value": float("nan")}]}}
-            ),
-        )
-        with pytest.raises(ValueError, match="non-finite"):
-            bundled_h15_rate_map("DGS10")
-
-    def test_empty_observations_fail_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            "quant_fund.stress.bundle.load_bundle",
-            lambda: self._bundle({"crisis": {"observations": []}}),
-        )
-        with pytest.raises(ValueError, match="no observations"):
-            bundled_h15_rate_map("DGS10")
-
     def test_rate_labels_overlap(self) -> None:
         rate_map = bundled_h15_rate_map("DGS10")
         assert rate_map

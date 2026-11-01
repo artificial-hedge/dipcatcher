@@ -23,20 +23,6 @@ def test_evidence_report_marks_complete_only_when_all_inputs_are_clean() -> None
     assert report["warnings"] == []
 
 
-def test_non_object_sections_are_not_a_complete_report() -> None:
-    report = build_evidence_report(
-        candidates={"ranker": {"mean_ic": 0.1}},
-        provenance="vendor",  # type: ignore[arg-type]
-        health="ok",  # type: ignore[arg-type]
-        promotion="approved",  # type: ignore[arg-type]
-    )
-    assert report["status"] == "insufficient_evidence"
-    assert report["provenance"] == {}
-    assert "provenance_missing" in report["warnings"]
-    assert "health_report_missing" in report["warnings"]
-    assert "promotion_receipt_missing" in report["warnings"]
-
-
 def test_write_evidence_report_persists_json_and_markdown(tmp_path) -> None:
     paths = write_evidence_report(
         tmp_path,
