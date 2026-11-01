@@ -135,7 +135,11 @@ def run_selftest(
     if remote is not None:
         from fx1.serve.client import HarnessClient
 
-        client = HarnessClient(remote, api_key=api_key, timeout_s=timeout_s)
+        try:
+            client = HarnessClient(remote, api_key=api_key, timeout_s=timeout_s)
+        except Exception as exc:  # noqa: BLE001 — setup is a reported check failure
+            report.note("client_setup", False, f"{type(exc).__name__}: {exc}")
+            return report
         _remote_checks(report, client, remote, api_key or "")
         return report
 
@@ -147,14 +151,24 @@ def run_selftest(
     from fx1.serve.contract import API_VERSION
     from fx1.serve.e2e_audit import _serve_uvicorn, _StubChat  # noqa: PLC0415
 
-    stub = ThreadingHTTPServer(("127.0.0.1", 0), _StubChat)
-    threading.Thread(target=stub.serve_forever, daemon=True).start()
+    try:
+        stub = ThreadingHTTPServer(("127.0.0.1", 0), _StubChat)
+        threading.Thread(target=stub.serve_forever, daemon=True).start()
+    except Exception as exc:  # noqa: BLE001 — boot failure must produce a failing report
+        report.note("boot", False, f"{type(exc).__name__}: {exc}")
+        return report
     stub_port = int(stub.server_address[1])
     key = "selftest-key"  # a probe string, not a credential
 
     saved = {
         k: os.environ.get(k)
-        for k in ("FX1_API_KEY", "FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+        for k in (
+            "FX1_API_KEY",
+            "FX1_BYOK_BASE_URL",
+            "FX1_BYOK_API_KEY",
+            "FX1_BYOK_MODEL",
+            "MOONSHOT_API_KEY",
+        )
     }
     os.environ.update(
         {
@@ -327,6 +341,8 @@ def run_selftest(
             return False
 
         _run(checks, "drained_rejects_work", _drained, True)
+    except Exception as exc:  # noqa: BLE001 — any local fault fails the deploy gate
+        checks.append(_Check("local_runtime", False, detail=f"{type(exc).__name__}: {exc}"))
     finally:
         api_logger.setLevel(prev_level)
         for srv in (server, server2):
