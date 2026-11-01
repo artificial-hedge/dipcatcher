@@ -16,6 +16,7 @@ chaos-tested below).
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import polars as pl
 import pytest
@@ -253,12 +254,14 @@ def test_missing_required_fields_fail_closed(batch: list[dict[str, object]], dro
 )
 def test_impossible_pit_chain_fails_closed(batch: list[dict[str, object]], fault: str) -> None:
     """available_time before event_time or after ingest time raises SourceError."""
-    if fault == "available_before_event":
-        batch[0]["available_time"] = BASE_TIME - timedelta(days=3650)
-    else:
-        batch[0]["available_time"] = datetime.now(UTC) + timedelta(days=3650)
-    with pytest.raises(SourceError, match="impossible event_time"):
-        normalize_ohlcv(batch, source="fault")
+    frozen = datetime(2024, 6, 1, tzinfo=UTC)
+    with patch("quant_fund.data.sources.base.utc_now", lambda: frozen):
+        if fault == "available_before_event":
+            batch[0]["available_time"] = BASE_TIME - timedelta(days=3650)
+        else:
+            batch[0]["available_time"] = frozen + timedelta(days=3650)
+        with pytest.raises(SourceError, match="impossible event_time"):
+            normalize_ohlcv(batch, source="fault")
 
 
 @settings(max_examples=40, deadline=None)
