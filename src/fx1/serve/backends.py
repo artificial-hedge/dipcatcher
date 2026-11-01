@@ -15,6 +15,7 @@ import contextlib
 import http.client
 import ipaddress
 import json
+import math
 import os
 import shlex
 import socket
@@ -200,15 +201,75 @@ def _openai_sibling_url(chat_url: str, route: str) -> str:
     return f"{base}/{route}"
 
 
+def _positive_seconds(name: str, value: object) -> float:
+    """Reject a timeout that is not a positive finite number.
+
+    ``nan <= 0`` is false, so a bare sign check would accept a NaN timeout
+    and leave the request without a usable deadline.
+    """
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+    try:
+        val = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a positive finite number, got {value!r}") from exc
+    if not math.isfinite(val) or val <= 0:
+        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+    return val
+
+
 def _env_float(name: str, override: float | None, default: float) -> float:
     """Resolve a seconds-valued knob: kwarg beats env beats default."""
     raw = override if override is not None else os.environ.get(name)
     if raw is None or raw == "":
         return default
-    val = float(raw)
-    if val <= 0:
-        raise ValueError(f"{name} must be positive, got {val!r}")
-    return val
+    return _positive_seconds(name, raw)
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError(f"duplicate key {key!r}")
+        obj[key] = value
+    return obj
+
+
+def _sha256_hex(value: object) -> bool:
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    return all(char in "0123456789abcdefABCDEF" for char in value)
+
+
+def _weights_sha_pin(path: Path) -> str | None:
+    """Return the pin from a present weights manifest.
+
+    A manifest without ``weights_sha256`` has nothing to verify. A file
+    that exists but is unreadable, not one JSON object, repeats a key, or
+    carries a non-digest pin is refused.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"weights manifest {path.name} is unreadable") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"weights manifest {path.name} is malformed: {exc}") from exc
+    try:
+        manifest = json.loads(text, object_pairs_hook=_reject_duplicate_keys)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"weights manifest {path.name} is not JSON") from exc
+    except ValueError as exc:
+        raise RuntimeError(f"weights manifest {path.name} is malformed: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise RuntimeError(f"weights manifest {path.name} is not a JSON object")
+    if "weights_sha256" not in manifest:
+        return None
+    sha = manifest["weights_sha256"]
+    if not _sha256_hex(sha):
+        raise RuntimeError(
+            f"weights manifest {path.name} weights_sha256 must be a 64-character hex digest"
+        )
+    return cast(str, sha)
 
 
 class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
@@ -1102,8 +1163,7 @@ class HostedK3Backend(_UsageTracker):
         self._api_key = api_key or os.environ.get("MOONSHOT_API_KEY", "")
         if not self._api_key:
             raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        timeout_s = _positive_seconds("timeout_s", timeout_s)
         resolved_url = api_url or os.environ.get("FX1_BASE_URL") or MOONSHOT_API_URL
         problem = hosted_api_url_problem(resolved_url)
         if problem is not None:
@@ -1373,13 +1433,12 @@ class OpenAICompatBackend(_UsageTracker):
         problem = byok_base_url_problem(url)
         if problem is not None:
             raise RuntimeError(f"{BYOK_BASE_URL_ENV} {problem}")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        resolved_timeout = _positive_seconds("timeout_s", timeout_s)
         super().__init__()
         self._url = _chat_completions_url(url)
         self._api_key = key
         self._model = mdl
-        self._timeout_s = timeout_s
+        self._timeout_s = resolved_timeout
 
     def complete(
         self,
@@ -1576,19 +1635,13 @@ class LocalFx1Backend(_UsageTracker):
         self._root = root
         # The weights sha this checkpoint's manifest pins — compared against
         # the sha a live engine advertises before we attach (see
-        # ``_verify_served_weights``). None when the dir has no readable
-        # manifest (e.g. a raw vLLM checkpoint layout) — then there is
-        # nothing to verify against and attach stays a liveness probe.
+        # ``_verify_served_weights``). None when the file is absent or the
+        # object declares no weights_sha256 (a raw vLLM layout). A present
+        # manifest that cannot be parsed is refused above.
         self._expected_weights_sha: str | None = None
         manifest_path = root / "weights.manifest.json"
         if manifest_path.is_file():
-            try:
-                manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                manifest_obj = {}
-            sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
-            if isinstance(sha, str):
-                self._expected_weights_sha = sha
+            self._expected_weights_sha = _weights_sha_pin(manifest_path)
         self._verified_attach = False
         url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
         if url:
