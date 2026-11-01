@@ -14,6 +14,7 @@ other evidence artifact.
 from __future__ import annotations
 
 import hashlib
+import math
 import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -89,8 +90,8 @@ def run_bench(
     _check_int("concurrency", concurrency, 1, _MAX_CONCURRENCY)
     _check_int("warmup", warmup, 0, _MAX_WARMUP)
     _check_int("max_tokens", max_tokens, 1, _MAX_MAX_TOKENS)
-    if timeout_s <= 0:
-        raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        raise ValueError(f"timeout_s must be finite and > 0, got {timeout_s}")
     if not prompt.strip():
         raise ValueError("prompt must not be empty")
     if len(prompt) > _MAX_PROMPT_CHARS:

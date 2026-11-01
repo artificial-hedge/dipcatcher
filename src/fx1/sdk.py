@@ -1645,8 +1645,10 @@ class Fx1Harness:
                 for name, path in outcome.artifacts.items():
                     try:
                         content = Path(path).read_bytes()
-                    except OSError:
-                        continue
+                    except OSError as exc:
+                        raise RuntimeError(
+                            f"cannot read fine-tune result artifact {name!r}: {path}"
+                        ) from exc
                     file_id = f"file-{uuid.uuid4().hex}"
                     fobj = {
                         "id": file_id,
