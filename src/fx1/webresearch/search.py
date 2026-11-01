@@ -14,6 +14,7 @@ decision enforced one layer up).
 
 from __future__ import annotations
 
+import math
 import time
 import urllib.error
 import urllib.parse
@@ -195,13 +196,28 @@ class DuckDuckGoLiteSearcher(Searcher):
         max_results: int = DEFAULT_MAX_RESULTS,
         timeout_s: float = DEFAULT_TIMEOUT_S,
     ) -> SearchResult:
+        result = SearchResult(query=query)
+        if not query.strip():
+            result.error = "query must be non-blank"
+            return result
+        if isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1:
+            result.error = "invalid max_results: must be a positive integer"
+            return result
+        try:
+            valid_timeout = (
+                not isinstance(timeout_s, bool) and math.isfinite(timeout_s) and timeout_s > 0
+            )
+        except TypeError:
+            valid_timeout = False
+        if not valid_timeout:
+            result.error = "invalid timeout_s: must be finite and > 0"
+            return result
         started = self._now()
         if self._pause_s:
             wait = self._pause_s - (self._now() - self._last_search_at)
             if wait > 0:
                 time.sleep(wait)
         self._last_search_at = self._now()
-        result = SearchResult(query=query)
         encoded = urllib.parse.urlencode({"q": query})
         for engine, endpoint in (("ddg-lite", DDG_LITE_URL), ("ddg-html", DDG_HTML_URL)):
             try:

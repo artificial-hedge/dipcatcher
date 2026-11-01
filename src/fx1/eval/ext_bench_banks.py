@@ -1054,8 +1054,14 @@ def _load_jsonl(path: str | Path, benchmark: str) -> list[BaseModel]:
     p = Path(path)
     if not p.is_file():
         raise ExternalBenchmarkSchemaError(f"benchmark file not found: {p}")
+    try:
+        lines = p.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise ExternalBenchmarkSchemaError(
+            f"{p}: cannot read benchmark file ({type(exc).__name__})"
+        ) from exc
     instances: list[BaseModel] = []
-    for lineno, raw in enumerate(p.read_text(encoding="utf-8").splitlines(), start=1):
+    for lineno, raw in enumerate(lines, start=1):
         line = raw.strip()
         if not line:
             raise ExternalBenchmarkSchemaError(
