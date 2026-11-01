@@ -65,7 +65,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --frozen --all-groups --no-build
       - name: Recompute native merges
         run: |
           uv run python scripts/sota_eval_native.py \
@@ -102,7 +102,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --frozen --all-groups --no-build
       - name: Fetch bar parquets from artifact store
         if: vars.SOTA_ARTIFACT_URI != ''
         run: |

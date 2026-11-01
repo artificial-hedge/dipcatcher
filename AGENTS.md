@@ -30,12 +30,15 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
 
 | Gate | Command |
 |---|---|
-| Lint | `make lint` (ruff check + format --check repo-wide) |
-| Types | `make typecheck` (mypy `src/quant_fund`); fx1: `uv run mypy src/fx1` |
-| Lab tests | `make test` (PR gate: not network, not slow, xdist). `make test-full` includes slow. |
-| fx1 suite | `make fx1-test` — separate lane, ~200 tests |
+| Lint | `make lint` (ruff check + format --check, mypy-strict allowlist, McCabe ratchet on `src`/`tests`) |
+| Types | `make typecheck` (mypy `src/quant_fund` + public API `--strict`); fx1: `uv run mypy src/fx1` |
+| Security | `make security` (bandit; the `ci.yml` `lint` job runs this too) |
+| Lab tests | `make test` (PR gate: not network, not slow, xdist). `make test-full` includes slow. CI shards `test` on 3.12/3.13. |
+| Local CI mirror | `make ci` — `lint` + `typecheck` + `security` + `coverage` (the `ci.yml` `lint` job + PR `test`/`coverage` gate) |
+| Other `ci.yml` jobs | `make audit`, `make mc-engine-smoke`, `make native-lint`, `make market-sim-test`, `make parity-smoke`, `make examples`, `make audit-obs`, `make diffbacktest`, `make robustness-smoke`, `make formal`, `make evidence-audit`, `make pretrade-bench`, `make stress-smoke`, `make test-durations`; GitHub-only: `package`, `container`, `test-inventory`, `perf`, `smoke`, `rust-accel`, `required-gate` (`ci-required` merge-queue check) |
+| fx1 suite | `make fx1-test` — separate lane (`fx1.yml`), ~300+ tests |
 | fx1 full gate | `make fx1-gate` — lint + types + tests + honesty + corpus smoke |
-| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen` |
+| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen`. A `v*.*.*` tag does not sign unless the latest completed `CI` run on that SHA is green and its `evidence-audit` job succeeded (`scripts/require_release_gates.py`, `release.yml` preflight). |
 
 ## Honesty contract (hard rules — do not weaken)
 

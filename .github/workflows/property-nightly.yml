@@ -26,7 +26,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras
+        run: uv sync --frozen --all-groups --all-extras --no-build
       - name: Hypothesis adversarial suite (nightly profile)
         env:
           HYPOTHESIS_PROFILE: nightly

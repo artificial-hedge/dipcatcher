@@ -43,9 +43,9 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 	# partial data files and applies the same threshold once.
 	uv run pytest -n auto --dist loadfile -m "not network and not slow" --cov --cov-report=term-missing --cov-report=xml
 
-lint: ## Ruff check + format check repo-wide
-	uv run ruff check .
-	uv run ruff format --check .
+lint: ## Ruff check + format check (matches ci.yml lint job scope)
+	uv run ruff check src tests
+	uv run ruff format --check src tests
 	uv run python scripts/check_mypy_strict_allowlist.py
 	uv run python scripts/check_mccabe_ratchet.py
 
@@ -117,7 +117,7 @@ native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` fi
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
-ci: lint typecheck coverage ## Local mirror of the CI gate
+ci: lint typecheck security coverage ## Local mirror of the CI gate
 
 code-inventory: ## Report tracked semantic Python LOC and feature/test counts
 	uv run python scripts/code_quality_inventory.py --summary-only
