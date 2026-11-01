@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import os
 import random
+import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 import numpy as np
 import polars as pl
+import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -21,6 +24,26 @@ from quant_fund.utils.hashing import (
 )
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 from quant_fund.utils.seeds import set_global_seed
+
+
+@pytest.fixture(autouse=True)
+def _restore_process_rng() -> Iterator[None]:
+    """Seed checks must not leak PYTHONHASHSEED or RNG state to later tests."""
+    py_state = random.getstate()
+    np_state = np.random.get_state()
+    hashseed = os.environ.get("PYTHONHASHSEED")
+    torch = sys.modules.get("torch")
+    torch_state = torch.get_rng_state() if torch is not None else None
+    yield
+    random.setstate(py_state)
+    np.random.set_state(np_state)
+    if hashseed is None:
+        os.environ.pop("PYTHONHASHSEED", None)
+    else:
+        os.environ["PYTHONHASHSEED"] = hashseed
+    if torch is not None and torch_state is not None:
+        torch.set_rng_state(torch_state)
+
 
 # ---------------- hashing ----------------
 

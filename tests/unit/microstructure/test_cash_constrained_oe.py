@@ -17,6 +17,8 @@ Paper corrections encoded below (see module docstring of
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import numpy as np
 import pytest
 
@@ -29,6 +31,14 @@ from quant_fund.execution.cash_constrained_oe import (
     solve_multiasset_oe,
     unconstrained_oe,
 )
+
+
+@pytest.fixture(autouse=True)
+def _restore_numpy_rng() -> Iterator[None]:
+    state = np.random.get_state()
+    yield
+    np.random.set_state(state)
+
 
 # Canonical SYNTHETIC configuration (deterministic convex program; the only
 # randomness in this file is the seeded Monte-Carlo in TestSimulation).
