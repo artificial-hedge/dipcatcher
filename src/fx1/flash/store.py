@@ -29,7 +29,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from fx1.interactive.profiles import config_dir
 
@@ -93,6 +93,18 @@ class FlashEntry(BaseModel):
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def _entry_problem(raw: dict[str, Any]) -> str | None:
+    """Why this object is not a flash entry, or None when it validates."""
+    entry_id = raw.get("id")
+    if not isinstance(entry_id, str) or not entry_id:
+        return "missing id"
+    try:
+        FlashEntry.model_validate(raw)
+    except ValidationError:
+        return "invalid entry"
+    return None
 
 
 def _nofollow_stat(path: Path, directory_fd: int) -> os.stat_result | None:
@@ -216,9 +228,11 @@ class FlashStore:
                         if isinstance(dead, str):
                             by_id.pop(dead, None)
                         continue
-                    entry_id = raw.get("id")
-                    if isinstance(entry_id, str) and entry_id:
-                        by_id[entry_id] = raw
+                    problem = _entry_problem(raw)
+                    if problem is not None:
+                        errors.append(f"line {lineno}: {problem}")
+                        continue
+                    by_id[str(raw["id"])] = raw
             return list(by_id.values()), errors
 
     def _append_line(self, raw: dict[str, Any]) -> None:
@@ -239,13 +253,7 @@ class FlashStore:
         return errors
 
     def all(self) -> list[FlashEntry]:
-        entries: list[FlashEntry] = []
-        for raw in self._load_raw()[0]:
-            try:
-                entries.append(FlashEntry.model_validate(raw))
-            except Exception:  # noqa: BLE001 — a bad line must not hide the rest
-                continue
-        return entries
+        return [FlashEntry.model_validate(raw) for raw in self._load_raw()[0]]
 
     def get(self, entry_id: str) -> FlashEntry | None:
         for entry in self.all():

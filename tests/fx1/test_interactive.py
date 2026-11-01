@@ -149,6 +149,24 @@ def test_resolve_endpoint_stored_wins_over_env(
     assert profiles.resolve_endpoint("fx1") == (SECRET_FX1, MOONSHOT_API_URL)
 
 
+def test_corrupt_endpoint_store_does_not_look_empty(tmp_path: Path, monkeypatch) -> None:
+    path = tmp_path / "credentials.json"
+    path.write_text("{", encoding="utf-8")
+    monkeypatch.setenv(profiles.ENV_API_KEY, "env-key")
+    with pytest.raises(profiles.ProfileStoreError):
+        profiles.resolve_endpoint("fx1", path=path)
+    with pytest.raises(profiles.ProfileStoreError):
+        profiles.set_endpoint("fx1", SECRET_FX1, path=path)
+    assert path.read_text(encoding="utf-8") == "{"
+
+
+def test_endpoint_store_rejects_a_non_object(tmp_path: Path) -> None:
+    path = tmp_path / "credentials.json"
+    path.write_text("[]", encoding="utf-8")
+    with pytest.raises(profiles.ProfileStoreError):
+        profiles.list_models(path=path)
+
+
 def test_resolve_endpoint_env_fallback(
     isolated_store: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

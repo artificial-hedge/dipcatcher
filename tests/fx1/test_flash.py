@@ -1,5 +1,6 @@
 """Flash context — store, retrieval, refresh. Offline; no network, no model."""
 
+import json
 import os
 import stat
 import threading
@@ -82,6 +83,23 @@ def test_torn_last_line_reported_not_fatal(store: FlashStore) -> None:
         fh.write('{"schema_version": "fx1.flash-entry/v1", "id": "x", "te\n')
     assert store.get("x") is None
     assert store.read_errors() == ["line 2: not JSON"]
+
+
+def test_invalid_revision_is_reported_and_keeps_the_previous(store: FlashStore) -> None:
+    entry_id = _add_inflation(store)
+    with store.path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"id": entry_id}) + "\n")
+    kept = store.get(entry_id)
+    assert kept is not None
+    assert kept.text.startswith("US inflation")
+    assert store.read_errors() == ["line 2: invalid entry"]
+
+
+def test_invalid_entry_without_a_prior_is_absent(store: FlashStore) -> None:
+    store.path.parent.mkdir(parents=True, exist_ok=True)
+    store.path.write_text(json.dumps({"id": "bad"}) + "\n", encoding="utf-8")
+    assert store.get("bad") is None
+    assert store.read_errors() == ["line 1: invalid entry"]
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX permission contract")
