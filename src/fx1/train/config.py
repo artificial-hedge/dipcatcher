@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class LadderStage(StrEnum):
@@ -22,6 +22,8 @@ class LadderStage(StrEnum):
 
 
 class LoRAConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
     rank: int = Field(default=16, ge=1, le=512)
     alpha: int = Field(default=32, ge=1)
     dropout: float = Field(default=0.05, ge=0.0, le=0.5)
@@ -32,6 +34,8 @@ class LoRAConfig(BaseModel):
 
 class TrainConfig(BaseModel):
     """Validated, cost-disclosed fx-1 training run configuration."""
+
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     run_name: str
     stage: LadderStage

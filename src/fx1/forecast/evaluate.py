@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
+from numbers import Integral
 from typing import Any, cast
 
 import numpy as np
@@ -53,8 +54,9 @@ def json_ready(value: Any) -> Any:
 
 def forward_simple_returns(bars: pl.DataFrame, horizon: int) -> pl.DataFrame:
     """Simple return from t to t+h. This is a label. Do not pass it to ``predict``."""
-    if horizon < 1:
-        raise ValueError("horizon must be >= 1")
+    if isinstance(horizon, bool) or not isinstance(horizon, Integral) or horizon < 1:
+        raise ValueError("horizon must be an integer >= 1")
+    horizon = int(horizon)
     frame = normalize_bar_times(bars).sort(["security_id", "event_time"])
     return frame.with_columns(
         (pl.col("close").shift(-horizon).over("security_id") / pl.col("close") - 1.0).alias(
