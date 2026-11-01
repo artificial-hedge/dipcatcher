@@ -12,6 +12,59 @@ from typing import Any
 from quant_fund.utils.atomicio import atomic_write_text
 
 
+def _as_section(value: object) -> dict[str, Any]:
+    """A present object section. Anything else is absent, not a silent pass."""
+    if isinstance(value, dict) and value:
+        return value
+    return {}
+
+
+def _evidence_warnings(
+    candidates: dict[str, Any],
+    provenance: object,
+    health: object,
+    promotion: object,
+) -> list[str]:
+    """Warnings for missing or unusable sections.
+
+    A truthy non-object (a string, a list) is not a section. Treating it as
+    present would let ``status`` become ``complete`` without a real receipt.
+    """
+    warnings: list[str] = []
+    if not candidates:
+        warnings.append("candidate_metrics_missing")
+    provenance_map = _as_section(provenance)
+    health_map = _as_section(health)
+    promotion_map = _as_section(promotion)
+    if not provenance_map:
+        warnings.append("provenance_missing")
+    if not health_map:
+        warnings.append("health_report_missing")
+    if not promotion_map:
+        warnings.append("promotion_receipt_missing")
+    artifact_hash = provenance_map.get("artifact_sha256")
+    if not isinstance(artifact_hash, str) or len(artifact_hash) != 64:
+        warnings.append("artifact_hash_missing_or_invalid")
+    warnings.extend(_provenance_warnings(provenance_map))
+    if isinstance(promotion, dict) and promotion.get("promote") is not True:
+        warnings.append("promotion_not_approved")
+    if isinstance(health, dict) and health.get("status") != "ok":
+        warnings.append("health_not_ok")
+    return warnings
+
+
+def _provenance_warnings(provenance_map: dict[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    artifact_hash = provenance_map.get("artifact_sha256")
+    if not isinstance(artifact_hash, str) or len(artifact_hash) != 64:
+        warnings.append("artifact_hash_missing_or_invalid")
+    if provenance_map.get("manifest_valid") is not True:
+        warnings.append("artifact_manifest_not_verified")
+    if str(provenance_map.get("data_source", "")).upper() == "SYNTHETIC":
+        warnings.append("synthetic_evidence_not_promotable")
+    return warnings
+
+
 def build_evidence_report(
     *,
     candidates: dict[str, Any],
@@ -23,34 +76,15 @@ def build_evidence_report(
 
     Missing sections are recorded as warnings; the function never infers
     readiness from absent metrics and never changes promotion state.
+    A non-object section is missing, not a pass.
     """
-    warnings: list[str] = []
-    if not candidates:
-        warnings.append("candidate_metrics_missing")
-    if not provenance:
-        warnings.append("provenance_missing")
-    if not health:
-        warnings.append("health_report_missing")
-    if not promotion:
-        warnings.append("promotion_receipt_missing")
-    artifact_hash = (provenance or {}).get("artifact_sha256")
-    if not isinstance(artifact_hash, str) or len(artifact_hash) != 64:
-        warnings.append("artifact_hash_missing_or_invalid")
-    if (provenance or {}).get("manifest_valid") is not True:
-        warnings.append("artifact_manifest_not_verified")
-    if isinstance(promotion, dict) and promotion.get("promote") is not True:
-        warnings.append("promotion_not_approved")
-    if isinstance(health, dict) and health.get("status") != "ok":
-        warnings.append("health_not_ok")
-    synthetic = str((provenance or {}).get("data_source", "")).upper() == "SYNTHETIC"
-    if synthetic:
-        warnings.append("synthetic_evidence_not_promotable")
+    warnings = _evidence_warnings(candidates, provenance, health, promotion)
     return {
         "schema": "evidence_report.v1",
         "candidates": candidates,
-        "provenance": provenance or {},
-        "health": health or {},
-        "promotion": promotion or {},
+        "provenance": provenance if isinstance(provenance, dict) else {},
+        "health": health if isinstance(health, dict) else {},
+        "promotion": promotion if isinstance(promotion, dict) else {},
         "warnings": sorted(set(warnings)),
         "status": "insufficient_evidence" if warnings else "complete",
         "research_only": True,

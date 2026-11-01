@@ -770,7 +770,6 @@ src/quant_fund/registry/lineage_dag.py:lineage_dag 12
 src/quant_fund/registry/mlflow_store.py:promotion_decision 18
 src/quant_fund/registry/schema_drift.py:schema_drift 12
 src/quant_fund/reporting/regime_performance.py:regime_performance_markdown 12
-src/quant_fund/reporting/report.py:build_evidence_report 10
 src/quant_fund/reporting/tearsheet.py:tearsheet_markdown 20
 src/quant_fund/research/admission.py:admission_check 17
 src/quant_fund/research/admission.py:admission_contract_errors 15
