@@ -62,7 +62,7 @@ jobs:
       - name: Sync
         run: uv sync --frozen --all-groups --no-build
       - name: Layering gate
-        run: uv run pytest tests/unit/test_proofcore_layering.py -q
+        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/unit/test_proofcore_layering.py -q
 
   # Bundle verification checks hashes, sidecars, signatures, and recomputed
   # metrics. Historical replay remains closed until decision-time PIT reads.
@@ -232,7 +232,7 @@ jobs:
         # serve surface it never imports are about half the statements and
         # sat near 0%. tests/unit/fx1_serve executes those modules. The
         # union measured 91.19% (2026-10-15); floor is measured-1 via pyproject.
-        run: uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing
+        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing
 
   required-gate:
     name: proofcore-required

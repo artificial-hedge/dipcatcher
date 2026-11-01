@@ -18,29 +18,11 @@ import subprocess
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 ZERO_SHA = "0" * 40
 
 _EVIDENCE = frozenset({"success", "failure", "cancelled"})
-
-
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
-def _resolve_repo_file(path_arg: str) -> Path:
-    """Resolve a CLI path and reject anything outside the repository root."""
-
-    root = _repo_root().resolve()
-    candidate = Path(path_arg)
-    resolved = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
-    if not resolved.is_relative_to(root):
-        raise ValueError(f"commits-json path escapes repository root: {path_arg!r}")
-    if not resolved.is_file():
-        raise ValueError(f"commits-json file not found: {path_arg!r}")
-    return resolved
 
 
 @dataclass(frozen=True)
@@ -320,8 +302,7 @@ def _gh_json(path: str) -> Any:
     return json.loads(proc.stdout)
 
 
-def _load_commits(path: Path) -> list[CommitEvidence]:
-    raw = json.loads(path.read_text(encoding="utf-8"))
+def _parse_commits_payload(raw: Any) -> list[CommitEvidence]:
     if not isinstance(raw, list):
         raise ValueError("commits-json must be a list")
     commits: list[CommitEvidence] = []
@@ -356,7 +337,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.commits_json:
-            commits = _load_commits(_resolve_repo_file(args.commits_json))
+            raw = args.commits_json.strip()
+            if not raw.startswith("["):
+                raise ValueError("--commits-json must be inline JSON array")
+            commits = _parse_commits_payload(json.loads(raw))
         elif args.event == "pull_request":
             commits = []
         else:

@@ -99,6 +99,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.python }}" = "3.14" ]; then
+            # NOSONAR githubactions:S8541 — cp314 has no wheels for some locked sdists.
             uv sync --frozen --all-groups --all-extras
           else
             uv sync --frozen --all-groups --all-extras --no-build
@@ -110,7 +111,7 @@ jobs:
           collect_out="$RUNNER_TEMP/matrix-collect.txt"
           collect_err="$RUNNER_TEMP/matrix-collect.err"
           set +e
-          uv run pytest --collect-only -q -m "not network" >"$collect_out" 2>"$collect_err"
+          uv run --frozen --no-build --no-binary-package fx-1 pytest --collect-only -q -m "not network" >"$collect_out" 2>"$collect_err"
           rc=$?
           set -e
           if [ "$rc" -ne 0 ]; then
@@ -186,6 +187,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.python }}" = "3.14" ]; then
+            # NOSONAR githubactions:S8541 — cp314 has no wheels for some locked sdists.
             uv sync --frozen --all-groups --all-extras
           else
             uv sync --frozen --all-groups --all-extras --no-build
@@ -234,4 +236,4 @@ jobs:
           # xargs -n caps each pytest argv — shards now select ~1300
           # files, far past the Windows 32k command-line limit; batches
           # keep sorted order and xargs exits nonzero if any batch fails.
-          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run pytest -q -m "not network" -n 2 --dist loadfile
+          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run --frozen --no-build --no-binary-package fx-1 pytest -q -m "not network" -n 2 --dist loadfile
