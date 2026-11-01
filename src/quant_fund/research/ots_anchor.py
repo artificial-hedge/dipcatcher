@@ -45,6 +45,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_bounded
 
 OTS_DIR = Path("quality/timestamps/ots")
 OTS_MANIFEST = Path("quality/timestamps/ots_anchors.json")
@@ -300,7 +301,7 @@ def stamp_ots(
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-                body = resp.read()
+                body = read_bounded(resp, timeout=timeout, max_bytes=DEFAULT_MAX_BODY)
             # The response is a timestamp stream rooted at our digest —
             # reject anything that doesn't parse or carries no attestation.
             probe: list[dict[str, Any]] = []
@@ -564,7 +565,7 @@ def verify_burial(header: bytes, successors: list[bytes]) -> dict[str, Any]:
 def _get(url: str, timeout: float) -> bytes:
     req = urllib.request.Request(url, headers={"Accept": "application/octet-stream"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        return bytes(resp.read())
+        return read_bounded(resp, timeout=timeout, max_bytes=DEFAULT_MAX_BODY)
 
 
 def _fetch_header(height: int, *, explorer: str, timeout: float) -> bytes | None:

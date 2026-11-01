@@ -37,6 +37,7 @@ from typing import Any
 
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_bounded
 
 BUNDLE_SCHEMA = "auditor_bundle.v1"
 BUNDLE_MEMBERS: tuple[str, ...] = (
@@ -74,7 +75,9 @@ SPINE_PREFIXES: tuple[str, ...] = (
 
 def _fetch_json(url: str, timeout: int = 30) -> dict[str, Any]:
     with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        result: dict[str, Any] = json.loads(resp.read())
+        result: dict[str, Any] = json.loads(
+            read_bounded(resp, timeout=float(timeout), max_bytes=DEFAULT_MAX_BODY)
+        )
         return result
 
 
@@ -220,7 +223,9 @@ def verify_bundle(
             with urllib.request.urlopen(  # noqa: S310  # nosec B310
                 rekor_url.rstrip("/") + "/api/v1/log/publicKey", timeout=timeout
             ) as resp:
-                decoded["quality/rekor_pubkey.pem"] = resp.read()
+                decoded["quality/rekor_pubkey.pem"] = read_bounded(
+                    resp, timeout=float(timeout), max_bytes=DEFAULT_MAX_BODY
+                )
         except OSError:
             pass  # fall back to the bundle's pinned copy
 

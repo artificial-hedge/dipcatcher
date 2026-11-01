@@ -15,6 +15,7 @@ import contextlib
 import http.client
 import ipaddress
 import json
+import math
 import os
 import shlex
 import socket
@@ -33,6 +34,7 @@ from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
+from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_timeout
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
@@ -206,7 +208,7 @@ def _env_float(name: str, override: float | None, default: float) -> float:
     if raw is None or raw == "":
         return default
     val = float(raw)
-    if val <= 0:
+    if not math.isfinite(val) or val <= 0:
         raise ValueError(f"{name} must be positive, got {val!r}")
     return val
 
@@ -303,11 +305,13 @@ def _byok_address_allowed(
     return any(address in network for network in networks)
 
 
-def _byok_resolved_addresses(host: str, port: int, *, allow_private: bool) -> tuple[str, ...]:
+def _byok_resolved_addresses(
+    host: str, port: int, *, allow_private: bool, timeout: float
+) -> tuple[str, ...]:
     """Resolve once, reject a mixed-policy answer set, and return numeric IPs."""
     addresses: list[str] = []
-    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
-        host, port, type=socket.SOCK_STREAM
+    for family, socktype, _proto, _canonname, sockaddr in bounded_getaddrinfo(
+        host, port, timeout, type=socket.SOCK_STREAM
     ):
         if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
             continue
@@ -371,7 +375,9 @@ def _open_byok_pinned(
         raise urllib.error.URLError(ValueError("BYOK endpoint has no host"))
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
     try:
-        addresses = _byok_resolved_addresses(host, port, allow_private=allow_private)
+        addresses = _byok_resolved_addresses(
+            host, port, allow_private=allow_private, timeout=timeout_s
+        )
     except (OSError, ValueError) as exc:
         raise urllib.error.URLError(exc) from exc
     target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
@@ -1102,8 +1108,7 @@ class HostedK3Backend(_UsageTracker):
         self._api_key = api_key or os.environ.get("MOONSHOT_API_KEY", "")
         if not self._api_key:
             raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        timeout_s = require_timeout(timeout_s, name="timeout_s")
         resolved_url = api_url or os.environ.get("FX1_BASE_URL") or MOONSHOT_API_URL
         problem = hosted_api_url_problem(resolved_url)
         if problem is not None:
@@ -1373,8 +1378,7 @@ class OpenAICompatBackend(_UsageTracker):
         problem = byok_base_url_problem(url)
         if problem is not None:
             raise RuntimeError(f"{BYOK_BASE_URL_ENV} {problem}")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        require_timeout(timeout_s, name="timeout_s")
         super().__init__()
         self._url = _chat_completions_url(url)
         self._api_key = key

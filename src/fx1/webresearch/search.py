@@ -24,6 +24,9 @@ from html.parser import HTMLParser
 from typing import Any
 
 from fx1.webresearch.fetch import DEFAULT_USER_AGENT
+from quant_fund.utils.net_timeout import read_bounded
+
+_MAX_SEARCH_BYTES = 512 * 1024
 
 DDG_LITE_URL = "https://lite.duckduckgo.com/lite/"
 DDG_HTML_URL = "https://html.duckduckgo.com/html/"
@@ -183,10 +186,10 @@ class DuckDuckGoLiteSearcher(Searcher):
         request = urllib.request.Request(url, headers={"User-Agent": self._user_agent})
         if self._open_fn is not None:
             with self._open_fn(request, timeout_s) as response:
-                return bytes(response.read())
+                return read_bounded(response, timeout=timeout_s, max_bytes=_MAX_SEARCH_BYTES)
         # Scheme and host are allowlisted immediately above.
         with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
-            return bytes(response.read())
+            return read_bounded(response, timeout=timeout_s, max_bytes=_MAX_SEARCH_BYTES)
 
     def search(
         self,
