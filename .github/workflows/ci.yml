@@ -50,19 +50,19 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Ruff
-        run: uv run --frozen --no-build --no-binary-package fx-1 ruff check src tests
+        run: uv run --locked --no-build --no-binary-package fx-1 ruff check src tests
       - name: Ruff format check
-        run: uv run --frozen --no-build --no-binary-package fx-1 ruff format --check src tests
+        run: uv run --locked --no-build --no-binary-package fx-1 ruff format --check src tests
       - name: Mypy
-        run: uv run --frozen --no-build --no-binary-package fx-1 mypy src/quant_fund
+        run: uv run --locked --no-build --no-binary-package fx-1 mypy src/quant_fund
       - name: Mypy strict allowlist
-        run: uv run --frozen --no-build --no-binary-package fx-1 python scripts/check_mypy_strict_allowlist.py
+        run: uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mypy_strict_allowlist.py
       - name: McCabe complexity ratchet
-        run: uv run --frozen --no-build --no-binary-package fx-1 python scripts/check_mccabe_ratchet.py
+        run: uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mccabe_ratchet.py
       - name: Mypy public API (strict)
-        run: uv run --frozen --no-build --no-binary-package fx-1 mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
+        run: uv run --locked --no-build --no-binary-package fx-1 mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
       - name: Static security analysis
         run: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
 
@@ -79,7 +79,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Lockfile consistency
         run: uv lock --check
       - name: Dependency vulnerability audit
@@ -117,7 +117,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync locked dependencies without installing the workspace
-        run: uv sync --frozen --all-groups --no-install-project --no-build
+        run: uv sync --locked --all-groups --no-install-project --no-build
       - name: Build wheel and source distribution
         run: uv build
       - name: Install wheel and smoke-test the installed console scripts
@@ -189,7 +189,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Build test-file inventory
         id: inv
         env:
@@ -210,7 +210,7 @@ jobs:
           collect_out="$RUNNER_TEMP/ci-collect.txt"
           collect_err="$RUNNER_TEMP/ci-collect.err"
           set +e
-          uv run --frozen --no-build --no-binary-package fx-1 pytest --collect-only -q -m "$marker" >"$collect_out" 2>"$collect_err"
+          uv run --locked --no-build --no-binary-package fx-1 pytest --collect-only -q -m "$marker" >"$collect_out" 2>"$collect_err"
           rc=$?
           set -e
           if [ "$rc" -ne 0 ]; then
@@ -290,7 +290,7 @@ jobs:
           restore-keys: |
             dipcatcher-session-${{ runner.os }}-py${{ matrix.python }}-
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Resolve suite marker
         id: suite
         env:
@@ -355,7 +355,7 @@ jobs:
             # Partial shards stay under the project threshold; the coverage job combines them.
             args+=(--cov --cov-report=xml:coverage.xml --cov-fail-under=0)
           fi
-          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run --frozen --no-build --no-binary-package fx-1 pytest "${args[@]}"
+          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run --locked --no-build --no-binary-package fx-1 pytest "${args[@]}"
       - name: Stage coverage data
         if: matrix.python == '3.12' && !cancelled()
         run: |
@@ -393,7 +393,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Download coverage shards
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -429,9 +429,9 @@ jobs:
             exit 1
           fi
           cd combined
-          uv run --frozen --no-build --no-binary-package fx-1 coverage combine
-          uv run --frozen --no-build --no-binary-package fx-1 coverage xml -o "$GITHUB_WORKSPACE/coverage.xml"
-          uv run --frozen --no-build --no-binary-package fx-1 coverage report
+          uv run --locked --no-build --no-binary-package fx-1 coverage combine
+          uv run --locked --no-build --no-binary-package fx-1 coverage xml -o "$GITHUB_WORKSPACE/coverage.xml"
+          uv run --locked --no-build --no-binary-package fx-1 coverage report
       - name: Upload coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -452,16 +452,16 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --group dev --no-build
+        run: uv sync --locked --group dev --no-build
       - name: Synthetic performance subset
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 pytest tests/perf -q -m "not perf_full" -o addopts= --strict-markers \
+          uv run --locked --no-build --no-binary-package fx-1 pytest tests/perf -q -m "not perf_full" -o addopts= --strict-markers \
             --benchmark-only --benchmark-min-rounds=5 --benchmark-max-time=2 \
             --benchmark-warmup=on --benchmark-disable-gc \
             --benchmark-json=perf-ci.json
       - name: Flag calibration-normalized regressions
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 python tests/perf/check_regression.py perf-ci.json \
+          uv run --locked --no-build --no-binary-package fx-1 python tests/perf/check_regression.py perf-ci.json \
             tests/perf/baselines/baseline.json --threshold 0.50 --ci
       - name: Upload performance results
         if: always()
@@ -488,24 +488,24 @@ jobs:
       - name: Sync
         # Match the test job and AGENTS.md: research smoke pulls soft_blobs /
         # ARL MM paths that need the optional torch `nn` extra.
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Run paper and analytics smoke tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest -q -m smoke --strict-markers
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest -q -m smoke --strict-markers
       - name: Synthetic research smoke
         # Required families alone exercise the seal/verify path; the live-optional
         # catalog is thousands of benches and starves the smoke budget.
         env:
           DIPCATCHER_RESEARCH_REQUIRED_ONLY: "1"
-        run: uv run --frozen --no-build --no-binary-package fx-1 dipcatcher research --config configs/research.yaml
+        run: uv run --locked --no-build --no-binary-package fx-1 dipcatcher research --config configs/research.yaml
       - name: Data lineage health
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 dipcatcher doctor --config configs/research.yaml | tee doctor.txt
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher doctor --config configs/research.yaml | tee doctor.txt
           grep -q '^data_manifest: ok$' doctor.txt
           grep -q '^live_allowed: False$' doctor.txt
       - name: Paper shadow smoke
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 dipcatcher paper --config configs/paper.yaml --max-steps 2 > paper-smoke.json
-          uv run --frozen --no-build --no-binary-package fx-1 python - <<'PY'
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher paper --config configs/paper.yaml --max-steps 2 > paper-smoke.json
+          uv run --locked --no-build --no-binary-package fx-1 python - <<'PY'
           import json
           from pathlib import Path
           from quant_fund.paper.ledger import validate_ledger_schema
@@ -537,8 +537,8 @@ jobs:
           if-no-files-found: error
       - name: Validate research artifact
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 dipcatcher verify-research
-          uv run --frozen --no-build --no-binary-package fx-1 python - <<'PY'
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher verify-research
+          uv run --locked --no-build --no-binary-package fx-1 python - <<'PY'
           import json
           from pathlib import Path
           from quant_fund.research.verify import REQUIRED_BENCHMARK_FAMILIES
@@ -603,17 +603,17 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Monte Carlo engine unit tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/unit/mc_engine -q -m "not slow"
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest tests/unit/mc_engine -q -m "not slow"
       - name: CLI smoke
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 python -m quant_fund.mc_engine --help
-          uv run --frozen --no-build --no-binary-package fx-1 python -m quant_fund.mc_engine run \
+          uv run --locked --no-build --no-binary-package fx-1 python -m quant_fund.mc_engine --help
+          uv run --locked --no-build --no-binary-package fx-1 python -m quant_fund.mc_engine run \
             --paths 1500 --steps 8 --workers 2 --backend process \
             --chunk-size 500 --seed 1 --shock-mode antithetic --no-progress \
             > mc-engine-smoke.json
-          uv run --frozen --no-build --no-binary-package fx-1 python - <<'PY'
+          uv run --locked --no-build --no-binary-package fx-1 python - <<'PY'
           import json
           from pathlib import Path
           doc = json.loads(Path("mc-engine-smoke.json").read_text())
@@ -661,7 +661,7 @@ jobs:
           restore-keys: |
             cargo-quant-core-${{ runner.os }}-
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Install maturin
         run: uv pip install "maturin>=1.7,<2"
       - name: Rustfmt and clippy
@@ -670,9 +670,9 @@ jobs:
           cargo fmt --check
           cargo clippy --locked --all-targets -- -D warnings
       - name: Build extension
-        run: uv run --frozen --no-build --no-binary-package fx-1 maturin develop --release --manifest-path rust/quant_core/Cargo.toml
+        run: uv run --locked --no-build --no-binary-package fx-1 maturin develop --release --manifest-path rust/quant_core/Cargo.toml
       - name: Parity tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest -q -m native tests/property tests/unit tests/native
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest -q -m native tests/property tests/unit tests/native
 
   market-sim:
     runs-on: instabox-large
@@ -687,11 +687,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: C compiler
         run: cc --version
       - name: Market simulator smoke
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest -q tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest -q tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"
 
   parity-smoke:
     runs-on: instabox-large
@@ -706,7 +706,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Parity unit tests and SYNTHETIC smoke
         run: make parity-smoke
       - name: Upload parity smoke report
@@ -731,7 +731,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Examples gallery
         run: make examples
 
@@ -748,14 +748,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Audit ledger and observability tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/unit/audit tests/unit/observe -q
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest tests/unit/audit tests/unit/observe -q
       - name: Types for the new packages
-        run: uv run --frozen --no-build --no-binary-package fx-1 mypy src/quant_fund/audit src/quant_fund/observe
+        run: uv run --locked --no-build --no-binary-package fx-1 mypy src/quant_fund/audit src/quant_fund/observe
       - name: Observability config parses
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 python -c "import json, pathlib, yaml; root = pathlib.Path('deploy/observability'); yaml.safe_load((root / 'slo.yml').read_text()); yaml.safe_load((root / 'docker-compose.yml').read_text()); yaml.safe_load((root / 'otel-collector.yaml').read_text()); yaml.safe_load((root / 'prometheus.yml').read_text()); json.loads((root / 'grafana/dashboards/dipcatcher.json').read_text())"
+          uv run --locked --no-build --no-binary-package fx-1 python -c "import json, pathlib, yaml; root = pathlib.Path('deploy/observability'); yaml.safe_load((root / 'slo.yml').read_text()); yaml.safe_load((root / 'docker-compose.yml').read_text()); yaml.safe_load((root / 'otel-collector.yaml').read_text()); yaml.safe_load((root / 'prometheus.yml').read_text()); json.loads((root / 'grafana/dashboards/dipcatcher.json').read_text())"
       - name: Compose config
         run: docker compose -f deploy/observability/docker-compose.yml config
 
@@ -772,9 +772,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync JAX extra
-        run: uv sync --frozen --group dev --extra jax --no-build
+        run: uv sync --locked --group dev --extra jax --no-build
       - name: CPU differentiable backtest
-        run: JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" uv run --frozen --no-build --no-binary-package fx-1 pytest -q tests/unit/diffbacktest
+        run: JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" uv run --locked --no-build --no-binary-package fx-1 pytest -q tests/unit/diffbacktest
 
   robustness-smoke:
     runs-on: instabox-large
@@ -789,11 +789,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Robustness tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest -q tests/unit/robustness tests/property/test_robustness_bounds.py
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest -q tests/unit/robustness tests/property/test_robustness_bounds.py
       - name: Certifier smoke
-        run: uv run --frozen --no-build --no-binary-package fx-1 python -m quant_fund.robustness
+        run: uv run --locked --no-build --no-binary-package fx-1 python -m quant_fund.robustness
 
   formal:
     runs-on: instabox-large
@@ -812,13 +812,13 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: TLC downloader regression tests (offline)
         run: python scripts/test_run_tlc.py
       - name: TLC order-lifecycle model check
         run: bash scripts/run_tlc.sh
       - name: SMT proofs, conformance, and stateful tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/formal -q --tb=short
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest tests/formal -q --tb=short
 
   evidence-audit:
     runs-on: instabox-large
@@ -839,7 +839,7 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         id: sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Re-verify every committed receipt (strict)
         id: evidence-audit
         # make evidence-audit runs every gate (including the seven integrity
@@ -907,7 +907,7 @@ jobs:
                 exit 0 ;;
             esac
             set +e
-            result=$(uv run --frozen --no-build --no-binary-package fx-1 -q python -m quant_fund.research.evidence_base \
+            result=$(uv run --locked --no-build --no-binary-package fx-1 -q python -m quant_fund.research.evidence_base \
               --event push \
               --head "$GITHUB_SHA" \
               --push-before "$PUSH_BEFORE" \
@@ -1026,11 +1026,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Pre-trade unit and property tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest -q tests/unit/pretrade tests/property/test_pretrade_risk.py
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest -q tests/unit/pretrade tests/property/test_pretrade_risk.py
       - name: Hot-path latency gate
-        run: uv run --frozen --no-build --no-binary-package fx-1 python -m quant_fund.pretrade.bench --gate --json-out pretrade-latency.json
+        run: uv run --locked --no-build --no-binary-package fx-1 python -m quant_fund.pretrade.bench --gate --json-out pretrade-latency.json
       - name: Upload latency report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -1051,16 +1051,16 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Fast stress tests
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest -q -m "not network and not slow" tests/unit/stress
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest -q -m "not network and not slow" tests/unit/stress
       - name: Catalog report smoke
         run: |
-          uv run --frozen --no-build --no-binary-package fx-1 dipcatcher stress crises | tee crises.txt
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher stress crises | tee crises.txt
           grep -q $'crash_1987\thistorical' crises.txt
           grep -q $'rates_2022\thistorical' crises.txt
           grep -q $'dfast_2025_severely_adverse\thypothetical' crises.txt
-          uv run --frozen --no-build --no-binary-package fx-1 dipcatcher stress report \
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher stress report \
             --strategy configs/stress_research.yaml \
             --out stress-report.md \
             --format markdown
@@ -1099,7 +1099,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Regenerate shard durations
         run: make test-durations
       - name: Upload .test_durations

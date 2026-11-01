@@ -42,6 +42,6 @@ jobs:
           python-version: "3.12"
       - name: Import boundary check
         # stdlib-only script; --no-project avoids syncing the workspace env.
-        run: uv run --no-project python scripts/check_import_boundaries.py
+        run: uv run --locked --no-build --no-project python scripts/check_import_boundaries.py
       - name: Checker unit tests
-        run: uv run --no-project python -m unittest tests.unit.arch.test_import_boundaries
+        run: uv run --locked --no-build --no-project python -m unittest tests.unit.arch.test_import_boundaries

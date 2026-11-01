@@ -31,19 +31,19 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Hypothesis adversarial suite (bounded CI profile)
         env:
           HYPOTHESIS_PROFILE: ci
           MLFLOW_DISABLE_AGENT_HINT: "1"
         run: |
           set -o pipefail
-          start=$(uv run python -c 'import time; print(time.time())')
-          uv run pytest -q --durations=20 -p no:cacheprovider \
+          start=$(uv run --locked --no-build --no-binary-package fx-1 python -c 'import time; print(time.time())')
+          uv run --locked --no-build --no-binary-package fx-1 pytest -q --durations=20 -p no:cacheprovider \
             tests/property/test_adversarial_costs.py \
             tests/property/test_adversarial_returns_and_sizing.py \
             tests/property/test_adversarial_backtest.py \
             tests/property/test_adversarial_lookahead.py \
             tests/property/test_adversarial_resample_and_sources.py \
             tests/property/test_adversarial_receipts.py
-          uv run python -c "import time; print('ELAPSED_SEC {:.3f}'.format(time.time() - float('${start}')))"
+          uv run --locked --no-build --no-binary-package fx-1 python -c "import time; print('ELAPSED_SEC {:.3f}'.format(time.time() - float('${start}')))"

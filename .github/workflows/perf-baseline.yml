@@ -40,9 +40,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --group dev --no-build
+        run: uv sync --locked --group dev --no-build
       - name: Record baseline on CI hardware
-        run: uv run python scripts/perf_baseline.py record --output perf-baseline.json
+        run: uv run --locked --no-build --no-binary-package fx-1 python scripts/perf_baseline.py record --output perf-baseline.json
       - name: Publish baseline artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -65,9 +65,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --group dev --no-build
+        run: uv sync --locked --group dev --no-build
       - name: Record current timings
-        run: uv run python scripts/perf_baseline.py record --output perf-current.json
+        run: uv run --locked --no-build --no-binary-package fx-1 python scripts/perf_baseline.py record --output perf-current.json
       - name: Fetch main-branch baseline artifact
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -88,7 +88,7 @@ jobs:
           test -s baseline/perf-baseline.json
       - name: Compare against baseline (1.5x normalized gate)
         run: |
-          uv run python scripts/perf_baseline.py compare \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/perf_baseline.py compare \
             --baseline baseline/perf-baseline.json \
             --current perf-current.json --json
       - name: Upload current timings

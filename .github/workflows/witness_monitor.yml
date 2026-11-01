@@ -42,8 +42,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Offline proof verification
-        run: uv run dipcatcher verify-witness
+        run: uv run --locked --no-build --no-binary-package fx-1 dipcatcher verify-witness
       - name: Live consistency against the public log
-        run: uv run dipcatcher verify-witness --online
+        run: uv run --locked --no-build --no-binary-package fx-1 dipcatcher verify-witness --online

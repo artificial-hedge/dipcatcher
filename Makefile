@@ -176,10 +176,10 @@ perf-check: ## Compare current timings against the stored local baseline (1.5x g
 
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
-	PYTHONPATH=src uv run pytest tests/fx1 -q
+	PYTHONPATH=src uv run --locked --no-build --no-binary-package fx-1 pytest tests/fx1 -q
 
 fx1-lint: ## fx-1 lint
-	uv run ruff check src/fx1 tests/fx1
+	uv run --locked --no-build --no-binary-package fx-1 ruff check src/fx1 tests/fx1
 
 fx1-corpus: ## Build fx-1 SFT corpus from harness receipts + lab research runs
 	# data/metadata/research/runs is host-local (gitignored, regenerable via

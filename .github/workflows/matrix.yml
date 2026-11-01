@@ -5,7 +5,7 @@ name: Platform Matrix
 # separate workflow so it never gates (or is gated by) ci.yml jobs.
 #
 # Python band: pyproject.toml has requires-python = ">=3.12", so the floor is
-# 3.12 (3.11 cannot even `uv sync --frozen` — the resolver rejects it). The
+# 3.12 (3.11 cannot even `uv sync --locked` — the resolver rejects it). The
 # ceiling is 3.14, the newest stable CPython; wheel coverage for locked deps on
 # cp314 is verified here rather than assumed.
 #
@@ -93,17 +93,7 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value (Split-Path -Parent $compiler)
           & $compiler --version
       - name: Sync locked environment
-        # cp314 has no wheels for some locked packages (hmmlearn; watchdog on
-        # macOS). --no-build is right on 3.12/3.13, where wheels exist and
-        # Sonar githubactions:S8541 applies. 3.14 must build those sdists.
-        shell: bash
-        run: |
-          if [ "${{ matrix.python }}" = "3.14" ]; then
-            # NOSONAR githubactions:S8541 — cp314 has no wheels for some locked sdists.
-            uv sync --frozen --all-groups --all-extras
-          else
-            uv sync --frozen --all-groups --all-extras --no-build
-          fi
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Build test-file inventory
         shell: bash
         run: |
@@ -111,7 +101,7 @@ jobs:
           collect_out="$RUNNER_TEMP/matrix-collect.txt"
           collect_err="$RUNNER_TEMP/matrix-collect.err"
           set +e
-          uv run --frozen --no-build --no-binary-package fx-1 pytest --collect-only -q -m "not network" >"$collect_out" 2>"$collect_err"
+          uv run --locked --no-build --no-binary-package fx-1 pytest --collect-only -q -m "not network" >"$collect_out" 2>"$collect_err"
           rc=$?
           set -e
           if [ "$rc" -ne 0 ]; then
@@ -183,15 +173,7 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value (Split-Path -Parent $compiler)
           & $compiler --version
       - name: Sync locked environment
-        # Same cp314 wheel gap as the inventory job.
-        shell: bash
-        run: |
-          if [ "${{ matrix.python }}" = "3.14" ]; then
-            # NOSONAR githubactions:S8541 — cp314 has no wheels for some locked sdists.
-            uv sync --frozen --all-groups --all-extras
-          else
-            uv sync --frozen --all-groups --all-extras --no-build
-          fi
+        run: uv sync --locked --all-groups --all-extras --no-build
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: matrix-inventory-${{ matrix.os }}-py${{ matrix.python }}
@@ -236,4 +218,4 @@ jobs:
           # xargs -n caps each pytest argv — shards now select ~1300
           # files, far past the Windows 32k command-line limit; batches
           # keep sorted order and xargs exits nonzero if any batch fails.
-          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run --frozen --no-build --no-binary-package fx-1 pytest -q -m "not network" -n 2 --dist loadfile
+          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run --locked --no-build --no-binary-package fx-1 pytest -q -m "not network" -n 2 --dist loadfile

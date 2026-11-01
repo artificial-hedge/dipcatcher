@@ -42,7 +42,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: PROOFCORE tests
         run: make proofcore-test
 
@@ -60,9 +60,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Layering gate
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/unit/test_proofcore_layering.py -q
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest tests/unit/test_proofcore_layering.py -q
 
   # Bundle verification checks hashes, sidecars, signatures, and recomputed
   # metrics. Historical replay remains closed until decision-time PIT reads.
@@ -79,7 +79,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Proof signer and recorder integrity
         run: make proof-integrity
       - name: Proof bundle verification
@@ -102,7 +102,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Leakage scan (warn mode)
         run: make leakage-scan
       - name: Upload leakage report
@@ -134,7 +134,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Reality-filter gate
         run: |
           set -o pipefail
@@ -161,7 +161,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --no-build
+        run: uv sync --locked --all-groups --no-build
       - name: Re-verify committed receipts
         run: make receipts-reverify
 
@@ -192,7 +192,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Per-package coverage floors
         run: make proofcore-coverage
 
@@ -225,14 +225,14 @@ jobs:
       - name: Sync
         # goldenpath loads weights.safetensors via the nn extra (torch pulls
         # safetensors). The fx1 workflow syncs --all-extras for the same reason.
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: fx1 coverage ratchet
         # Floor 90. `--cov=fx1` counts every module in the package.
         # tests/fx1 alone measured 36.76% on 2026-10-15: *_audit.py and the
         # serve surface it never imports are about half the statements and
         # sat near 0%. tests/unit/fx1_serve executes those modules. The
         # union measured 91.19% (2026-10-15); floor is measured-1 via pyproject.
-        run: uv run --frozen --no-build --no-binary-package fx-1 pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing
+        run: uv run --locked --no-build --no-binary-package fx-1 pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing
 
   required-gate:
     name: proofcore-required
