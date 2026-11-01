@@ -70,6 +70,20 @@ def test_modelcard_roundtrip_and_ship_gate(tmp_path: Path):
     assert loaded.eval_delta.ship_eligible
 
 
+def test_modelcard_save_preserves_prior_file_on_crash(tmp_path: Path, monkeypatch):
+    path = tmp_path / "modelcard.json"
+    path.write_bytes(b"prior-good")
+
+    def crash(_fd, _mode):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("quant_fund.utils.atomicio.os.fdopen", crash)
+    with pytest.raises(KeyboardInterrupt):
+        _card().save(path)
+    assert path.read_bytes() == b"prior-good"
+    assert list(tmp_path.iterdir()) == [path]
+
+
 def test_ship_gate_blocks_regression_and_dishonesty():
     assert not _delta(general_pass_rate_candidate=0.8).ship_eligible
     assert not _delta(honesty_gate_candidate=False).ship_eligible
