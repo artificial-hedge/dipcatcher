@@ -99,12 +99,12 @@
   "members_removed": [],
   "n_members": 22,
   "params": {
-    "head_sha": "fc48195763891682f9e7876008160dc6b59dad65",
+    "head_sha": "a945004c654b388bec7dadb8c6d1f456b0df2b74",
     "pattern": "*.yml"
   },
-  "prev_epoch_receipt": "corpus_epoch_aa4a9729ce1d0ab6.json",
-  "prev_epoch_sha256": "07e3616d942db1b2d52322d4444cc55aa34b57174cd9b780f1e383f5f57ceabf",
-  "receipt_sha256": "8ab122c7675ad83fa89091b8da014c6848942ac9e58d08dd73a9cddb98aaba63",
+  "prev_epoch_receipt": "corpus_epoch_13d212761f16c364.json",
+  "prev_epoch_sha256": "0eb3cd1ff891b3da4b86bece0c13d5785511ab14b8045b07df44560c67335017",
+  "receipt_sha256": "ee122ec07d0227c4b60284bff0eb4e05f891a0c2e1f2c7476922b387a9d67573",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

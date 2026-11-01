@@ -284,7 +284,6 @@ _DOCUMENTARY_SCHEMAS = frozenset(
         "boundary_audit.v1",  # boundary audit lane
         "byok_audit.v1",  # BYOK policy audit lane
         "cache_audit.v1",  # fx1 cache audit lane
-        "calibration_audit.drill.v1",  # calibration audit drill lane
         "cap_audit.v1",  # fx1 cap_audit lane
         "capability_audit.v1",  # capability qualification audit lane
         "causality_scan.v1",  # causality scan bench
@@ -351,7 +350,6 @@ _DOCUMENTARY_SCHEMAS = frozenset(
         "queue_fate.v1",  # queue-fate bench
         "queue_jump.v1",  # queue-jump bench
         "queue_occupancy.v1",  # queue-occupancy bench
-        "queue_priority.v1",  # queue-priority bench
         "quota2_audit.v1",  # fx1 quota2 audit lane
         "receipts_audit.v1",  # receipts audit lane
         "replay_audit.v1",  # fx1 replay audit lane
@@ -400,7 +398,6 @@ _DOCUMENTARY_SCHEMAS = frozenset(
         "initiative_fade.v1",  # initiative-fade bench
         "intraday_exec.v1",  # intraday-exec bench
         "lob_invariants.v1",  # lob-invariants bench
-        "lobster_replay.v1",  # lobster replay bench
         "decay_watch.v1",  # decay-watch synth fixture
         "attribution.v1",  # attribution bench
     }
