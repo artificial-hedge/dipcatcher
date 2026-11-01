@@ -83,6 +83,38 @@ def visible_bars(bars: pl.DataFrame, decision_time: datetime | None) -> pl.DataF
     return frame.filter(pl.col("event_time") <= cutoff)
 
 
+_PRICE_DTYPES = (
+    pl.Float32,
+    pl.Float64,
+    pl.Int8,
+    pl.Int16,
+    pl.Int32,
+    pl.Int64,
+    pl.UInt8,
+    pl.UInt16,
+    pl.UInt32,
+    pl.UInt64,
+)
+
+
+def require_positive_close(frame: pl.DataFrame, *, where: str) -> None:
+    """Reject a close that is not a finite positive price.
+
+    Null, non-numeric, non-finite, and non-positive closes must not be
+    dropped or turned into a return. Polars treats NaN as not-null, so a
+    later ``is_not_null`` filter would still score it.
+    """
+    if "close" not in frame.columns:
+        raise PointInTimeError(f"{where} missing close")
+    dtype = frame.schema["close"]
+    if dtype not in _PRICE_DTYPES:
+        raise PointInTimeError(f"{where} close must be numeric, got {dtype}")
+    close = pl.col("close").cast(pl.Float64)
+    bad = frame.filter(pl.col("close").is_null() | ~close.is_finite() | (close <= 0))
+    if bad.height:
+        raise PointInTimeError(f"{where} close must be finite and positive")
+
+
 def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
     """Aggregate OHLCV into non-overlapping buckets of width ``every``.
 
@@ -117,6 +149,7 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
         raise PointInTimeError("bar event_time is after its available_time")
     if frame.select(["security_id", "event_time"]).is_duplicated().any():
         raise PointInTimeError("duplicate (security_id, event_time) bars")
+    require_positive_close(frame, where="resample input")
     frame = frame.sort(["security_id", "event_time"])
     frame = frame.with_columns(pl.col("event_time").dt.truncate(every).alias("_bucket"))
     aggs: list[pl.Expr] = [
@@ -198,6 +231,7 @@ class OhlcvFeaturePipeline:
                 raise PointInTimeError(f"feature bars missing {name}")
         if frame.select(["security_id", "event_time"]).is_duplicated().any():
             raise PointInTimeError("duplicate (security_id, event_time) bars")
+        require_positive_close(frame, where="feature bars")
         frame = frame.sort(["security_id", "event_time"])
         frame = frame.with_columns(
             (pl.col("close") / pl.col("close").shift(1).over("security_id") - 1.0).alias("ret_1")
