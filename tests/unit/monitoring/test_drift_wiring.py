@@ -107,6 +107,27 @@ def test_evidence_report_sidecar_tamper_detected(tmp_path) -> None:
     assert verdict["reason"] == "hash_mismatch"
 
 
+def test_non_object_report_with_matching_hash_is_invalid(tmp_path: Path) -> None:
+    path = tmp_path / "evidence_report.json"
+    path.write_text("[]", encoding="utf-8")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    (tmp_path / "evidence_report.json.sha256").write_text(digest + "\n", encoding="ascii")
+    verdict = verify_evidence_report_sidecar(path)
+    assert verdict["valid"] is False
+    assert verdict["reason"] == "malformed"
+    assert verdict["status"] == "invalid"
+
+
+def test_unreadable_report_bytes_are_not_a_hash_mismatch(tmp_path: Path) -> None:
+    path = tmp_path / "evidence_report.json"
+    path.write_bytes(b"{")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    (tmp_path / "evidence_report.json.sha256").write_text(digest + "\n", encoding="ascii")
+    verdict = verify_evidence_report_sidecar(path)
+    assert verdict["valid"] is False
+    assert verdict["reason"] == "unreadable"
+
+
 def test_evidence_report_sidecar_missing_is_invalid(tmp_path) -> None:
     verdict = verify_evidence_report_sidecar(tmp_path / "nope.json")
     assert verdict["valid"] is False
