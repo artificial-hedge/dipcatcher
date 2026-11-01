@@ -154,10 +154,12 @@ def frozen_referee_evalue(
         raise ValueError("post_sub_returns must be non-empty")
     if not np.isfinite(r).all():
         raise ValueError("post_sub_returns must be finite")
-    if null_std <= 0:
-        raise ValueError("null_std must be positive")
-    if not (0 < bet_fraction < 1):
-        raise ValueError("bet_fraction must be in (0, 1)")
+    if not math.isfinite(null_mean):
+        raise ValueError("null_mean must be finite")
+    if not math.isfinite(null_std) or null_std <= 0:
+        raise ValueError("null_std must be finite and positive")
+    if not math.isfinite(bet_fraction) or not (0 < bet_fraction < 1):
+        raise ValueError("bet_fraction must be finite and in (0, 1)")
 
     z = (r - null_mean) / null_std
     # Truncated betting: wealth_t = max(wealth_{t-1} * (1 + lambda * z_t), 0)
@@ -203,11 +205,17 @@ class RefereeLedger:
         bet_fraction : lambda for the betting e-value.
         alpha : FDR level for the e-BH procedure.
         """
-        if not (0 < alpha < 1):
-            raise ValueError("alpha must be in (0, 1)")
+        if not math.isfinite(alpha) or not (0 < alpha < 1):
+            raise ValueError("alpha must be finite and in (0, 1)")
         self._null_mean = float(null_mean)
         self._null_std = float(null_std)
         self._bet_fraction = float(bet_fraction)
+        if not math.isfinite(self._null_mean):
+            raise ValueError("null_mean must be finite")
+        if not math.isfinite(self._null_std) or self._null_std <= 0:
+            raise ValueError("null_std must be finite and positive")
+        if not math.isfinite(self._bet_fraction) or not (0 < self._bet_fraction < 1):
+            raise ValueError("bet_fraction must be finite and in (0, 1)")
         self._alpha = float(alpha)
         self._submissions: list[CandidateSubmission] = []
         self._frozen = False
@@ -323,10 +331,14 @@ def referee_fdr_control(
     -------
     The same verdicts with `admitted` set to True for rejected nulls.
     """
+    if not math.isfinite(alpha) or not (0 < alpha < 1):
+        raise ValueError("alpha must be finite and in (0, 1)")
     if not verdicts:
         return verdicts
 
     e_values = np.array([v.e_value for v in verdicts])
+    if not np.isfinite(e_values).all() or (e_values < 0).any():
+        raise ValueError("verdict e-values must be finite and nonnegative")
     m = len(e_values)
 
     # e-BH: sort e-values descending, find the largest k such that
