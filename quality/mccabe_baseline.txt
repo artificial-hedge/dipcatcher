@@ -177,7 +177,6 @@ src/quant_fund/cli/micro_cmds.py:candle_book 11
 src/quant_fund/cli/micro_cmds.py:kyle_ofi 11
 src/quant_fund/cli/ops_cmds.py:monitor 10
 src/quant_fund/cli/ops_cmds.py:paper 23
-src/quant_fund/cli/ops_cmds.py:sim_live 10
 src/quant_fund/cli/research_cmds.py:basis_carry_cmd 26
 src/quant_fund/cli/research_cmds.py:corpus_absence_cmd 19
 src/quant_fund/cli/research_cmds.py:corpus_epoch 24
