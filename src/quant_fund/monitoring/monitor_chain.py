@@ -46,8 +46,12 @@ def _record(
 def _read(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"monitor_chain {path} is not valid UTF-8: {exc}") from exc
     out: list[dict[str, Any]] = []
-    for line_no, line in enumerate(path.read_text().splitlines(), 1):
+    for line_no, line in enumerate(raw.splitlines(), 1):
         if not line.strip():
             continue
         try:
