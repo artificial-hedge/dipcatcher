@@ -15,6 +15,7 @@ import contextlib
 import http.client
 import ipaddress
 import json
+import math
 import os
 import shlex
 import socket
@@ -206,8 +207,8 @@ def _env_float(name: str, override: float | None, default: float) -> float:
     if raw is None or raw == "":
         return default
     val = float(raw)
-    if val <= 0:
-        raise ValueError(f"{name} must be positive, got {val!r}")
+    if not math.isfinite(val) or val <= 0:
+        raise ValueError(f"{name} must be finite and positive, got {val!r}")
     return val
 
 

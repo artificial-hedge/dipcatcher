@@ -274,10 +274,9 @@ __all__ = [
 
 def _maybe_install_observation_hooks() -> None:
     """Wrap pipeline entry points only when the operator opted in."""
-    import os
+    from quant_fund.observe.flags import observe_enabled
 
-    flag = os.environ.get("DIPCATCHER_OBSERVE", "").strip().lower()
-    if flag not in {"1", "true", "yes", "on"}:
+    if not observe_enabled():
         return
     from quant_fund.observe.install import install_passive_hooks
 
