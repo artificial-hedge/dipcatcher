@@ -22,6 +22,7 @@ from quant_fund.calendars.sessions import (
     SessionIndex,
     TradingCalendar,
     require_aware,
+    require_label_range,
 )
 
 _Schema = dict[str, pl.DataType | type[pl.DataType]]
@@ -86,6 +87,7 @@ def session_grid(
     """
     if bar_size <= timedelta(0):
         raise ValueError("bar_size must be positive")
+    require_label_range(start, end)
     sessions = calendar.sessions(start, end)
     schema = grid_schema(calendar.tz.key or "UTC")
     rows: list[dict[str, object]] = []
