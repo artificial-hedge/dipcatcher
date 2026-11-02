@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data e2e-smoke release-dry-run prod-readiness lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data e2e-smoke release-dry-run prod-readiness owner-rehearsal lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
 
 .DEFAULT_GOAL := help
 
@@ -111,6 +111,9 @@ release-dry-run: ## Build the wheel offline and run dipcatcher/fx1 --help
 
 prod-readiness: ## Pass/fail/needs-owner scorecard; nonzero when any check fails
 	$(TEST_ENV) uv run python -m quant_fund.simtest.prod_readiness --out "$${PROD_READINESS_OUT:-/tmp/prod-readiness.json}"
+
+owner-rehearsal: ## Rehearse OWNER_STEPS in a throwaway copy; refuses the real checkout
+	uv run python scripts/owner_rehearsal.py
 
 native: ## Build optional quant_core (Rust + maturin). NumPy stays the fallback.
 	uv pip install "maturin>=1.7,<2"
@@ -367,8 +370,12 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any 
 	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --out-dir "$$spec" --heads-pin quality/epoch_heads.json || exit 1; \
 	done
 
-sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
-	uv run dipcatcher sign-pins
+sign-pins: ## Sign the pin manifest after stamp-epochs. A quorum registry needs quorum-sign; v1 fails closed.
+	@if [ -f quality/gate_quorum.json ]; then \
+		GATE_QUORUM_KEYS="$${GATE_QUORUM_KEYS:-$${GATE_SIGNING_KEY:-}}" uv run dipcatcher quorum-sign; \
+	else \
+		uv run dipcatcher sign-pins; \
+	fi
 
 anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); run after sign-pins, at quiet points only — every stamp-epochs stales the anchors
 	uv run dipcatcher anchor-timestamp --file quality/epoch_heads.json
@@ -377,8 +384,8 @@ anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); 
 checkpoint: ## Sign the pin state into quality/checkpoint.json (needs GATE_SIGNING_KEY); run LAST — it binds the current signature
 	uv run dipcatcher checkpoint
 
-anchor-checkpoint: ## RFC 3161-anchor the checkpoint (network); one token time-binds the whole pin state
-	uv run dipcatcher checkpoint --anchor
+anchor-checkpoint: ## RFC 3161-anchor the existing checkpoint (network); does not mint a second one
+	uv run dipcatcher anchor-timestamp --file quality/checkpoint.json
 
 witness-checkpoint: ## Witness the checkpoint into the public Rekor transparency log (network; needs WITNESS_SIGNING_KEY); commits a self-verifying proof under quality/witness/
 	uv run dipcatcher witness-checkpoint
