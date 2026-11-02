@@ -1,0 +1,34 @@
+# Offline end-to-end correctness smoke. SYNTHETIC only.
+# Proves ingest → features → train → forecast → backtest → portfolio/risk →
+# report. Not market evidence. See docs/E2E_SMOKE.md.
+inherit: base.yaml
+runtime:
+  mode: research
+data:
+  # The runner overrides this with a temporary root. The placeholder sits
+  # under data/demo/, which is gitignored.
+  root: data/demo/e2e_smoke
+  source: synthetic
+  synthetic_n_assets: 6
+  synthetic_n_days: 100
+  synthetic_seed: 13
+universe:
+  # Short panel: membership starts early, and ADV warmup must not empty it.
+  min_history_bars: 20
+  min_adv: 0.0
+validation:
+  scheme: expanding
+  train_bars: 24
+  val_bars: 8
+  test_bars: 8
+  embargo_bars: 1
+  seed: 13
+horizons:
+  bars: [1]
+  names: ["1d"]
+train:
+  ranking_target: future_excess_return_1
+  random_seed: 13
+robinhood_plus:
+  # Kept off so the smoke stays offline and inside a few minutes.
+  enabled: false
