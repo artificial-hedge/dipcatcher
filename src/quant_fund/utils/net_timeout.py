@@ -165,3 +165,17 @@ def read_pinned(
                 None,
             )
         return body
+
+
+def get_capped(
+    url: str,
+    headers: dict[str, str],
+    *,
+    timeout: float,
+    max_bytes: int = DEFAULT_MAX_BODY,
+) -> bytes:
+    """GET ``url`` through the pinned client and return a capped body."""
+    import urllib.request
+
+    request = urllib.request.Request(url, headers=dict(headers), method="GET")
+    return read_pinned(request, timeout=timeout, max_bytes=max_bytes)

@@ -709,22 +709,20 @@ def _decoded_json(raw: bytes | str) -> object | None:
 
 
 def _fetch_status(slug: str, sha: str, token: str) -> object | None:
-    import urllib.request
+    from quant_fund.utils.net_timeout import get_capped
 
-    from quant_fund.utils.net_timeout import read_pinned
-
-    request = urllib.request.Request(
-        f"https://api.github.com/repos/{slug}/commits/{sha}/status",
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "dipcatcher-prod-readiness",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-        method="GET",
-    )
     try:
-        raw = read_pinned(request, timeout=10, max_bytes=1_000_000)
+        raw = get_capped(
+            f"https://api.github.com/repos/{slug}/commits/{sha}/status",
+            {
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {token}",
+                "User-Agent": "dipcatcher-prod-readiness",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+            timeout=10,
+            max_bytes=1_000_000,
+        )
     except Exception:  # noqa: BLE001 — a missing status is needs-owner, and the error can carry a token
         return None
     return _decoded_json(raw)
