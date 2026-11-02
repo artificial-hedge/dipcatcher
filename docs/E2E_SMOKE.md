@@ -64,3 +64,16 @@ uv run python -m quant_fund.simtest.e2e_paper --root /tmp/e2e-paper
 ```
 
 `make e2e-smoke` collects this stage with the ingest-to-report smoke.
+
+## Release dry-run
+
+CI's package job builds the sdist and wheel and runs the installed
+`dipcatcher --help` and `fx1 --help`. The local check does the same offline:
+one wheel, one sdist, both entrypoints exit 0 with a Usage line, and the
+checkout environment stays on the source tree.
+
+```bash
+make release-dry-run
+uv run pytest -m release_dry_run -q
+```
+

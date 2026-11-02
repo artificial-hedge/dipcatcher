@@ -365,6 +365,7 @@ markers = [
     "slow: long tests; full suite on schedule/workflow_dispatch, excluded from the PR gate",
     "smoke: paper, ledger, and analytics modules collected by the CI smoke job",
     "e2e_smoke: deterministic offline ingest-to-report and paper-session smoke",
+    "release_dry_run: build the wheel offline and run installed CLI --help",
     "native: quant_core parity tests selected by the rust-accel CI job",
     "synthetic: uses synthetic market data",
     "perf_full: larger synthetic performance benchmarks (not the CI fast subset)",

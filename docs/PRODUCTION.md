@@ -28,6 +28,8 @@ managed keys).
       (kill switch, oversize reject, cancel while halted, restart).
       See [`E2E_SMOKE.md`](E2E_SMOKE.md). The smoke is a SYNTHETIC
       correctness check, not market evidence.
+- [ ] `make release-dry-run` passes. Offline wheel build, then
+      `dipcatcher --help` and `fx1 --help` from that artifact.
 - [ ] `uv run dipcatcher doctor --config configs/research.yaml` exits `0`
       after the first research run has produced a data manifest and a valid
       receipt. On a fresh tree it exits `1` by design — run research first.
@@ -39,6 +41,7 @@ make lint
 make typecheck
 make test
 make e2e-smoke
+make release-dry-run
 uv run dipcatcher research --config configs/research.yaml
 uv run dipcatcher verify-research
 uv run dipcatcher doctor --config configs/research.yaml
