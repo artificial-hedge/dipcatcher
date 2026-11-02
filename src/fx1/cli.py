@@ -590,9 +590,8 @@ def harness_serve(
     ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
-    import uvicorn
-
     from fx1.serve.api import create_app
+    from fx1.serve.kill_drain import serve_until_signal
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
@@ -618,7 +617,7 @@ def harness_serve(
     except ValueError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=2) from exc
-    uvicorn.run(harness_api, host=host, port=port, reload=False, server_header=False)
+    serve_until_signal(harness_api, host=host, port=port)
 
 
 _BACKEND_HELP = (

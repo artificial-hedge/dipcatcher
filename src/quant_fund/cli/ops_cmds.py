@@ -14,23 +14,39 @@ from .support import _cfg
 
 
 @app.command()
-def api(host: str = "127.0.0.1", port: int = 8000) -> None:
-    import os
+def api(
+    host: str | None = typer.Option(None, help="Bind host. Overrides DIPCATCHER_BIND_HOST."),
+    port: int | None = typer.Option(None, help="Bind port. Overrides DIPCATCHER_BIND_PORT."),
+) -> None:
+    """Serve the lab API after the environment contract validates."""
+    from quant_fund.api.serve import serve_lab
+    from quant_fund.api.service_config import ServiceConfigError
 
-    import uvicorn
-
-    loopback_hosts = {"127.0.0.1", "::1", "localhost"}
-    if host not in loopback_hosts and not os.environ.get("QUANT_API_KEY"):
-        raise typer.BadParameter(
-            "non-loopback API binding requires QUANT_API_KEY; refusing unauthenticated exposure"
-        )
-    uvicorn.run("quant_fund.api.app:app", host=host, port=port, reload=False)
+    try:
+        serve_lab(host, port)
+    except ServiceConfigError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 def _reject_halt_flags(halt: bool, clear_halt: bool) -> None:
     """Reject the mutually exclusive kill-switch overrides."""
     if halt and clear_halt:
         raise typer.BadParameter("pass only one of --halt / --clear-halt")
+
+
+def _publish_paper_halt(state: str) -> None:
+    """Write the shared kill file when the operator set a path. Otherwise no-op."""
+    import os
+
+    from quant_fund.utils.operator_kill import ENV_PATH, OperatorKillError, write_operator_kill
+
+    raw = os.environ.get(ENV_PATH, "").strip()
+    if not raw:
+        return
+    try:
+        write_operator_kill(Path(raw), state)
+    except OperatorKillError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @app.command()
@@ -189,8 +205,10 @@ def paper(
     _reject_halt_flags(halt, clear_halt)
     if halt:
         cfg.kill_switch.state = "HALT_NEW_ORDERS"
+        _publish_paper_halt("HALT_NEW_ORDERS")
     if clear_halt:
         cfg.kill_switch.state = "ENABLED"
+        _publish_paper_halt("ENABLED")
     bars = ensure_silver(cfg)
     feat = build_features(bars, cfg)
     # Same gold-panel overlap contract as execution-sensitivity/backtest:

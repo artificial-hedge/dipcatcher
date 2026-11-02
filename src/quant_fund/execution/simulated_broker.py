@@ -7,6 +7,8 @@ kill switch and ``check_order`` risk gate before cash moves.
 
 from __future__ import annotations
 
+import math
+import numbers
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -22,6 +24,41 @@ from quant_fund.monitoring.kill_switch import KillSwitch
 from quant_fund.portfolio.risk_gate import check_order
 from quant_fund.schemas.errors import KillSwitchActive, RiskGateRejected
 from quant_fund.schemas.orders import Fill, Order, OrderSide, OrderStatus
+
+_POSITION_EPS = 1e-12
+
+
+def _positive_mark(price: object) -> bool:
+    if isinstance(price, bool) or not isinstance(price, numbers.Real):
+        return False
+    value = float(price)
+    return math.isfinite(value) and value > 0.0
+
+
+def _unmarked_positions(shares: dict[str, float], prices: dict[str, float]) -> bool:
+    for name, quantity in shares.items():
+        if abs(float(quantity)) <= _POSITION_EPS:
+            continue
+        if not _positive_mark(prices.get(name)):
+            return True
+    return False
+
+
+def _close_paper_positions(broker: SimulatedBroker, prices: dict[str, float]) -> list[str]:
+    names = sorted(
+        name for name, quantity in broker.shares.items() if abs(float(quantity)) > _POSITION_EPS
+    )
+    for name in names:
+        quantity = float(broker.shares[name])
+        if broker.allow_capital:
+            broker.cash += quantity * float(prices[name])
+        broker.shares[name] = 0.0
+    broker.shares = {
+        name: quantity
+        for name, quantity in broker.shares.items()
+        if abs(float(quantity)) > _POSITION_EPS
+    }
+    return names
 
 
 def _limit_fill_price(
@@ -353,6 +390,30 @@ class SimulatedBroker:
         rec = OrderRecord(order=cancelled, reject_reason=None, slot=self.slot)
         self.history.append(rec)
         return rec
+
+    def cancel_operator_orders(self) -> list[str]:
+        """Cancel working orders in sorted id order. Positions stay put."""
+        cancelled = sorted(self.open_orders)
+        for order_id in cancelled:
+            self.cancel_order(order_id)
+        return cancelled
+
+    def flatten_operator_book(
+        self, marks: dict[str, float] | None = None, *, at: datetime | None = None
+    ) -> dict[str, Any]:
+        """Cancel working orders, then close the paper book at the marks.
+
+        ``at`` is accepted so the paper ledger and this broker share one
+        signature. Cash moves by ``quantity * mark`` with zero costs. A missing
+        or non-positive mark cancels orders and leaves every position.
+        """
+        del at
+        cancelled = self.cancel_operator_orders()
+        prices = self.last_marks if marks is None else marks
+        if _unmarked_positions(self.shares, prices):
+            return {"ok": False, "problem": "flatten_unmarked", "cancelled": cancelled, "names": []}
+        names = _close_paper_positions(self, prices)
+        return {"ok": True, "problem": None, "cancelled": cancelled, "names": names}
 
     def amend_order(
         self,

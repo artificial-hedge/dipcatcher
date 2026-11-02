@@ -231,6 +231,7 @@ nav:
       - Runbook: OPERATIONS_RUNBOOK.md
       - Production checklist: PRODUCTION.md
       - End-to-end smoke: E2E_SMOKE.md
+      - Production runbook: PRODUCTION_RUNBOOK.md
       - Ultra plan — production readiness: ULTRA_PROD_READINESS.md
       - Audit ledger and observability: AUDIT_OBSERVABILITY.md
       - Paper and shadow: PAPER_SHADOW.md
