@@ -16,6 +16,7 @@ from typing import Any, cast
 import numpy as np
 import polars as pl
 
+from quant_fund.backtest.inputs import finite_non_negative
 from quant_fund.config.models import AppConfig, FillConvention
 from quant_fund.execution.costs import total_cost
 from quant_fund.execution.spread_calibration import (
@@ -275,6 +276,7 @@ def run_backtest(
     an unsupported workload never silently degrades to the event loop.
     ``fast=False`` pins the reference event loop for audit runs.
     """
+    initial_nav = finite_non_negative(initial_nav, "initial_nav")
     if fast is not False:
         from quant_fund.backtest.fast_replay import run_backtest_fast
 
@@ -351,6 +353,7 @@ def _run_backtest_event_loop(
     risk_overlay: BookRiskOverlay | None = None,
 ) -> BacktestResult:
     """Reference event loop. ``run_backtest`` delegates here when the fast replay is incomplete."""
+    initial_nav = finite_non_negative(initial_nav, "initial_nav")
     _validate_target_weight_panel(weights)
     _validate_bar_panel(bars)
     costs_cfg0 = config.costs
