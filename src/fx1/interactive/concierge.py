@@ -53,6 +53,7 @@ from fx1.interactive.superpower import (
     plan_goal,
     run_plan,
 )
+from fx1.process_signals import sigterm_as_keyboard_interrupt
 from fx1.serve.backends import HostedK3Backend
 
 HELP_TEXT = """\
@@ -1024,21 +1025,31 @@ def run_console(
     if sys.platform == "win32":
         output_fn("On Windows, background progress updates after you submit a line.")
     prompt_pending = True
-    while True:
-        try:
-            line = _tty_polling_read(input_fn, "dip › " if prompt_pending else "", poll_timeout_s)
-        except (EOFError, KeyboardInterrupt):
-            output_fn("")
-            concierge.shutdown()
-            return
-        if line is None:  # poll timeout — render background progress
-            prompt_pending = False
-            concierge.tick()
-            continue
-        prompt_pending = True
-        try:
-            if concierge.handle_line(line):
+
+    def _on_sigterm() -> None:
+        output_fn("")
+        concierge.shutdown()
+
+    # Ctrl-C during a read is caught below. SIGTERM during a turn is not an
+    # Exception, so it leaves the loop and still joins the background job.
+    with sigterm_as_keyboard_interrupt(on_interrupt=_on_sigterm):
+        while True:
+            try:
+                line = _tty_polling_read(
+                    input_fn, "dip › " if prompt_pending else "", poll_timeout_s
+                )
+            except (EOFError, KeyboardInterrupt):
+                output_fn("")
+                concierge.shutdown()
                 return
-        except Exception as exc:  # noqa: BLE001 — a bad turn must not kill the shell
-            typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
-        concierge.tick()
+            if line is None:  # poll timeout — render background progress
+                prompt_pending = False
+                concierge.tick()
+                continue
+            prompt_pending = True
+            try:
+                if concierge.handle_line(line):
+                    return
+            except Exception as exc:  # noqa: BLE001 — a bad turn must not kill the shell
+                typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+            concierge.tick()
