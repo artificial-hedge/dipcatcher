@@ -35,6 +35,7 @@ __all__ = [
     "pinned_connection",
     "public_addresses",
     "read_http",
+    "read_http_redirects",
     "repo_file",
     "repo_relative",
 ]
@@ -440,6 +441,77 @@ def read_http(
         if int(handle.status) >= 400:
             raise _http_error(handle, body)
         return body
+
+
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
+_REDIRECT_HEADERS = frozenset({"user-agent", "accept", "content-type"})
+
+
+def _redirect_headers(request: urllib.request.Request, *, drop_body: bool) -> dict[str, str]:
+    """Copy only safe headers onto the next hop. Host is never forwarded."""
+    headers: dict[str, str] = {}
+    for name, value in request.header_items():
+        lowered = name.lower()
+        if lowered not in _REDIRECT_HEADERS:
+            continue
+        if drop_body and lowered == "content-type":
+            continue
+        headers[name] = value
+    return headers
+
+
+def _redirect_request(
+    request: urllib.request.Request, location: str, status: int
+) -> urllib.request.Request:
+    """Next hop. 301/302/303 become GET; 307/308 keep the method and body."""
+    drop_body = status in {301, 302, 303}
+    method = "GET" if drop_body else request.get_method()
+    data = None if drop_body else request.data
+    return urllib.request.Request(
+        urllib.parse.urljoin(request.full_url, location.strip()),
+        data=data,
+        headers=_redirect_headers(request, drop_body=drop_body),
+        method=method,
+    )
+
+
+def _finish_http(handle: _PinnedHandle, body: bytes) -> bytes:
+    if int(handle.status) >= 400:
+        raise _http_error(handle, body)
+    return body
+
+
+def read_http_redirects(
+    request: urllib.request.Request,
+    *,
+    timeout: float,
+    max_redirects: int = 5,
+    allow_loopback: bool = False,
+    allow_private: bool = False,
+    resolve_fn: ResolveFn | None = None,
+) -> bytes:
+    """Follow redirects by re-pinning every hop. Other 3xx responses are bodies."""
+    current = request
+    followed = 0
+    while True:
+        with open_pinned(
+            current,
+            timeout=timeout,
+            allow_loopback=allow_loopback,
+            allow_private=allow_private,
+            resolve_fn=resolve_fn,
+        ) as handle:
+            body = handle.read()
+            status = int(handle.status)
+            if status not in _REDIRECT_STATUSES:
+                return _finish_http(handle, body)
+            location = handle.headers.get("Location")
+        if followed >= max_redirects:
+            raise OutboundRefused("too many redirects")
+        if not location or not str(location).strip():
+            raise OutboundRefused("redirect missing Location")
+        current = _redirect_request(current, str(location), status)
+        followed += 1
 
 
 def repo_relative(root: Path, relative: str | Path) -> Path:

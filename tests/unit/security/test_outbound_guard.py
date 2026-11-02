@@ -24,6 +24,7 @@ from quant_fund.utils.outbound import (
     directory_child,
     is_public_ip,
     public_addresses,
+    read_http_redirects,
     repo_relative,
 )
 
@@ -255,3 +256,139 @@ def test_harness_client_refuses_metadata_literals(monkeypatch: pytest.MonkeyPatc
         _urllib_transport("GET", "http://192.168.1.1/", None, {}, 1.0)
     with pytest.raises(AssertionError):
         _urllib_transport("GET", "https://harness.invalid/health", None, {}, 1.0)
+
+
+class _Hop:
+    def __init__(self, status: int, headers: Any, body: bytes, url: str) -> None:
+        self.status = status
+        self.reason = "test"
+        self.headers = headers
+        self._body = body
+        self._url = url
+
+    def read(self, amt: int | None = None) -> bytes:
+        return self._body
+
+    def geturl(self) -> str:
+        return self._url
+
+    def close(self) -> None:
+        return None
+
+
+def _redirect_plan(
+    monkeypatch: pytest.MonkeyPatch,
+    plan: dict[str, tuple[int, str | None, bytes]],
+) -> list[tuple[str, str, bytes | None, dict[str, str]]]:
+    import email.message
+    import urllib.parse
+
+    import quant_fund.utils.outbound as outbound_mod
+
+    seen: list[tuple[str, str, bytes | None, dict[str, str]]] = []
+
+    @contextmanager
+    def fake_open(request: Any, **_kwargs: object) -> Iterator[object]:
+        parsed = urllib.parse.urlparse(request.full_url)
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        public_addresses(parsed.hostname or "", port)
+        seen.append(
+            (request.full_url, request.get_method(), request.data, dict(request.header_items()))
+        )
+        status, location, body = plan[request.full_url]
+        headers = email.message.Message()
+        if location is not None:
+            headers["Location"] = location
+        yield _Hop(status, headers, body, request.full_url)
+
+    monkeypatch.setattr(outbound_mod, "open_pinned", fake_open)
+    return seen
+
+
+def test_read_http_redirects_follows_a_public_hop(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.request
+
+    seen = _redirect_plan(
+        monkeypatch,
+        {
+            "https://8.8.8.8/start": (302, "http://1.1.1.1/landed", b""),
+            "http://1.1.1.1/landed": (200, None, b"landed"),
+        },
+    )
+    body = read_http_redirects(urllib.request.Request("https://8.8.8.8/start"), timeout=1.0)
+    assert body == b"landed"
+    assert [item[0] for item in seen] == ["https://8.8.8.8/start", "http://1.1.1.1/landed"]
+
+
+def test_read_http_redirects_refuses_a_metadata_hop(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.request
+
+    seen = _redirect_plan(
+        monkeypatch,
+        {"https://8.8.8.8/start": (302, "http://169.254.169.254/latest/meta-data", b"")},
+    )
+    with pytest.raises(OutboundRefused, match="not allowed"):
+        read_http_redirects(urllib.request.Request("https://8.8.8.8/start"), timeout=1.0)
+    assert [item[0] for item in seen] == ["https://8.8.8.8/start"]
+
+
+def test_read_http_redirects_turns_303_into_get(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.request
+
+    seen = _redirect_plan(
+        monkeypatch,
+        {
+            "https://8.8.8.8/post": (303, "http://1.1.1.1/done", b""),
+            "http://1.1.1.1/done": (200, None, b"done"),
+        },
+    )
+    request = urllib.request.Request(
+        "https://8.8.8.8/post",
+        data=b"{}",
+        headers={"User-Agent": "dipcatcher-research/1.0", "Content-Type": "application/json"},
+        method="POST",
+    )
+    assert read_http_redirects(request, timeout=1.0) == b"done"
+    assert seen[1][1] == "GET"
+    assert seen[1][2] is None
+    forwarded = {name.lower() for name in seen[1][3]}
+    assert "user-agent" in forwarded
+    assert "content-type" not in forwarded
+    assert "host" not in forwarded
+
+
+def test_read_http_redirects_stops_on_a_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.request
+
+    seen = _redirect_plan(
+        monkeypatch,
+        {
+            "https://8.8.8.8/loop": (302, "https://1.1.1.1/loop", b""),
+            "https://1.1.1.1/loop": (302, "https://8.8.8.8/loop", b""),
+        },
+    )
+    with pytest.raises(OutboundRefused, match="too many redirects"):
+        read_http_redirects(
+            urllib.request.Request("https://8.8.8.8/loop"), timeout=1.0, max_redirects=1
+        )
+    assert len(seen) == 2
+
+
+def test_read_http_redirects_rejects_a_missing_location(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.request
+
+    _redirect_plan(monkeypatch, {"https://8.8.8.8/bare": (302, None, b"")})
+    with pytest.raises(OutboundRefused, match="redirect missing Location"):
+        read_http_redirects(urllib.request.Request("https://8.8.8.8/bare"), timeout=1.0)
+
+
+def test_read_http_redirects_raises_http_error_for_a_final_status(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import urllib.error
+    import urllib.request
+
+    _redirect_plan(monkeypatch, {"https://8.8.8.8/missing": (404, None, b"nope")})
+    with pytest.raises(urllib.error.HTTPError) as raised:
+        read_http_redirects(urllib.request.Request("https://8.8.8.8/missing"), timeout=1.0)
+    assert raised.value.code == 404
