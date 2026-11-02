@@ -1,7 +1,19 @@
 global:
   scrape_interval: 15s
 
+rule_files:
+  - alerts.yml
+
 scrape_configs:
-  - job_name: dipcatcher
+  - job_name: lab-api
+    authorization:
+      type: Bearer
+      credentials_file: /tmp/lab.token
     static_configs:
-      - targets: ["host.docker.internal:9464"]
+      - targets: ["lab-a:9464", "lab-b:9464"]
+  - job_name: research-api
+    authorization:
+      type: Bearer
+      credentials_file: /tmp/research.token
+    static_configs:
+      - targets: ["research-a:9464", "research-b:9464"]

@@ -8,6 +8,8 @@ Every state x action cell is checked against the declared spec:
 - ``CANCEL_OPEN_ORDERS``: orders blocked; cancel=True; flatten=False.
 - ``FLATTEN_OPTIONAL``: orders blocked; cancel=True; flatten only with
   ``human_authorized=True`` (and never under ``allow_auto_flatten``).
+- ``FLATTEN``: orders blocked; cancel=False; flatten=False. The paper book
+  closes through the operator file, not through ``may_flatten``.
 - Any *unknown* state (typo, future enum, empty): orders must raise
   (fail closed) and cancel/flatten must return False.
 - ``set_state`` to an unknown name must raise, never transition.
@@ -23,6 +25,7 @@ from quant_fund.config.models import KillSwitchConfig
 from quant_fund.monitoring.kill_switch import (
     CANCEL_OPEN_ORDERS,
     ENABLED,
+    FLATTEN,
     FLATTEN_OPTIONAL,
     HALT_NEW_ORDERS,
     KillSwitch,
@@ -37,8 +40,9 @@ _SPEC: dict[str, tuple[bool, bool, bool]] = {
     HALT_NEW_ORDERS: (False, False, False),
     CANCEL_OPEN_ORDERS: (False, True, False),
     FLATTEN_OPTIONAL: (False, True, True),
+    FLATTEN: (False, False, False),
 }
-_UNKNOWN = ["BOGUS", "", "enabled", "HALT", "FLATTEN", "0", "None"]
+_UNKNOWN = ["BOGUS", "", "enabled", "HALT", "0", "None"]
 
 
 def _mk(state: str, auto_flatten: bool = False) -> KillSwitch:
