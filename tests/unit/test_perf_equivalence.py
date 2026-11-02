@@ -209,6 +209,7 @@ def _backtest_config(**overrides: object) -> AppConfig:
             stale_price_bars=5,
         ),
     )
+    config.kill_switch.state = "ENABLED"
     for name, value in overrides.items():
         setattr(config, name, value)
     return config

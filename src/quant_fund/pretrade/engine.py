@@ -142,7 +142,7 @@ class PretradeEngine:
         ref_ts_ns: int,
         halted: bool = False,
         sho_restricted: bool = False,
-        locate_ok: bool = True,
+        locate_ok: bool = False,
         bid: float = 0.0,
     ) -> None:
         sym = self._symbol(symbol_id)

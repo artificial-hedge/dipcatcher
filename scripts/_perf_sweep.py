@@ -83,7 +83,7 @@ def build_workload(
 
 
 def make_cfg() -> AppConfig:
-    return AppConfig(
+    cfg = AppConfig(
         costs=CostConfig(
             commission_bps=10.0,
             half_spread_bps=0.0,
@@ -105,6 +105,8 @@ def make_cfg() -> AppConfig:
             stale_model_hours=1e9,
         ),
     )
+    cfg.kill_switch.state = "ENABLED"
+    return cfg
 
 
 def _time(fn, bars, weights, cfg, reps: int) -> dict[str, float]:

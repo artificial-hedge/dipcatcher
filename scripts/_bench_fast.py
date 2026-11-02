@@ -73,7 +73,7 @@ def load_workload(sids=SIDS):
 def make_cfg():
     from quant_fund.config.models import AppConfig, CostConfig, RiskGateConfig
 
-    return AppConfig(
+    cfg = AppConfig(
         costs=CostConfig(
             commission_bps=10.0,
             half_spread_bps=0.0,
@@ -95,6 +95,8 @@ def make_cfg():
             stale_model_hours=1e9,
         ),
     )
+    cfg.kill_switch.state = "ENABLED"
+    return cfg
 
 
 def run_fast(bars, weights, cfg):

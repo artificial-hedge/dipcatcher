@@ -150,10 +150,12 @@ class PaperTradingSession:
         kind = refuse_live_endpoint(endpoint_kind)
         self.limits = limits if limits is not None else SessionLimits()
         if adapter is None:
+            # Opening a paper session is the opt-in. The adapter default stays halted.
             self._broker = PaperBrokerAdapter(
                 state_path=state_path,
                 endpoint_kind=kind,
                 starting_cash=_finite_positive(starting_cash, "starting_cash"),
+                accept_orders=True,
             )
         else:
             if adapter.endpoint_kind != kind:

@@ -923,7 +923,9 @@ class PaperConfig(StrictConfigModel):
 
 
 class KillSwitchConfig(StrictConfigModel):
-    state: str = "ENABLED"
+    """New orders stay blocked until ``state`` is set to ``ENABLED``."""
+
+    state: str = "HALT_NEW_ORDERS"
     allow_auto_flatten: bool = False
 
 

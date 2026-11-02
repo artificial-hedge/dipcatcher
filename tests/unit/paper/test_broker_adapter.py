@@ -35,7 +35,7 @@ def test_live_endpoint_refused_at_construction(tmp_path) -> None:
 
 def test_kill_resume_nav_seam_parity_and_no_duplicate_orders(tmp_path) -> None:
     path = tmp_path / "state.json"
-    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0)
+    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0, accept_orders=True)
     run1.submit(_order("o1", qty=10.0))
     run1.apply_fill(_fill("f1", "o1", qty=10.0, price=10.0))
     run1.mark("SEC_A", 11.0)
@@ -58,7 +58,7 @@ def test_kill_resume_nav_seam_parity_and_no_duplicate_orders(tmp_path) -> None:
 
 def test_no_duplicate_orders_across_resume(tmp_path) -> None:
     path = tmp_path / "state.json"
-    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0)
+    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0, accept_orders=True)
     assert run1.submit(_order("o1")) == "accepted"
     assert run1.submit(_order("o1")) == "duplicate_order"
     run1.checkpoint()
@@ -74,7 +74,7 @@ def test_no_duplicate_orders_across_resume(tmp_path) -> None:
 
 def test_resume_continues_and_totals_are_consistent(tmp_path) -> None:
     path = tmp_path / "state.json"
-    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0)
+    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0, accept_orders=True)
     run1.submit(_order("o1", qty=5.0))
     run1.apply_fill(_fill("f1", "o1", qty=5.0, price=10.0))
     run1.mark("SEC_A", 10.0)
@@ -93,7 +93,7 @@ def test_resume_continues_and_totals_are_consistent(tmp_path) -> None:
 
 def test_cancel_survives_resume_and_blocks_the_late_fill(tmp_path) -> None:
     path = tmp_path / "state.json"
-    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0)
+    run1 = PaperBrokerAdapter(state_path=path, starting_cash=1000.0, accept_orders=True)
     run1.submit(_order("o1", qty=10.0))
     run1.mark("SEC_A", 10.0)
     run1.cancel("o1")
@@ -110,7 +110,7 @@ def test_cancel_survives_resume_and_blocks_the_late_fill(tmp_path) -> None:
 
 def test_seam_reports_research_only(tmp_path) -> None:
     path = tmp_path / "state.json"
-    run = PaperBrokerAdapter(state_path=path, starting_cash=0.0)
+    run = PaperBrokerAdapter(state_path=path, starting_cash=0.0, accept_orders=True)
     run.checkpoint()
     report = run.seam_report()
     assert report["research_only"] is True

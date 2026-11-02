@@ -65,6 +65,7 @@ cfg = AppConfig(
         stale_model_hours=1e9,
     ),
 )
+cfg.kill_switch.state = "ENABLED"
 run_backtest_fast(bars, weights, cfg)  # warmup
 pr = cProfile.Profile()
 pr.enable()

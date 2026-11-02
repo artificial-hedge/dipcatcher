@@ -73,6 +73,7 @@ risk_gate:
   max_name: 0.05
   max_participation: 0.1
   max_predicted_vol: 0.4
+# Explicit opt-in for simulated research orders. The code default is halt.
 kill_switch:
   state: ENABLED
   allow_auto_flatten: false
