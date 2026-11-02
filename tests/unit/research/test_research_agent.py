@@ -120,7 +120,8 @@ def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
     assert "conformal" in nb.families
     assert nb.families["cpcv"]["purge_embargo_valid"] is True
     assert nb.families["cpcv"]["claim"] == "validation_integrity_only"
-    assert all(item["executed"] for item in nb.scorecard.values())
+    not_executed = sorted(name for name, item in nb.scorecard.items() if not item["executed"])
+    assert not_executed == []
     assert all(item["finite_observation"] for item in nb.scorecard.values())
     assert all(item["forbidden_metrics_absent"] for item in nb.scorecard.values())
     conf = nb.families["conformal"]
