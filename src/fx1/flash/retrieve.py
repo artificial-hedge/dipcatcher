@@ -18,7 +18,7 @@ import math
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fx1.flash.store import FlashEntry, FlashStore
 
@@ -106,7 +106,8 @@ def _age_s(entry: FlashEntry, now: float) -> float:
     conservative fallback: ``updated_at`` may have been advanced merely by a
     failed refresh or by ``mark_used`` and therefore cannot prove freshness.
     A successful source refresh is evidence-bearing and takes precedence.
-    Malformed timestamps fail stale rather than silently appearing current.
+    Malformed or timezone-naive timestamps fail stale rather than silently
+    appearing current.
     """
     evidence_times: list[float] = []
     for value in (entry.refreshed_at, entry.evidence_at, entry.created_at):
@@ -116,8 +117,8 @@ def _age_s(entry: FlashEntry, now: float) -> float:
             evidence_at = datetime.fromisoformat(value)
         except ValueError:
             continue
-        if evidence_at.tzinfo is None:
-            evidence_at = evidence_at.replace(tzinfo=UTC)
+        if evidence_at.tzinfo is None or evidence_at.utcoffset() is None:
+            continue
         evidence_times.append(evidence_at.timestamp())
     if not evidence_times:
         return math.inf
