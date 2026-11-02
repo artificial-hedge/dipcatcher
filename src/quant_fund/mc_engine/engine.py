@@ -45,6 +45,7 @@ from quant_fund.mc_engine.summary import (
 )
 from quant_fund.mc_engine.tails import path_risk_stats
 from quant_fund.mc_engine.variance import draw_standard_normals
+from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 ProgressCallback = Callable[[dict[str, float | int]], None]
@@ -273,25 +274,29 @@ def _chunk_file(directory: Path, chunk_id: int) -> Path:
 def _write_manifest(directory: Path, manifest: dict[str, Any]) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     body = {k: v for k, v in manifest.items() if k != "receipt_sha256"}
-    manifest = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
-    target = directory / "manifest.json"
-    tmp = directory / "manifest.json.tmp"
-    tmp.write_text(json.dumps(manifest, sort_keys=True, indent=2), encoding="utf-8")
-    tmp.replace(target)
+    sealed = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
+    atomic_write_text(
+        directory / "manifest.json",
+        json.dumps(sealed, sort_keys=True, indent=2),
+    )
 
 
 def _load_manifest(directory: Path) -> dict[str, Any] | None:
     path = directory / "manifest.json"
     if not path.is_file():
         return None
-    loaded = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("checkpoint manifest is unreadable — refusing to resume") from exc
     if not isinstance(loaded, dict):
         raise ValueError("checkpoint manifest is not an object")
     seal = loaded.get("receipt_sha256")
-    if seal is not None:
-        body = {k: v for k, v in loaded.items() if k != "receipt_sha256"}
-        if seal != hash_bytes(canonical_json_bytes(body)):
-            raise ValueError("checkpoint manifest seal mismatch — refusing to resume")
+    if not isinstance(seal, str) or not seal:
+        raise ValueError("checkpoint manifest has no receipt seal — refusing to resume")
+    body = {k: v for k, v in loaded.items() if k != "receipt_sha256"}
+    if seal != hash_bytes(canonical_json_bytes(body)):
+        raise ValueError("checkpoint manifest seal mismatch — refusing to resume")
     return cast(dict[str, Any], loaded)
 
 

@@ -185,6 +185,18 @@ class TestManifest:
     def test_manifest_missing(self, tmp_path) -> None:
         assert _load_manifest(tmp_path) is None
 
+    def test_torn_manifest_is_refused(self, tmp_path) -> None:
+        (tmp_path / "manifest.json").write_text('{"completed_chunks": [0]')
+        with pytest.raises(ValueError, match="unreadable"):
+            _load_manifest(tmp_path)
+
+    def test_unsealed_manifest_is_refused(self, tmp_path) -> None:
+        (tmp_path / "manifest.json").write_text(
+            json.dumps({"mc_engine_version": 1, "completed_chunks": [0]})
+        )
+        with pytest.raises(ValueError, match="seal"):
+            _load_manifest(tmp_path)
+
 
 class TestResume:
     def test_no_manifest(self, tmp_path) -> None:
