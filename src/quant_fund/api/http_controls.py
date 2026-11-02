@@ -10,8 +10,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import secrets
 import threading
 import time
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -149,27 +152,53 @@ def _configured_match(provided: str | None, expected: str | None) -> bool:
     return matched
 
 
+def _slot_match(provided: str | None, current: str | None, previous: str | None) -> bool:
+    """Digest the current key and the previous key before deciding.
+
+    The previous compare always runs, including when the current key matched
+    and when the previous key is unset.
+    """
+    current_ok = _configured_match(provided, current)
+    previous_ok = _configured_match(provided, previous)
+    return current_ok or previous_ok
+
+
+def _any_key(*keys: str | None) -> bool:
+    return any(keys)
+
+
+def admin_key_matches(
+    provided: str | None,
+    current: str | None,
+    previous: str | None,
+) -> bool:
+    """True when the header matches the current or previous admin key."""
+    return _slot_match(provided, current, previous)
+
+
 def scoped_auth_decision(
     method: str,
     provided: str | None,
     admin_key: str | None,
     read_key: str | None,
+    admin_previous: str | None = None,
+    read_previous: str | None = None,
 ) -> str:
     """Return ``ok``, ``unauthorized``, ``forbidden``, or ``read_denied``.
 
     The admin key authorizes every method. The read key authorizes safe
-    methods only. Both digests run before the decision, including when a key
-    is unset and when the admin key matches.
+    methods only. Current and previous digests both run before the decision,
+    including when a key is unset and when the current key matches.
     """
-    admin_ok = _configured_match(provided, admin_key)
-    read_ok = _configured_match(provided, read_key)
+    admin_ok = _slot_match(provided, admin_key, admin_previous)
+    read_ok = _slot_match(provided, read_key, read_previous)
     if admin_ok:
         return "ok"
     if read_ok and method.upper() in _SAFE_METHODS:
         return "ok"
     if read_ok:
         return "read_denied"
-    if admin_key or read_key:
+    if _any_key(admin_key, read_key, admin_previous, read_previous):
         return "unauthorized"
     return "forbidden"
 
@@ -179,6 +208,8 @@ def credential_refusal(
     admin_key: str | None,
     read_key: str | None,
     unset_detail: str,
+    admin_previous: str | None = None,
+    read_previous: str | None = None,
 ) -> JSONResponse | None:
     """401, 403, or None when the request may proceed."""
     decision = scoped_auth_decision(
@@ -186,6 +217,8 @@ def credential_refusal(
         request.headers.get("X-API-Key"),
         admin_key,
         read_key,
+        admin_previous,
+        read_previous,
     )
     if decision == "ok":
         return None
@@ -257,6 +290,113 @@ def nonempty_env(name: str) -> str | None:
     if value is None or value == "":
         return None
     return value
+
+
+_SECRET_FILE_BYTES = 4096
+_UNREADABLE_SECRET = "file-secret-unreadable-" + secrets.token_hex(16)
+_KEY_FILE_SUFFIXES = ("_FILE", "_PREVIOUS_FILE", "_GRACE_UNTIL_FILE")
+_KEY_SLOTS = (
+    "QUANT_API_KEY",
+    "QUANT_API_READ_KEY",
+    "RESEARCH_API_KEY",
+    "RESEARCH_API_READ_KEY",
+)
+
+
+def key_file_env_names() -> tuple[str, ...]:
+    """Environment names that point at key material or a grace deadline."""
+    return tuple(f"{slot}{suffix}" for slot in _KEY_SLOTS for suffix in _KEY_FILE_SUFFIXES)
+
+
+def admin_key_configured(name: str) -> bool:
+    """True when the admin env value or its ``*_FILE`` path is set.
+
+    A read-key file does not satisfy this check. The bind guard uses it so a
+    file-backed admin key can listen beyond loopback.
+    """
+    if nonempty_env(name):
+        return True
+    return bool(os.environ.get(f"{name}_FILE", "").strip())
+
+
+def load_key_slot(name: str, *, now: datetime | None = None) -> tuple[str | None, str | None]:
+    """Current and previous secrets for one key name.
+
+    ``{name}_FILE`` replaces the environment value. ``{name}_PREVIOUS_FILE``
+    is accepted only while ``now`` is strictly before the timestamp in
+    ``{name}_GRACE_UNTIL_FILE``. A set file that cannot be read stays
+    configured and matches nothing.
+    """
+    moment = now if now is not None else datetime.now(UTC)
+    return _current_secret(name), _previous_secret(name, moment)
+
+
+def _current_secret(name: str) -> str | None:
+    if os.environ.get(f"{name}_FILE", "").strip():
+        return _secret_from_env_path(f"{name}_FILE")
+    return nonempty_env(name)
+
+
+def _previous_secret(name: str, now: datetime) -> str | None:
+    if not _grace_open(name, now):
+        return None
+    env_name = f"{name}_PREVIOUS_FILE"
+    if not os.environ.get(env_name, "").strip():
+        return None
+    return _secret_from_env_path(env_name)
+
+
+def _grace_open(name: str, now: datetime) -> bool:
+    deadline = _grace_deadline(name)
+    if deadline is None:
+        return False
+    return now < deadline
+
+
+def _grace_deadline(name: str) -> datetime | None:
+    raw_path = os.environ.get(f"{name}_GRACE_UNTIL_FILE", "").strip()
+    if not raw_path:
+        return None
+    try:
+        text = Path(raw_path).read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return None
+    try:
+        return _parse_deadline(text)
+    except ValueError:
+        return None
+
+
+def _parse_deadline(text: str) -> datetime:
+    line = text.strip()
+    if len(line) > 64:
+        raise ValueError("deadline is too long")
+    if line.endswith("Z"):
+        line = line[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(line)
+    if parsed.tzinfo is None:
+        raise ValueError("deadline needs a timezone")
+    return parsed.astimezone(UTC)
+
+
+def _secret_from_env_path(env_name: str) -> str:
+    raw = os.environ.get(env_name, "").strip()
+    if not raw:
+        return _UNREADABLE_SECRET
+    try:
+        return _read_secret_file(Path(raw))
+    except (OSError, UnicodeError, ValueError):
+        return _UNREADABLE_SECRET
+
+
+def _read_secret_file(path: Path) -> str:
+    data = path.read_bytes()
+    if len(data) > _SECRET_FILE_BYTES:
+        raise ValueError("secret file is too large")
+    lines = data.decode("utf-8").splitlines()
+    if len(lines) != 1 or lines[0] == "":
+        raise ValueError("secret file must be a single line")
+    return lines[0]
 
 
 def rate_config(prefix: str) -> tuple[float, float] | None:

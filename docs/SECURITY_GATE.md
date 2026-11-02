@@ -33,6 +33,21 @@ The rescan for this slice sent 40 keyed requests to each service after the overr
 
 `QUANT_API_KEY` and `RESEARCH_API_KEY` are the admin keys. `QUANT_API_READ_KEY` and `RESEARCH_API_READ_KEY` are the read keys. Safe methods are GET, HEAD, and OPTIONS. The matrix in `tests/unit/security/test_authz_matrix.py` fails when a new route is missing. `.env.example` does not gain the read-key names.
 
+## Key rotation
+
+The process reads key files on each request. Replacing a file does not require a restart. `deploy/compose.hardened.yml` still injects `QUANT_API_KEY` and `RESEARCH_API_KEY` and does not mount these files. An operator who wants file rotation sets the variables below in the service environment and mounts the files. `.env.example` is hash-pinned and does not list them.
+
+For each of `QUANT_API_KEY`, `QUANT_API_READ_KEY`, `RESEARCH_API_KEY`, and `RESEARCH_API_READ_KEY`:
+
+1. Write the new secret as one UTF-8 line in a mode `0600` file. Point `{NAME}_FILE` at that path. When `{NAME}_FILE` is set, the environment value of `{NAME}` is not accepted.
+2. Write the retiring secret as one line in `{NAME}_PREVIOUS_FILE`, mode `0600`.
+3. Write the grace deadline as one ISO-8601 timestamp with a timezone in `{NAME}_GRACE_UNTIL_FILE`. `2026-11-03T12:00:00Z` is a valid line. The previous secret authorizes the same methods as the current secret while the clock is strictly before that timestamp.
+4. After the deadline the previous file is ignored. Delete it when the clients have moved.
+5. A missing, empty, multi-line, or unreadable current file stays configured and matches nothing, including for a loopback peer. A missing or unreadable deadline file closes the grace window.
+6. The CLI bind guard treats `{NAME}_FILE` for the admin name as the key being set. A read-key file does not satisfy that guard.
+
+`tests/unit/security/test_key_rotation.py` covers the file replacement, the grace boundary, the read-key scope, and the lab bind guard.
+
 ## Owner steps this gate does not perform
 
 - Bump the crown `uv.lock` virtualenv pin past 21.14.12 for GHSA-cx6f-vjhg-g3cc.

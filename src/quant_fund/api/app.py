@@ -22,7 +22,7 @@ from quant_fund.api.http_controls import (
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
-    nonempty_env,
+    load_key_slot,
     reject_bad_headers,
     reject_deep_json,
 )
@@ -179,11 +179,15 @@ async def _authenticate_request(request: Request, call_next: Any, path: str) -> 
     limited = ip_rate_response(request, "QUANT_API")
     if limited is not None:
         return limited
+    admin_key, admin_previous = load_key_slot("QUANT_API_KEY")
+    read_key, read_previous = load_key_slot("QUANT_API_READ_KEY")
     refusal = credential_refusal(
         request,
-        nonempty_env("QUANT_API_KEY"),
-        nonempty_env("QUANT_API_READ_KEY"),
+        admin_key,
+        read_key,
         _QUANT_UNSET_DETAIL,
+        admin_previous,
+        read_previous,
     )
     if refusal is not None:
         return refusal
@@ -198,9 +202,10 @@ async def _authenticate_request(request: Request, call_next: Any, path: str) -> 
 async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Secure default:
 
-    - If ``QUANT_API_KEY`` or ``QUANT_API_READ_KEY`` is set: require a matching
-      ``X-API-Key``. The admin key authorizes every method. The read key
-      authorizes GET, HEAD, and OPTIONS.
+    - If an admin or read key is set, including a ``*_FILE`` value: require a
+      matching ``X-API-Key``. The admin key authorizes every method. The read
+      key authorizes GET, HEAD, and OPTIONS. A previous key in its grace
+      window authorizes the same methods as the current key.
     - If both are unset: allow only loopback clients.
     - Reject malformed or oversized request bodies before route work is performed.
     """

@@ -15,14 +15,12 @@ from .support import _cfg
 
 @app.command()
 def api(host: str = "127.0.0.1", port: int = 8000) -> None:
-    import os
-
     import uvicorn
 
-    from quant_fund.api.http_controls import serve_banner_kwargs
+    from quant_fund.api.http_controls import admin_key_configured, serve_banner_kwargs
 
     loopback_hosts = {"127.0.0.1", "::1", "localhost"}
-    if host not in loopback_hosts and not os.environ.get("QUANT_API_KEY"):
+    if host not in loopback_hosts and not admin_key_configured("QUANT_API_KEY"):
         raise typer.BadParameter(
             "non-loopback API binding requires QUANT_API_KEY; refusing unauthenticated exposure"
         )

@@ -25,14 +25,18 @@ Secure default: ``/health`` and ``/ready`` are the only unauthenticated
 routes. ``/health`` is liveness. ``/ready`` is readiness: it is 200 only when
 the evidence roots the process serves are directories, and 503 otherwise.
 ``RESEARCH_API_KEY`` is the admin key and ``RESEARCH_API_READ_KEY`` is the
-read key. When either is set, every other route requires ``X-API-Key``.
-The admin key authorizes every method. The read key authorizes GET, HEAD,
-and OPTIONS. When both are unset only loopback clients are served. An app
-built with ``ResearchApiSettings.from_env`` reads the admin key on each
-request. An explicit ``api_key`` is a test override and is not taken from
-the environment. The read key is always the environment variable. The
-service holds no credentials and exposes no trading surface, but it must
-still never be bound to a non-loopback interface without ``RESEARCH_API_KEY``.
+read key. A ``*_FILE`` path replaces the environment value and is read on
+each request. A previous file is accepted until the timestamp in the
+matching ``*_GRACE_UNTIL_FILE``. When either slot is set, every other route
+requires ``X-API-Key``. The admin key authorizes every method. The read key
+authorizes GET, HEAD, and OPTIONS. When every slot is unset only loopback
+clients are served. An app built with ``ResearchApiSettings.from_env`` reads
+the admin key on each request. An explicit ``api_key`` is a test override
+and is not taken from the environment or from ``RESEARCH_API_KEY_FILE``.
+The read key still comes from its environment value or file. The service
+holds no trading credentials, but it must still never be bound to a
+non-loopback interface without ``RESEARCH_API_KEY`` or
+``RESEARCH_API_KEY_FILE``.
 """
 
 from __future__ import annotations
@@ -62,7 +66,7 @@ from quant_fund.api.http_controls import (
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
-    nonempty_env,
+    load_key_slot,
     reject_declared_body,
     reject_deep_json,
 )
@@ -414,13 +418,19 @@ def _int_or_none(value: object) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
+def research_admin_slot(cfg: ResearchApiSettings) -> tuple[str | None, str | None]:
+    """Current and previous admin keys. An explicit settings key ignores files."""
+    if cfg.key_from_env:
+        return load_key_slot("RESEARCH_API_KEY")
+    if cfg.api_key:
+        return cfg.api_key, None
+    return None, None
+
+
 def research_api_key(cfg: ResearchApiSettings) -> str | None:
     """Explicit settings keep their key. Env-backed apps read it per request."""
-    if cfg.key_from_env:
-        return nonempty_env("RESEARCH_API_KEY")
-    if cfg.api_key:
-        return cfg.api_key
-    return None
+    current, _previous = research_admin_slot(cfg)
+    return current
 
 
 def _evidence_checks(cfg: ResearchApiSettings) -> dict[str, bool]:
@@ -470,11 +480,15 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
     limited = ip_rate_response(request, "RESEARCH_API")
     if limited is not None:
         return limited
+    admin_key, admin_previous = research_admin_slot(cfg)
+    read_key, read_previous = load_key_slot("RESEARCH_API_READ_KEY")
     refusal = credential_refusal(
         request,
-        research_api_key(cfg),
-        nonempty_env("RESEARCH_API_READ_KEY"),
+        admin_key,
+        read_key,
         _RESEARCH_UNSET_DETAIL,
+        admin_previous,
+        read_previous,
     )
     if refusal is not None:
         return refusal
@@ -1052,12 +1066,14 @@ if __name__ == "__main__":
 
     host = os.environ.get("RESEARCH_API_HOST", "127.0.0.1")
     port = int(os.environ.get("RESEARCH_API_PORT", "8010"))
-    if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("RESEARCH_API_KEY"):
+    from quant_fund.api.http_controls import admin_key_configured, serve_banner_kwargs
+
+    if host not in {"127.0.0.1", "::1", "localhost"} and not admin_key_configured(
+        "RESEARCH_API_KEY"
+    ):
         raise SystemExit(
             "non-loopback binding requires RESEARCH_API_KEY; refusing unauthenticated exposure"
         )
-    from quant_fund.api.http_controls import serve_banner_kwargs
-
     banner = serve_banner_kwargs()
     uvicorn.run(
         app,
