@@ -95,6 +95,36 @@ def test_fail_closed_edges() -> None:
         mcs_report({"a": np.ones(10), "b": np.full(10, np.inf)})
 
 
+@pytest.mark.parametrize(
+    "streams",
+    [
+        {"a": [], "b": [1.0]},
+        {"a": [float("nan")], "b": [1.0]},
+        {"a": [float("inf")], "b": [1.0]},
+        {"a": [1.0], "b": ["1.0"]},
+        {"a": [1.0, 2.0], "b": [1.0]},
+    ],
+)
+def test_load_loss_streams_rejects_invalid_json(tmp_path: Path, streams) -> None:
+    import json
+
+    from quant_fund.research.mcs_seq import load_loss_streams
+
+    path = tmp_path / "streams.json"
+    path.write_text(json.dumps(streams))
+    with pytest.raises(ValueError, match="stream|loss streams"):
+        load_loss_streams(path)
+
+
+def test_load_loss_streams_rejects_null_csv_value(tmp_path: Path) -> None:
+    from quant_fund.research.mcs_seq import load_loss_streams
+
+    path = tmp_path / "streams.csv"
+    path.write_text("a,b\n1,2\n3,\n")
+    with pytest.raises(ValueError, match="non-numeric"):
+        load_loss_streams(path)
+
+
 def test_receipt_shape_and_monotone_shrink() -> None:
     heads = ["a", "b", "c"]
     streams = _iid_streams(heads, 50, seed=1)
