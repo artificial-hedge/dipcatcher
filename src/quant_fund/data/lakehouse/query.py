@@ -19,6 +19,7 @@ from quant_fund.config.models import UniverseConfig
 from quant_fund.data.lakehouse.store import FileEntry, Snapshot, load_snapshot
 from quant_fund.data.universe import membership_asof
 from quant_fund.schemas.errors import DataContractError, LeakageError, PointInTimeError
+from quant_fund.utils.path_safety import PathSafetyError, contained_path
 
 _BAR_FIELDS = (
     "security_id",
@@ -160,8 +161,16 @@ def universe_asof(
     return members
 
 
+def _lake_object(root: Path, relative: str) -> Path:
+    """Resolve a snapshot object and refuse links or paths outside the lake."""
+    try:
+        return contained_path(root, relative)
+    except PathSafetyError as exc:
+        raise DataContractError(f"lake object path escapes the lake: {relative}") from exc
+
+
 def _read_bars(root: Path, entry: FileEntry, decision: datetime) -> pl.DataFrame:
-    path = str(Path(root) / entry.object_path)
+    path = str(_lake_object(root, entry.object_path))
     names = set(pl.scan_parquet(path).collect_schema().names())
     if {"event_time", "available_time"} <= names:
         sql = """
@@ -200,7 +209,7 @@ def _members_from_universe_files(
 ) -> list[UniverseMember]:
     frames: list[pl.DataFrame] = []
     for entry in files:
-        path = str(Path(root) / entry.object_path)
+        path = str(_lake_object(root, entry.object_path))
         names = set(pl.scan_parquet(path).collect_schema().names())
         if "asof" in names and "security_id" in names:
             frames.append(_panel_members_frame(path, names, decision))
@@ -282,7 +291,7 @@ def _load_role(root: Path, snapshot: Snapshot, role: str) -> pl.DataFrame | None
         return None
     frames = []
     for entry in files:
-        path = Path(root) / entry.object_path
+        path = _lake_object(root, entry.object_path)
         if entry.kind == "lfs_pointer":
             raise DataContractError(f"{entry.logical_path} is an LFS pointer; payload is absent")
         frames.append(pl.read_parquet(path))

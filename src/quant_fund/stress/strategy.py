@@ -15,6 +15,8 @@ import numpy as np
 import yaml
 from numpy.typing import NDArray
 
+from quant_fund.utils.path_safety import PathSafetyError, contained_path
+
 _MAPPINGS = frozenset({"return", "duration"})
 
 
@@ -41,6 +43,23 @@ def _require_mapping(mapping: str) -> str:
     if mapping not in _MAPPINGS:
         raise ValueError(f"mapping must be one of {sorted(_MAPPINGS)}")
     return mapping
+
+
+def _returns_csv_path(raw: object, base_dir: Path | None) -> str | None:
+    """Keep a strategy return panel inside the strategy directory."""
+    if not raw:
+        return None
+    if not isinstance(raw, str):
+        raise ValueError("returns_csv must be a relative path")
+    if base_dir is None:
+        candidate = Path(raw)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            raise ValueError("returns_csv must stay inside the strategy directory")
+        return raw
+    try:
+        return str(contained_path(base_dir, raw))
+    except PathSafetyError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 def strategy_from_mapping(
@@ -80,10 +99,7 @@ def strategy_from_mapping(
             if not np.isfinite(weight):
                 raise ValueError(f"asset weight for {key} must be finite")
             asset_weights.append((str(key), weight))
-    returns_csv = payload.get("returns_csv")
-    returns_text = str(returns_csv) if returns_csv else None
-    if returns_text and base_dir is not None and not Path(returns_text).is_absolute():
-        returns_text = str((base_dir / returns_text).resolve())
+    returns_text = _returns_csv_path(payload.get("returns_csv"), base_dir)
     return ResearchStrategy(
         name=name,
         positions=tuple(positions),
