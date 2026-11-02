@@ -4,6 +4,14 @@ Dipcatcher is Artificial Hedge's research lab. This matrix is deliberately
 evidence-gated: a capability is not marked ready because a module exists or a
 synthetic fixture passes.
 
+`make prod-readiness` scores this matrix and the operations runbook on a
+checkout. Each row is `pass`, `fail`, or `needs-owner`. A `pass` is written
+only after the check observed the condition. `needs-owner` means a key
+holder, a vendor, or another host still has to supply evidence; it is not a
+pass. The command prints the table, writes a JSON receipt, and exits
+nonzero when any row fails. It does not stamp epochs, sign pins, or edit
+`src/fx1/serve/api.py`.
+
 | Control area | Current state | Evidence / gate |
 |---|---|---|
 | Point-in-time data contract | Implemented for file adapters; revision-aware on the evaluation side | PIT timestamp validation, duplicate-key checks, OHLCV checks, manifest hash verification, and decision-time filtering for late cross-sectional/market aggregates. Wave 15 adds `validation/vintage_eval.py` (VINTAGE-TS): validity-interval reconstruction, delayed-label filtering, and hindsight-contamination audits over SYNTHETIC revision regimes — the *evaluation* layer now detects vintage cheating even though true as-of vintages on the public tape remain a procurement gap. |
