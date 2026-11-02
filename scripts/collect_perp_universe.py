@@ -8,6 +8,10 @@ then collects (per symbol, resumable):
 - ``{symbol}_{interval}.spot.parquet`` spot klines over the same window
   (``--spot``, for the conservative spot-only book)
 
+Resume reuses a file only when its sidecar receipt sha256 matches the bytes
+and the parquet opens. A non-empty file without that seal is a failure, not
+a skip, so an interrupted write cannot be reported as a finished collection.
+
 Writes ``perp_universe.parquet`` + ``collection_manifest.json`` with per-file
 sha256, row counts, first/last event_time, and a gap audit (observed vs
 expected bars between first and last open). Per-symbol start is the
@@ -37,6 +41,7 @@ import polars as pl  # noqa: E402
 
 from quant_fund.data.collector import collect_source  # noqa: E402
 from quant_fund.data.sources.base import SourceError  # noqa: E402
+from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text  # noqa: E402
 
 _INTERVAL_MS = {
     "1m": 60_000,
@@ -80,6 +85,10 @@ _DEFAULT_EXCLUDE_BASES = {
 }
 
 
+class PartialCollectionError(SourceError):
+    """A non-empty collection artifact is not sealed and must not be reused."""
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -88,10 +97,87 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def existing_output_action(path: Path, *, resume: bool) -> str:
+    """Return ``reuse`` or ``collect``.
+
+    Missing and zero-length files are collected. With resume on, any other
+    existing path must be a sealed parquet: the sidecar receipt sha256 matches
+    the file bytes and the parquet opens. Otherwise this raises
+    PartialCollectionError so a later run cannot treat an interrupted write
+    as success.
+    """
+    if not resume:
+        return "collect"
+    if path.is_symlink():
+        raise PartialCollectionError(f"{path.name}: collection output is not a regular file")
+    if not path.exists():
+        return "collect"
+    if path.is_file() and path.stat().st_size == 0:
+        return "collect"
+    _require_sealed_collection(path)
+    return "reuse"
+
+
+def _require_sealed_collection(path: Path) -> None:
+    _require_readable_parquet(path, label="collection output")
+    receipt = path.with_suffix(".json")
+    if receipt.is_symlink() or not receipt.is_file():
+        raise PartialCollectionError(
+            f"{path.name}: collection output has no receipt; refusing to reuse a partial file"
+        )
+    if _receipt_sha256(receipt) != _sha256(path):
+        raise PartialCollectionError(
+            f"{path.name}: receipt sha256 does not match the file; refusing to reuse a partial file"
+        )
+
+
+def _receipt_sha256(receipt: Path) -> str:
+    try:
+        payload = json.loads(receipt.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise PartialCollectionError(f"{receipt.name}: collection receipt is unreadable") from exc
+    if not isinstance(payload, dict):
+        raise PartialCollectionError(f"{receipt.name}: collection receipt is unreadable")
+    digest = payload.get("sha256")
+    if not isinstance(digest, str) or not digest:
+        raise PartialCollectionError(f"{receipt.name}: collection receipt is missing sha256")
+    return digest
+
+
+def _require_readable_parquet(path: Path, *, label: str) -> None:
+    if path.is_symlink() or not path.is_file():
+        raise PartialCollectionError(f"{path.name}: {label} is not a regular file")
+    try:
+        pl.read_parquet(path)
+    except (OSError, pl.exceptions.PolarsError) as exc:
+        raise PartialCollectionError(f"{path.name}: {label} is not a readable parquet") from exc
+
+
+def _publish_universe(frame: pl.DataFrame, path: Path, *, keep_existing: bool) -> None:
+    """Keep a readable universe file, or replace it atomically.
+
+    Shard allowlists must not clobber a good full-universe parquet. A torn
+    file is not readable, so it is refused instead of kept.
+    """
+    if keep_existing and path.exists():
+        _require_readable_parquet(path, label="universe artifact")
+        return
+    atomic_write_parquet(frame, path)
+
+
+def _publish_manifest(path: Path, manifest: dict) -> None:
+    atomic_write_text(path, json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+
+def _accept_reusable(manifest: dict, filename: str, path: Path, interval: str | None) -> None:
+    manifest["skipped_existing"].append(filename)
+    manifest["files"][filename] = _audit(path, interval)
+
+
 def _audit(path: Path, interval: str | None) -> dict:
     frame = pl.read_parquet(path)
     if frame.is_empty():
-        return {"rows": 0}
+        return {"rows": 0, "sha256": _sha256(path)}
     times = frame["event_time"].sort()
     entry = {
         "rows": frame.height,
@@ -185,10 +271,14 @@ def main() -> int:
 
     uni_path = sources_dir / "perp_universe.parquet"
     if symbols_arg and uni_path.exists():
-        # Shard runs must not overwrite the canonical full-universe file.
+        # Shard runs must not overwrite a readable full-universe file.
+        try:
+            _publish_universe(uni, uni_path, keep_existing=True)
+        except PartialCollectionError as exc:
+            raise SystemExit(str(exc)) from exc
         print(f"universe allowlist: {uni.height} of {len(allowed)} requested")
     else:
-        uni.write_parquet(uni_path)
+        _publish_universe(uni, uni_path, keep_existing=False)
         print(f"universe: {uni.height} symbols -> {uni_path}")
     symbols = uni["security_id"].to_list()
     onboard = {
@@ -196,7 +286,7 @@ def main() -> int:
         for r in uni.select(["security_id", "onboard_ms"]).iter_rows(named=True)
     }
 
-    jobs: list[tuple[str, str, dict, str]] = []
+    jobs: list[tuple[str, str, dict, str | None]] = []
     for symbol in symbols:
         start_ms = onboard[symbol]
         for interval in args.intervals:
@@ -276,27 +366,27 @@ def main() -> int:
     t0 = time.time()
     for idx, (source, filename, kwargs, interval) in enumerate(jobs, start=1):
         target = sources_dir / filename
-        if args.resume and target.exists() and target.stat().st_size > 0:
-            manifest["skipped_existing"].append(filename)
-            continue
         try:
-            path = _collect_with_retries(source, data_root, kwargs, filename)
-            manifest["files"][filename] = _audit(path, interval)
-            if idx % 20 == 0 or idx == len(jobs):
-                done = len(manifest["files"])
-                rate = done / max(time.time() - t0, 1e-9)
-                print(
-                    f"[{idx}/{len(jobs)}] collected={done} "
-                    f"failures={len(manifest['failures'])} rate={rate:.2f} files/s"
-                )
+            if existing_output_action(target, resume=bool(args.resume)) == "reuse":
+                _accept_reusable(manifest, filename, target, interval)
+            else:
+                path = _collect_with_retries(source, data_root, kwargs, filename)
+                manifest["files"][filename] = _audit(path, interval)
+                if idx % 20 == 0 or idx == len(jobs):
+                    done = len(manifest["files"])
+                    rate = done / max(time.time() - t0, 1e-9)
+                    print(
+                        f"[{idx}/{len(jobs)}] collected={done} "
+                        f"failures={len(manifest['failures'])} rate={rate:.2f} files/s"
+                    )
         except SourceError as exc:
             manifest["failures"][filename] = str(exc)
             print(f"FAILED {filename}: {exc}", file=sys.stderr)
         # Persist after every file so a crash loses at most one entry.
-        manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        _publish_manifest(manifest_path, manifest)
 
     manifest["elapsed_seconds"] = round(time.time() - t0, 1)
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    _publish_manifest(manifest_path, manifest)
     print(
         f"done: {len(manifest['files'])} files, "
         f"{len(manifest['failures'])} failures, "
