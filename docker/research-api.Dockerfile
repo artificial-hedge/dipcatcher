@@ -62,13 +62,18 @@ COPY --chown=dipcatcher:dipcatcher verifier ./verifier
 COPY --chown=dipcatcher:dipcatcher artifacts ./artifacts
 # data/ is dockerignored — mount it at runtime (see header).
 COPY --chown=dipcatcher:dipcatcher docker/healthcheck.py /app/healthcheck.py
+COPY --chown=dipcatcher:dipcatcher docker/entrypoint.py /app/entrypoint.py
 COPY --chown=dipcatcher:dipcatcher deploy/observability/slo.yml /app/deploy/observability/slo.yml
 RUN mkdir -p /app/data && chown dipcatcher:dipcatcher /app/data
 USER dipcatcher
+# A read-only data mount is valid. The entrypoint still refuses a symlink.
+ENV DIPCATCHER_DATA_ROOT=/app/data \
+    DIPCATCHER_REQUIRE_DATA_WRITE=0
 EXPOSE 8010
 STOPSIGNAL SIGTERM
 # RESEARCH_API_HOST is 0.0.0.0, so the process refuses to start without
 # RESEARCH_API_KEY. The probe runs inside the container network namespace.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["/app/.venv/bin/python", "/app/healthcheck.py"]
+ENTRYPOINT ["/app/.venv/bin/python", "/app/entrypoint.py"]
 CMD ["python", "-m", "quant_fund.api.research_api"]

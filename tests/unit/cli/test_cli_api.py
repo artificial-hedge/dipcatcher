@@ -317,12 +317,16 @@ def test_cli_api_refuses_non_loopback_without_key(monkeypatch) -> None:
     for name in (
         "DIPCATCHER_BIND_PORT",
         "DIPCATCHER_CONFIG",
+        "DIPCATCHER_DATA_ROOT",
+        "DIPCATCHER_HALT_CANCELS_OPEN_ORDERS",
+        "DIPCATCHER_KILL_DRAIN_DEBOUNCE_S",
         "DIPCATCHER_KILL_SWITCH_PATH",
         "DIPCATCHER_LOG_LEVEL",
         "DIPCATCHER_METRICS_LOOPBACK_SCRAPE",
         "DIPCATCHER_METRICS_PORT",
         "DIPCATCHER_OBSERVE",
         "DIPCATCHER_OTEL_ENDPOINT",
+        "DIPCATCHER_REQUIRE_DATA_WRITE",
         "DIPCATCHER_SLO_PATH",
         "PORT",
     ):

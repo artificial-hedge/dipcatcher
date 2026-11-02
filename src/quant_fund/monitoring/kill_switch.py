@@ -9,10 +9,11 @@ ENABLED = "ENABLED"
 HALT_NEW_ORDERS = "HALT_NEW_ORDERS"
 CANCEL_OPEN_ORDERS = "CANCEL_OPEN_ORDERS"
 FLATTEN_OPTIONAL = "FLATTEN_OPTIONAL"
+FLATTEN = "FLATTEN"
 
-VALID_STATES = frozenset({ENABLED, HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL})
+VALID_STATES = frozenset({ENABLED, HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL, FLATTEN})
 # Any non-ENABLED state (including unknown) blocks new orders — fail closed.
-BLOCKING_STATES = frozenset({HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL})
+BLOCKING_STATES = frozenset({HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL, FLATTEN})
 
 
 class KillSwitch:
@@ -45,6 +46,8 @@ class KillSwitch:
         return self.state in {CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL}
 
     def may_flatten(self, human_authorized: bool) -> bool:
+        # ``FLATTEN`` is the paper-file token. This in-memory gate stays human-only
+        # and only on ``FLATTEN_OPTIONAL``. ``allow_auto_flatten`` never authorizes it.
         if self.state != FLATTEN_OPTIONAL:
             return False
         if self.allow_auto_flatten:

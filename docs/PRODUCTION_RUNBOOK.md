@@ -68,9 +68,13 @@ docker run --detach --name dipcatcher \
   dipcatcher:local
 ```
 
-The image creates `/app/data` owned by uid 10001. A mounted data directory
-must already be writable by that user. A root-owned named volume makes
-`smoke-up` fail closed. The smoke compose file uses the image directory.
+The image creates `/app/data` owned by uid 10001. The entrypoint
+(`DIPCATCHER_REQUIRE_DATA_WRITE=1`, `DIPCATCHER_DATA_ROOT=/app/data`) refuses
+to start when that directory is missing, is a symlink, or is not writable by
+uid 10001. The message names the path and the uid. A root-owned named volume
+fails that check. The smoke compose file uses the image directory. The
+research image sets `DIPCATCHER_REQUIRE_DATA_WRITE=0` so a `:ro` mount still
+starts, and it still refuses a symlink.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt
@@ -126,7 +130,8 @@ with `dipcatcher tombstone`. Do not edit the receipt file.
 
 Write one token into the file named by `DIPCATCHER_KILL_SWITCH_PATH`:
 
-`ENABLED`, `HALT_NEW_ORDERS`, `CANCEL_OPEN_ORDERS`, or `FLATTEN_OPTIONAL`.
+`ENABLED`, `HALT_NEW_ORDERS`, `CANCEL_OPEN_ORDERS`, `FLATTEN_OPTIONAL`, or
+`FLATTEN`.
 
 Any token other than `ENABLED` makes `/ready` return 503 on the next probe.
 A missing file is `ENABLED`. A symlink, directory, or unknown body also
@@ -134,20 +139,48 @@ fails closed. The body is never copied into logs or the readiness payload.
 
 `dipcatcher live kill` writes `HALT_NEW_ORDERS` to this file (or to
 `--kill-switch-file`, or to `<desk>/kill_switch` when neither is set) and
-then latches the desk. `dipcatcher live reset` clears the desk and then
+then latches the desk. It does not cancel or flatten a paper book, and it
+does not write `FLATTEN`. `dipcatcher live reset` clears the desk and then
 writes `ENABLED`. `dipcatcher paper --halt` and `--clear-halt` write the
 same file when `DIPCATCHER_KILL_SWITCH_PATH` is set.
 
 New paper orders and the paper fill ledger call the same reader. A blocking
-token, or a symlink, directory, or unknown body, refuses the order. The file
-does not cancel open paper orders and does not flatten a book.
+token, or a symlink, directory, or unknown body, refuses the order and does
+not change the book.
 
-`fx1 harness serve` watches the file and sets the harness drain latch. That
-latch is one-way: writing `ENABLED` later restores `/ready` and paper, and
-the harness process keeps refusing new work until it is restarted.
+`HALT_NEW_ORDERS` cancels resting paper orders only when
+`DIPCATCHER_HALT_CANCELS_OPEN_ORDERS` is `1`, `true`, `yes`, or `on`. The
+default leaves those orders in place. `CANCEL_OPEN_ORDERS` always cancels
+resting paper orders and does not close positions. `FLATTEN_OPTIONAL` does
+not cancel or flatten; the in-memory human gate is unchanged.
+`FLATTEN` cancels resting paper orders and then closes the simulated book at
+the last positive finite mark, in symbol order, with zero costs. A missing
+mark cancels the orders and leaves every position. This is a paper
+mark-to-cash close, not a live order. The live broker is not on this path.
+
+`fx1 harness serve` watches the file. A blocking token sets the harness
+drain immediately. After the file stays `ENABLED` for
+`DIPCATCHER_KILL_DRAIN_DEBOUNCE_S` (default 1 second, maximum 300), the
+watcher clears only the latch it set and logs `operator_kill_drain_cleared`.
+An invalid debounce never clears that latch and logs
+`operator_kill_drain_debounce_invalid`. `POST /harness/drain` stays one-way.
 `python -m fx1.serve.api` does not watch the file; that module is hash-pinned.
+The lab process SIGTERM drain is also one-way.
 
 Clear the halt by writing `ENABLED`, or by removing the file.
+
+Paper ledger and checkpoint backup:
+
+```bash
+python scripts/paper_state_backup.py backup --source /path/to/data --dest /path/to/archive
+python scripts/paper_state_backup.py restore --archive /path/to/archive --dest /path/to/data
+```
+
+The archive covers `metadata/paper/` and `checkpoints/` under the data root,
+or a single run directory that contains `broker_state.json`. Restore checks
+every hash before it writes. A symlink, a tampered file, or a destination
+file with different bytes is refused. The script does not archive the rest
+of the tree.
 
 ## Logs
 

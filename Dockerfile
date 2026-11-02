@@ -32,13 +32,18 @@ COPY --from=builder --chown=dipcatcher:dipcatcher /app/.venv /app/.venv
 COPY --chown=dipcatcher:dipcatcher src ./src
 COPY --chown=dipcatcher:dipcatcher configs ./configs
 COPY --chown=dipcatcher:dipcatcher docker/healthcheck.py /app/healthcheck.py
+COPY --chown=dipcatcher:dipcatcher docker/entrypoint.py /app/entrypoint.py
 COPY --chown=dipcatcher:dipcatcher deploy/observability/slo.yml /app/deploy/observability/slo.yml
 RUN mkdir -p /app/data && chown dipcatcher:dipcatcher /app/data
 USER dipcatcher
+ENV DIPCATCHER_DATA_ROOT=/app/data \
+    DIPCATCHER_REQUIRE_DATA_WRITE=1
 EXPOSE 8000
 STOPSIGNAL SIGTERM
 # Loopback by default. A published port needs DIPCATCHER_BIND_HOST=0.0.0.0
 # and QUANT_API_KEY. The probe runs inside the container network namespace.
+# The entrypoint refuses a data directory uid 10001 cannot write.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["/app/.venv/bin/python", "/app/healthcheck.py"]
+ENTRYPOINT ["/app/.venv/bin/python", "/app/entrypoint.py"]
 CMD ["dipcatcher", "api"]

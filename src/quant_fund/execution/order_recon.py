@@ -19,15 +19,17 @@ SYNTHETIC fills in tests are correctness fixtures only, never market evidence.
 from __future__ import annotations
 
 import math
+import numbers
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from quant_fund.schemas.errors import ConfigError, KillSwitchActive
 
 #: Float slack for filled-quantity comparisons. Not a price tolerance.
 _QTY_EPS = 1e-9
+_FLATTEN_STAMP = datetime(2026, 11, 2, tzinfo=UTC)
 
 #: The only endpoint kinds this paper/simulated adapter accepts.
 ALLOWED_ENDPOINT_KINDS: frozenset[str] = frozenset({"paper", "simulated"})
@@ -105,6 +107,65 @@ class _OrderState:
 
 def _signed_qty(side: Side, quantity: float) -> float:
     return quantity if side == "BUY" else -quantity
+
+
+def _positive_mark(price: object) -> bool:
+    if isinstance(price, bool) or not isinstance(price, numbers.Real):
+        return False
+    value = float(price)
+    return math.isfinite(value) and value > 0.0
+
+
+def _marks_cover(positions: dict[str, float], marks: dict[str, float] | None) -> bool:
+    for name, quantity in positions.items():
+        if abs(float(quantity)) <= _QTY_EPS:
+            continue
+        price = None if marks is None else marks.get(name)
+        if not _positive_mark(price):
+            return False
+    return True
+
+
+def _flatten_positions(
+    ledger: OrderFillLedger, marks: dict[str, float], stamp: datetime
+) -> list[str]:
+    names = sorted(
+        name
+        for name, quantity in ledger._computed_positions.items()
+        if abs(float(quantity)) > _QTY_EPS
+    )
+    for name in names:
+        _flatten_name(ledger, name, float(marks[name]), stamp)
+    return names
+
+
+def _flatten_name(ledger: OrderFillLedger, name: str, price: float, stamp: datetime) -> None:
+    quantity = float(ledger._computed_positions.get(name, 0.0))
+    if abs(quantity) <= _QTY_EPS:
+        return
+    side: Side = "SELL" if quantity > 0.0 else "BUY"
+    order_id = f"flatten:{name}"
+    if order_id not in ledger._orders:
+        ledger._orders[order_id] = _OrderState(
+            order=Order(
+                order_id=order_id,
+                security_id=name,
+                side=side,
+                quantity=abs(quantity),
+                submitted_time=stamp,
+            )
+        )
+        ledger._counters["orders"] += 1
+    ledger.record_fill(
+        Fill(
+            fill_id=f"flatten-fill:{name}",
+            order_id=order_id,
+            security_id=name,
+            quantity=abs(quantity),
+            price=price,
+            fill_time=stamp,
+        )
+    )
 
 
 class OrderFillLedger:
@@ -201,6 +262,36 @@ class OrderFillLedger:
         state.cancelled = True
         self._counters["cancels"] += 1
         return "cancelled"
+
+    def cancel_operator_orders(self) -> list[str]:
+        """Cancel working residuals in sorted id order."""
+        cancelled: list[str] = []
+        for order_id in self._working_ids():
+            if self.cancel(order_id) == "cancelled":
+                cancelled.append(order_id)
+        return cancelled
+
+    def flatten_operator_book(
+        self, marks: dict[str, float] | None = None, *, at: datetime | None = None
+    ) -> dict[str, Any]:
+        """Cancel working orders, then record deterministic closing fills.
+
+        Orders are inserted directly so a blocking kill file cannot reject the
+        close. A second call is a no-op once positions are flat. ``marks is
+        None`` leaves every position and still cancels working orders.
+        """
+        cancelled = self.cancel_operator_orders()
+        if not _marks_cover(self._computed_positions, marks):
+            return {"ok": False, "problem": "flatten_unmarked", "cancelled": cancelled, "names": []}
+        names = _flatten_positions(self, {} if marks is None else marks, at or _FLATTEN_STAMP)
+        return {"ok": True, "problem": None, "cancelled": cancelled, "names": names}
+
+    def _working_ids(self) -> list[str]:
+        return sorted(
+            order_id
+            for order_id, state in self._orders.items()
+            if not state.cancelled and state.filled_qty + _QTY_EPS < state.order.quantity
+        )
 
     # -- fill intake --
 
