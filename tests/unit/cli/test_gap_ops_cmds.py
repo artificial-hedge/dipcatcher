@@ -10,7 +10,7 @@ wrong thing rather than about doing the right thing efficiently:
   configured, because an unauthenticated research API exposed on a routable
   interface is an open door.
 
-The API guard is tested with ``uvicorn.run`` replaced by a recorder, so no
+The API guard is tested with ``run_uvicorn`` replaced by a recorder, so no
 socket is ever opened.
 """
 
@@ -49,16 +49,27 @@ def test_at_most_one_kill_switch_override_is_accepted(halt: bool, clear_halt: bo
 
 @pytest.fixture
 def recorded_uvicorn(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
-    """Replace ``uvicorn.run`` so no socket is ever opened."""
-    import uvicorn
+    """Replace ``run_uvicorn`` so no socket is ever opened."""
+    from quant_fund.api import serve
 
     calls: dict[str, Any] = {}
 
-    def _fake_run(app: str, **kwargs: Any) -> None:
-        calls["app"] = app
-        calls.update(kwargs)
+    def _fake_run(
+        application: object,
+        *,
+        host: str,
+        port: int,
+        log_level: str,
+        shutdown_grace_s: int,
+    ) -> None:
+        calls["app"] = application
+        calls["host"] = host
+        calls["port"] = port
+        calls["log_level"] = log_level
+        calls["shutdown_grace_s"] = shutdown_grace_s
+        calls["reload"] = False
 
-    monkeypatch.setattr(uvicorn, "run", _fake_run)
+    monkeypatch.setattr(serve, "run_uvicorn", _fake_run)
     return calls
 
 
