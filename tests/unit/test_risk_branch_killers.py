@@ -102,11 +102,10 @@ def test_dd_remaining_cushion_boundary() -> None:
     assert lev[0] == pytest.approx(1.0)
 
 
-def test_dd_remaining_nonfinite_return_preserves_equity() -> None:
+def test_dd_remaining_nonfinite_return_zeros_from_that_bar() -> None:
     lev = dd_remaining_leverage(np.array([float("nan"), -0.045]), limit=0.05)
-    # NaN bar does not move equity; the -4.5% bar then exhausts the budget.
-    assert lev[0] == pytest.approx(1.0)
-    assert lev[1] == 0.0
+    # A non-finite print makes the equity path undefined from that bar on.
+    np.testing.assert_array_equal(lev, [0.0, 0.0])
 
 
 # ------------------------------- gates.es_leverage / kelly / crc / crash -----
@@ -517,14 +516,14 @@ def test_crc_leverage_window_exact() -> None:
     assert lev[7] == pytest.approx(expected, rel=1e-9)
 
 
-def test_crash_leverage_ignores_nan_for_wealth() -> None:
-    # NaN bars must not poison wealth (they are treated as 0), and a real
-    # crash after them still flattens.
+def test_crash_leverage_zeros_from_first_nonfinite() -> None:
+    # A hole makes every later wealth ratio undefined, including a mild bar
+    # that would have stayed invested if the hole had been treated as zero.
     r = np.array([0.0, float("nan"), -0.3, 0.0])
     lev = crash_leverage(r, lookback=1, crash_return=-0.2)
-    assert lev[2] == 0.0
+    np.testing.assert_array_equal(lev, [1.0, 0.0, 0.0, 0.0])
     lev = crash_leverage(np.array([0.0, float("nan"), -0.1, 0.0]), lookback=1)
-    assert lev[2] == pytest.approx(1.0)
+    np.testing.assert_array_equal(lev, [1.0, 0.0, 0.0, 0.0])
 
 
 def test_crash_leverage_lookback_boundary() -> None:
@@ -1103,10 +1102,10 @@ def test_dd_halt_exact_limit_is_halt() -> None:
     np.testing.assert_array_equal(dd_halt(r, limit=0.05), [0.0, -0.05, 0.0])
 
 
-def test_dd_remaining_nan_neutralizes_equity() -> None:
-    # Non-finite returns skip the equity update (multiplier 1.0, not 2.0).
+def test_dd_remaining_nan_zeros_the_suffix() -> None:
+    # The bar before the hole is still scored. From the hole on, size is flat.
     lev = dd_remaining_leverage(np.array([0.5, np.nan, -0.3]), limit=0.1, cushion=0.01)
-    np.testing.assert_array_equal(lev, [1.0, 1.0, 0.0])
+    np.testing.assert_array_equal(lev, [1.0, 0.0, 0.0])
 
 
 def test_dd_remaining_peak_above_one() -> None:
@@ -1192,11 +1191,13 @@ def test_crash_trail_divides_by_base() -> None:
     np.testing.assert_array_equal(lev, [1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0])
 
 
-def test_crash_nan_treated_as_zero_for_wealth() -> None:
-    # np.where(isfinite, r, 0.0): nan contributes 0, not +1.
+def test_crash_nan_zeros_the_suffix() -> None:
+    # The first hole flattens that bar and every later bar.
     r = np.array([0.1, np.nan, 0.1, -0.5, 0.2] * 3)
     lev = crash_leverage(r, lookback=3, crash_return=-0.2)
-    np.testing.assert_array_equal(lev, [1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0])
+    expected = np.ones_like(r)
+    expected[1:] = 0.0
+    np.testing.assert_array_equal(lev, expected)
 
 
 def test_stepm_step_boundary_fill() -> None:
@@ -1338,7 +1339,7 @@ def test_apply_gate_stack_dd_limit_arg_used() -> None:
     assert res.n_halt == 5
 
 
-def test_apply_gate_stack_nan_keeps_prior_scale() -> None:
+def test_apply_gate_stack_nan_flattens_scale() -> None:
     r = np.array([0.5, np.nan, -0.2])
     spec = GateSpec(
         vol_target=None,
@@ -1350,7 +1351,10 @@ def test_apply_gate_stack_nan_keeps_prior_scale() -> None:
         crash_lookback=0,
     )
     res = apply_gate_stack(r, spec)
-    assert res.scale[1] == 1.0
+    assert res.scale[1] == 0.0
+    assert res.scale[2] == 0.0
+    assert res.returns[1] == 0.0
+    assert res.returns[2] == 0.0
 
 
 # ----------------------------- overlay wave 3 --------------------------------
@@ -1563,9 +1567,9 @@ def test_dd_remaining_default_limit_pin() -> None:
     assert lev[0] == 0.0
 
 
-def test_dd_remaining_nan_multiplies_by_one_not_two() -> None:
-    # A non-finite return must leave equity unchanged (×1.0), not double it:
-    # after a 50% drawdown, eq staying 0.5 keeps lev at 0; eq=1.0 resets dd.
+def test_dd_remaining_nan_does_not_reopen_the_book() -> None:
+    # After a 50% drawdown the book is flat. A later non-finite print must not
+    # reopen it by pretending the equity path recovered.
     lev = dd_remaining_leverage(np.array([-0.5, np.nan]), limit=0.05, cushion=0.005)
     assert lev[1] == 0.0
 

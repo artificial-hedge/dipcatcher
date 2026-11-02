@@ -214,6 +214,8 @@ def black_litterman(
     """
     m = _as_cov(cov)
     n = m.shape[0]
+    if not np.isfinite(delta):
+        raise ValueError("delta must be finite")
     if prior_mu is None:
         w_mkt = np.full(n, 1.0 / n)
         pi = delta * (m @ w_mkt)
@@ -321,11 +323,13 @@ def cvar_minimization(
     )
     if not res.success:
         raise ValueError(f"CVaR LP failed: {res.message}")
-    w = np.clip(res.x[:n], 0.0, None) if long_only else res.x[:n]
-    s = np.abs(w).sum()
-    if s <= 0.0:
-        raise ValueError("CVaR LP returned zero portfolio")
-    w = w / w.sum()
+    raw = res.x[:n]
+    w = np.clip(raw, 0.0, None) if long_only else np.asarray(raw, dtype=float)
+    net = float(np.sum(w))
+    # Long-short books can cancel. Dividing by a zero net emits inf weights.
+    if not np.isfinite(net) or abs(net) <= 1e-12:
+        raise ValueError("CVaR LP returned a zero-net portfolio")
+    w = w / net
     losses = -(r @ w)
     var_alpha = float(np.quantile(losses, alpha, method="inverted_cdf"))
     # Empirical ES includes fractional mass at VaR; averaging all tail rows
