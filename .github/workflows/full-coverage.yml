@@ -58,7 +58,7 @@ jobs:
         run: make native
       - name: Execute all selected offline tests, including slow tests
         run: >-
-          uv run --frozen python scripts/full_coverage.py run
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/full_coverage.py run
           --lane '${{ matrix.lane }}'
           --output '${{ runner.temp }}/full-coverage-${{ matrix.lane }}'
       - name: Preserve results even after a test failure
@@ -97,7 +97,7 @@ jobs:
             name="$(basename "$directory")"
             mv "$directory" "$RUNNER_TEMP/coverage-parts/${name#full-coverage-}"
           done
-          uv run --frozen python scripts/full_coverage.py combine \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/full_coverage.py combine \
             --parts "$RUNNER_TEMP/coverage-parts" \
             --output "$RUNNER_TEMP/full-coverage-report"
       - name: Preserve per-file line and branch reports even below the floor
@@ -134,7 +134,7 @@ jobs:
         run: make fx1-gate
       - name: Strict FX1 types
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
-        run: uv run --frozen mypy --strict src/fx1
+        run: uv run --locked --no-build --no-binary-package fx-1 mypy --strict src/fx1
       - name: Static security analysis
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make security
@@ -230,7 +230,7 @@ jobs:
       - run: make sync
       - name: Prepare the required new workflow epoch and pin update
         run: |
-          uv run --frozen dipcatcher corpus-epoch \
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher corpus-epoch \
             --corpus-dir .github/workflows --glob '*.yml' \
             --out-dir .github/workflows --heads-pin quality/epoch_heads.json
           git add --intent-to-add .github/workflows/corpus_epoch_*.json

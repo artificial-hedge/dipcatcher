@@ -154,11 +154,11 @@
     "transport": "in-process buffered TestClient; stub backends"
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "b58a48a0869f9c8e04435129170432df0dce919d",
+  "git_revision": "fc48195763891682f9e7876008160dc6b59dad65",
   "interpretation": "Every retrieval sub-resource reads honestly end to end: empty pages answer their declared envelope instead of fabricating rows, every 404 lands in the path's own error grammar, the documented orderings hold (oldest-first event feeds, newest-first inventories, insertion-order items, request-order batch verdicts), cursor paging walks each list exactly once with honest has_more and previous-page before semantics, deleted parents tombstone their sub-resources while orphaned file records survive, the JSONL results stream terminates by EOF with complete lines and refuses pre-terminal reads, the ft event feed grows monotonically with a stable prefix and retains exactly the declared cap under overflow, reads stay idempotent and scope-checked (write scope can't read, read scope sees the shared workspace), concurrent read-during-write observes only consistent snapshots, and a bounded event feed pages its retained tail without blowup.",
   "kind": "retrieval_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "45112c7316351da5ec2323fd90580a0151209e10e25d64d39d6d54831158b4df",
+  "receipt_sha256": "ee643b3857038626cd0ed124ac0ec6917bf1648b8bab3803451a9a83966044f3",
   "research_only": true,
   "schema": "retrieval_audit.v1"
 }
