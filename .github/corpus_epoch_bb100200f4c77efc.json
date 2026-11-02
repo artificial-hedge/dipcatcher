@@ -1,0 +1,75 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "f279ee903fec77c53fce2217246e1b64f8aa4b02e8ff775a4e37af93d95bd336",
+  "inputs_sha256": "64faff681bc07abe12ac05ff9fb9ddd852b8de41919993c15be4c3cb288b3793",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "cb32a2621b62ff4ff14bf1d30613d6b623a7c598f97a2a1811840c641e832196",
+  "members": [
+    {
+      "name": "HISTORY_REWRITE_PLAN.md",
+      "sha256": "2f8ab97634040aab5853a8423c417b45206dcaa4ee31acea1280d0eecd4b9f54"
+    },
+    {
+      "name": "PULL_REQUEST_TEMPLATE.md",
+      "sha256": "b758ec958f9d43f8b32f85f39fe53da4958d147922444eb809b5de364b51e345"
+    },
+    {
+      "name": "actionlint.yaml",
+      "sha256": "849e7462a530dc6fafa21a62fd3ef0aa7a660220d6199869de415a9a9c6509f0"
+    },
+    {
+      "name": "codeql/codeql-config.yml",
+      "sha256": "acb715120442b5aa3eb9ff6e1541ead7a6c5b7a75966a380285e211ed4d80fe4"
+    },
+    {
+      "name": "corpus_epoch_0861a7387e453c36.json",
+      "sha256": "f810173afdb57fe84a469fecb8f76a6305b602994a296d2767d191d71145c5e7"
+    },
+    {
+      "name": "corpus_epoch_26a4c2c8da9dae82.json",
+      "sha256": "3f41843a20eca74f7d3d203cb938686be63cadf29b2d325904b70c17efee1607"
+    },
+    {
+      "name": "corpus_epoch_66b11cb0bac7bc80.json",
+      "sha256": "416012ace1be36fb1f26d55af3de7970eaf58fd1f7538f2b6ac066972e001d19"
+    },
+    {
+      "name": "corpus_epoch_8a12bbf1b44658cf.json",
+      "sha256": "c74093976a8a4b8fae9665a09029531b7f91a8b5e337c8e865d43c810dffd82c"
+    },
+    {
+      "name": "corpus_epoch_9ad1a2f4c6bab0c6.json",
+      "sha256": "f4d087b59289c30a3c7fd340237de7318ce4c13c834e0fb64d9ce10520daeb19"
+    },
+    {
+      "name": "corpus_epoch_ddbd72688b99d6e8.json",
+      "sha256": "b7269d31119f82dc37e9cec5d5bb8e87d1caa1337c573d2d010e5ca9bf82e39b"
+    },
+    {
+      "name": "dependabot.yml",
+      "sha256": "0377bba62c89d512c9d0535d4d1b401797e66cabe82ef042b3e17af7290968ee"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_26a4c2c8da9dae82.json",
+    "corpus_epoch_8a12bbf1b44658cf.json",
+    "corpus_epoch_9ad1a2f4c6bab0c6.json",
+    "corpus_epoch_ddbd72688b99d6e8.json"
+  ],
+  "members_removed": [
+    "corpus_epoch_ad2b92d9448af845.json"
+  ],
+  "n_members": 11,
+  "params": {
+    "head_sha": "016ce4583cc9df5eff959b80cbac623a5bbae937",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_ddbd72688b99d6e8.json",
+  "prev_epoch_sha256": "f795915853448fc667705317acc0c24db39ab99737f1c5b29d84352a836b3908",
+  "receipt_sha256": "bb100200f4c77efc70808f3f04c8e5d3996c87d6a19ac1213ffcfe5d1c07be84",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "shrinking"
+}

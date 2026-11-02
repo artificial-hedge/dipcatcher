@@ -1,0 +1,100 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "d7567795bcc8900394f96af73dcd7dde34321b99315527b9c07aca8789fe273a",
+  "inputs_sha256": "9e01384f48c1fbcff2a179ae1cf15cde0d0b606ab8855ac0787a7f93f2006254",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "8a8f32cdb68110b11f829f12b71a4dee46ad9420486263c579d1bea93ea10afc",
+  "members": [
+    {
+      "name": "corpus_epoch_418473661e43b332.json",
+      "sha256": "73ecaeeda9fb228ef90ecb32625cd84ceb32e0687a63bffaf86ac39851441a92"
+    },
+    {
+      "name": "corpus_epoch_54655917bf13602b.json",
+      "sha256": "e4b35f4804d235bb6ee75b8406420f5dd402dd205860840f2347de897b43e1a9"
+    },
+    {
+      "name": "corpus_epoch_ba4dfc5e9539492b.json",
+      "sha256": "83aeacb1b785346cbc7099e2aea6e97e27279a6712725ca5468809855813cf33"
+    },
+    {
+      "name": "corpus_epoch_c2f0991bd13465d2.json",
+      "sha256": "1505acada8aa13468c79fb7128dbe96b8ceb9bc8a8eba59b3746c778cbde245e"
+    },
+    {
+      "name": "typescript/README.md",
+      "sha256": "36f5d39a3a0d33808055337927edb430fc1e3f6c96e3469838ca9ab84184a03f"
+    },
+    {
+      "name": "typescript/client.test.mjs",
+      "sha256": "22f29c2dd1b2ff69b44278150f054934612c193654e92af815c53fcb7862fbeb"
+    },
+    {
+      "name": "typescript/client.ts",
+      "sha256": "3a1c659be32ed94101ac92b15f2cacdecef4b51e5117c79c47245439fd2fe03f"
+    },
+    {
+      "name": "typescript/fx1/README.md",
+      "sha256": "5643bb1c6eab35b841a8cf3a27091a380fc871ddca2cf004c4bf784b21f46e43"
+    },
+    {
+      "name": "typescript/fx1/client.test.mjs",
+      "sha256": "de01a81689e073ba4586e9220fd5222670e28238b1f3fe7f59972d56b16ec263"
+    },
+    {
+      "name": "typescript/fx1/client.ts",
+      "sha256": "c4ea38678aff34c421d4af6f49072b0bb9540eaf60dba4c4de7e827e5d8b1e9a"
+    },
+    {
+      "name": "typescript/fx1/openapi.json",
+      "sha256": "357c79cbb93b75ee9650c20aa512b75ab2774543bd86a1e2dd92d034b6e5e176"
+    },
+    {
+      "name": "typescript/fx1/package-lock.json",
+      "sha256": "d5f04456e47b23532e3bcf2128e954ddaed66275d72119bcc40be64a51eaa22f"
+    },
+    {
+      "name": "typescript/fx1/package.json",
+      "sha256": "dac005beaa88e6e13c97408e682864996d64148f324c920539b8f9794d7d6a55"
+    },
+    {
+      "name": "typescript/fx1/schema.d.ts",
+      "sha256": "d0c91cfad9431e8c654f2a8244822cd1470c5aa1820d7b83072a831ab6d9f8a8"
+    },
+    {
+      "name": "typescript/openapi.json",
+      "sha256": "9e8e7b9240f3ab928009282b75f85127d52dc6215fa6d633386bc2caf651dc8a"
+    },
+    {
+      "name": "typescript/package-lock.json",
+      "sha256": "41c36671e3665fada0e786deb478a99e53ffd1420c46c5f06468d8858fcbe6cf"
+    },
+    {
+      "name": "typescript/package.json",
+      "sha256": "db097d634bd826dc91b93ae55c3c1c6727d01fcb002a239ea0059708d693a746"
+    },
+    {
+      "name": "typescript/schema.d.ts",
+      "sha256": "f4a32590d0cb5587d0922ed83ec02474433d61f0f4f7cb4b4be4fe5eb43aaaab"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_418473661e43b332.json",
+    "typescript/client.test.mjs",
+    "typescript/fx1/client.test.mjs"
+  ],
+  "members_removed": [],
+  "n_members": 18,
+  "params": {
+    "head_sha": "016ce4583cc9df5eff959b80cbac623a5bbae937",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_418473661e43b332.json",
+  "prev_epoch_sha256": "24a2552d46453e7a79f9597849f966f3eee4495b0ec735083c25fa20ac5be028",
+  "receipt_sha256": "c6e24116f60f5a9c3d720407f91b821f364e38cc72c6a69206834e9de99cf45e",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

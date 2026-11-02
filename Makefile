@@ -43,19 +43,19 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 	# partial data files and applies the same threshold once.
 	uv run pytest -n auto --dist loadfile -m "not network and not slow" --cov --cov-report=term-missing --cov-report=xml
 
-lint: ## Ruff check + format check repo-wide
-	uv run ruff check .
-	uv run ruff format --check .
-	uv run python scripts/check_mypy_strict_allowlist.py
-	uv run python scripts/check_mccabe_ratchet.py
+lint: ## Ruff check + format check (matches ci.yml lint job scope)
+	uv run --locked --no-build --no-binary-package fx-1 ruff check src tests
+	uv run --locked --no-build --no-binary-package fx-1 ruff format --check src tests
+	uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mypy_strict_allowlist.py
+	uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mccabe_ratchet.py
 
 fmt: ## Auto-fix lint + format repo-wide
 	uv run ruff check --fix .
 	uv run ruff format .
 
 typecheck: ## mypy on the harness (public modules are strict; see pyproject)
-	uv run mypy src/quant_fund
-	uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
+	uv run --locked --no-build --no-binary-package fx-1 mypy src/quant_fund
+	uv run --locked --no-build --no-binary-package fx-1 mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
 
 arch-guard: ## Import-boundary guard (same commands as arch_guards.yml; stdlib-only)
 	uv run --no-project python scripts/check_import_boundaries.py
@@ -117,7 +117,7 @@ native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` fi
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
-ci: lint typecheck coverage ## Local mirror of the CI gate
+ci: lint typecheck security coverage ## Local mirror of the CI gate
 
 code-inventory: ## Report tracked semantic Python LOC and feature/test counts
 	uv run python scripts/code_quality_inventory.py --summary-only
@@ -176,10 +176,10 @@ perf-check: ## Compare current timings against the stored local baseline (1.5x g
 
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
-	PYTHONPATH=src uv run pytest tests/fx1 -q
+	PYTHONPATH=src uv run --locked --no-build --no-binary-package fx-1 pytest tests/fx1 -q
 
 fx1-lint: ## fx-1 lint
-	uv run ruff check src/fx1 tests/fx1
+	uv run --locked --no-build --no-binary-package fx-1 ruff check src/fx1 tests/fx1
 
 fx1-corpus: ## Build fx-1 SFT corpus from harness receipts + lab research runs
 	# data/metadata/research/runs is host-local (gitignored, regenerable via
