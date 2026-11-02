@@ -481,7 +481,10 @@ def test_legacy_heavy_jobs_are_gated_and_keep_instabox() -> None:
                 assert condition == "github.event_name == 'workflow_dispatch'"
                 continue
             if name == "ci.yml" and job == "refresh-test-durations":
-                assert condition == "github.event_name == 'workflow_dispatch' && inputs.suite == 'full'"
+                assert (
+                    condition
+                    == "github.event_name == 'workflow_dispatch' && inputs.suite == 'full'"
+                )
                 assert "instabox-large" in block
                 continue
             assert "USE_CURSOR_CI" in condition, (name, job)
