@@ -24,13 +24,15 @@ Evidence roots (all read-only, resolved at app construction):
 Secure default: ``/health`` and ``/ready`` are the only unauthenticated
 routes. ``/health`` is liveness. ``/ready`` is readiness: it is 200 only when
 the evidence roots the process serves are directories, and 503 otherwise.
-When ``RESEARCH_API_KEY`` is set every other route requires ``X-API-Key``;
-when it is unset only loopback clients are served. An app built with
-``ResearchApiSettings.from_env`` reads that variable on each request. An
-explicit ``api_key`` is a test override and is not taken from the
-environment. The service holds no credentials and exposes no trading
-surface, but it must still never be bound to a non-loopback interface
-without ``RESEARCH_API_KEY``.
+``RESEARCH_API_KEY`` is the admin key and ``RESEARCH_API_READ_KEY`` is the
+read key. When either is set, every other route requires ``X-API-Key``.
+The admin key authorizes every method. The read key authorizes GET, HEAD,
+and OPTIONS. When both are unset only loopback clients are served. An app
+built with ``ResearchApiSettings.from_env`` reads the admin key on each
+request. An explicit ``api_key`` is a test override and is not taken from
+the environment. The read key is always the environment variable. The
+service holds no credentials and exposes no trading surface, but it must
+still never be bound to a non-loopback interface without ``RESEARCH_API_KEY``.
 """
 
 from __future__ import annotations
@@ -54,9 +56,8 @@ from quant_fund.api.http_controls import (
     RequestBodyTooLarge,
     apply_security_headers,
     attach_body_limit,
-    auth_decision,
-    auth_rejection,
     buffer_capped_body,
+    credential_refusal,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
@@ -69,7 +70,6 @@ from quant_fund.api.http_controls import (
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 _PUBLIC_PATHS = frozenset({"/health", "/ready"})
-_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _RUN_ID_RE = re.compile(r"^[0-9a-f]{64}$")
 _RECEIPT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 _ARTIFACT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_./-]{0,255}$")
@@ -470,15 +470,14 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
     limited = ip_rate_response(request, "RESEARCH_API")
     if limited is not None:
         return limited
-    expected = research_api_key(cfg)
-    decision = auth_decision(request.headers.get("X-API-Key"), expected)
-    if decision == "unauthorized":
-        return auth_rejection(decision, unset_detail=_RESEARCH_UNSET_DETAIL)
-    if decision == "forbidden":
-        host = (request.client.host if request.client else "") or ""
-        if host not in _LOOPBACK_HOSTS:
-            return auth_rejection(decision, unset_detail=_RESEARCH_UNSET_DETAIL)
-        return await call_next(request)
+    refusal = credential_refusal(
+        request,
+        research_api_key(cfg),
+        nonempty_env("RESEARCH_API_READ_KEY"),
+        _RESEARCH_UNSET_DETAIL,
+    )
+    if refusal is not None:
+        return refusal
     provided = request.headers.get("X-API-Key") or ""
     limited_key = key_rate_response(request, "RESEARCH_API", provided)
     if limited_key is not None:
@@ -517,7 +516,7 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
 
     @app.middleware("http")
     async def research_api_auth(request: Request, call_next: Any) -> Any:
-        """Loopback-only by default; X-API-Key when RESEARCH_API_KEY is set."""
+        """Loopback-only by default; X-API-Key when an admin or read key is set."""
         try:
             response = await _research_dispatch(request, call_next, cfg)
         except RequestBodyTooLarge:

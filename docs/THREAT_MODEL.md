@@ -13,9 +13,9 @@ claims. `quant_fund.api.app._stamp_research_honesty` overwrites
 ## Assets
 
 - Operator API keys in the process environment: `QUANT_API_KEY`,
-  `RESEARCH_API_KEY`, and, on the harness, `FX1_API_KEY`. The request path
-  sees them only as an `X-API-Key` header. Bucket ids store a SHA-256 digest,
-  not the key.
+  `QUANT_API_READ_KEY`, `RESEARCH_API_KEY`, `RESEARCH_API_READ_KEY`, and, on
+  the harness, `FX1_API_KEY`. The request path sees them only as an
+  `X-API-Key` header. Bucket ids store a SHA-256 digest, not the key.
 - Research evidence on disk: `receipts/`, `verifier/`, `artifacts/`, and the
   run notebooks under the research data root. The research API is read-only.
 - Lab configs under `configs/`. `resolve_allowed_config_path` refuses a path
@@ -54,31 +54,52 @@ behind a proxy.
 
 ## Authentication and authorization
 
-Both lab and research apps use one shared key. There are no scopes and no
-per-route roles. A matching key authorizes every non-public route, including
-`/docs`, `/redoc`, and `/openapi.json`.
+Each app has an admin key and an optional read key.
 
-`/health` is the only public route on each app (`_PUBLIC_PATHS`). It is not
-rate limited.
-
-| Key on this request | Peer | Other routes |
+| App | Admin key | Read key |
 |---|---|---|
-| Non-empty | any | `X-API-Key` must match, or the response is 401 `{"detail": "invalid or missing X-API-Key"}` |
-| Missing or empty | loopback set above | Allowed |
-| Missing or empty | anything else | 403. The detail names the env var and tells the operator to set it or bind loopback. It does not echo a key. |
+| Lab | `QUANT_API_KEY` | `QUANT_API_READ_KEY` |
+| Research | `RESEARCH_API_KEY`, or `ResearchApiSettings.api_key` when `key_from_env` is false | `RESEARCH_API_READ_KEY` |
 
-The lab reads `QUANT_API_KEY` inside `api_auth_middleware` on every request.
-An empty string is treated as unset. The research app built with
-`ResearchApiSettings.from_env` sets `key_from_env` and `research_api_key`
+The admin key authorizes every method. The read key authorizes `GET`, `HEAD`,
+and `OPTIONS`. Any other method presented with the read key is 403
+`{"detail": "read key cannot modify"}`. That body does not echo the key.
+The research API registers only GET routes, so the two keys authorize the
+same registered routes. A POST with the read key is still that 403. A POST
+with the admin key reaches the router and is 405 when the path has no POST
+route.
+
+`/health` is public on both apps and is not rate limited. `/ready` is public
+on the research API only. The lab `/ready` probe requires a key when one is
+configured. Neither app mounts `/docs` or `/redoc` (`docs_url` and
+`redoc_url` are `None`). `/openapi.json` is mounted and follows the key rule.
+
+| Keys on this request | Peer | Other routes |
+|---|---|---|
+| Either key non-empty | any | `X-API-Key` must match the admin key, or match the read key on a safe method. Otherwise 401 `{"detail": "invalid or missing X-API-Key"}`. A matching read key on another method is the 403 above. |
+| Both missing or empty | loopback set above | Allowed |
+| Both missing or empty | anything else | 403. The detail names the admin env var and tells the operator to set it or bind loopback. It does not echo a key. |
+
+`_authenticate_request` reads both lab variables on every non-public request.
+An empty string is unset. `research_api_key` supplies the research admin key.
+The research read key is always `nonempty_env("RESEARCH_API_READ_KEY")`.
+`ResearchApiSettings.from_env` sets `key_from_env`, and `research_api_key`
 calls `nonempty_env("RESEARCH_API_KEY")` on every request. An explicit
 `ResearchApiSettings.api_key` is a frozen override used by tests; it does not
 read the environment.
 
-Comparison is `quant_fund.api.http_controls.keys_match`. Both sides are
-SHA-256 digested and the digests are compared with `hmac.compare_digest`, so
-the compare itself is fixed length. A surrogate that cannot be encoded as
-UTF-8 is a mismatch (401), not a 500. Hash time still depends on the length
-of the header value.
+`credential_refusal` runs `keys_match` twice, once for the admin key and once
+for the read key, including when a variable is unset. A missing header or an
+unset key is digested as the stand-in `absent-api-key`. Both sides of each
+call are SHA-256 digested and the digests are compared with
+`hmac.compare_digest`, so each compare is fixed length. A surrogate that
+cannot be encoded as UTF-8 is a mismatch, not a 500. Hash time still depends
+on the length of the header value.
+
+The CLI bind guard still requires the admin key. `QUANT_API_READ_KEY` alone
+does not allow `dipcatcher api` to bind a non-loopback host, and
+`RESEARCH_API_READ_KEY` alone does not allow
+`python -m quant_fund.api.research_api` to do so.
 
 ## Controls on both APIs
 
@@ -113,7 +134,8 @@ In-memory token bucket, one process, not shared across workers.
 - `/health` is not counted.
 - Other routes take an IP token first, including a request that will 401 or
   403. After the key matches, a second bucket is taken. Its id is
-  `sha256(key)`, not the key.
+  `sha256(key)`, not the key. A read key refused for a mutating method does
+  not take that second bucket.
 - At 1024 identities the oldest bucket is dropped.
 - Over the limit: 429 `{"detail": "rate limit exceeded"}` and `Retry-After: 1`.
 
@@ -165,7 +187,9 @@ handler with an HTML traceback. Both apps are constructed with debug off.
 
 Public: `GET /health`.
 
-Key required when configured, loopback-only when not:
+Key required when configured, loopback-only when not. Safe methods accept
+either key. `POST /portfolio/optimize` and `POST /backtest` accept the admin
+key. `/docs` and `/redoc` are not mounted.
 
 - `GET /ready`
 - `GET /models`
@@ -182,11 +206,13 @@ Key required when configured, loopback-only when not:
 - `GET /monitoring/drift`
 - `GET /doctor`
 - `GET /research/latest`
-- `GET /docs`, `GET /redoc`, `GET /openapi.json`, `GET /docs/oauth2-redirect`
+- `GET /openapi.json`
 
 ### Research API (`quant_fund.api.research_api`)
 
-Every declared route is GET. Public: `GET /health`.
+Every declared route is GET. Public: `GET /health` and `GET /ready`.
+`/ready` is 200 when the evidence roots are directories and 503 otherwise.
+`/docs` and `/redoc` are not mounted.
 
 The same key rule covers:
 
@@ -199,7 +225,7 @@ The same key rule covers:
 - `GET /verifier/versions`, `GET /verifier/versions/{version}`
 - `GET /verifier/runs`, `GET /verifier/runs/{run_log_id}`
 - `GET /artifacts`, `GET /artifacts/{artifact_id:path}`
-- `GET /docs`, `GET /redoc`, `GET /openapi.json`, `GET /docs/oauth2-redirect`
+- `GET /openapi.json`
 
 Ids are checked against closed regular expressions, and every file read goes
 through `_contained`.
@@ -246,12 +272,13 @@ apps in this branch do not unwrap IPv4-mapped addresses. On those two apps,
 - Process logs can still contain a traceback, because the server-error
   middleware re-raises after writing the generic body.
 - `debug=True` on a future constructor would HTML-render the traceback.
-- One key authorizes the whole app. There is no read-only vs. optimize split
-  on the lab API.
+- The admin key still authorizes every method on that app. The read key does
+  not. A deployment that sets only the admin key has no separate read credential.
 - Direct `uvicorn` of either module skips the CLI bind guard. The request
   gate still applies.
-- `.env.example` is hash-pinned, so the new rate-limit variables are
-  documented here and not added to that file.
+- `.env.example` is hash-pinned, so the rate-limit variables and
+  `QUANT_API_READ_KEY` / `RESEARCH_API_READ_KEY` are documented here and are
+  not added to that file.
 - `docs/THREAT_MODEL.md` is a new corpus file. A later evidence audit with
   `require_stamped` will report it until the docs epoch is restamped. This
   change does not edit `quality/*.json` or `gate_pins.sig`.

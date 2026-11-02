@@ -91,6 +91,8 @@ def is_loopback_host(host: str) -> bool:
 
 
 _STAND_IN_KEY = "absent-api-key"
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+_READ_DENIED_DETAIL = "read key cannot modify"
 _FAILED_PRESENTED = b"presented-unencodable"
 _FAILED_EXPECTED = b"expected-unencodable"
 _JSON_MAX_DEPTH = 32
@@ -129,6 +131,71 @@ def auth_decision(provided: str | None, expected: str | None) -> str:
     if configured:
         return "unauthorized"
     return "forbidden"
+
+
+def _presented(value: str | None) -> str:
+    if value:
+        return value
+    return _STAND_IN_KEY
+
+
+def _configured_match(provided: str | None, expected: str | None) -> bool:
+    """Digest both sides, then accept only a configured key that was sent."""
+    matched = keys_match(_presented(provided), _presented(expected))
+    if not expected:
+        return False
+    if not provided:
+        return False
+    return matched
+
+
+def scoped_auth_decision(
+    method: str,
+    provided: str | None,
+    admin_key: str | None,
+    read_key: str | None,
+) -> str:
+    """Return ``ok``, ``unauthorized``, ``forbidden``, or ``read_denied``.
+
+    The admin key authorizes every method. The read key authorizes safe
+    methods only. Both digests run before the decision, including when a key
+    is unset and when the admin key matches.
+    """
+    admin_ok = _configured_match(provided, admin_key)
+    read_ok = _configured_match(provided, read_key)
+    if admin_ok:
+        return "ok"
+    if read_ok and method.upper() in _SAFE_METHODS:
+        return "ok"
+    if read_ok:
+        return "read_denied"
+    if admin_key or read_key:
+        return "unauthorized"
+    return "forbidden"
+
+
+def credential_refusal(
+    request: Request,
+    admin_key: str | None,
+    read_key: str | None,
+    unset_detail: str,
+) -> JSONResponse | None:
+    """401, 403, or None when the request may proceed."""
+    decision = scoped_auth_decision(
+        request.method,
+        request.headers.get("X-API-Key"),
+        admin_key,
+        read_key,
+    )
+    if decision == "ok":
+        return None
+    if decision == "read_denied":
+        return JSONResponse(status_code=403, content={"detail": _READ_DENIED_DETAIL})
+    if decision != "forbidden":
+        return auth_rejection("unauthorized", unset_detail=unset_detail)
+    if is_loopback_host(client_host(request)):
+        return None
+    return auth_rejection("forbidden", unset_detail=unset_detail)
 
 
 def auth_rejection(decision: str, *, unset_detail: str) -> JSONResponse:

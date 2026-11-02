@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -17,13 +16,13 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from quant_fund import __firm__, __version__
 from quant_fund.api.http_controls import (
     apply_security_headers,
-    auth_decision,
-    auth_rejection,
     buffer_capped_body,
+    credential_refusal,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
+    nonempty_env,
     reject_bad_headers,
     reject_deep_json,
 )
@@ -167,14 +166,7 @@ def _read_json_object(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _client_is_loopback(request: Request) -> bool:
-    host = (request.client.host if request.client else "") or ""
-    return host in {"127.0.0.1", "::1", "localhost", "testclient"}
-
-
-async def _authenticate_request(
-    request: Request, call_next: Any, path: str, expected: str | None
-) -> Any:
+async def _authenticate_request(request: Request, call_next: Any, path: str) -> Any:
     bad = reject_bad_headers(request)
     if bad is not None:
         return bad
@@ -187,13 +179,14 @@ async def _authenticate_request(
     limited = ip_rate_response(request, "QUANT_API")
     if limited is not None:
         return limited
-    decision = auth_decision(request.headers.get("X-API-Key"), expected)
-    if decision == "unauthorized":
-        return auth_rejection(decision, unset_detail=_QUANT_UNSET_DETAIL)
-    if decision == "forbidden":
-        if not _client_is_loopback(request):
-            return auth_rejection(decision, unset_detail=_QUANT_UNSET_DETAIL)
-        return await call_next(request)
+    refusal = credential_refusal(
+        request,
+        nonempty_env("QUANT_API_KEY"),
+        nonempty_env("QUANT_API_READ_KEY"),
+        _QUANT_UNSET_DETAIL,
+    )
+    if refusal is not None:
+        return refusal
     provided = request.headers.get("X-API-Key") or ""
     limited_key = key_rate_response(request, "QUANT_API", provided)
     if limited_key is not None:
@@ -205,13 +198,14 @@ async def _authenticate_request(
 async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Secure default:
 
-    - If ``QUANT_API_KEY`` is set: require matching ``X-API-Key`` on all non-public routes.
-    - If unset: allow only loopback clients (refuse remote unauthenticated access).
+    - If ``QUANT_API_KEY`` or ``QUANT_API_READ_KEY`` is set: require a matching
+      ``X-API-Key``. The admin key authorizes every method. The read key
+      authorizes GET, HEAD, and OPTIONS.
+    - If both are unset: allow only loopback clients.
     - Reject malformed or oversized request bodies before route work is performed.
     """
     path = request.url.path
     response: JSONResponse | Any
-    expected = os.environ.get("QUANT_API_KEY")
     received_bytes = 0
     original_receive = request._receive
 
@@ -245,9 +239,9 @@ async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-u
                         content={"detail": "request body exceeds the 64 KiB limit"},
                     )
                 else:
-                    response = await _authenticate_request(request, call_next, path, expected)
+                    response = await _authenticate_request(request, call_next, path)
         else:
-            response = await _authenticate_request(request, call_next, path, expected)
+            response = await _authenticate_request(request, call_next, path)
     except _RequestBodyTooLarge:
         response = JSONResponse(
             status_code=413,

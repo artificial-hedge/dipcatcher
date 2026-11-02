@@ -78,6 +78,52 @@ def test_rate_limit_can_be_turned_off(monkeypatch: pytest.MonkeyPatch) -> None:
     assert client.get("/models").status_code == 403
 
 
+def test_read_key_cannot_modify(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("QUANT_API_KEY", "admin-key")
+    monkeypatch.setenv("QUANT_API_READ_KEY", "read-key")
+    client = TestClient(app, raise_server_exceptions=False)
+    assert client.get("/models").status_code == 401
+    assert client.get("/models", headers={"X-API-Key": "wrong-key"}).status_code == 401
+    assert client.get("/models", headers={"X-API-Key": "read-key"}).status_code == 200
+    assert client.get("/models", headers={"X-API-Key": "admin-key"}).status_code == 200
+    denied = client.post(
+        "/portfolio/optimize",
+        headers={"X-API-Key": "read-key"},
+        json={},
+    )
+    assert denied.status_code == 403
+    assert denied.json() == {"detail": "read key cannot modify"}
+    assert "read-key" not in denied.text
+    assert "admin-key" not in denied.text
+
+    monkeypatch.setenv("RESEARCH_API_READ_KEY", "read-key")
+    settings = ResearchApiSettings(
+        data_root=tmp_path / "data",
+        receipts_dir=tmp_path / "receipts",
+        verifier_dir=tmp_path / "verifier",
+        artifacts_dir=tmp_path / "artifacts",
+        api_key="admin-key",
+    )
+    for path in (
+        settings.data_root,
+        settings.receipts_dir,
+        settings.verifier_dir,
+        settings.artifacts_dir,
+    ):
+        path.mkdir()
+    research = TestClient(
+        create_app(settings), client=("198.51.100.41", 9), raise_server_exceptions=False
+    )
+    assert research.get("/receipts").status_code == 401
+    assert research.get("/receipts", headers={"X-API-Key": "read-key"}).status_code == 200
+    read_post = research.post("/receipts", headers={"X-API-Key": "read-key"})
+    assert read_post.status_code == 403
+    assert read_post.json() == {"detail": "read key cannot modify"}
+    assert "read-key" not in read_post.text
+    admin_post = research.post("/receipts", headers={"X-API-Key": "admin-key"})
+    assert admin_post.status_code == 405
+
+
 def test_lab_cors_default_reflects_nothing() -> None:
     response = TestClient(app).get("/health", headers={"Origin": "https://evil.example"})
     assert "access-control-allow-origin" not in response.headers
