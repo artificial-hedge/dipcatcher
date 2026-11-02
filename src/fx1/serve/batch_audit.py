@@ -119,7 +119,7 @@ _SWEPT_ENVS = (
     "FX1_LOCAL_MODEL",
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
-    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    "FX1_PRIVATE_ALLOW_CIDRS",
 )
 _WAIT_S = 20.0
 _OPENAI_TERMINAL = ("completed", "failed", "expired", "cancelled")
@@ -1605,7 +1605,7 @@ def batch_audit() -> dict[str, Any]:
         os.environ.pop(k, None)
     # The audit's webhook sink is deliberately loopback-only. Production
     # callback delivery remains public-network-only unless explicitly opted in.
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     out: dict[str, Any] = {}
     try:
         with _audit_resources(), tempfile.TemporaryDirectory() as td:
