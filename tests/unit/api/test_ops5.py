@@ -25,6 +25,7 @@ _PRIOR = '{"ok":1}\n'
 def _clear(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in (
         "DIPCATCHER_PROFILE",
+        "DIPCATCHER_WRITE_OWNER",
         "DIPCATCHER_RATE_LIMIT_RPS",
         "QUANT_API_KEY",
         "RESEARCH_API_KEY",

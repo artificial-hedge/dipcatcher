@@ -2,8 +2,10 @@
 """Async HTTP load for the lab and research APIs. Stdlib only.
 
 One JSON object on stdout: p50, p95, p99, status counts, and the error rate.
-Each worker keeps one connection. The API key is read from an env file and
-is not printed. ``--seconds`` is capped at 120 and ``--concurrency`` at 200.
+Each worker keeps one connection. ``https`` URLs are supported. ``--ca-file``
+verifies the server; ``--insecure`` skips that check. HTTP/2 is not used.
+The API key is read from an env file and is not printed. ``--seconds`` is
+capped at 120 and ``--concurrency`` at 200.
 """
 
 from __future__ import annotations
@@ -13,6 +15,7 @@ import asyncio
 import json
 import math
 import os
+import ssl
 import sys
 import time
 import urllib.parse
@@ -79,9 +82,16 @@ def _content_length(header: bytes) -> int | None:
     return None
 
 
-async def _open(host: str, port: int) -> tuple[asyncio.StreamReader, asyncio.StreamWriter] | None:
+async def _open(
+    host: str,
+    port: int,
+    ssl_context: ssl.SSLContext | None,
+) -> tuple[asyncio.StreamReader, asyncio.StreamWriter] | None:
     try:
-        return await asyncio.wait_for(asyncio.open_connection(host, port), timeout=_TIMEOUT_S)
+        return await asyncio.wait_for(
+            asyncio.open_connection(host, port, ssl=ssl_context),
+            timeout=_TIMEOUT_S,
+        )
     except (TimeoutError, OSError):
         return None
 
@@ -127,12 +137,13 @@ async def _worker(
     deadline: float,
     statuses: Counter[str],
     latencies: list[float],
+    ssl_context: ssl.SSLContext | None,
 ) -> None:
     reader: asyncio.StreamReader | None = None
     writer: asyncio.StreamWriter | None = None
     while time.monotonic() < deadline:
         if writer is None or reader is None:
-            opened = await _open(host, port)
+            opened = await _open(host, port, ssl_context)
             if opened is None:
                 statuses["transport"] += 1
                 continue
@@ -155,13 +166,19 @@ async def _worker(
 
 
 async def _run(
-    host: str, port: int, payload: bytes, concurrency: int, seconds: float
+    host: str,
+    port: int,
+    payload: bytes,
+    concurrency: int,
+    seconds: float,
+    ssl_context: ssl.SSLContext | None,
 ) -> dict[str, object]:
     statuses: Counter[str] = Counter()
     latencies: list[float] = []
     deadline = time.monotonic() + seconds
     workers: list[Awaitable[None]] = [
-        _worker(host, port, payload, deadline, statuses, latencies) for _ in range(concurrency)
+        _worker(host, port, payload, deadline, statuses, latencies, ssl_context)
+        for _ in range(concurrency)
     ]
     await asyncio.gather(*workers)
     attempts = sum(statuses.values())
@@ -185,15 +202,34 @@ async def _run(
     }
 
 
-def _parse_url(url: str) -> tuple[str, int, str]:
+def _parse_url(url: str) -> tuple[str, int, str, bool]:
     parsed = urllib.parse.urlsplit(url)
-    if parsed.scheme != "http" or not parsed.hostname:
-        raise SystemExit("only http URLs are supported")
-    port = parsed.port or 80
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise SystemExit("only http and https URLs are supported")
+    https = parsed.scheme == "https"
+    port = parsed.port or (443 if https else 80)
     path = parsed.path or "/"
     if parsed.query:
         path = f"{path}?{parsed.query}"
-    return parsed.hostname, port, path
+    return parsed.hostname, port, path, https
+
+
+def _client_ssl(https: bool, ca_file: str | None, insecure: bool) -> ssl.SSLContext | None:
+    """Verify https with a CA file, or skip verification when asked."""
+    if ca_file and insecure:
+        raise SystemExit("pass either --ca-file or --insecure")
+    if not https:
+        if ca_file or insecure:
+            raise SystemExit("--ca-file and --insecure apply to https URLs")
+        return None
+    if insecure:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+    else:
+        context = ssl.create_default_context(cafile=ca_file)
+    context.set_alpn_protocols(["http/1.1"])
+    return context
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -203,6 +239,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seconds", type=float, required=True)
     parser.add_argument("--env-file")
     parser.add_argument("--key-env")
+    parser.add_argument("--ca-file")
+    parser.add_argument("--insecure", action="store_true")
     args = parser.parse_args(argv)
     if args.concurrency < 1 or args.concurrency > _MAX_CONCURRENCY:
         raise SystemExit(f"concurrency must be 1..{_MAX_CONCURRENCY}")
@@ -212,9 +250,10 @@ def main(argv: list[str] | None = None) -> int:
     key = ""
     if args.key_env:
         key = os.environ.get(args.key_env) or file_env.get(args.key_env, "")
-    host, port, path = _parse_url(args.url)
+    host, port, path, https = _parse_url(args.url)
     payload = _request_bytes(host, path, key)
-    report = asyncio.run(_run(host, port, payload, args.concurrency, args.seconds))
+    context = _client_ssl(https, args.ca_file, args.insecure)
+    report = asyncio.run(_run(host, port, payload, args.concurrency, args.seconds, context))
     report["path"] = path
     report["port"] = port
     sys.stdout.write(json.dumps(report, sort_keys=True) + "\n")

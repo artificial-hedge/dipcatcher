@@ -15,6 +15,7 @@ from quant_fund.metrics.analytics import analytics_export_digest, validate_analy
 from quant_fund.utils import atomicio
 from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 from quant_fund.utils.hashing import hash_bytes, receipt_tree
+from quant_fund.utils.write_owner import require_write_owner
 
 
 def _safe_run_id(run_id: str) -> str:
@@ -69,10 +70,12 @@ def _fsync_directory(path: Path) -> None:
 
 def _atomic_write_text(path: Path, text: str) -> None:
     """One fsync and replace. A crash keeps the previous complete file."""
+    require_write_owner()
     atomic_write_text(path, text)
 
 
 def _atomic_write_parquet(frame: pl.DataFrame, path: Path) -> None:
+    require_write_owner()
     atomic_write_parquet(frame, path)
 
 
@@ -142,6 +145,7 @@ class PaperLedger:
         *,
         load_existing: bool = False,
     ) -> None:
+        require_write_owner()
         self.run_id = _safe_run_id(run_id)
         self.root = paper_root(data_root, subdir) / self.run_id
         self.root.mkdir(parents=True, exist_ok=True)

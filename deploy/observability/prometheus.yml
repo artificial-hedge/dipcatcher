@@ -10,10 +10,10 @@ scrape_configs:
       type: Bearer
       credentials_file: /tmp/lab.token
     static_configs:
-      - targets: ["lab-api:9464"]
+      - targets: ["lab-a:9464", "lab-b:9464"]
   - job_name: research-api
     authorization:
       type: Bearer
       credentials_file: /tmp/research.token
     static_configs:
-      - targets: ["research-api:9464"]
+      - targets: ["research-a:9464", "research-b:9464"]

@@ -28,6 +28,7 @@ _CLEAR = (
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
     "DIPCATCHER_PROFILE",
+    "DIPCATCHER_WRITE_OWNER",
     "DIPCATCHER_RATE_LIMIT_RPS",
     "DIPCATCHER_REQUIRE_DATA_WRITE",
     "DIPCATCHER_SHUTDOWN_GRACE_S",
@@ -173,7 +174,15 @@ def test_prod_env_is_the_production_default_and_holds_no_secrets() -> None:
     assert "DIPCATCHER_REQUIRE_DATA_WRITE=0" in research
     assert "DIPCATCHER_REQUIRE_DATA_WRITE=1" in lab
     compose = yaml.safe_load((_ROOT / "deploy" / "compose.prod.yml").read_text(encoding="utf-8"))
-    assert set(compose["services"]) == {"lab-api", "research-api", "prometheus", "grafana"}
+    assert set(compose["services"]) == {
+        "lab-a",
+        "lab-b",
+        "research-a",
+        "research-b",
+        "proxy",
+        "prometheus",
+        "grafana",
+    }
     rendered = (_ROOT / "deploy" / "compose.prod.yml").read_text(encoding="utf-8")
     assert "GF_SECURITY_ADMIN_PASSWORD" not in rendered
     assert "9464:9464" not in rendered

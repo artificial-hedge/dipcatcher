@@ -24,6 +24,7 @@ value.
 | `DIPCATCHER_OTEL_ENDPOINT` | unset | `http` or `https` URL with a host and no userinfo. Requires `DIPCATCHER_OBSERVE=1`. |
 | `DIPCATCHER_RATE_LIMIT_RPS` | unset (off) | Finite rate from 0 to 1000000 for both APIs. `0` or unset disables the limit outside production. `/health` is exempt. Overload returns HTTP 429. An invalid value refuses startup. A production profile refuses to boot unless this is set and above 0. |
 | `DIPCATCHER_PROFILE` | unset | `production` or `prod` requires `DIPCATCHER_RATE_LIMIT_RPS` set and above 0, and forces the data-dir write probe even when `DIPCATCHER_REQUIRE_DATA_WRITE=0`. Any other value keeps the non-production defaults. Set it in `deploy/prod.env`, not in the example env file. |
+| `DIPCATCHER_WRITE_OWNER` | unset | Not in the example env file and not in the service env contract. Unset allows writes and takes no lock. `1`, `true`, `yes`, or `on` is the owner and holds `{DIPCATCHER_DATA_ROOT}/.dipcatcher-write.lock` for the process lifetime. `0`, `false`, `no`, or `off` is a reader and refuses paper-ledger and kill-file writes. Any other value refuses to boot. Compose sets this per replica. |
 | `DIPCATCHER_SLO_PATH` | shipped `deploy/observability/slo.yml` when observe is on and this is unset | Requires `DIPCATCHER_OBSERVE=1`. A symlink or invalid file refuses startup. |
 | `DIPCATCHER_ALERT_INTERVAL_S` | `60` | Alert loop period. `1`–`86400`. |
 | `DIPCATCHER_METRICS_LOOPBACK_SCRAPE` | unset (off) | Allows an unauthenticated `/metrics` scrape only when `DIPCATCHER_METRICS_HOST` is loopback. Any other host refuses startup. |
@@ -53,20 +54,50 @@ shell history if you can avoid it; the compose file reads it from the
 environment.
 
 ```bash
-docker build -t dipcatcher:local .
-docker build -f docker/research-api.Dockerfile -t dipcatcher-research-api .
-docker compose -f deploy/compose.prod.yml up -d
+make -f deploy/prod.mk prod-up
+make -f deploy/prod.mk prod-down
+make -f deploy/prod.mk prod-restart
 ```
 
-That compose file starts the lab API, the research API, Prometheus, and
-Grafana. Published ports stay on `127.0.0.1`. The defaults are lab `8000`,
-research `8010`, Prometheus `9090`, and Grafana `3000`. Set
-`LAB_PUBLISH_PORT`, `RESEARCH_PUBLISH_PORT`, `PROMETHEUS_PUBLISH_PORT`, or
-`GRAFANA_PUBLISH_PORT` when a default is already taken. Do not publish
-`9464`. Prometheus reads bearer tokens from files it writes at start and
-scrapes `lab-api:9464` and `research-api:9464`. Those files are not in git.
-Grafana anonymous access is a local viewer. The compose file does not set
-an admin password.
+The root Makefile does not define those targets. `deploy/prod.mk` builds
+the lab and research images one at a time, creates the data directories,
+chowns them to uid 10001, and generates a dev certificate when
+`dev.crt` or `dev.key` is missing. Export `QUANT_API_KEY` and
+`RESEARCH_API_KEY` in the environment first. The makefile checks that the
+names are set and does not print the values.
+
+`deploy/compose.prod.yml` starts two lab replicas, two research replicas,
+the Caddy proxy, Prometheus, and Grafana. Replica API ports are not
+published. Clients use `https://127.0.0.1:8443` for the lab API and
+`https://127.0.0.1:8444` for the research API. Prometheus `9090` and
+Grafana `3000` stay on `127.0.0.1`. Set `LAB_TLS_PORT`,
+`RESEARCH_TLS_PORT`, `PROMETHEUS_PUBLISH_PORT`, or `GRAFANA_PUBLISH_PORT`
+when a default is already taken. Do not publish `9464`. Prometheus reads
+bearer tokens from files it writes at start and scrapes `lab-a:9464`,
+`lab-b:9464`, `research-a:9464`, and `research-b:9464`. Those files are
+not in git. Grafana anonymous access is a local viewer. The compose file
+does not set an admin password.
+
+`lab-a` and `research-a` set `DIPCATCHER_WRITE_OWNER=1`. Each holds an
+exclusive flock on `/app/data/.dipcatcher-write.lock` until the process
+exits. `lab-b` and `research-b` set `DIPCATCHER_WRITE_OWNER=0`. A reader
+refuses paper-ledger writes and kill-file writes with
+`write_owner_required` before it creates a temporary file. A second owner
+exits before bind with `write_owner_busy`. The lab replicas share one data
+directory and the research replicas share another, so the two owners do
+not block each other. `lab-a` runs `dipcatcher smoke-up` and plants the
+SYNTHETIC manifest. `lab-b` runs `dipcatcher api` only after `lab-a` is
+healthy. The entrypoint still writes and unlinks
+`.dipcatcher-write-probe-<pid>` on every replica, including a reader. That
+probe is the only reader write. It does not touch the ledger or the kill
+file. Do not point an unset host paper job at a data directory an owner is
+using. A host writer sets `DIPCATCHER_WRITE_OWNER=1` and fails to start
+while the replica holds the lock.
+
+Override `LAB_DATA`, `RESEARCH_DATA`, and `TLS_DIR` when the defaults under
+`/tmp/dipcatcher-ops7-*` are not the ones you want. `SUDO` defaults to
+`sudo` because compose and chown need it on a host where the user is not in
+the `docker` group. Set `SUDO=` on the make command line when they do not.
 
 Equivalent `docker run`:
 
@@ -138,24 +169,76 @@ the grace period.
 
 ## Rolling restart
 
-`scripts/rolling_restart.py` drains one container, waits until `/ready` is
-not 200, stops it, starts it, and waits until `/ready` is 200. SIGTERM sets
-the drain latch, so `/ready` returns 503 before the process exits. The load
-check uses `/health`, which stays 200 until the socket closes. A 503 from
-`/ready` is the drain signal. A single replica has a gap of transport
-errors while it is stopped. Those are not HTTP 5xx. The script exits 1
-when `scripts/http_load.py` reports any HTTP 5xx. The key is not printed.
+`make -f deploy/prod.mk prod-restart` rolls `lab-a`, then `lab-b`, then
+`research-a`, then `research-b`. Each pair is one `scripts/rolling_restart.py`
+invocation. The script sends SIGUSR1 to one replica, waits until that
+replica's `/ready` is 503, waits `--settle-seconds` (5 by default) so
+Caddy's one-second `/ready` check removes it, then `docker stop` and
+`docker start`. It waits until `/ready` is 200 and settles again before
+the next replica. The other replica keeps serving. SIGUSR1 sets the drain
+latch and leaves the socket open. SIGTERM still drains and then stops
+accepting, which is what `docker stop` does after the proxy has already
+removed the replica.
+
+The ready probe is `docker exec` of Python inside the replica. It reads
+`QUANT_API_KEY` or `RESEARCH_API_KEY` from the container environment. The
+key is not an argument and the script does not print it. The load target
+is `https://127.0.0.1:<tls-port>/health` at concurrency 10 for 110 seconds,
+which covers the roll. `/health` stays 200 on a drained replica. `/ready`
+returns 503, and that 503 is the drain signal. The two-replica path exits
+1 when `scripts/http_load.py` reports any HTTP 5xx or any transport error.
+
+A one-container roll still exists. It sends SIGTERM. A single replica has
+a gap of transport errors while it is stopped. Those are not HTTP 5xx
+unless you pass `--zero-drops`.
 
 ```bash
 python scripts/rolling_restart.py \
-  --container dipcatcher-ops6-lab-api-1 \
-  --ready-url http://127.0.0.1:8000/ready \
-  --env-file /secure/lab.env \
+  --containers dipcatcher-ops7-lab-a-1 dipcatcher-ops7-lab-b-1 \
+  --probe-url http://127.0.0.1:8000/ready \
+  --signal USR1 \
+  --settle-seconds 5 \
   --key-env QUANT_API_KEY \
-  --load-url http://127.0.0.1:8000/health \
-  --load-seconds 45 \
-  --load-concurrency 10
+  --load-url https://127.0.0.1:8443/health \
+  --ca-file /tmp/dipcatcher-ops7-tls/dev.crt \
+  --load-seconds 110 \
+  --load-concurrency 10 \
+  --docker "sudo docker" \
+  --zero-drops
 ```
+
+## TLS
+
+Caddy (`caddy:2.8.4`, `deploy/proxy/Caddyfile`) terminates TLS on the lab
+and research listeners. `auto_https` is off. The dev certificate is
+self-signed, SAN `DNS:localhost` and `IP:127.0.0.1`, and lives in
+`TLS_DIR` (`/tmp/dipcatcher-ops7-tls` unless you override it) as `dev.crt`
+and `dev.key`. `dev.key` is mode 600. Neither file is in git. Point
+`scripts/http_load.py` at the certificate with `--ca-file`. `--insecure`
+skips verification and is not the prod-restart path.
+
+HSTS is `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+on both listeners. A browser that accepts the dev certificate will remember
+that host. The load client is not a browser.
+
+Both listeners reject a request body above 64 KiB, the lab API cap in
+`quant_fund.api.app`. The research API does not define a higher cap, so
+the proxy uses the lab cap on both ports. Caddy answers that case with
+HTTP 413.
+
+The proxy polls `/ready` with `X-API-Key` set to the service key. Only
+HTTP 200 stays in the pool. The admin endpoint listens on `127.0.0.1:2019`
+inside the proxy container and is not published. Keys substituted into the
+Caddyfile must be a single token: no spaces, quotes, braces, or `#`.
+
+Replace the dev pair with a real certificate by putting the PEM certificate
+at `dev.crt` and the unencrypted private key at `dev.key` in `TLS_DIR`,
+mode 600 on the key, owned by the proxy user (the pinned image runs as
+root, so a mode 600 key on the host is readable there). Restart the proxy
+container. Do not commit the key. Use a name that is covered by the
+certificate SAN. Turn HSTS on for a public name only when that name is
+always served over HTTPS. Delete `dev.crt` and `dev.key` and run `prod-up`
+again to mint a fresh dev pair.
 
 ## Rollback
 
@@ -318,9 +401,9 @@ docker inspect --format '{{.State.Health.Status}}' dipcatcher
 With compose, pin the tag you saved and do not rebuild the bad tree:
 
 ```bash
-docker compose -f deploy/compose.prod.yml stop lab-api
+docker compose -f deploy/compose.prod.yml stop lab-a lab-b
 docker tag dipcatcher:previous dipcatcher:local
-docker compose -f deploy/compose.prod.yml up -d --no-build lab-api
+docker compose -f deploy/compose.prod.yml up -d --no-build lab-a lab-b
 ```
 
 Retract a bad research receipt. This appends a tombstone. It does not edit
@@ -336,8 +419,9 @@ and `dipcatcher_kill_switch_info`. Stage latency, error rate, and freshness
 use the same names as `deploy/observability/slo.yml`. The alert rules in
 `deploy/observability/alerts.yml` page when readiness is 0, drain is 1, the
 kill file is blocking, p99 is above 2 seconds, the error ratio is at least
-0.01, freshness is at least 86400 seconds, or the `lab-api` or
-`research-api` scrape target is down. A non-zero error rate is a warning.
+0.01, freshness is at least 86400 seconds, or any `lab-api` or
+`research-api` replica scrape is down. A short roll stays under the one
+minute `for` of `DipcatcherTargetDown`. A non-zero error rate is a warning.
 Tripping the kill file keeps the process up, so
 `DipcatcherKillSwitchBlocking` and `DipcatcherNotReady` fire. A full data
 directory makes the entrypoint exit before bind, the scrape target goes
@@ -410,7 +494,8 @@ ops commits. The pins are not re-signed here.
 | `mkdocs.yml` | 3058 | Publish this runbook in the docs nav. |
 
 No other pinned crown-jewel path changed in that range. This slice does
-not edit `.env.example` or `Dockerfile`.
+not edit `.env.example`, `Dockerfile`, `mkdocs.yml`, `.dockerignore`, or
+the root `Makefile`. New make targets are in `deploy/prod.mk`.
 
 ## What this does not do
 

@@ -87,7 +87,7 @@ SLO definitions live in `deploy/observability/slo.yml`. A missing sample is `no_
 docker compose -f deploy/observability/docker-compose.yml up
 ```
 
-`deploy/compose.prod.yml` publishes the lab API, the research API, Prometheus, and Grafana on loopback only. Prometheus scrapes `lab-api:9464` and `research-api:9464` with bearer tokens written at start from `QUANT_API_KEY` and `RESEARCH_API_KEY`. Those token files are not committed, and `9464` is not published. `deploy/observability/docker-compose.yml` is the collector plus Prometheus and Grafana; its scrape targets are the same service names. Grafana provisions datasource uid `prometheus` and the dashboard `deploy/observability/grafana/dashboards/dipcatcher.json`. Anonymous access is a local viewer. No admin password is committed.
+`deploy/compose.prod.yml` publishes the TLS proxy, Prometheus, and Grafana on loopback only. The API replicas are not published. Prometheus scrapes `lab-a:9464`, `lab-b:9464`, `research-a:9464`, and `research-b:9464` with bearer tokens written at start from `QUANT_API_KEY` and `RESEARCH_API_KEY`. The job names stay `lab-api` and `research-api`. Those token files are not committed, and `9464` is not published. `deploy/observability/docker-compose.yml` is the collector plus Prometheus and Grafana; it uses the same scrape file, so those replica names resolve on the prod compose network. Grafana provisions datasource uid `prometheus` and the dashboard `deploy/observability/grafana/dashboards/dipcatcher.json`. Anonymous access is a local viewer. No admin password is committed.
 
 ```bash
 export DIPCATCHER_OBSERVE=1

@@ -1056,6 +1056,7 @@ def _clear_service_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "DIPCATCHER_OBSERVE",
         "DIPCATCHER_OTEL_ENDPOINT",
         "DIPCATCHER_PROFILE",
+        "DIPCATCHER_WRITE_OWNER",
         "DIPCATCHER_RATE_LIMIT_RPS",
         "DIPCATCHER_REQUIRE_DATA_WRITE",
         "DIPCATCHER_SHUTDOWN_GRACE_S",

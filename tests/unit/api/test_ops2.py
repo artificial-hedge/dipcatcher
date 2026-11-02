@@ -46,6 +46,7 @@ _SERVICE_ENV = (
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
     "DIPCATCHER_PROFILE",
+    "DIPCATCHER_WRITE_OWNER",
     "DIPCATCHER_RATE_LIMIT_RPS",
     "DIPCATCHER_REQUIRE_DATA_WRITE",
     "DIPCATCHER_SLO_PATH",
@@ -489,4 +490,4 @@ def test_uv_installer_is_hash_pinned() -> None:
     assert "env_file:" in compose
     assert "./prod.env" in compose
     assert "DIPCATCHER_METRICS_LOOPBACK_SCRAPE:" not in compose
-    assert "research-api:" in compose
+    assert "research-a:" in compose
