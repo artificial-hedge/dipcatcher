@@ -1074,7 +1074,7 @@ src/quant_fund/simtest/session.py:_run_in 18
 src/quant_fund/stress/regimes.py:GaussianRegimeSpec.__post_init__ 12
 src/quant_fund/stress/reverse.py:reverse_stress 17
 src/quant_fund/stress/strategy.py:load_return_panel 18
-src/quant_fund/stress/strategy.py:strategy_from_mapping 13
+src/quant_fund/stress/strategy.py:strategy_from_mapping 12
 src/quant_fund/stress/vendor_cache.py:parse_french_daily_factors 12
 src/quant_fund/utils/hashing.py:_canonicalize 11
 src/quant_fund/utils/reproducibility.py:_parse_lfs_pointer 11
