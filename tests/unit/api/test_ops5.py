@@ -126,6 +126,22 @@ def test_invalid_rate_limit_refuses_startup(monkeypatch: pytest.MonkeyPatch) -> 
     assert ServiceSettings.for_research().host == "127.0.0.1"
 
 
+def test_full_data_dir_when_the_probe_byte_cannot_land(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    entry = _entrypoint()
+    target = tmp_path / "data"
+    target.mkdir()
+
+    def _full(_descriptor: int, _data: bytes) -> int:
+        raise OSError(errno.ENOSPC, "No space left on device")
+
+    monkeypatch.setattr(entry.os, "write", _full)
+    message = entry.check_data_dir(str(target), require_write=True)
+    assert message == f"data directory {target} is full; the dipcatcher user is uid 10001"
+    assert list(target.glob(".dipcatcher-write-probe-*")) == []
+
+
 def test_full_data_dir_names_uid_10001(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     entry = _entrypoint()
     target = tmp_path / "data"

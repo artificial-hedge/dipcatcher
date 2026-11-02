@@ -20,7 +20,11 @@ def _enabled(name: str, default: str) -> bool:
 
 
 def _probe_errno(path: str) -> int | None:
-    """Return the errno of a failed create, or ``None`` when the probe lands."""
+    """Return the errno of a failed create, or ``None`` when a byte is durable.
+
+    An empty create can succeed on a tmpfs that has no data blocks left, so
+    the probe writes one byte and fsyncs it.
+    """
     probe = os.path.join(path, f".dipcatcher-write-probe-{os.getpid()}")
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
     if hasattr(os, "O_NOFOLLOW"):
@@ -29,8 +33,22 @@ def _probe_errno(path: str) -> int | None:
         descriptor = os.open(probe, flags, 0o644)
     except OSError as exc:
         return exc.errno if exc.errno is not None else errno.EIO
+    failure = _write_probe(descriptor)
     os.close(descriptor)
-    os.unlink(probe)
+    try:
+        os.unlink(probe)
+    except OSError:
+        if failure is None:
+            return errno.EIO
+    return failure
+
+
+def _write_probe(descriptor: int) -> int | None:
+    try:
+        os.write(descriptor, b"x")
+        os.fsync(descriptor)
+    except OSError as exc:
+        return exc.errno if exc.errno is not None else errno.EIO
     return None
 
 
