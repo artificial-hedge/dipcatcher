@@ -756,7 +756,7 @@ def optimize(req: OptimizeRequest) -> dict[str, Any]:
     cfg = _load_cfg(req.config_path)
     try:
         rows = optimize_asof(cfg, req.asof).to_dicts()
-    except (OptimizationInfeasible, PointInTimeError) as exc:
+    except (OptimizationInfeasible, PointInTimeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail="optimize request is infeasible") from exc
     return _weights_honesty_envelope(rows)
 
