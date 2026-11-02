@@ -1208,6 +1208,11 @@ def _stream_probes() -> dict[str, bool]:
     )
     jb = client.post("/harness/jobs", json={"command": "doctor"}, headers=_h())
     jid = str(jb.json()["job_id"])
+    # The SSE handler closes on the first terminal snapshot it observes.
+    # Under a loaded executor the job is still queued when a short stream
+    # hits timeout_s, so the body never contains a terminal status. Wait
+    # on the same GET the stream snapshots, then require that terminal frame.
+    _wait_job(client, jid)
     frames: list[str] = []
     terminal_seen = False
     with client.stream(
