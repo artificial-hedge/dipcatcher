@@ -69,6 +69,40 @@ def test_load_broker_state_missing_and_corrupt(tmp_path: Path) -> None:
     assert load_broker_state(tmp_path, "run_bad") is None
     (root / "broker_state.json").write_text(json.dumps(["not", "an", "object"]))
     assert load_broker_state(tmp_path, "run_bad") is None
+    (root / "broker_state.json").write_text(
+        '{"run_id": "run_bad", "run_id": "other", "step": 0}',
+        encoding="utf-8",
+    )
+    assert load_broker_state(tmp_path, "run_bad") is None
+    (root / "broker_state.json").write_bytes(b"\xff")
+    assert load_broker_state(tmp_path, "run_bad") is None
+
+
+def test_latest_run_id_rejects_duplicate_keys_and_undecodable_bytes(tmp_path: Path) -> None:
+    latest = paper_root(tmp_path) / "latest_run.json"
+    latest.parent.mkdir(parents=True, exist_ok=True)
+    latest.write_text('{"run_id": "run_ok", "run_id": "run_other"}', encoding="utf-8")
+    assert latest_run_id(tmp_path) is None
+    latest.write_bytes(b"\xff")
+    assert latest_run_id(tmp_path) is None
+
+
+def test_validate_ledger_schema_rejects_ambiguous_and_undecodable_meta(tmp_path: Path) -> None:
+    root = tmp_path / "dup-run"
+    root.mkdir()
+    (root / "meta.json").write_text(
+        '{"run_id": "dup-run", "run_id": "other", "schema_version": 2, '
+        '"label": "PAPER_SIMULATED", "disclaimer": "x"}',
+        encoding="utf-8",
+    )
+    report = validate_ledger_schema(root)
+    assert report["ok"] is False
+    assert any(str(error).startswith("meta.json_invalid_json:") for error in report["errors"])
+
+    (root / "meta.json").write_bytes(b"\xff")
+    report = validate_ledger_schema(root)
+    assert report["ok"] is False
+    assert any(str(error).startswith("meta.json_invalid_json:") for error in report["errors"])
 
 
 def test_latest_run_id_missing_and_corrupt(tmp_path: Path) -> None:

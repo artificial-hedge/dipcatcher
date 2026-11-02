@@ -344,6 +344,80 @@ def test_validate_rejects_missing_metrics_file(tmp_path: Path) -> None:
     assert str(result["reasons"][0]).startswith("metrics_file_missing:")
 
 
+def test_validate_rejects_undecodable_metrics_file(tmp_path: Path) -> None:
+    cfg = load_config("configs/research.yaml")
+    cfg.data.root = tmp_path
+    path = tmp_path / "metrics.json"
+    path.write_bytes(b"\xff")
+    result = validate_candidate("model-x", cfg, metrics_path=path)
+    assert result["ok"] is False
+    assert result["promote"] is False
+    assert str(result["reasons"][0]).startswith("metrics_file_invalid:")
+
+
+def test_validate_rejects_duplicate_metric_keys(tmp_path: Path) -> None:
+    """A last-win duplicate must not supply finite evidence that looks complete."""
+    cfg = load_config("configs/research.yaml")
+    cfg.data.root = tmp_path
+    path = tmp_path / "metrics.json"
+    path.write_text(
+        '{"mean_ic": 0.0, "mean_ic": 0.2, "net_spread": 0.01, "turnover": 0.1}',
+        encoding="utf-8",
+    )
+    result = validate_candidate("model-x", cfg, metrics_path=path)
+    assert result["ok"] is False
+    assert result["promote"] is False
+    assert str(result["reasons"][0]).startswith("metrics_file_invalid:")
+
+
+def test_validate_accepts_unique_metric_keys(tmp_path: Path) -> None:
+    cfg = load_config("configs/research.yaml")
+    cfg.data.root = tmp_path
+    path = tmp_path / "metrics.json"
+    path.write_text(
+        '{"mean_ic": 0.2, "net_spread": 0.01, "turnover": 0.1}',
+        encoding="utf-8",
+    )
+    result = validate_candidate("model-x", cfg, metrics_path=path)
+    assert not str(result["reasons"][0]).startswith("metrics_file_invalid:")
+    assert result["promote"] is False
+
+
+def test_validate_rejects_undecodable_research_notebook(tmp_path: Path) -> None:
+    cfg = load_config("configs/research.yaml")
+    cfg.data.root = tmp_path
+    receipt_dir = tmp_path / "metadata" / "research"
+    receipt_dir.mkdir(parents=True)
+    (receipt_dir / "latest.json").write_bytes(b"\xff")
+    result = validate_candidate(
+        "model-x",
+        cfg,
+        metrics={"mean_ic": 0.1, "net_spread": 0.01, "turnover": 0.2, "n_folds": 2},
+    )
+    assert result["promote"] is False
+    assert result["gates"]["research_notebook_receipt_valid"] is False
+    assert "research_notebook_invalid" in result["reasons"]
+
+
+def test_validate_rejects_duplicate_notebook_keys(tmp_path: Path) -> None:
+    cfg = load_config("configs/research.yaml")
+    cfg.data.root = tmp_path
+    receipt_dir = tmp_path / "metadata" / "research"
+    receipt_dir.mkdir(parents=True)
+    (receipt_dir / "latest.json").write_text(
+        '{"synthetic": false, "synthetic": true}',
+        encoding="utf-8",
+    )
+    result = validate_candidate(
+        "model-x",
+        cfg,
+        metrics={"mean_ic": 0.1, "net_spread": 0.01, "turnover": 0.2, "n_folds": 2},
+    )
+    assert result["promote"] is False
+    assert result["gates"]["research_notebook_receipt_valid"] is False
+    assert "research_notebook_invalid" in result["reasons"]
+
+
 def test_validate_rejects_nonfinite_causal_panel(tmp_path: Path) -> None:
     cfg = load_config("configs/research.yaml")
     cfg.data.root = tmp_path

@@ -19,6 +19,24 @@ from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 from quant_fund.utils.hashing import hash_bytes, receipt_tree
 
 
+def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject last-win duplicate keys in paper ledger JSON."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _read_json_value(path: Path) -> Any:
+    """Load JSON. Undecodable bytes and duplicate keys are errors."""
+    return json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=_object_without_duplicate_keys,
+    )
+
+
 def _safe_run_id(run_id: str) -> str:
     value = str(run_id)
     if (
@@ -326,8 +344,8 @@ def load_broker_state(
     if not path.is_file():
         return None
     try:
-        state = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        state = _read_json_value(path)
+    except (OSError, TypeError, ValueError):
         return None
     return state if isinstance(state, dict) else None
 
@@ -337,8 +355,8 @@ def latest_run_id(data_root: Path | str, subdir: str = "paper") -> str | None:
     if not path.is_file():
         return None
     try:
-        blob = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        blob = _read_json_value(path)
+    except (OSError, TypeError, ValueError):
         return None
     if not isinstance(blob, dict) or not isinstance(blob.get("run_id"), str):
         return None
@@ -652,8 +670,8 @@ def validate_ledger_schema(
     meta: dict[str, Any] = {}
     if meta_path.is_file():
         try:
-            meta = json.loads(meta_path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+            meta = _read_json_value(meta_path)
+        except (OSError, ValueError) as exc:
             errors.append(f"meta.json_invalid_json:{exc}")
         else:
             if not isinstance(meta, dict):
@@ -685,8 +703,8 @@ def validate_ledger_schema(
     present["broker_state.json"] = state_path.is_file()
     if state_path.is_file():
         try:
-            state = json.loads(state_path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+            state = _read_json_value(state_path)
+        except (OSError, ValueError) as exc:
             errors.append(f"broker_state_invalid_json:{exc}")
         else:
             if not isinstance(state, dict):
@@ -847,8 +865,8 @@ def validate_ledger_schema(
     present["promotion_dry_run.json"] = promo_path.is_file()
     if promo_path.is_file():
         try:
-            promo = json.loads(promo_path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+            promo = _read_json_value(promo_path)
+        except (OSError, ValueError) as exc:
             errors.append(f"promotion_dry_run_invalid_json:{exc}")
         else:
             promo_errors = validate_promotion_dry_run_receipt(promo)
@@ -877,8 +895,8 @@ def validate_ledger_schema(
     present["analytics_export.json"] = analytics_path.is_file()
     if analytics_path.is_file():
         try:
-            analytics = json.loads(analytics_path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+            analytics = _read_json_value(analytics_path)
+        except (OSError, ValueError) as exc:
             errors.append(f"analytics_export_invalid_json:{exc}")
         else:
             analytics_report = validate_analytics_export(analytics)
