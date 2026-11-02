@@ -344,6 +344,28 @@ def monitor(
         raise typer.Exit(1)
 
 
+_GIT_SHA_TIMEOUT_S = 10
+
+
+def _probe_git_sha() -> str | None:
+    """Short HEAD, or None when git is missing, fails, or does not finish."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=_GIT_SHA_TIMEOUT_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip() or None
+
+
 @app.command("sim-live")
 def sim_live(
     config: Path = typer.Option(Path("configs/sim_live.yaml")),
@@ -427,21 +449,12 @@ def sim_live(
 ) -> None:
     """Simulated-live PnL: proven quantile forecasters trade the paper loop on real bars."""
     import json
-    import subprocess
 
     from quant_fund.paper.quantile_signals import QuantilePolicy
     from quant_fund.paper.sim_live import StrategySlot, run_sim_live
 
     cfg = _cfg(config)
-    try:
-        git_sha = (
-            subprocess.run(
-                ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=False
-            ).stdout.strip()
-            or None
-        )
-    except OSError:
-        git_sha = None
+    git_sha = _probe_git_sha()
     champion_policy = QuantilePolicy(
         mode=mode,
         kappa=kappa,

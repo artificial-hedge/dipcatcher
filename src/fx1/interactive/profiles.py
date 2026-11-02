@@ -39,6 +39,14 @@ STORE_NAME = "credentials.json"
 _MODE_0600 = stat.S_IRUSR | stat.S_IWUSR
 
 
+class ProfileStoreError(RuntimeError):
+    """The endpoint file exists but cannot be trusted.
+
+    Callers must not treat this as an empty store: that would drop saved
+    keys and fall through to whatever is in the environment.
+    """
+
+
 def config_dir() -> Path:
     override = os.environ.get("FX1_CONFIG_DIR")
     if override:
@@ -78,17 +86,22 @@ def _normalize(entry: Mapping[str, str]) -> dict[str, str]:
 
 
 def _load(path: Path | None = None) -> dict[str, dict[str, str]]:
+    """Load profiles. A missing file is empty; a broken file is an error."""
     path = path or store_path()
     if not path.is_file():
         return {}
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
+    except (json.JSONDecodeError, OSError, UnicodeError) as exc:
+        raise ProfileStoreError(f"endpoint store is unreadable: {path}") from exc
+    if not isinstance(raw, dict):
+        raise ProfileStoreError(f"endpoint store is not a JSON object: {path}")
     profiles = raw.get("profiles")
-    if isinstance(profiles, dict):
-        return cast("dict[str, dict[str, str]]", profiles)
-    return {}
+    if profiles is None:
+        return {}
+    if not isinstance(profiles, dict):
+        raise ProfileStoreError(f"endpoint store profiles are not an object: {path}")
+    return cast("dict[str, dict[str, str]]", profiles)
 
 
 def _save(payload: dict[str, dict[str, str]], path: Path | None = None) -> Path:

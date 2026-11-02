@@ -33,6 +33,9 @@ REQUIRED_FLOOR_PACKAGES: tuple[str, ...] = ("pit", "proof", "leakage", "reality"
 VerifyFn = Callable[[Path], bool]
 RunFn = Callable[..., subprocess.CompletedProcess[str]]
 
+# One receipt verify is a short CLI. A hang must fail the gate, not pass it.
+_VERIFIER_TIMEOUT_S = 120
+
 
 def coverage_floors(pyproject_path: Path = Path("pyproject.toml")) -> dict[str, int]:
     """Read ``[tool.proofcore.coverage-floors]`` from pyproject.toml.
@@ -288,11 +291,15 @@ def _cli_verifier(path: Path) -> bool:
     Uses ``python -m quant_fund.cli.main`` so no SCC import enters this
     module's import graph (layering contract, DESIGN.md §1.3).
     """
-    proc = subprocess.run(
-        [sys.executable, "-m", "quant_fund.cli.main", "verify-receipt", str(path)],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "quant_fund.cli.main", "verify-receipt", str(path)],
+            capture_output=True,
+            text=True,
+            timeout=_VERIFIER_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired:
+        return False
     return proc.returncode == 0
 
 

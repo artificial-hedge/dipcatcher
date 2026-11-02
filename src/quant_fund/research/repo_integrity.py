@@ -147,6 +147,29 @@ LOCAL_ONLY_CORPORA: frozenset[str] = frozenset({"data/metadata"})
 EVIDENCE_CORPORA: frozenset[str] = frozenset(c[0] for c in CORPORA[:8])
 
 
+def _load_allowed_removals(path: Path) -> tuple[dict[str, str], str | None]:
+    """Return ``(allowlist, error)``. Missing file is an empty allowlist.
+
+    A present file that is not a string-to-string object is an error and
+    grants no exceptions. Treating it as empty without an error would let
+    a broken pin look like a clean tree.
+    """
+    if not path.is_file():
+        return {}, None
+    try:
+        raw = json.loads(path.read_text())
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}, "allowed_removals_unreadable"
+    if not isinstance(raw, dict):
+        return {}, "allowed_removals_malformed"
+    allowed: dict[str, str] = {}
+    for key, value in raw.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            return {}, "allowed_removals_malformed"
+        allowed[key] = value
+    return allowed, None
+
+
 def verify_repo(
     root: Path | str = ".",
     *,
@@ -172,15 +195,9 @@ def verify_repo(
     # legacy-unsealed/) or a transient corpus blip is recorded history, not
     # an error, when name->sha256 is declared here. The file is itself a
     # corpus member: silently editing it still trips the epoch gate.
-    allowed_removals: dict[str, str] = {}
-    ar_path = root / "quality/epoch_allowed_removals.json"
-    if ar_path.is_file():
-        try:
-            raw_ar = json.loads(ar_path.read_text())
-            if isinstance(raw_ar, dict):
-                allowed_removals = {str(k): str(v) for k, v in raw_ar.items() if isinstance(v, str)}
-        except (OSError, json.JSONDecodeError):
-            allowed_removals = {}
+    allowed_removals, allowlist_error = _load_allowed_removals(
+        root / "quality/epoch_allowed_removals.json"
+    )
     gates: dict[str, dict[str, Any]] = {}
 
     if evidence_only:
@@ -443,6 +460,10 @@ def verify_repo(
         "errors": lattice_errs,
         **lattice_info,
     }
+    if allowlist_error is not None:
+        # An unreadable allowlist is not "no exceptions": that would hide a
+        # broken pin and still report the tree clean when nothing was removed.
+        gates["epoch_allowed_removals"] = {"ok": False, "errors": [allowlist_error]}
 
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}
 

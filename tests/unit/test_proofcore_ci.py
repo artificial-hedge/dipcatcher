@@ -347,6 +347,22 @@ def test_receipt_verifier_dispatch(tmp_path: Path) -> None:
     assert ci._receipt_verifier_command(not_object) == "verify-research"
 
 
+def test_cli_verifier_timeout_is_a_failed_verification(tmp_path: Path, monkeypatch) -> None:
+    import subprocess
+
+    from quant_fund.proofcore import ci
+
+    receipt = tmp_path / "receipt.json"
+    receipt.write_text("{}")
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert kwargs.get("timeout") == ci._VERIFIER_TIMEOUT_S
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=ci._VERIFIER_TIMEOUT_S)
+
+    monkeypatch.setattr(ci.subprocess, "run", fake_run)
+    assert ci._cli_verifier(receipt) is False
+
+
 def test_cli_verifier_routes_sealed_to_verify_receipt(tmp_path, monkeypatch) -> None:
     import subprocess
 

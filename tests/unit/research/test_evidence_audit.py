@@ -175,6 +175,33 @@ def test_format_table_smoke(tmp_path: Path) -> None:
     assert "a.json" in text and "True" in text
 
 
+def test_index_builder_timeout_or_failure_is_not_fresh(tmp_path: Path, monkeypatch) -> None:
+    import subprocess
+
+    from quant_fund.research import evidence_audit
+
+    script = tmp_path / "scripts" / "build_evidence_report.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("# builder\n", encoding="utf-8")
+    index = tmp_path / "docs" / "evidence" / "index.md"
+    index.parent.mkdir(parents=True)
+    index.write_text("index\n", encoding="utf-8")
+
+    def timed_out(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert kwargs.get("timeout") == evidence_audit._INDEX_BUILD_TIMEOUT_S
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=evidence_audit._INDEX_BUILD_TIMEOUT_S)
+
+    monkeypatch.setattr(evidence_audit.subprocess, "run", timed_out)
+    assert check_evidence_index_fresh(tmp_path) is False
+
+    def failed(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert kwargs.get("timeout") == evidence_audit._INDEX_BUILD_TIMEOUT_S
+        return subprocess.CompletedProcess(cmd, 1, "", "builder failed")
+
+    monkeypatch.setattr(evidence_audit.subprocess, "run", failed)
+    assert check_evidence_index_fresh(tmp_path) is False
+
+
 def test_committed_receipts_verify_and_index_fresh() -> None:
     """The committed receipts/ directory must audit clean on this branch:
     every sealed receipt verifies, every digest-named file binds, and

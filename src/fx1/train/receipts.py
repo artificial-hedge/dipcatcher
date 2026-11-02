@@ -26,6 +26,9 @@ def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+_GIT_TIMEOUT_S = 15
+
+
 def _git_revision(repo_root: Path) -> tuple[str, bool]:
     """(HEAD sha, dirty?) — unknown/True when git is unavailable (fail-closed)."""
     try:
@@ -35,6 +38,7 @@ def _git_revision(repo_root: Path) -> tuple[str, bool]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,
         ).stdout.strip()
         dirty = bool(
             subprocess.run(
@@ -43,11 +47,14 @@ def _git_revision(repo_root: Path) -> tuple[str, bool]:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=_GIT_TIMEOUT_S,
             ).stdout.strip()
         )
-        return sha, dirty
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.SubprocessError):
         return "unknown", True
+    if not sha:
+        return "unknown", True
+    return sha, dirty
 
 
 class TrainingReceipt(BaseModel):

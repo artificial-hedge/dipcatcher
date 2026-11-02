@@ -68,8 +68,14 @@ def collect_receipt_refs(path: Path) -> dict[str, Any]:
     """One receipt's digest + its declared input references."""
     try:
         doc = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
-        return {"file": str(path), "digest": None, "kind": None, "refs": []}
+    except (OSError, json.JSONDecodeError, UnicodeError):
+        return {
+            "file": str(path),
+            "digest": None,
+            "kind": None,
+            "refs": [],
+            "unreadable": True,
+        }
     refs: list[dict[str, str]] = []
     _walk_refs(doc, "", refs)
     # the receipt's own seal is not an input
@@ -95,6 +101,12 @@ def collect_receipt_refs(path: Path) -> dict[str, Any]:
     }
 
 
+def _unreadable_dangling(receipts: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
+    """Names of receipts that did not parse, and dangling labels for them."""
+    names = [str(item["file"]) for item in receipts if item.get("unreadable")]
+    return names, [f"{name}:unreadable" for name in names]
+
+
 def lineage_dag(root: Path | str) -> dict[str, Any]:
     """Build the receipt→input DAG over a corpus directory."""
     root = Path(root)
@@ -103,7 +115,7 @@ def lineage_dag(root: Path | str) -> dict[str, Any]:
 
     edges: list[dict[str, str]] = []
     artifacts: set[str] = set()
-    dangling: list[str] = []
+    unreadable, dangling = _unreadable_dangling(receipts)
     consumers: set[str] = set()
     consumed: set[str] = set()
     for r in receipts:
@@ -165,6 +177,7 @@ def lineage_dag(root: Path | str) -> dict[str, Any]:
         "sinks": sinks,
         "orphan_receipts": orphans,
         "dangling_inputs": dangling,
+        "unreadable": unreadable,
         "cycles": cycles,
         "verdict": "provenance_complete" if not cycles and not dangling else "open",
     }
@@ -183,6 +196,7 @@ def lineage_dag_bench(root: Path | str = "receipts") -> dict[str, Any]:
         "n_sinks": len(dag["sinks"]),
         "n_orphans": len(dag["orphan_receipts"]),
         "n_dangling": len(dag["dangling_inputs"]),
+        "n_unreadable": len(dag["unreadable"]),
         "cycles": dag["cycles"][:8],
         "verdict": dag["verdict"],
     }

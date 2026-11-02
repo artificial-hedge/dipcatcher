@@ -19,6 +19,7 @@ from typing import cast
 
 _LIB: ctypes.CDLL | None = None
 _SOURCE = Path(__file__).with_name("_lob_core.c")
+_COMPILE_TIMEOUT_S = 120
 
 
 class TradeC(ctypes.Structure):
@@ -142,7 +143,16 @@ def _compile(source: Path, dest: Path) -> None:
         str(dest),
         str(source),
     ]
-    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    try:
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=_COMPILE_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"matching core compile timed out after {_COMPILE_TIMEOUT_S}s") from exc
     if proc.returncode != 0:
         raise RuntimeError(
             "matching core failed to compile\n"
