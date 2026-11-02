@@ -21,6 +21,7 @@ import typer
 from fx1.interactive import actions, profiles
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
+from fx1.process_signals import sigterm_as_keyboard_interrupt
 
 _HELP = """\
 keys                              list model endpoints (presence-only)
@@ -298,4 +299,5 @@ class FxiShell(cmd.Cmd):
 
 def run_shell(model: str = DEFAULT_MODEL, *, output_fn: Callable[..., None] = typer.echo) -> None:
     output_fn(orb_banner(model, _endpoint_host(model)))
-    FxiShell(model=model).cmdloop()
+    with sigterm_as_keyboard_interrupt(on_interrupt=lambda: output_fn("")):
+        FxiShell(model=model).cmdloop()

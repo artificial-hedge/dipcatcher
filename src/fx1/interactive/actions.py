@@ -25,6 +25,7 @@ from fx1.harness import HARNESS_REGISTRY, Harness
 from fx1.interactive import profiles
 from fx1.interactive.orb import OrbAnimator, OrbState
 from fx1.interactive.profiles import DEFAULT_MODEL
+from fx1.process_signals import sigterm_as_keyboard_interrupt
 from fx1.serve.backends import HostedK3Backend
 
 # Console scripts shipped in the fx-1 distribution that fxi may launch.
@@ -114,25 +115,27 @@ def chat(
         return 0
     host = profiles.host_of(base_url)
     output_fn(f"fxi chat — model {model} @ {host}; 'exit' or Ctrl-D to leave")
-    while True:
-        try:
-            line = input_fn("you › ").strip()
-        except (EOFError, KeyboardInterrupt):
-            output_fn("")
-            return 0
-        if not line:
-            continue
-        if line.lower() in {"exit", "quit"}:
-            return 0
-        messages.append({"role": "user", "content": line})
-        try:
-            reply = _complete_with_orb(backend, messages, animated=animate)
-        except Exception as exc:  # noqa: BLE001 — a dead network must not kill the shell
-            output_fn(f"error: {exc}")
-            messages.pop()
-            continue
-        messages.append({"role": "assistant", "content": reply})
-        output_fn(reply)
+    with sigterm_as_keyboard_interrupt(on_interrupt=lambda: output_fn("")):
+        while True:
+            try:
+                line = input_fn("you › ").strip()
+            except (EOFError, KeyboardInterrupt):
+                output_fn("")
+                return 0
+            if not line:
+                continue
+            if line.lower() in {"exit", "quit"}:
+                return 0
+            messages.append({"role": "user", "content": line})
+            try:
+                reply = _complete_with_orb(backend, messages, animated=animate)
+            except Exception as exc:  # noqa: BLE001 — a dead network must not kill the shell
+                output_fn(f"error: {exc}")
+                messages.pop()
+                continue
+            messages.append({"role": "assistant", "content": reply})
+            output_fn(reply)
+    return 0
 
 
 def harness_rows() -> list[dict[str, str]]:
