@@ -29,7 +29,18 @@ def _client() -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
 
 
-def _nonloopback_status(path: str, expected: str | None) -> int:
+def _push_env(name: str) -> str | None:
+    return os.environ.pop(name, None)
+
+
+def _pop_env(name: str, saved: str | None) -> None:
+    if saved is None:
+        os.environ.pop(name, None)
+        return
+    os.environ[name] = saved
+
+
+def _nonloopback_status(path: str) -> int:
     """Drive ``_authenticate_request`` with a forged remote client scope."""
     from starlette.requests import Request
 
@@ -59,7 +70,7 @@ def _nonloopback_status(path: str, expected: str | None) -> int:
 
             return _Resp()
 
-        resp = await _authenticate_request(request, call_next, path, expected)
+        resp = await _authenticate_request(request, call_next, path)
         return int(resp.status_code)
 
     return asyncio.run(_run())
@@ -67,7 +78,8 @@ def _nonloopback_status(path: str, expected: str | None) -> int:
 
 def middleware_audit() -> dict[str, Any]:
     results: dict[str, Any] = {}
-    saved = os.environ.pop("QUANT_API_KEY", None)
+    saved = _push_env("QUANT_API_KEY")
+    saved_read = _push_env("QUANT_API_READ_KEY")
     try:
         client = _client()
         r = client.get("/health")
@@ -78,16 +90,16 @@ def middleware_audit() -> dict[str, Any]:
         }
 
         results["remote_no_key_refused"] = {
-            "status": _nonloopback_status("/models", None),
-            "ok": _nonloopback_status("/models", None) == 403,
-            "remote_on_public_path": _nonloopback_status("/health", None) == 200,
+            "status": _nonloopback_status("/models"),
+            "ok": _nonloopback_status("/models") == 403,
+            "remote_on_public_path": _nonloopback_status("/health") == 200,
         }
 
         # Empty-string key must NOT silently enable key auth semantics —
         # pinned: it falls through to the loopback gate like unset.
         os.environ["QUANT_API_KEY"] = ""
         results["empty_key_equals_unset"] = {
-            "remote_status": _nonloopback_status("/models", ""),
+            "remote_status": _nonloopback_status("/models"),
             "loopback_status": _client().get("/models").status_code,
         }
 
@@ -129,10 +141,8 @@ def middleware_audit() -> dict[str, Any]:
             "on_status": r_err.status_code,
         }
     finally:
-        if saved is not None:
-            os.environ["QUANT_API_KEY"] = saved
-        else:
-            os.environ.pop("QUANT_API_KEY", None)
+        _pop_env("QUANT_API_KEY", saved)
+        _pop_env("QUANT_API_READ_KEY", saved_read)
     return results
 
 

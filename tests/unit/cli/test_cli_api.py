@@ -4,7 +4,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import polars as pl
-import pytest
 from fastapi.testclient import TestClient
 
 from quant_fund.api.app import _backtest_artifact_digest, _write_backtest_artifact, app
@@ -205,9 +204,9 @@ def test_readiness_does_not_mask_internal_bugs_as_config_invalid(
 ) -> None:
     """Bugbot regression: only genuine config errors fail closed as 'invalid'.
 
-    A code bug inside ``doctor`` (e.g. AttributeError) must surface as an
-    HTTP 500 traceback, not be swallowed into a 503 "configuration invalid"
-    that hides the real defect from operators.
+    A code bug inside ``doctor`` (e.g. AttributeError) must surface as HTTP
+    500, not a 503 "configuration invalid". The body is a fixed sentence:
+    it does not include the exception text, a traceback, or a filesystem path.
     """
     import importlib
 
@@ -219,13 +218,18 @@ def test_readiness_does_not_mask_internal_bugs_as_config_invalid(
     monkeypatch.setattr(api, "_CONFIGS_DIR", root)
 
     def boom(_config_path: str):
-        raise AttributeError("simulated internal bug in doctor()")
+        raise AttributeError(f"simulated internal bug in doctor() at {root}")
 
     monkeypatch.setattr(api, "doctor", boom)
-    with pytest.raises(AttributeError, match="simulated internal bug"):
-        TestClient(api.app, raise_server_exceptions=True).get(
-            "/ready", params={"config_path": "research.yaml"}
-        )
+    response = TestClient(api.app, raise_server_exceptions=False).get(
+        "/ready", params={"config_path": "research.yaml"}
+    )
+    assert response.status_code == 500
+    assert response.json() == {"detail": "internal error"}
+    body = response.text
+    assert "simulated internal bug" not in body
+    assert "Traceback" not in body
+    assert str(root) not in body
 
 
 def test_models_endpoint_reports_backend_availability() -> None:
@@ -381,23 +385,35 @@ def test_api_request_models_reject_unknown_fields() -> None:
 
 
 def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
+    import hashlib
     import hmac
     import importlib
 
-    api = importlib.import_module("quant_fund.api.app")
+    controls = importlib.import_module("quant_fund.api.http_controls")
 
     calls: list[tuple[bytes, bytes]] = []
     original = hmac.compare_digest
 
     def recording_compare(left: bytes, right: bytes) -> bool:
-        calls.append((left, right))
+        calls.append((bytes(left), bytes(right)))
         return original(left, right)
 
-    monkeypatch.setattr(api.hmac, "compare_digest", recording_compare)
+    monkeypatch.setattr(controls.hmac, "compare_digest", recording_compare)
     monkeypatch.setenv("QUANT_API_KEY", "secret-test-key")
-    response = TestClient(app).get("/doctor", headers={"X-API-Key": "wrong-key"})
-    assert response.status_code == 401
-    assert calls == [(b"wrong-key", b"secret-test-key")]
+    monkeypatch.delenv("QUANT_API_READ_KEY", raising=False)
+    client = TestClient(app)
+    short = client.get("/doctor", headers={"X-API-Key": "x"})
+    longer = client.get("/doctor", headers={"X-API-Key": "wrong-key"})
+    assert short.status_code == 401
+    assert longer.status_code == 401
+    assert len(calls) == 4
+    expected = hashlib.sha256(b"secret-test-key").digest()
+    stand_in = hashlib.sha256(b"absent-api-key").digest()
+    assert calls[0] == (hashlib.sha256(b"x").digest(), expected)
+    assert calls[1] == (hashlib.sha256(b"x").digest(), stand_in)
+    assert calls[2] == (hashlib.sha256(b"wrong-key").digest(), expected)
+    assert calls[3] == (hashlib.sha256(b"wrong-key").digest(), stand_in)
+    assert len(calls[0][0]) == len(calls[0][1]) == len(calls[2][0]) == 32
 
 
 def test_drift_endpoint_fails_closed_on_invalid_research_artifact(

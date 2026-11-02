@@ -900,8 +900,8 @@ def test_callback_url_private_literal_ssrf_gate() -> None:
                 "callback_url": "http://127.0.0.1:8080/cb",
             }
         )
-    prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    prev = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         req = OpenAIBatchRequest.model_validate(
             {
@@ -913,9 +913,9 @@ def test_callback_url_private_literal_ssrf_gate() -> None:
         assert req.callback_url == "http://127.0.0.1:8080/cb"
     finally:
         if prev is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
         else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = prev
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = prev
 
 
 def test_upload_models_forbid_extras_and_bound() -> None:

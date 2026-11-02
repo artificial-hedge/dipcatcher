@@ -185,7 +185,11 @@ class PaperLedger:
         ):
             path = self.root / f"{name}.parquet"
             if path.is_file():
-                target.extend(pl.read_parquet(path).to_dicts())
+                try:
+                    rows = pl.read_parquet(path).to_dicts()
+                except (OSError, pl.exceptions.PolarsError, RecursionError, ValueError) as exc:
+                    raise ValueError(f"ledger file is unreadable: {name}") from exc
+                target.extend(rows)
 
     def set_meta(self, **kwargs: Any) -> None:
         self._meta.update(kwargs)
@@ -326,10 +330,21 @@ def load_broker_state(
     if not path.is_file():
         return None
     try:
-        state = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        state = parse_broker_state(path.read_text())
+    except (OSError, ValueError):
         return None
-    return state if isinstance(state, dict) else None
+    return state
+
+
+def parse_broker_state(text: str) -> dict[str, Any]:
+    """Parse a broker-state document. Malformed input raises ``ValueError``."""
+    try:
+        state = json.loads(text)
+    except (json.JSONDecodeError, UnicodeError, RecursionError, TypeError, ValueError) as exc:
+        raise ValueError("broker state is invalid") from exc
+    if not isinstance(state, dict):
+        raise ValueError("broker state is invalid")
+    return state
 
 
 def latest_run_id(data_root: Path | str, subdir: str = "paper") -> str | None:
@@ -338,7 +353,7 @@ def latest_run_id(data_root: Path | str, subdir: str = "paper") -> str | None:
         return None
     try:
         blob = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+    except (OSError, json.JSONDecodeError, RecursionError, TypeError, ValueError):
         return None
     if not isinstance(blob, dict) or not isinstance(blob.get("run_id"), str):
         return None

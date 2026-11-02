@@ -1,0 +1,64 @@
+# Seccomp- and AppArmor-friendly runtime for the two app images.
+#
+# Merge this onto the root compose file. That file only defines the optional
+# mlflow service and is a crown jewel, so it is not edited. Default Docker
+# seccomp and the default AppArmor profile stay in force: this file does not
+# set privileged, does not set seccomp=unconfined, and does not set
+# apparmor=unconfined.
+#
+#   export QUANT_API_KEY=... RESEARCH_API_KEY=...
+#   docker compose -f docker-compose.yml -f deploy/compose.hardened.yml \
+#     up --no-deps api research-api
+#
+# Both processes answer /ready. The lab probe is fail-closed without a sealed
+# data lake (503 not_ready). The research probe is 200 when the baked-in
+# evidence roots are directories. Published ports are loopback-only. The lab
+# command binds 0.0.0.0 because a published port is not loopback inside the
+# network namespace; QUANT_API_KEY is required for that bind. The research
+# image already binds RESEARCH_API_HOST=0.0.0.0 and refuses to start without
+# RESEARCH_API_KEY.
+#
+# read_only makes the image root immutable. tmpfs covers the scratch the
+# processes actually write: /tmp (HOME and tempfile), /run, and /app/data
+# (the lab doctor creates data dirs on startup; the research data root is an
+# empty mount point in the image).
+
+services:
+  api:
+    image: dipcatcher:supply-hardened
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=67108864,mode=1777
+      - /run:size=16777216,mode=755
+      - /app/data:size=268435456,uid=10001,gid=10001,mode=755
+    environment:
+      HOME: /tmp
+      TMPDIR: /tmp
+      QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY}
+      HOST: 0.0.0.0
+      PORT: "8000"
+    command: ["dipcatcher", "api", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  research-api:
+    image: dipcatcher-research-api:supply
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=67108864,mode=1777
+      - /run:size=16777216,mode=755
+      - /app/data:size=268435456,uid=10001,gid=10001,mode=755
+    environment:
+      HOME: /tmp
+      TMPDIR: /tmp
+      RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY}
+    ports:
+      - "127.0.0.1:8010:8010"

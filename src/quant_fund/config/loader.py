@@ -6,9 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from quant_fund.config.models import AppConfig
+from quant_fund.config.yaml_safe import load_yaml_document
 
 
 def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
@@ -23,9 +22,12 @@ def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    raw = yaml.safe_load(path.read_text()) or {}
+    try:
+        raw = load_yaml_document(path.read_text()) or {}
+    except ValueError as exc:
+        raise ValueError(f"Config {path.name} is not valid YAML") from exc
     if not isinstance(raw, dict):
-        raise ValueError(f"Config {path} must be a mapping")
+        raise ValueError(f"Config {path.name} must be a mapping")
     return raw
 
 

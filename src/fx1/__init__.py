@@ -16,3 +16,7 @@ price/return model that is not implemented in this package. See
 __version__ = "0.4.0"
 
 BASE_MODEL = "moonshotai/Kimi-K3"
+
+from fx1.secret_guard import install_secret_redaction  # noqa: E402
+
+install_secret_redaction()

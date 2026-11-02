@@ -58,6 +58,8 @@ class TestEd25519:
         assert loaded.public_key == signer.public_key
         bad = tmp_path / "bad.hex"
         bad.write_text("not-hex\n", encoding="utf-8")
+        if os.name != "nt":
+            os.chmod(bad, 0o600)
         with pytest.raises(AuditError, match="not hex"):
             Ed25519Signer.from_path(bad)
 

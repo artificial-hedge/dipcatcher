@@ -1,0 +1,321 @@
+# HTTP threat model
+
+Scope: the lab forecast API (`dipcatcher api`, `quant_fund.api.app`) and the
+read-only research evidence API (`quant_fund.api.research_api`). The fx-1
+harness service (`src/fx1/serve/api.py`) is a separate process. This document
+records its current posture and the pending change. That file is not modified
+here.
+
+Research payloads from these APIs stay research-only. They are not live P&L
+claims. `quant_fund.api.app._stamp_research_honesty` overwrites
+`research_only` and `live_pnl_claim` on metric-bearing responses.
+
+## Assets
+
+- Operator API keys in the process environment: `QUANT_API_KEY`,
+  `QUANT_API_READ_KEY`, `RESEARCH_API_KEY`, `RESEARCH_API_READ_KEY`, and, on
+  the harness, `FX1_API_KEY`. The request path sees them only as an
+  `X-API-Key` header. Bucket ids store a SHA-256 digest, not the key.
+- Research evidence on disk: `receipts/`, `verifier/`, `artifacts/`, and the
+  run notebooks under the research data root. The research API is read-only.
+- Lab configs under `configs/`. `resolve_allowed_config_path` refuses a path
+  that does not resolve inside that directory.
+- Forecast, ranking, regime, risk, and backtest responses. These are research
+  outputs. A successful risk or backtest response can still name a local file
+  (see residual risks).
+- Signing keys (`GATE_SIGNING_KEY` and the other keys in `docs/PRODUCTION.md`)
+  are not request credentials for these two APIs and are not read by their
+  middleware.
+
+## Trust boundaries
+
+| Boundary | What is trusted | What is not |
+|---|---|---|
+| Direct peer | `request.client.host` as the immediate TCP peer | `X-Forwarded-For`, `Forwarded`, and any client-supplied host header |
+| Loopback | `127.0.0.1`, `::1`, `localhost`, and the ASGI test peer `testclient` | `::ffff:127.0.0.1` and every other address, including IPv4-mapped loopback |
+| Environment | The key read on that request | A key copied into the app at import, for the env-backed apps |
+| Filesystem | Paths that stay inside the configured root after resolve | User path segments that escape the root (`research_api._contained`, `resolve_allowed_config_path`) |
+| Reverse proxy | Nothing, until a key is set | A proxy on the same host makes every browser look like loopback |
+
+`X-Forwarded-For` is not read. A reverse proxy bound to loopback collapses
+every client into the loopback peer: the no-key fallback allows them, and the
+rate limit does not apply. Set the API key before placing either service
+behind a proxy.
+
+## Entrypoints
+
+| Entrypoint | Bind guard | Request gate |
+|---|---|---|
+| `dipcatcher api` (`quant_fund.cli.ops_cmds.api`) | Refuses a host other than `127.0.0.1`, `::1`, or `localhost` when `QUANT_API_KEY` is missing or empty. Default `127.0.0.1:8000`. | `api_auth_middleware` |
+| `uvicorn quant_fund.api.app:app` | No bind guard. The request gate still refuses a non-loopback peer when no key is set. | `api_auth_middleware` |
+| `python -m quant_fund.api.research_api` | Refuses a non-loopback `RESEARCH_API_HOST` when `RESEARCH_API_KEY` is missing or empty. Default `127.0.0.1:8010`. | `research_api_auth` |
+| `uvicorn quant_fund.api.research_api:app` | No bind guard. Same request gate. | `research_api_auth` |
+| `fx1 harness serve`, `python -m fx1.serve.api` | Refuses a non-loopback bind when `FX1_API_KEY` is missing or empty. Loopback still boots with no key. See the pending proposal. | `harness_api_auth` in `src/fx1/serve/api.py` |
+
+## Authentication and authorization
+
+Each app has an admin key and an optional read key.
+
+| App | Admin key | Read key |
+|---|---|---|
+| Lab | `QUANT_API_KEY` | `QUANT_API_READ_KEY` |
+| Research | `RESEARCH_API_KEY`, or `ResearchApiSettings.api_key` when `key_from_env` is false | `RESEARCH_API_READ_KEY` |
+
+The admin key authorizes every method. The read key authorizes `GET`, `HEAD`,
+and `OPTIONS`. Any other method presented with the read key is 403
+`{"detail": "read key cannot modify"}`. That body does not echo the key.
+The research API registers only GET routes, so the two keys authorize the
+same registered routes. A POST with the read key is still that 403. A POST
+with the admin key reaches the router and is 405 when the path has no POST
+route.
+
+`/health` is public on both apps and is not rate limited. `/ready` is public
+on the research API only. The lab `/ready` probe requires a key when one is
+configured. Neither app mounts `/docs` or `/redoc` (`docs_url` and
+`redoc_url` are `None`). `/openapi.json` is mounted and follows the key rule.
+
+| Keys on this request | Peer | Other routes |
+|---|---|---|
+| Either key non-empty | any | `X-API-Key` must match the admin key, or match the read key on a safe method. Otherwise 401 `{"detail": "invalid or missing X-API-Key"}`. A matching read key on another method is the 403 above. |
+| Both missing or empty | loopback set above | Allowed |
+| Both missing or empty | anything else | 403. The detail names the admin env var and tells the operator to set it or bind loopback. It does not echo a key. |
+
+`_authenticate_request` reads both lab variables on every non-public request.
+An empty string is unset. `research_api_key` supplies the research admin key.
+The research read key is always `nonempty_env("RESEARCH_API_READ_KEY")`.
+`ResearchApiSettings.from_env` sets `key_from_env`, and `research_api_key`
+calls `nonempty_env("RESEARCH_API_KEY")` on every request. An explicit
+`ResearchApiSettings.api_key` is a frozen override used by tests; it does not
+read the environment.
+
+`credential_refusal` runs `keys_match` twice, once for the admin key and once
+for the read key, including when a variable is unset. A missing header or an
+unset key is digested as the stand-in `absent-api-key`. Both sides of each
+call are SHA-256 digested and the digests are compared with
+`hmac.compare_digest`, so each compare is fixed length. A surrogate that
+cannot be encoded as UTF-8 is a mismatch, not a 500. Hash time still depends
+on the length of the header value.
+
+The CLI bind guard still requires the admin key. `QUANT_API_READ_KEY` alone
+does not allow `dipcatcher api` to bind a non-loopback host, and
+`RESEARCH_API_READ_KEY` alone does not allow
+`python -m quant_fund.api.research_api` to do so.
+
+## Controls on both APIs
+
+Implemented in `quant_fund.api.http_controls` and called from
+`quant_fund.api.app` and `quant_fund.api.research_api`.
+
+### Body size
+
+The cap is 64 KiB (`MAX_BODY_BYTES`, and `_MAX_REQUEST_BYTES` on the lab).
+
+- A `Content-Length` that does not parse, or is negative, is 400
+  `{"detail": "invalid Content-Length"}`.
+- A declared or streamed body over 64 KiB is 413
+  `{"detail": "request body exceeds the 64 KiB limit"}`.
+- The lab counts bytes in `api_auth_middleware` before the route runs.
+- The research app uses `reject_declared_body` and `attach_body_limit` inside
+  `_research_dispatch`. The middleware turns `RequestBodyTooLarge` into the
+  413 response.
+
+The check runs for `/health` as well, so a public liveness route cannot be
+used to stream an unbounded body.
+
+### Rate limit
+
+In-memory token bucket, one process, not shared across workers.
+
+- `QUANT_API_RATE_PER_SEC` and `RESEARCH_API_RATE_PER_SEC` default to `10`.
+- `QUANT_API_RATE_BURST` and `RESEARCH_API_RATE_BURST` default to `30`.
+- `0`, `off`, `false`, `no`, or an empty value disables that API's limit.
+- A value that does not parse keeps 10 per second and a burst of 30.
+- Loopback peers, including `testclient`, skip the limit.
+- `/health` is not counted.
+- Other routes take an IP token first, including a request that will 401 or
+  403. After the key matches, a second bucket is taken. Its id is
+  `sha256(key)`, not the key. A read key refused for a mutating method does
+  not take that second bucket.
+- At 1024 identities the oldest bucket is dropped.
+- Over the limit: 429 `{"detail": "rate limit exceeded"}` and `Retry-After: 1`.
+
+`reset_rate_gates` clears process state for tests.
+
+### CORS
+
+Neither app installs `CORSMiddleware`. `enforce_closed_cors` removes
+`Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials`,
+`Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`, and
+`Access-Control-Expose-Headers` if something else set them. An `Origin`
+request header is not reflected. There is no allowlist.
+
+### Security headers
+
+`apply_security_headers` sets:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Content-Security-Policy` with `frame-ancestors 'none'`
+- `Permissions-Policy` denying camera, microphone, and geolocation
+- `Cache-Control: no-store`
+- `Strict-Transport-Security` when the request scheme is `https`
+
+The lab middleware sets HSTS again on https so the pinned complexity of
+`api_auth_middleware` stays at 11 (`quality/mccabe_baseline.txt`).
+
+### Error responses
+
+`install_plain_errors` registers the `Exception` handler. Starlette runs that
+handler on the outermost server-error middleware, so it only sees errors that
+route handlers did not turn into `HTTPException` or a validation error.
+The body is `{"detail": "internal error"}`. The handler does not interpolate
+the exception. It also applies the security headers and strips CORS headers,
+because this response is produced outside user middleware.
+
+`HTTPException` and request-validation errors keep their status and their
+existing detail. A 422 from a point-in-time failure can include `str(exc)`.
+That path is not the 500 handler.
+
+Starlette re-raises after the 500 handler so the server process can log the
+traceback. The HTTP body does not contain it. `debug=True` would replace the
+handler with an HTML traceback. Both apps are constructed with debug off.
+
+## Route catalog
+
+### Lab API (`quant_fund.api.app`)
+
+Public: `GET /health`.
+
+Key required when configured, loopback-only when not. Safe methods accept
+either key. `POST /portfolio/optimize` and `POST /backtest` accept the admin
+key. `/docs` and `/redoc` are not mounted.
+
+- `GET /ready`
+- `GET /models`
+- `GET /forecast/{symbol}`
+- `GET /forecast/{symbol}/distribution`
+- `GET /ranking`
+- `GET /regime`
+- `GET /risk/portfolio`
+- `GET /portfolio/target`
+- `GET /portfolio/exposures`
+- `POST /portfolio/optimize`
+- `POST /backtest`
+- `GET /backtest/{backtest_id}`
+- `GET /monitoring/drift`
+- `GET /doctor`
+- `GET /research/latest`
+- `GET /openapi.json`
+
+### Research API (`quant_fund.api.research_api`)
+
+Every declared route is GET. Public: `GET /health` and `GET /ready`.
+`/ready` is 200 when the evidence roots are directories and 503 otherwise.
+`/docs` and `/redoc` are not mounted.
+
+The same key rule covers:
+
+- `GET /runs`, `GET /runs/latest`, `GET /runs/{run_id}`,
+  `GET /runs/{run_id}/markdown`, `GET /runs/{run_id}/verification`
+- `GET /receipts`, `GET /receipts/by-hash/{digest}`, `GET /receipts/{receipt_id}`,
+  `GET /receipts/{receipt_id}/verification`
+- `GET /results`, `GET /results/{kind}/{name}`,
+  `GET /results/{kind}/{name}/verification`
+- `GET /verifier/versions`, `GET /verifier/versions/{version}`
+- `GET /verifier/runs`, `GET /verifier/runs/{run_log_id}`
+- `GET /artifacts`, `GET /artifacts/{artifact_id:path}`
+- `GET /openapi.json`
+
+Ids are checked against closed regular expressions, and every file read goes
+through `_contained`.
+
+## Pending harness change
+
+`src/fx1/serve/api.py` is hash-pinned. This branch does not modify it, and it
+does not modify `src/fx1/cli.py`. Current behavior, read from those files:
+
+- `create_app` copies `FX1_API_KEY` once (`api_key = os.environ.get("FX1_API_KEY") or None`) and `_resolve_auth` compares that closed-over value. Rotating the variable does nothing until the process builds a new app.
+- The compare is `hmac.compare_digest` on the raw UTF-8 bytes. Python's compare returns early when the lengths differ, so the length of the configured key can leak through timing. A surrogate uses `surrogatepass` so a malformed key does not become a 500.
+- With no key and no managed keys, only `_LOOPBACK_HOSTS` (`127.0.0.1`, `::1`, `localhost`, `testclient`) is served. `::ffff:127.0.0.1` is not unwrapped, so it is refused. A missing `request.client` is refused.
+- `/health` is public. With a key set, other routes require `X-API-Key` (Bearer on OpenAI-shaped paths). Managed keys add a scope check.
+- `fx1 harness serve` and `python -m fx1.serve.api` refuse a non-loopback bind when `FX1_API_KEY` is missing or empty. A loopback bind still starts with no key. `import fx1.serve.api` does not exit.
+- Body cap is 1 MiB. `FX1_API_RATE_LIMIT_RPS` defaults to `0`, which leaves the limiter off. When set, the bucket is per client host, not per key. `FX1_API_CORS_ORIGINS` defaults to empty, which installs no CORS middleware. A non-empty list is an explicit origin allowlist with credentials off.
+
+The pending proposal, written with the workflow-hardening slice and not
+applied, changes only the serving entrypoints and the auth lookup:
+
+- `uvicorn fx1.serve.api:app`, `python -m fx1.serve.api`, and `fx1 harness serve` refuse to boot unless `FX1_API_KEY` is non-empty, including a loopback bind.
+- `create_app()` stays callable with no key so in-process tests keep working.
+- Middleware reads `FX1_API_KEY` on each request instead of closing over the import-time value.
+- The client host strips brackets and a zone id, then unwraps IPv4-mapped IPv6. `::ffff:127.0.0.1` becomes loopback. `::ffff:169.254.169.254` stays link-local and is refused when no key is configured.
+
+Applying that proposal re-signs `src/fx1/serve/api.py`. The lab and research
+apps in this branch do not unwrap IPv4-mapped addresses. On those two apps,
+`::ffff:127.0.0.1` stays a remote peer: it needs a key, and it is rate limited.
+
+## Residual risks
+
+- A reverse proxy in front of loopback inherits the no-key fallback and skips
+  the rate limit. Set the key first.
+- Buckets are per process. Several workers multiply the budget. A restart
+  clears them. The limit is not a quota.
+- `/health` is unauthenticated and unlimited. It returns status, firm,
+  product, version, and mode. It does not return a key.
+- SHA-256 of the presented key takes time proportional to the header length.
+  The digest compare does not.
+- Successful lab responses can include a local path: `source` on
+  `GET /risk/portfolio` and `artifact_path` on a stored backtest. Those are
+  200 bodies, not the 500 handler.
+- Some 422 details are `str(exc)` (`PointInTimeError` on the portfolio
+  routes). They are not passed through `install_plain_errors`.
+- Process logs can still contain a traceback, because the server-error
+  middleware re-raises after writing the generic body.
+- `debug=True` on a future constructor would HTML-render the traceback.
+- The admin key still authorizes every method on that app. The read key does
+  not. A deployment that sets only the admin key has no separate read credential.
+- Direct `uvicorn` of either module skips the CLI bind guard. The request
+  gate still applies.
+- `.env.example` is hash-pinned, so the rate-limit variables and
+  `QUANT_API_READ_KEY` / `RESEARCH_API_READ_KEY` are documented here and are
+  not added to that file.
+- `docs/THREAT_MODEL.md` is a new corpus file. A later evidence audit with
+  `require_stamped` will report it until the docs epoch is restamped. This
+  change does not edit `quality/*.json` or `gate_pins.sig`.
+- The harness gaps above remain until the pending proposal is applied and
+  `src/fx1/serve/api.py` is re-signed. This branch does not change that file,
+  its signature, crown-jewel verifiers, or workflow `runs-on` labels.
+
+## Outbound clients
+
+`quant_fund.utils.outbound.vetted_addresses` is the shared selector.
+`literal_connect_address` is the same classification without DNS, for a
+check that must not resolve yet. A decimal, octal, hex, short, trailing-dot,
+or compatibility-folded IPv4 literal is parsed before `getaddrinfo`. 6to4,
+Teredo, NAT64 `64:ff9b::/96`, IPv4-translated, and deprecated IPv4-compatible
+embeddings are refused whole. The caller dials one returned numeric address.
+
+| Caller | How it dials |
+|---|---|
+| `open_pinned`, `read_http`, `read_http_redirects`, `public_addresses` | `vetted_addresses` with the boolean loopback/private flags |
+| BYOK (`backends._byok_resolved_addresses`) | `vetted_addresses` and `FX1_PRIVATE_ALLOW_CIDRS` before DNS. Connect uses `addresses[0]` |
+| Unflagged OpenAI and local-engine completion (`_openai_urlopen`) | Same pin. Loopback and RFC1918/ULA literals, and the name `localhost`, stay dialable. Any other name must be public. `http_proxy` and `https_proxy` are not consulted |
+| Webhooks | `literal_connect_address` at `check_callback_url`. `vetted_addresses` again at delivery. `_post_once` dials that address |
+| `quant_fund.data.concurrent_io` | `public_addresses` on every pooled hop. A checkout without an address resolves the same way, then `pinned_connection` |
+| `quant_fund.live.brokers.urllib_transport` | `open_pinned`. Redirects are not followed. Alpaca live still refuses before the socket |
+| `quant_fund.observe.tracing._export` | `vetted_addresses` with loopback literals allowed, then `pinned_connection`. A refused collector is an `otel_export` error and does not raise |
+| `src/fx1/serve/client.py` | `open_pinned` (`allow_loopback`, `allow_private`) |
+| `src/fx1/webresearch` | `open_pinned` / `read_http` |
+| Research witnesses and `scripts/vendor_http.py` | `read_http` / `read_http_redirects` |
+| `src/fx1/serve/e2e_audit.py`, `scripts/fx1_goldenpath.py` | `open_pinned` with loopback allowed. The URLs are `127.0.0.1` plus a port this process bound |
+
+### Exemptions
+
+- `scripts/verify_auditor_bundle.py` calls `urllib.request.urlopen` on the fixed URL `https://rekor.sigstore.dev/api/v1/log/publicKey`. The script is a second verifier and imports nothing from `quant_fund`. The host is not caller input. A DNS rebind of that name is the residual.
+- `third_party/kronos/examples/get_akshare_date_2024-2025_x.py` and `get_date_new.py` call `requests.get` on fixed AkShare hosts. They are vendored examples. Product code does not import them.
+- `src/fx1/serve/jobs_audit.py`, `src/fx1/serve/idem_audit.py`, and `tests/unit/fx1_serve/test_harness_idempotency_races.py` construct `httpx.AsyncClient` with `ASGITransport`. The client stays in process. There is no DNS and no socket.
+- `tests/fx1/test_goldenpath.py` and `tests/examples/test_fx1_quickstart_startup.py` call `urlopen` on `http://127.0.0.1` servers those tests bind.
+- `src/quant_fund/data/adapters/hf_ohlcv_1m.py` `stream_https` takes an injected opener and is covered by tests. The production download is `http_download` → `pooled_stream` → `public_addresses`. `stream_https` is pinned at McCabe 12, so this change does not rewrite it.
+- `src/fx1/serve/api.py` imports `urllib.request` and does not open a connection. The file is hash-pinned and is not modified here.
+- `quant_fund.paper.trading_session` forbids importing `urllib`, `requests`, `httpx`, and `aiohttp`. It has no outbound client.
+- No `aiohttp` call site exists in this repo.
