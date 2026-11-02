@@ -65,6 +65,18 @@ uv run python -m quant_fund.simtest.e2e_paper --root /tmp/e2e-paper
 
 `make e2e-smoke` collects this stage with the ingest-to-report smoke.
 
+## Paper soak
+
+A longer simulated book trades one share of two names on at least 30
+synthetic sessions. After every session it reconciles cash to the filled
+notional, positions to the filled quantity, and book value to the overnight
+mark move. A fill at the mark does not create value. The run stays under
+two minutes. The receipt schema is `e2e_paper_soak.v1`.
+
+```bash
+uv run pytest -q tests/end_to_end/test_paper_soak.py
+```
+
 ## Release dry-run
 
 CI's package job builds the sdist and wheel and runs the installed
