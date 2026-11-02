@@ -422,6 +422,7 @@ Machine-checkable. Each row is a command that returns pass/fail. Re-run on every
 | 16 | Dependency audit | `make audit-all` | no high/critical |
 | 17 | Docs drift | drift checker enabled | pass |
 | 18 | Honesty ledger | `HONESTY_RATING.md` dated at `PROD_BASELINE` | current |
+| 19 | security_gate | `uv run python scripts/check_security_gate_summary.py` | `.tmp_security/summary.json` has `ok` true, `dirty` false, and `head` equal to `git rev-parse HEAD` |
 
 Rows 1–5 are the Tier-A gate. Tier A is **not** achieved until all five are green.
 
