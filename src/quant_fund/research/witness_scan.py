@@ -26,6 +26,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_bounded
+
 DEFAULT_REKOR_URL = "https://rekor.sigstore.dev"
 WITNESS_PUBKEY_PATH = Path("quality/witness_signing.pub")
 # Ceiling on entries fetched per scan — Rekor index can return thousands for
@@ -41,7 +43,7 @@ def _http(url: str, timeout: float, data: bytes | None = None) -> bytes:
         method="POST" if data else "GET",
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        return bytes(resp.read())
+        return read_bounded(resp, timeout=timeout, max_bytes=DEFAULT_MAX_BODY)
 
 
 def _entry_uuids(pubkey_pem: bytes, rekor_url: str, timeout: float) -> list[str]:

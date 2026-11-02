@@ -24,6 +24,8 @@ import socket
 import ssl
 import urllib.parse
 
+from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_attempts, require_timeout
+
 __all__ = [
     "WEBHOOK_BACKOFF_S",
     "WEBHOOK_MAX_ATTEMPTS",
@@ -78,12 +80,13 @@ def _validate_literal_host(host: str) -> None:
         raise ValueError("callback_url must not target a private or special-use address")
 
 
-def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
+def _resolved_addresses(host: str, port: int, timeout: float) -> tuple[str, ...]:
     """Resolve a host and return only validated, distinct numeric addresses."""
     addresses: list[str] = []
-    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
+    for family, socktype, _proto, _canonname, sockaddr in bounded_getaddrinfo(
         host,
         port,
+        timeout,
         type=socket.SOCK_STREAM,
     ):
         if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
@@ -274,6 +277,8 @@ def deliver_signed(
 
     error: str | None = None
     try:
+        timeout_s = require_timeout(timeout_s, name="timeout_s")
+        max_attempts = require_attempts(max_attempts)
         check_callback_url(url)
         parsed = urllib.parse.urlparse(url)
         host = parsed.hostname
@@ -287,14 +292,14 @@ def deliver_signed(
 
     for attempt in range(max_attempts):
         if attempt:
-            time.sleep(backoff_s * (1 << (attempt - 1)))
+            time.sleep(min(30.0, backoff_s * (1 << (attempt - 1))))
         try:
             headers = {"Content-Type": "application/json"}
             if secret:
                 ts = str(int(time.time()))
                 headers[WEBHOOK_TIMESTAMP_HEADER] = ts
                 headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(secret, ts, body)
-            addresses = _resolved_addresses(host, port)
+            addresses = _resolved_addresses(host, port, timeout_s)
             last_exception: Exception | None = None
             for address in addresses:
                 try:

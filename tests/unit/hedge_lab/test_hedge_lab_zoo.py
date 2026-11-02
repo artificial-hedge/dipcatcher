@@ -44,3 +44,26 @@ def test_known_variant_with_fake_hub(tmp_path, monkeypatch) -> None:
     assert out["sizes_book"] is False
     assert out["research_only"] is True
     assert out["tokenizer_path"].endswith(spec["tokenizer"].rsplit("/", 1)[-1])
+
+
+def test_hub_snapshot_passes_timeout_and_stops_after_the_retry_cap(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(zoo, "lab_root", lambda: tmp_path)
+    calls: list[dict[str, object]] = []
+
+    def snapshot_download(**kwargs: object) -> str:
+        calls.append(dict(kwargs))
+        if len(calls) <= 2:
+            raise ConnectionError("synthetic reset")
+        return str(kwargs["local_dir"])
+
+    fake = types.ModuleType("huggingface_hub")
+    fake.snapshot_download = snapshot_download
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake)
+
+    variant = next(iter(VARIANT_HUB))
+    out = zoo.fetch_kronos_variant(variant)
+    assert out["status"] == "ok"
+    assert calls[0]["etag_timeout"] == 30.0
+    # tokenizer fails twice then succeeds; model succeeds on the first try
+    assert len(calls) == 4
+    assert all(call["etag_timeout"] == 30.0 for call in calls)

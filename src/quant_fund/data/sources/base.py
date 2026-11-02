@@ -11,6 +11,7 @@ from urllib.parse import urlencode, urlsplit
 import polars as pl
 
 from quant_fund.data.concurrent_io import IoError, call_with_retry, pooled_request
+from quant_fund.utils.net_timeout import require_retries, require_timeout
 
 
 class SourceError(RuntimeError):
@@ -28,10 +29,10 @@ class HttpClient:
         max_bytes: int = 25_000_000,
         user_agent: str = "dipcatcher/1.0 (research; contact=research@example.invalid)",
     ) -> None:
-        if timeout <= 0 or retries < 0 or max_bytes < 1:
-            raise ValueError("timeout must be positive; retries non-negative; max_bytes positive")
-        self.timeout = float(timeout)
-        self.retries = int(retries)
+        if max_bytes < 1:
+            raise ValueError("max_bytes must be positive")
+        self.timeout = require_timeout(timeout)
+        self.retries = require_retries(retries)
         self.max_bytes = int(max_bytes)
         self.user_agent = user_agent
 

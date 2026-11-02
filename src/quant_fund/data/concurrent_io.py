@@ -21,6 +21,8 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import urljoin, urlsplit
 
+from quant_fund.utils.net_timeout import require_retries, require_timeout
+
 _CHUNK = 1024 * 1024
 
 
@@ -131,8 +133,7 @@ def call_with_retry[R](
     Backoff is exponential. With ``jitter``, each wait is uniform in
     ``[0, min(max_backoff_s, backoff_s * 2**attempt)]``.
     """
-    if retries < 0:
-        raise ValueError("retries must be non-negative")
+    retries = require_retries(retries)
     if backoff_s < 0 or max_backoff_s < 0:
         raise ValueError("backoff must be non-negative")
     sleep = _default_sleep if sleeper is None else sleeper
@@ -283,8 +284,7 @@ async def amap_ordered[T, R](
         return []
     if max_in_flight < 1:
         raise ValueError("max_in_flight must be >= 1")
-    if retries < 0:
-        raise ValueError("retries must be non-negative")
+    retries = require_retries(retries)
     sem = asyncio.Semaphore(max_in_flight)
     limiter = AsyncRateLimiter(min_interval_s)
 
@@ -415,8 +415,7 @@ def pooled_request(
     Redirects are followed for GET and HEAD. Responses over ``max_bytes``
     raise :class:`IoError` and the connection is not reused.
     """
-    if timeout <= 0:
-        raise ValueError("timeout must be positive")
+    timeout = require_timeout(timeout)
     if max_bytes < 1:
         raise ValueError("max_bytes must be positive")
     if max_redirects < 0:
@@ -506,8 +505,7 @@ def pooled_stream(
     response is written.
     """
     path = Path(dest)
-    if timeout <= 0:
-        raise ValueError("timeout must be positive")
+    timeout = require_timeout(timeout)
     if max_bytes < 1:
         raise ValueError("max_bytes must be positive")
     if max_redirects < 0:

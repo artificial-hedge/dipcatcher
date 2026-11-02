@@ -43,6 +43,7 @@ from typing import Any
 
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_bounded
 
 WITNESS_SCHEMA = "integrity_witness.v1"
 WITNESS_DIR = Path("quality/witness")
@@ -85,7 +86,9 @@ def _post_entry(target_bytes: bytes, witness_key_pem: bytes, rekor_url: str) -> 
         headers={"Content-Type": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310  # nosec B310
-        result: dict[str, Any] = json.loads(resp.read())
+        result: dict[str, Any] = json.loads(
+            read_bounded(resp, timeout=30, max_bytes=DEFAULT_MAX_BODY)
+        )
         return result
 
 
@@ -454,7 +457,7 @@ def verify_witness_online(
         with urllib.request.urlopen(  # noqa: S310  # nosec B310
             rekor_url.rstrip("/") + "/api/v1/log", timeout=timeout
         ) as resp:
-            log = json.loads(resp.read())
+            log = json.loads(read_bounded(resp, timeout=float(timeout), max_bytes=DEFAULT_MAX_BODY))
     except (OSError, json.JSONDecodeError) as exc:
         return {"ok": False, "online": False, "errors": [f"log_unreachable:{exc}"]}
     note = str(log.get("signedTreeHead", ""))
@@ -502,7 +505,8 @@ def verify_witness_online(
                 + f"/api/v1/log/proof?firstSize={old_size}&lastSize={cur_size}",
                 timeout=timeout,
             ) as resp:
-                path = [bytes.fromhex(h) for h in json.loads(resp.read())["hashes"]]
+                body = read_bounded(resp, timeout=float(timeout), max_bytes=DEFAULT_MAX_BODY)
+                path = [bytes.fromhex(h) for h in json.loads(body)["hashes"]]
         except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{name}:proof_fetch_failed:{exc}")
             continue

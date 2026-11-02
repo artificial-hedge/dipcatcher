@@ -9,6 +9,7 @@ import io
 import os
 import socket
 import ssl
+import threading
 import unittest
 import urllib.parse
 from typing import Any
@@ -311,7 +312,7 @@ class TestWebhooks(unittest.TestCase):
                     response = connection_cls.return_value.getresponse.return_value
                     response.__enter__.return_value.status = 204
                     self.assertEqual(deliver_signed(url, None, self.body), (True, None, 1))
-                    resolve.assert_called_once_with("example.com", port)
+                    resolve.assert_called_once_with("example.com", port, 10.0)
                     connection_cls.assert_called_once_with(
                         "example.com", port, "93.184.216.34", 10.0
                     )
@@ -403,6 +404,49 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(attempts, 2)
         self.assertEqual(resolve.call_count, 2)
         post.assert_called_once()
+
+    def test_dns_lookup_is_bounded_by_the_delivery_timeout(self) -> None:
+        release = threading.Event()
+
+        def hang(*_args: object, **_kwargs: object) -> list[object]:
+            release.wait(2.0)
+            return []
+
+        with (
+            patch("fx1.serve.webhooks.socket.getaddrinfo", side_effect=hang),
+            patch("fx1.serve.webhooks._post_once") as post,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://example.com/hook",
+                None,
+                self.body,
+                max_attempts=1,
+                backoff_s=0,
+                timeout_s=0.05,
+            )
+        release.set()
+        self.assertFalse(delivered)
+        self.assertIn("TimeoutError", error or "")
+        self.assertEqual(attempts, 1)
+        post.assert_not_called()
+
+    def test_non_finite_timeout_and_unbounded_attempts_fail_closed(self) -> None:
+        for kwargs in (
+            {"timeout_s": float("nan")},
+            {"timeout_s": float("inf")},
+            {"max_attempts": 10_000},
+        ):
+            with self.subTest(**kwargs):
+                delivered, error, attempts = deliver_signed(
+                    "https://example.com/hook",
+                    None,
+                    self.body,
+                    backoff_s=0,
+                    **kwargs,
+                )
+                self.assertFalse(delivered)
+                self.assertTrue(error)
+                self.assertEqual(attempts, 0)
 
     def test_post_once_closes_real_responses_without_reading_the_body(self) -> None:
         for scheme, port, connection_name in (

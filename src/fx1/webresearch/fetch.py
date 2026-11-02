@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import ipaddress
 import math
-import socket
 import threading
 import urllib.error
 import urllib.parse
@@ -33,6 +32,8 @@ from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from typing import Any
 
+from quant_fund.utils.net_timeout import bounded_getaddrinfo
+
 DEFAULT_USER_AGENT = "dipcatcher-research/0.1 (+https://github.com/artificial-hedge/dipcatcher)"
 DEFAULT_MAX_BYTES = 512 * 1024
 DEFAULT_TIMEOUT_S = 10.0
@@ -41,6 +42,12 @@ ACCEPT = "text/html, text/plain;q=0.9, */*;q=0.1"
 
 OpenFn = Callable[[urllib.request.Request, float], Any]  # -> context manager over response
 ResolveFn = Callable[..., list[tuple[Any, ...]]]  # socket.getaddrinfo shape
+
+
+def _bounded_resolve(host: str, port: int) -> list[tuple[Any, ...]]:
+    """Default resolver: DNS cannot outlive the fetch timeout."""
+    # type=0 matches socket.getaddrinfo's default (every socket kind).
+    return bounded_getaddrinfo(host, port, DEFAULT_TIMEOUT_S, type=0)
 
 
 class FetchPolicyError(Exception):
@@ -83,7 +90,7 @@ def _ip_is_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     )
 
 
-def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> tuple[bool, str]:
+def host_is_public(host: str, *, resolve_fn: ResolveFn = _bounded_resolve) -> tuple[bool, str]:
     """(allowed, reason) for fetching ``host``. Literal IPs need no resolution."""
     try:
         literal = ipaddress.ip_address(host)
@@ -112,7 +119,7 @@ def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> 
     return True, ""
 
 
-def url_policy_error(url: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> str | None:
+def url_policy_error(url: str, *, resolve_fn: ResolveFn = _bounded_resolve) -> str | None:
     """Why *url* may not be fetched; ``None`` when it may. Never echoes secrets."""
     try:
         parsed = urllib.parse.urlparse(url)
@@ -346,7 +353,7 @@ def fetch_page(
     max_redirects: int = DEFAULT_MAX_REDIRECTS,
     user_agent: str = DEFAULT_USER_AGENT,
     open_fn: OpenFn | None = None,
-    resolve_fn: ResolveFn = socket.getaddrinfo,
+    resolve_fn: ResolveFn = _bounded_resolve,
     check_policy: bool = True,
 ) -> FetchResult:
     """Fetch one URL with policy, size, and redirect limits. Never raises for
