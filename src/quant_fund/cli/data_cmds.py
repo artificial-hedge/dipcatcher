@@ -58,6 +58,41 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
         raise typer.Exit(code=1)
 
 
+@app.command("ready-bootstrap")
+def ready_bootstrap(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+) -> None:
+    """Write a SYNTHETIC manifest and receipt so an empty lab tree can become ready."""
+    from quant_fund.pipeline.readiness_bootstrap import (
+        ReadinessBootstrapError,
+        bootstrap_readiness,
+    )
+
+    try:
+        report = bootstrap_readiness(config)
+    except (OSError, ReadinessBootstrapError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"data_manifest={report.get('data_manifest')}")
+    typer.echo(f"research_receipt={report.get('research_receipt')}")
+    typer.echo("synthetic=true")
+    if report.get("data_manifest") != "ok" or report.get("research_receipt") != "ok":
+        raise typer.Exit(code=1)
+
+
+@app.command("smoke-up")
+def smoke_up(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+) -> None:
+    """Bootstrap a SYNTHETIC ready tree, then serve the lab API."""
+    import os
+
+    from quant_fund.api.serve import serve_lab
+
+    ready_bootstrap(config)
+    os.environ["DIPCATCHER_CONFIG"] = str(config)
+    serve_lab()
+
+
 def get_logger(**binds: Any) -> Any:
     """Resolve the structured logger on first call.
 
