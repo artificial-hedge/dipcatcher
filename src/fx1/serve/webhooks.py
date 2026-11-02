@@ -24,12 +24,15 @@ import random
 import socket
 import ssl
 import urllib.parse
+from typing import Any, NoReturn
 
 from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_attempts, require_timeout
 from quant_fund.utils.outbound import (
     PRIVATE_ALLOW_CIDRS_ENV,
-    address_permitted,
+    OutboundRefused,
+    literal_connect_address,
     parse_allow_cidrs,
+    vetted_addresses,
 )
 from quant_fund.utils.secrets import redact_text
 
@@ -52,47 +55,45 @@ WEBHOOK_BACKOFF_S = 0.5
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
 
 
-def _address_permitted(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Public unicast, plus hosts inside ``FX1_PRIVATE_ALLOW_CIDRS``."""
-    networks = parse_allow_cidrs(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, ""))
-    return address_permitted(address, networks)
+def _webhook_networks() -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+    return parse_allow_cidrs(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, ""))
+
+
+def _raise_webhook_resolution(host: str, exc: OutboundRefused) -> NoReturn:
+    if str(exc) == "allowlist CIDR is invalid":
+        raise exc
+    if isinstance(exc.__cause__, OSError) or str(exc) in {
+        "cannot resolve host",
+        "destination host did not resolve to an IP address",
+    }:
+        raise OSError(f"callback_url host {host!r} did not resolve to an IP address") from exc
+    raise ValueError(f"callback_url resolved to a private or special-use address: {exc}") from exc
 
 
 def _validate_literal_host(host: str) -> None:
     """Reject a special-use IP literal without performing DNS at submit time."""
-    candidate = host.split("%", 1)[0]
     try:
-        address = ipaddress.ip_address(candidate)
-    except ValueError:
-        return
-    if not _address_permitted(address):
-        raise ValueError("callback_url must not target a private or special-use address")
+        literal_connect_address(host, _webhook_networks())
+    except OutboundRefused as exc:
+        raise ValueError("callback_url must not target a private or special-use address") from exc
 
 
-def _resolved_addresses(host: str, port: int, timeout: float) -> tuple[str, ...]:
-    """Resolve a host and return only validated, distinct numeric addresses."""
-    addresses: list[str] = []
-    for family, socktype, _proto, _canonname, sockaddr in bounded_getaddrinfo(
-        host,
-        port,
-        timeout,
-        type=socket.SOCK_STREAM,
-    ):
-        if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
-            continue
-        raw = str(sockaddr[0])
-        candidate = raw.split("%", 1)[0]
-        address = ipaddress.ip_address(candidate)
-        if not _address_permitted(address):
-            raise ValueError(
-                f"callback_url resolved to a private or special-use address: {address}"
-            )
-        normalized = str(address)
-        if normalized not in addresses:
-            addresses.append(normalized)
-    if not addresses:
-        raise OSError(f"callback_url host {host!r} did not resolve to an IP address")
-    return tuple(addresses)
+def _resolved_addresses(host: str, port: int, timeout: float = 10.0) -> tuple[str, ...]:
+    """Classify a literal before DNS and return numeric addresses to dial."""
+
+    def resolve(name: str, number: int) -> list[tuple[Any, ...]]:
+        return bounded_getaddrinfo(
+            name,
+            number,
+            timeout,
+            type=socket.SOCK_STREAM,
+            lookup=socket.getaddrinfo,
+        )
+
+    try:
+        return vetted_addresses(host, port, _webhook_networks(), resolve_fn=resolve)
+    except OutboundRefused as exc:
+        _raise_webhook_resolution(host, exc)
 
 
 class _PinnedHTTPConnection(http.client.HTTPConnection):

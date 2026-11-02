@@ -181,26 +181,50 @@ def test_byok_policy_reaches_all_five_provider_routes(monkeypatch: pytest.Monkey
     assert not any(getattr(request, "_fx1_byok_allow_private", False) for request in seen)
 
 
-def test_non_byok_transport_keeps_existing_urllib_path(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unflagged_transport_pins_loopback_and_refuses_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     built: list[tuple[Any, ...]] = []
+    seen: list[tuple[str, int, str]] = []
 
     class Response:
+        status = 200
+        reason = "OK"
+        headers: dict[str, str] = {}
+
         def close(self) -> None:
             pass
 
-    class Opener:
-        def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
-            assert request.full_url == "http://127.0.0.1/private"
-            assert timeout == 2
+    class Connection:
+        def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+            del timeout
+            seen.append((host, port, address))
+
+        def request(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def getresponse(self) -> Response:
             return Response()
 
-    def build(*handlers: Any) -> Opener:
-        built.append(handlers)
-        return Opener()
+        def close(self) -> None:
+            return None
 
-    monkeypatch.setattr(urllib.request, "build_opener", build)
+    def refuse_dns(*_args: Any, **_kwargs: Any) -> list[object]:
+        raise AssertionError("a literal must not reach DNS")
+
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: built.append(handlers))
+    monkeypatch.setattr(socket, "getaddrinfo", refuse_dns)
+    monkeypatch.setattr(backends, "_ByokPinnedHTTPConnection", Connection)
     with backends._openai_urlopen(
         urllib.request.Request("http://127.0.0.1/private"), timeout_s=2
     ) as response:
-        assert isinstance(response, Response)
-    assert len(built) == 1
+        assert response.status == 200
+    assert seen == [("127.0.0.1", 80, "127.0.0.1")]
+    assert built == []
+    with (
+        pytest.raises(urllib.error.URLError, match="prohibited network address"),
+        backends._openai_urlopen(
+            urllib.request.Request("http://169.254.169.254/latest/"), timeout_s=2
+        ),
+    ):
+        pass

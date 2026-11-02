@@ -26,6 +26,7 @@ from quant_fund.live.errors import (
     LiveBrokerRefused,
     LiveGateError,
 )
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
@@ -150,36 +151,23 @@ def urllib_transport(
     body: bytes | None,
     timeout: float,
 ) -> tuple[int, bytes]:
-    """HTTP/1.1 request that refuses redirects so the credential header cannot leave the host."""
+    """HTTP/1.1 request pinned to a vetted address. Redirects are not followed."""
     request = urllib.request.Request(url, data=body, headers=headers, method=method)
-    opener = urllib.request.build_opener(_RefuseRedirect)
     try:
-        with opener.open(request, timeout=timeout) as response:
-            status = int(response.status)
-            payload = response.read()
-    except urllib.error.HTTPError as exc:
-        status = int(exc.code)
-        payload = exc.read()
+        with open_pinned(request, timeout=timeout) as handle:
+            status = int(handle.status)
+            payload = handle.read()
+            if 300 <= status < 400:
+                raise urllib.error.URLError("redirects are not followed")
+            return status, payload
+    except OutboundRefused as exc:
+        raise urllib.error.URLError(exc) from exc
     except urllib.error.URLError as exc:
         if isinstance(exc.reason, TimeoutError):
             raise BrokerTimeout("broker request timed out") from exc
         raise
     except TimeoutError as exc:
         raise BrokerTimeout("broker request timed out") from exc
-    return status, payload
-
-
-class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: Any,
-        code: int,
-        msg: str,
-        headers: Any,
-        newurl: str,
-    ) -> urllib.request.Request | None:
-        return None
 
 
 def _redact(text: str, secrets: tuple[str, ...]) -> str:

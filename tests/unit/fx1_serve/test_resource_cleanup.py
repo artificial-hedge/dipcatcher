@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import socket
 import subprocess
 import threading
 import time
@@ -38,10 +39,37 @@ def _http_error(status: int = 503) -> tuple[urllib.error.HTTPError, _TrackedBody
 
 
 def test_backend_closes_http_error_response(monkeypatch: pytest.MonkeyPatch) -> None:
-    error, body = _http_error()
-    opener = Mock()
-    opener.open.side_effect = error
-    monkeypatch.setattr(backends.urllib.request, "build_opener", lambda *args: opener)
+    body = _TrackedBody(b'{"error":"SYNTHETIC refusal"}')
+
+    class Response:
+        status = 503
+        reason = "SYNTHETIC refusal"
+        headers: dict[str, str] = {}
+
+        def close(self) -> None:
+            body.close()
+
+    class Connection:
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def request(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def getresponse(self) -> Response:
+            return Response()
+
+        def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))
+        ],
+    )
+    monkeypatch.setattr(backends, "_ByokPinnedHTTPSConnection", Connection)
 
     with pytest.raises(RuntimeError, match="HTTP 503"):
         backends._openai_chat_complete(

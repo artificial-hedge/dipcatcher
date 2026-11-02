@@ -64,6 +64,8 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+from quant_fund.utils.outbound import open_pinned  # noqa: E402
+
 _PROBE_KEY = (
     "goldenpath-changeme-probe"  # obvious placeholder token — a probe string, not a credential
 )
@@ -161,7 +163,7 @@ def _wait_health(base: str, timeout_s: float) -> str:
     while time.monotonic() < deadline:
         try:
             req = urllib.request.Request(f"{base}/health")
-            with urllib.request.urlopen(req, timeout=2) as resp:  # noqa: S310 — loopback URL built by this module  # nosec B310
+            with open_pinned(req, timeout=2, allow_loopback=True) as resp:
                 if resp.status == 200:
                     return ""
                 err = f"health http {resp.status}"

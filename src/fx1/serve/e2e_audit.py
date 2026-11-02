@@ -28,13 +28,13 @@ import os
 import socket
 import threading
 import time
-import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.outbound import open_pinned
 from quant_fund.utils.reproducibility import git_revision
 
 if TYPE_CHECKING:
@@ -156,11 +156,8 @@ def _raw_headers(url: str, key: str | None) -> tuple[int, dict[str, str]]:
     req = urllib.request.Request(url)
     if key is not None:
         req.add_header("X-API-Key", key)
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310 — loopback probe URL built by this module  # nosec B310
-            return resp.status, {k.lower(): v for k, v in resp.headers.items()}
-    except urllib.error.HTTPError as exc:
-        return exc.code, {k.lower(): v for k, v in (exc.headers or {}).items()}
+    with open_pinned(req, timeout=10, allow_loopback=True) as resp:
+        return int(resp.status), {k.lower(): v for k, v in resp.headers.items()}
 
 
 def e2e_audit() -> dict[str, bool]:
@@ -599,14 +596,14 @@ def e2e_audit() -> dict[str, bool]:
             import gzip as _gz  # noqa: PLC0415
             import urllib.request  # noqa: PLC0415
 
-            gz_req = urllib.request.Request(  # noqa: S310 — loopback test server
+            gz_req = urllib.request.Request(
                 f"http://127.0.0.1:{port7}/openapi.json",
                 headers={
                     "Accept-Encoding": "gzip",
                     "X-API-Key": _API_KEY,
                 },
             )
-            with urllib.request.urlopen(gz_req, timeout=10) as resp:  # nosec B310
+            with open_pinned(gz_req, timeout=10, allow_loopback=True) as resp:
                 gz_raw = resp.read()
                 gz_enc = resp.headers.get("Content-Encoding")
             out["e2e_gzip_wire"] = gz_enc == "gzip" and json.loads(_gz.decompress(gz_raw))["info"][

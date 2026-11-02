@@ -12,6 +12,7 @@ import math
 import socket
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 
 DEFAULT_MAX_BODY = 2_000_000
@@ -52,20 +53,24 @@ def bounded_getaddrinfo(
     timeout: float,
     *,
     type: int = 0,
+    lookup: Callable[..., Any] | None = None,
 ) -> list[tuple[Any, ...]]:
     """Resolve ``host`` or raise ``TimeoutError`` when DNS exceeds ``timeout``.
 
     The lookup runs on a daemon thread. A timed-out resolver call cannot be
-    cancelled inside the C library; the thread is abandoned.
+    cancelled inside the C library; the thread is abandoned. ``lookup`` is
+    the getaddrinfo callable; the default is ``socket.getaddrinfo``, and a
+    caller passes its own so a test patch on that module is the one that runs.
     """
     timeout_s = require_timeout(timeout, name="timeout")
+    resolve = socket.getaddrinfo if lookup is None else lookup
     box: list[list[tuple[Any, ...]]] = []
     err: list[Exception] = []
     done = threading.Event()
 
     def run() -> None:
         try:
-            box.append(socket.getaddrinfo(host, port, type=type))
+            box.append(resolve(host, port, type=type))
         except Exception as exc:  # noqa: BLE001 — re-raised on the caller thread
             err.append(exc)
         finally:
