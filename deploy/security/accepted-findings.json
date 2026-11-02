@@ -1,0 +1,30 @@
+{
+  "schema": "dipcatcher.security_accepted/1",
+  "findings": [
+    {
+      "expiry": "2027-02-02",
+      "id": "hadolint:DL3025:Dockerfile:31",
+      "owner": "Crown Dockerfile JSON HEALTHCHECK. Owner diff is in the supply-chain draft."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "hadolint:DL3066:Dockerfile:28",
+      "owner": "Crown Dockerfile numeric USER. Owner diff is in the supply-chain draft."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "osv:GHSA-cx6f-vjhg-g3cc:virtualenv",
+      "owner": "uv.lock virtualenv bump remains the owner step from the earlier advisory."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "pip-audit:GHSA-cx6f-vjhg-g3cc:virtualenv",
+      "owner": "uv.lock virtualenv bump remains the owner step from the earlier advisory."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "zap:10049:Non-Storable Content",
+      "owner": "Cache-Control no-store is intentional."
+    }
+  ]
+}
