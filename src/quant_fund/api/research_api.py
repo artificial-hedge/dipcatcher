@@ -54,14 +54,16 @@ from quant_fund.api.http_controls import (
     RequestBodyTooLarge,
     apply_security_headers,
     attach_body_limit,
+    auth_decision,
+    auth_rejection,
     buffer_capped_body,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
-    keys_match,
     nonempty_env,
     reject_declared_body,
+    reject_deep_json,
 )
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -387,7 +389,7 @@ class _JsonDocCache:
         error: str | None
         try:
             parsed = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
             payload, error = None, f"invalid_json:{type(exc).__name__}"
         else:
             if isinstance(parsed, dict):
@@ -445,6 +447,13 @@ def _ready_payload(checks: dict[str, bool]) -> tuple[int, dict[str, object]]:
     )
 
 
+_RESEARCH_UNSET_DETAIL = (
+    "RESEARCH_API_KEY is unset; non-localhost clients are "
+    "refused. Set RESEARCH_API_KEY and send X-API-Key, or "
+    "bind to 127.0.0.1 only."
+)
+
+
 async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiSettings) -> Any:
     """Auth, body cap, and rate limit for one research-API request."""
     rejection = reject_declared_body(request, MAX_BODY_BYTES)
@@ -452,6 +461,9 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
         return rejection
     attach_body_limit(request, MAX_BODY_BYTES)
     await buffer_capped_body(request)
+    deep = reject_deep_json(request)
+    if deep is not None:
+        return deep
     path = request.url.path
     if path in _PUBLIC_PATHS:
         return await call_next(request)
@@ -459,26 +471,18 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
     if limited is not None:
         return limited
     expected = research_api_key(cfg)
-    if expected:
-        provided = request.headers.get("X-API-Key")
-        if not provided or not keys_match(provided, expected):
-            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
-        limited_key = key_rate_response(request, "RESEARCH_API", provided)
-        if limited_key is not None:
-            return limited_key
+    decision = auth_decision(request.headers.get("X-API-Key"), expected)
+    if decision == "unauthorized":
+        return auth_rejection(decision, unset_detail=_RESEARCH_UNSET_DETAIL)
+    if decision == "forbidden":
+        host = (request.client.host if request.client else "") or ""
+        if host not in _LOOPBACK_HOSTS:
+            return auth_rejection(decision, unset_detail=_RESEARCH_UNSET_DETAIL)
         return await call_next(request)
-    host = (request.client.host if request.client else "") or ""
-    if host not in _LOOPBACK_HOSTS:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": (
-                    "RESEARCH_API_KEY is unset; non-localhost clients are "
-                    "refused. Set RESEARCH_API_KEY and send X-API-Key, or "
-                    "bind to 127.0.0.1 only."
-                )
-            },
-        )
+    provided = request.headers.get("X-API-Key") or ""
+    limited_key = key_rate_response(request, "RESEARCH_API", provided)
+    if limited_key is not None:
+        return limited_key
     return await call_next(request)
 
 
@@ -500,7 +504,9 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
 
     app = FastAPI(
         title="dipcatcher research API",
-        version=__version__,
+        version="0",
+        docs_url=None,
+        redoc_url=None,
         description=(
             "Read-only access to research runs, sealed receipts, verifier "
             "acceptance history, and benchmark results. No trading, order, "
@@ -1051,4 +1057,14 @@ if __name__ == "__main__":
         raise SystemExit(
             "non-loopback binding requires RESEARCH_API_KEY; refusing unauthenticated exposure"
         )
-    uvicorn.run(app, host=host, port=port, reload=False)
+    from quant_fund.api.http_controls import serve_banner_kwargs
+
+    banner = serve_banner_kwargs()
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        reload=False,
+        server_header=banner["server_header"],
+        date_header=banner["date_header"],
+    )

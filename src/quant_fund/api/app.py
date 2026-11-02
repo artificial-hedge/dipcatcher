@@ -17,13 +17,15 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from quant_fund import __firm__, __version__
 from quant_fund.api.http_controls import (
     apply_security_headers,
+    auth_decision,
+    auth_rejection,
     buffer_capped_body,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
-    keys_match,
     reject_bad_headers,
+    reject_deep_json,
 )
 from quant_fund.config import load_config
 from quant_fund.config.models import AppConfig
@@ -37,9 +39,15 @@ from quant_fund.pipeline.forecast import (
 from quant_fund.pipeline.forecast import (
     decision_dates as _causal_decision_dates,
 )
+from quant_fund.schemas.errors import OptimizationInfeasible, PointInTimeError
 from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 
-app = FastAPI(title=f"{__firm__} Dipcatcher", version=__version__)
+app = FastAPI(
+    title=f"{__firm__} Dipcatcher",
+    version="0",
+    docs_url=None,
+    redoc_url=None,
+)
 install_plain_errors(app)
 
 # Repo root: src/quant_fund/api/app.py → parents[3]
@@ -118,8 +126,45 @@ def _weights_honesty_envelope(rows: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
 
+_QUANT_UNSET_DETAIL = (
+    "QUANT_API_KEY is unset; non-localhost clients are refused. "
+    "Set QUANT_API_KEY and send X-API-Key, or bind to 127.0.0.1 only."
+)
+
+
+def _public_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Drop product version and interpreter identity from a non-health body."""
+    redacted = dict(report)
+    redacted.pop("version", None)
+    redacted.pop("python_package", None)
+    return redacted
+
+
 def _load_cfg(config_path: str) -> AppConfig:
-    return load_config(resolve_allowed_config_path(config_path))
+    try:
+        return load_config(resolve_allowed_config_path(config_path))
+    except (ValueError, yaml.YAMLError, ValidationError) as exc:
+        raise HTTPException(status_code=400, detail="invalid config") from exc
+
+
+def _reject_path_token(value: str, detail: str) -> None:
+    if (
+        not value
+        or value in {".", ".."}
+        or any(char in value for char in "/\\\x00")
+        or ".." in Path(value).parts
+    ):
+        raise HTTPException(status_code=400, detail=detail)
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, UnicodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="invalid JSON document") from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="invalid JSON document")
+    return payload
 
 
 def _client_is_loopback(request: Request) -> bool:
@@ -134,29 +179,25 @@ async def _authenticate_request(
     if bad is not None:
         return bad
     await buffer_capped_body(request)
+    deep = reject_deep_json(request)
+    if deep is not None:
+        return deep
     if path in _PUBLIC_PATHS:
         return await call_next(request)
     limited = ip_rate_response(request, "QUANT_API")
     if limited is not None:
         return limited
-    if expected:
-        provided = request.headers.get("X-API-Key")
-        if not provided or not keys_match(provided, expected):
-            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
-        limited_key = key_rate_response(request, "QUANT_API", provided)
-        if limited_key is not None:
-            return limited_key
+    decision = auth_decision(request.headers.get("X-API-Key"), expected)
+    if decision == "unauthorized":
+        return auth_rejection(decision, unset_detail=_QUANT_UNSET_DETAIL)
+    if decision == "forbidden":
+        if not _client_is_loopback(request):
+            return auth_rejection(decision, unset_detail=_QUANT_UNSET_DETAIL)
         return await call_next(request)
-    if not _client_is_loopback(request):
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": (
-                    "QUANT_API_KEY is unset; non-localhost clients are refused. "
-                    "Set QUANT_API_KEY and send X-API-Key, or bind to 127.0.0.1 only."
-                )
-            },
-        )
+    provided = request.headers.get("X-API-Key") or ""
+    limited_key = key_rate_response(request, "QUANT_API", provided)
+    if limited_key is not None:
+        return limited_key
     return await call_next(request)
 
 
@@ -351,7 +392,11 @@ def readiness(config_path: str = "configs/research.yaml") -> JSONResponse:
     ready = all(checks.values()) and report.get("live") != "REJECTED"
     return JSONResponse(
         status_code=200 if ready else 503,
-        content={"status": "ready" if ready else "not_ready", "checks": checks, "report": report},
+        content={
+            "status": "ready" if ready else "not_ready",
+            "checks": checks,
+            "report": _public_report(report),
+        },
     )
 
 
@@ -438,6 +483,7 @@ def models() -> dict[str, Any]:
 
 @app.get("/forecast/{symbol}")
 def forecast_symbol(symbol: str, config_path: str = "configs/research.yaml") -> dict[str, Any]:
+    _reject_path_token(symbol, "invalid symbol")
     cfg = _load_cfg(config_path)
     state = forecast_asof(cfg)
     hits = [f for f in state.forecasts if f.symbol == symbol or f.security_id == symbol]
@@ -708,7 +754,11 @@ def exposures(config_path: str = "configs/research.yaml") -> dict[str, Any]:
 @app.post("/portfolio/optimize")
 def optimize(req: OptimizeRequest) -> dict[str, Any]:
     cfg = _load_cfg(req.config_path)
-    return _weights_honesty_envelope(optimize_asof(cfg, req.asof).to_dicts())
+    try:
+        rows = optimize_asof(cfg, req.asof).to_dicts()
+    except (OptimizationInfeasible, PointInTimeError) as exc:
+        raise HTTPException(status_code=422, detail="optimize request is infeasible") from exc
+    return _weights_honesty_envelope(rows)
 
 
 @app.post("/backtest")
@@ -730,8 +780,11 @@ def backtest(req: BacktestRequest) -> dict[str, Any]:
     simulation_dates = grid[:31]
     simulation_bars = bars.filter(bars["event_time"].is_in(simulation_dates))
     # Causal weights per decision date (no end-of-sample broadcast)
-    weights = build_causal_weight_panel(cfg, decision_dates)
-    result = run_backtest(simulation_bars, weights, cfg)
+    try:
+        weights = build_causal_weight_panel(cfg, decision_dates)
+        result = run_backtest(simulation_bars, weights, cfg)
+    except (OptimizationInfeasible, PointInTimeError) as exc:
+        raise HTTPException(status_code=422, detail="backtest request is infeasible") from exc
     artifact = _write_backtest_artifact(cfg, req, simulation_bars, result)
     # Artifact overwrites metrics keys; still force honesty so a poisoned
     # metrics blob cannot claim live P&L on the HTTP response.
@@ -746,7 +799,7 @@ def get_backtest(backtest_id: str, config_path: str = "configs/backtest.yaml") -
     path = _backtest_artifact_dir(cfg) / f"{backtest_id}.json"
     if not path.is_file():
         raise HTTPException(404, f"backtest not found: {backtest_id}")
-    artifact = json.loads(path.read_text())
+    artifact = _read_json_object(path)
     required = (
         "id",
         "metrics",
@@ -913,7 +966,11 @@ def drift(config_path: str = "configs/research.yaml") -> dict[str, Any]:
 
 @app.get("/doctor")
 def doctor_endpoint(config_path: str = "configs/research.yaml") -> dict[str, Any]:
-    return doctor(str(resolve_allowed_config_path(config_path)))
+    try:
+        report = doctor(str(resolve_allowed_config_path(config_path)))
+    except (yaml.YAMLError, ValidationError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid config") from exc
+    return _public_report(report)
 
 
 @app.get("/research/latest")

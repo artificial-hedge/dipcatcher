@@ -71,6 +71,14 @@ def validate_upload_intent(purpose: str, filename: str, accept: frozenset[str]) 
         raise UploadStoreError(
             400, f"input must be a .jsonl file, got {filename!r}", "invalid_request"
         )
+    name = Path(filename)
+    if (
+        name.is_absolute()
+        or name.name != filename
+        or any(part in {"", ".", ".."} for part in name.parts)
+        or any(char in filename for char in "/\\\x00")
+    ):
+        raise UploadStoreError(400, "filename must be a plain .jsonl name", "invalid_request")
 
 
 class UploadMeta(BaseModel):
