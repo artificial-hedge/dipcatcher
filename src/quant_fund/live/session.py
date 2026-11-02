@@ -1199,13 +1199,48 @@ def _windows_lock(handle: Any, operation: str) -> None:
     attrgetter("locking")(runtime)(handle.fileno(), attrgetter(operation)(runtime), 1)
 
 
-def _acquire(handle: Any) -> None:
+# A peer that never drops the session file must not stall this process.
+_SESSION_LOCK_WAIT_S = 30.0
+
+
+def _lock_wait(timeout: float) -> float:
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+        raise LiveGateError("session lock timeout must be a positive finite number of seconds")
+    if not math.isfinite(float(timeout)) or float(timeout) <= 0.0:
+        raise LiveGateError("session lock timeout must be a positive finite number of seconds")
+    return float(timeout)
+
+
+def _try_lock(handle: Any) -> bool:
+    """Take a non-blocking exclusive lock. False means another holder has it."""
     if os.name == "nt":
-        _windows_lock(handle, "LK_LOCK")
-        return
+        import importlib
+        from operator import attrgetter
+
+        runtime = importlib.import_module("msvcrt")
+        handle.seek(0)
+        try:
+            attrgetter("locking")(runtime)(handle.fileno(), attrgetter("LK_NBLCK")(runtime), 1)
+        except OSError:
+            return False
+        return True
     import fcntl
 
-    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return False
+    return True
+
+
+def _acquire(handle: Any, *, timeout: float = _SESSION_LOCK_WAIT_S) -> None:
+    deadline = time.monotonic() + _lock_wait(timeout)
+    while True:
+        if _try_lock(handle):
+            return
+        if time.monotonic() >= deadline:
+            raise LiveGateError("session lock timed out")
+        time.sleep(0.01)
 
 
 def _release(handle: Any) -> None:
