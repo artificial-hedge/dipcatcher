@@ -49,6 +49,65 @@ def test_config_inheritance_cannot_escape_root(tmp_path: Path) -> None:
         load_config(config)
 
 
+@pytest.mark.parametrize("document", ["[]\n", "false\n", "0\n", "''\n"])
+def test_load_config_rejects_falsey_non_mapping_roots(tmp_path: Path, document: str) -> None:
+    config = tmp_path / "falsey.yaml"
+    config.write_text(document, encoding="utf-8")
+
+    with pytest.raises(ValueError) as caught:
+        load_config(config)
+
+    message = str(caught.value)
+    assert str(config.resolve()) in message
+    assert "must be a mapping" in message
+
+
+@pytest.mark.parametrize("document", ["", "# comment only\n"])
+def test_load_config_blank_documents_use_defaults(tmp_path: Path, document: str) -> None:
+    config = tmp_path / "blank.yaml"
+    config.write_text(document, encoding="utf-8")
+
+    assert load_config(config) == AppConfig()
+
+
+@pytest.mark.parametrize(
+    "inherit",
+    ["false", "0", "[]", "{}", "true", "1", "[base.yaml]", "{path: base.yaml}", "''"],
+)
+def test_load_config_rejects_non_string_inherit(tmp_path: Path, inherit: str) -> None:
+    config = tmp_path / "inherit.yaml"
+    config.write_text(f"inherit: {inherit}\n", encoding="utf-8")
+
+    with pytest.raises(ValueError) as caught:
+        load_config(config)
+
+    message = str(caught.value).lower()
+    assert "inherit" in message
+    assert "string" in message
+
+
+@pytest.mark.parametrize(
+    ("document", "key"),
+    [
+        ("runtime: {}\nruntime: {}\n", "runtime"),
+        ("runtime:\n  mode: research\n  mode: backtest\n", "mode"),
+        ("inherit: base.yaml\ninherit: other.yaml\n", "inherit"),
+    ],
+    ids=("top_level_runtime", "nested_runtime_mode", "inherit"),
+)
+def test_load_config_rejects_duplicate_keys(tmp_path: Path, document: str, key: str) -> None:
+    config = tmp_path / "duplicate.yaml"
+    config.write_text(document, encoding="utf-8")
+
+    with pytest.raises(ValueError) as caught:
+        load_config(config)
+
+    message = str(caught.value)
+    assert str(config.resolve()) in message
+    assert "duplicate" in message.lower()
+    assert key in message
+
+
 def test_live_requires_flag() -> None:
     # A3 #1 / F2.1 (PROOFCORE W5): the previous try/except-pass body swallowed
     # its own AssertionError and could never fail. This is the only unit test
