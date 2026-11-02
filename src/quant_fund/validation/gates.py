@@ -72,7 +72,7 @@ def _load_metrics(path: Path | None) -> dict[str, Any]:
         return {"_metrics_file_missing": True, "path": str(path)}
     try:
         raw = _read_json_value(path)
-    except (OSError, ValueError):
+    except (OSError, UnicodeError, ValueError):
         return {"_metrics_file_invalid": True, "path": str(path)}
     if not isinstance(raw, dict):
         return {"_metrics_file_invalid": True, "path": str(path)}
@@ -85,7 +85,7 @@ def _load_research_notebook(config: AppConfig) -> dict[str, Any] | None:
         return None
     try:
         raw = _read_json_value(path)
-    except (OSError, ValueError):
+    except (OSError, UnicodeError, ValueError):
         return {"_notebook_invalid": True}
     return raw if isinstance(raw, dict) else {"_notebook_invalid": True}
 
