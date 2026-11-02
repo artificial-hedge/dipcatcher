@@ -238,25 +238,36 @@ def pmmh_sv(
     )
 
 
-def bench_pmcmc_sv(seed: int = 20260131) -> dict[str, float]:
+def bench_pmcmc_sv(
+    seed: int = 20260131,
+    *,
+    n_obs: int = 600,
+    pf_particles: int = 100,
+    pf_particles_hi: int = 800,
+    n_iter: int = 250,
+    n_particles: int = 200,
+) -> dict[str, float]:
     """SYNTHETIC bench for the PMCMC-SV machinery. Correctness only."""
     out: dict[str, float] = {}
     true_mu, true_phi, true_eta = -4.0, 0.95, 0.15
-    r, _ = simulate_sv(600, mu=true_mu, phi=true_phi, sigma_eta=true_eta, seed=seed)
+    r, _ = simulate_sv(n_obs, mu=true_mu, phi=true_phi, sigma_eta=true_eta, seed=seed)
     # PF loglik stability vs particle count
-    l1 = sv_pf_loglik(r, true_mu, true_phi, true_eta, n_particles=100, seed=seed)
-    l2 = sv_pf_loglik(r, true_mu, true_phi, true_eta, n_particles=800, seed=seed)
+    l1 = sv_pf_loglik(r, true_mu, true_phi, true_eta, n_particles=pf_particles, seed=seed)
+    l2 = sv_pf_loglik(r, true_mu, true_phi, true_eta, n_particles=pf_particles_hi, seed=seed)
     out["synthetic_loglik_stability"] = abs(l1 - l2)
     # PMMH posterior recovery (short chain — smoke-scale)
-    res = pmmh_sv(r, n_iter=250, n_particles=200, seed=seed)
+    res = pmmh_sv(r, n_iter=n_iter, n_particles=n_particles, seed=seed)
     out["synthetic_post_mu_err"] = abs(float(res.post_mean[0]) - true_mu)
     out["synthetic_post_phi_err"] = abs(float(res.post_mean[1]) - true_phi)
     out["synthetic_post_sigma_err"] = abs(float(res.post_mean[2]) - true_eta)
     out["synthetic_acceptance_rate"] = res.acceptance_rate
     out["synthetic_ess_min"] = float(res.effective_sizes.min())
-    # determinism
-    a = pmmh_sv(r[:200], n_iter=60, n_particles=80, seed=seed)
-    b = pmmh_sv(r[:200], n_iter=60, n_particles=80, seed=seed)
+    # determinism. Defaults reproduce the historical 200/60/80 pair.
+    det_obs = min(200, n_obs)
+    det_iter = min(60, n_iter)
+    det_particles = min(80, n_particles)
+    a = pmmh_sv(r[:det_obs], n_iter=det_iter, n_particles=det_particles, seed=seed)
+    b = pmmh_sv(r[:det_obs], n_iter=det_iter, n_particles=det_particles, seed=seed)
     out["synthetic_determinism"] = float(
         np.allclose(a.post_mean, b.post_mean) and a.acceptance_rate == b.acceptance_rate
     )

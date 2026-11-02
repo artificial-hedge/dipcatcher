@@ -25,6 +25,7 @@ from quant_fund.models.path_signatures import (
     signature_kernel,
 )
 from quant_fund.portfolio.wasserstein_dro import solve_wasserstein_dro
+from quant_fund.research.scorecard_budget import CI_BENCH_BUDGETS, ci_scorecard
 
 _SEED = 20260928
 
@@ -75,15 +76,18 @@ def bench_rough_paths() -> dict[str, float]:
         return {}
 
 
-def bench_optimal_transport() -> dict[str, float]:
+def bench_optimal_transport(n: int | None = None) -> dict[str, float]:
     """Optimal-transport diagnostics (wave 11; Villani 2003, Cuturi 2013,
     Bhatia-Jain-Lim 2019): W1 of a unit shift must recover 1, the Bures-
     Wasserstein distance must vanish for identical Gaussians and equal the
     squared mean gap for shifted ones, and the Sinkhorn divergence must
     separate same-law from shifted samples."""
+    if n is None:
+        n = 2000
+        if ci_scorecard():
+            n = int(CI_BENCH_BUDGETS.get("bench_optimal_transport", {}).get("n", n))
     try:
         rng = np.random.default_rng(_SEED)
-        n = 2000
         a = rng.standard_normal(n)
         b = a + 1.0
         c = rng.standard_normal(n)
