@@ -30,6 +30,11 @@ DDG_HTML_URL = "https://html.duckduckgo.com/html/"
 _DDG_SEARCH_HOSTS = frozenset({"lite.duckduckgo.com", "html.duckduckgo.com"})
 DEFAULT_TIMEOUT_S = 10.0
 DEFAULT_MAX_RESULTS = 8
+DEFAULT_MAX_RESPONSE_BYTES = 512 * 1024
+
+
+class SearchResponseTooLargeError(ValueError):
+    """The search endpoint exceeded the configured response-size limit."""
 
 
 @dataclass
@@ -169,12 +174,24 @@ class DuckDuckGoLiteSearcher(Searcher):
         open_fn: Callable[[urllib.request.Request, float], Any] | None = None,
         pause_s: float = 0.0,
         now_fn: Callable[[], float] = time.monotonic,
+        max_response_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
     ) -> None:
+        if max_response_bytes < 1:
+            raise ValueError("max_response_bytes must be positive")
         self._user_agent = user_agent
         self._open_fn = open_fn
         self._pause_s = pause_s
         self._now = now_fn
+        self._max_response_bytes = max_response_bytes
         self._last_search_at = 0.0
+
+    def _read_response(self, response: Any) -> bytes:
+        body = bytes(response.read(self._max_response_bytes + 1))
+        if len(body) > self._max_response_bytes:
+            raise SearchResponseTooLargeError(
+                f"search response exceeds {self._max_response_bytes}-byte limit"
+            )
+        return body
 
     def _get(self, url: str, timeout_s: float) -> bytes:
         parsed = urllib.parse.urlsplit(url)
@@ -183,10 +200,10 @@ class DuckDuckGoLiteSearcher(Searcher):
         request = urllib.request.Request(url, headers={"User-Agent": self._user_agent})
         if self._open_fn is not None:
             with self._open_fn(request, timeout_s) as response:
-                return bytes(response.read())
+                return self._read_response(response)
         # Scheme and host are allowlisted immediately above.
         with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
-            return bytes(response.read())
+            return self._read_response(response)
 
     def search(
         self,
@@ -206,6 +223,9 @@ class DuckDuckGoLiteSearcher(Searcher):
         for engine, endpoint in (("ddg-lite", DDG_LITE_URL), ("ddg-html", DDG_HTML_URL)):
             try:
                 body = self._get(f"{endpoint}?{encoded}", timeout_s)
+            except SearchResponseTooLargeError as exc:
+                result.error = str(exc)
+                continue
             except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
                 result.error = f"search transport fault ({type(exc).__name__})"
                 continue
