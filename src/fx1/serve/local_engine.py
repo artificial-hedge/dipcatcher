@@ -29,6 +29,7 @@ import hashlib
 import json
 import math
 import os
+import signal
 import sys
 import threading
 import time
@@ -534,17 +535,28 @@ def _watch_orphan(spawner_ppid: int) -> None:
         time.sleep(1.0)
 
 
+def _handle_sigterm(signum: int, frame: Any) -> None:
+    del signum, frame
+    raise KeyboardInterrupt
+
+
 def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: bool = True) -> int:
     """Serve forever on a real socket; returns 0 on a clean shutdown."""
     srv = _EngineHTTPServer((host, port), _Handler)
     srv.engine = engine
     if watch_orphan:
         threading.Thread(target=_watch_orphan, args=(os.getppid(),), daemon=True).start()
+    manage_sigterm = threading.current_thread() is threading.main_thread()
+    previous_sigterm = signal.getsignal(signal.SIGTERM)
+    if manage_sigterm:
+        signal.signal(signal.SIGTERM, _handle_sigterm)
     try:
         srv.serve_forever()  # NOSONAR — loopback fixture engine; harness-local, no TLS needed
     except KeyboardInterrupt:
         pass
     finally:
+        if manage_sigterm:
+            signal.signal(signal.SIGTERM, previous_sigterm)
         srv.server_close()
     return 0
 
