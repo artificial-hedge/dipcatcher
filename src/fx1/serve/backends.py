@@ -1592,9 +1592,9 @@ class LocalFx1Backend(_UsageTracker):
         self._verified_attach = False
         url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
         if url:
-            parsed = urllib.parse.urlparse(url)
-            if parsed.scheme not in ("http", "https") or not parsed.netloc:
-                raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
+            problem = byok_base_url_problem(url)
+            if problem is not None:
+                raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} {problem}")
         self._url = _chat_completions_url(url) if url else ""
         cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
         self._serve_cmd = cmd
@@ -1737,7 +1737,8 @@ class LocalFx1Backend(_UsageTracker):
             )
         except OSError as exc:
             raise RuntimeError(
-                f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
+                "failed to spawn local fx-1 engine "
+                f"({type(exc).__name__}); check {LOCAL_SERVE_CMD_ENV}"
             ) from exc
 
     def _wait_for_engine(self, proc: subprocess.Popen[bytes]) -> None:
@@ -1747,8 +1748,8 @@ class LocalFx1Backend(_UsageTracker):
             returncode = proc.poll()
             if returncode is not None:
                 raise RuntimeError(
-                    "local fx-1 engine exited during startup "
-                    f"(rc={returncode}): {self._serve_cmd!r}"
+                    f"local fx-1 engine exited during startup (rc={returncode}); "
+                    f"check {LOCAL_SERVE_CMD_ENV}"
                 )
             if self._engine_up():
                 self._verify_served_weights()
@@ -1756,7 +1757,7 @@ class LocalFx1Backend(_UsageTracker):
             time.sleep(0.1)
         raise RuntimeError(
             "local fx-1 engine did not become ready within "
-            f"{self._start_timeout_s:g}s: {self._serve_cmd!r}"
+            f"{self._start_timeout_s:g}s; check {LOCAL_SERVE_CMD_ENV}"
         )
 
     def complete(

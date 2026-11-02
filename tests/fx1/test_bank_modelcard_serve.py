@@ -97,6 +97,21 @@ def test_local_backend_fail_closed(tmp_path: Path):
         LocalFx1Backend(tmp_path)
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "SYNTHETIC-local-url-secret",
+        "https://user:SYNTHETIC-local-url-secret@example.test/v1",
+        "https://example.test/v1?api_key=SYNTHETIC-local-url-secret",
+    ],
+)
+def test_local_backend_url_errors_do_not_echo_secrets(tmp_path: Path, url: str):
+    _card().save(tmp_path / "modelcard.json")
+    with pytest.raises(RuntimeError, match="FX1_LOCAL_SERVE_URL") as caught:
+        LocalFx1Backend(tmp_path, serve_url=url)
+    assert "SYNTHETIC-local-url-secret" not in str(caught.value)
+
+
 def test_backend_factory_fail_closed(tmp_path: Path):
     with pytest.raises(KeyError, match="unknown backend"):
         get_backend("openai")
