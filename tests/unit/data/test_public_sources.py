@@ -84,8 +84,10 @@ def _kline(open_ms, close_ms, close="11"):
     return [open_ms, "10", "12", "9", close, "100", close_ms, None, None, None, None, None]
 
 
-def test_perp_klines_paginate_forward_and_drop_in_progress():
-    now_ms = int(datetime.now(tz=UTC).timestamp() * 1000)
+def test_perp_klines_paginate_forward_and_drop_in_progress(monkeypatch: pytest.MonkeyPatch):
+    frozen = datetime(2026, 1, 15, tzinfo=UTC)
+    monkeypatch.setattr("quant_fund.data.sources.adapters.utc_now", lambda: frozen)
+    now_ms = int(frozen.timestamp() * 1000)
     pages = [
         [
             _kline(1_577_836_800_000, 1_577_923_199_999),

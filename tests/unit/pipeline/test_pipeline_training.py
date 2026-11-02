@@ -381,7 +381,7 @@ def test_train_calibration_persists_causal_artifact(
     label = cfg.train.ranking_target
     frame = pl.DataFrame(
         {
-            "event_time": [datetime(2020, 1, 1) + timedelta(days=i) for i in range(20)],
+            "event_time": [datetime(2020, 1, 1, tzinfo=UTC) + timedelta(days=i) for i in range(20)],
             "cs_pct_mom_20": np.linspace(0.02, 0.98, 20),
             label: np.where(np.arange(20) % 2 == 0, 0.02, -0.01),
         }

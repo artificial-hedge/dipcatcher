@@ -52,6 +52,7 @@ from quant_fund.models.ranking import PUBLIC_FEATURES, available_features, drop_
 from quant_fund.pipeline.dataset import build_gold, design_matrix, panel
 from quant_fund.pipeline.train import _label_horizon
 from quant_fund.research.benches import oos_rank_scores
+from quant_fund.utils.path_safety import output_path, write_private_text
 
 Array = NDArray[np.float64]
 
@@ -322,12 +323,10 @@ def verify_slate_receipt(path: str | Path) -> list[str]:
 def _write_receipt(receipt: dict[str, Any], artifact: str, root: Path) -> dict[str, Any]:
     sealed = seal_receipt(receipt)
     payload = json.dumps(sealed, indent=2, default=str)
-    public = Path(artifact)
-    public.parent.mkdir(parents=True, exist_ok=True)
-    public.write_text(payload, encoding="utf-8")
-    meta = root / "metadata" / public.name
-    meta.parent.mkdir(parents=True, exist_ok=True)
-    meta.write_text(payload, encoding="utf-8")
+    public = output_path(artifact, Path(root), Path.cwd())
+    write_private_text(public, payload)
+    meta = Path(root) / "metadata" / public.name
+    write_private_text(meta, payload)
     sealed["artifact_path"] = str(public)
     sealed["metadata_path"] = str(meta)
     return sealed
@@ -375,6 +374,16 @@ def _base_receipt(
     }
 
 
+def _contained_lane_receipt(spec: Path, root: Path) -> Path:
+    """Resolve a lane-1 receipt and refuse escapes and symbolic links."""
+    lexical = spec if spec.is_absolute() else root / spec
+    if lexical.is_symlink() or not lexical.resolve().is_relative_to(root):
+        raise ValueError("lane1_receipt escapes its permitted root")
+    if not lexical.is_file():
+        raise FileNotFoundError("lane-1 receipt (ml_lane.json) not found")
+    return lexical.resolve()
+
+
 def run_lane1_calibration(
     slate_path: str = SLATE_PATH,
 ) -> dict[str, Any]:
@@ -390,11 +399,7 @@ def run_lane1_calibration(
     # Absolute specs live under the configured data root (receipt artifacts);
     # relative specs resolve against the repository root — escapes fail closed.
     root = Path(cfg.data.root).resolve() if spec.is_absolute() else Path.cwd().resolve()
-    receipt_path = spec.resolve() if spec.is_absolute() else (root / spec).resolve()
-    if not receipt_path.is_relative_to(root):
-        raise ValueError("lane1_receipt escapes its permitted root")
-    if not receipt_path.is_file():
-        raise FileNotFoundError("lane-1 receipt (ml_lane.json) not found")
+    receipt_path = _contained_lane_receipt(spec, root)
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     calibration = _calibration(cfg)
     receipt["calibration"] = calibration
@@ -406,9 +411,9 @@ def run_lane1_calibration(
         and str(receipt.get("data_source", "")).upper() != "SYNTHETIC"
     )
     payload = json.dumps(receipt, indent=2, default=str)
-    receipt_path.write_text(payload, encoding="utf-8")
+    write_private_text(receipt_path, payload)
     meta = Path(cfg.data.root) / "metadata" / receipt_path.name
-    meta.write_text(payload, encoding="utf-8")
+    write_private_text(meta, payload)
     receipt["calibration_pass"] = bool(calibration.get("pass"))
     return cast(dict[str, Any], receipt)
 

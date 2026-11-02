@@ -44,6 +44,7 @@ from quant_fund.research.fleet_eval import (
     resolve_shard_generators,
 )
 from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
+from quant_fund.utils.atomicio import atomic_write_text
 
 MULTIH_FLEET_SCHEMA = "multih_fleet_eval.v1"
 MULTIH_FLEET_KIND = "multih_fleet_eval"
@@ -404,7 +405,7 @@ def write_multih_receipt(receipt: Mapping[str, Any], out_dir: Path) -> Path:
     digest = str(sealed["receipt_sha256"])
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{MULTIH_FLEET_KIND}_{digest[:16]}.json"
-    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
     return path
 
 

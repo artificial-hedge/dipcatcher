@@ -18,7 +18,7 @@ promotion:
   min_cost_adjusted_spread: 0.0
   max_turnover: 2.0
   require_leakage_pass: true
-# Keep kill switch halt-safe even if someone later flips mode without reading.
+# Halt new orders unless a later profile sets state: ENABLED.
 kill_switch:
-  state: ENABLED
+  state: HALT_NEW_ORDERS
   allow_auto_flatten: false

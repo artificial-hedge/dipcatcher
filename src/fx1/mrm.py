@@ -18,6 +18,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -35,6 +36,38 @@ FIVE_ACTIVITIES = (
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _artifact_flags_contamination(path: Path, *, declared: bool) -> bool:
+    """True when this artifact must not certify the corpus clean.
+
+    A repeated key is ambiguous. An object that carries ``overall_flagged``
+    and any duplicate key cannot last-win its way to a clean audit. An
+    unreadable or non-object declared contamination artifact cannot certify
+    clean either. Other activities keep non-contamination JSON as-is.
+    """
+    ambiguous = False
+
+    def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        nonlocal ambiguous
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                ambiguous = True
+            result[key] = value
+        return result
+
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_pairs)
+    except (OSError, ValueError):
+        return declared
+    if not isinstance(report, dict):
+        return declared
+    if ambiguous and "overall_flagged" in report:
+        return True
+    if "overall_flagged" in report:
+        return bool(report["overall_flagged"])
+    return declared
 
 
 class DossierSection(BaseModel):
@@ -94,19 +127,11 @@ def compile_dossier(
         report_activity = "validation" if activity == "contamination_report" else activity
         hashes.setdefault(report_activity, {})[str(path)] = _sha(path)
         declared = activity == "contamination_report" or "contamination" in path.name
-        report: object = None
-        try:
-            report = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError, OSError):
-            report = None
-        if isinstance(report, dict) and "overall_flagged" in report:
-            # A dict carrying the field is contamination evidence wherever
-            # it sits — renaming the file or the activity cannot launder it.
-            contamination_flagged = contamination_flagged or bool(report["overall_flagged"])
-        elif declared:
-            # A declared contamination artifact that fails to parse, or a
-            # valid JSON non-dict ("[]", "null") with no overall_flagged
-            # field, cannot certify the corpus clean.
+        # A dict carrying overall_flagged is contamination evidence wherever
+        # it sits — renaming the file or the activity cannot launder it.
+        # Declared artifacts that fail to parse, and ambiguous duplicates,
+        # cannot certify the corpus clean.
+        if _artifact_flags_contamination(path, declared=declared):
             contamination_flagged = True
     sections: list[DossierSection] = []
     summaries = {

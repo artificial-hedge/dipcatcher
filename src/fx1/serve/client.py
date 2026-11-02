@@ -54,7 +54,10 @@ from fx1.sdk import (
 )
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
+from fx1.serve.transport_text import bad_base_url, fault, unreachable
+from fx1.serve.transport_text import timeout_s as checked_timeout
 from fx1.serve.usage_report import UsageReport
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -111,6 +114,21 @@ class HarnessCompatError(RuntimeError):
         self.code = code
 
 
+def _pinned_harness_exchange(
+    req: urllib.request.Request, timeout_s: float
+) -> tuple[int, dict[str, str], bytes]:
+    """Resolve once and dial that numeric address. Redirects stay as statuses.
+
+    Loopback and RFC1918 literals stay allowed. Other hostnames must resolve
+    entirely to public addresses; ``localhost`` may resolve to loopback.
+    """
+    try:
+        with open_pinned(req, timeout=timeout_s, allow_loopback=True, allow_private=True) as handle:
+            return int(handle.status), dict(handle.headers), handle.read()
+    except OutboundRefused as exc:
+        raise HarnessTransportError(f"harness destination refused: {exc}") from exc
+
+
 def _urllib_transport(
     method: str,
     url: str,
@@ -129,8 +147,7 @@ def _urllib_transport(
         req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
-            return resp.status, dict(resp.headers), resp.read()
+        return _pinned_harness_exchange(req, timeout_s)
     except urllib.error.HTTPError as exc:
         # HTTPError owns the rejected response/socket.  The normal ``with``
         # path cannot close it because urlopen raises before it is entered.
@@ -141,13 +158,11 @@ def _urllib_transport(
             with contextlib.suppress(Exception):
                 exc.close()
     except urllib.error.URLError as exc:
-        raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
+        raise HarnessTransportError(unreachable(url, exc.reason)) from exc
     except (http.client.HTTPException, OSError) as exc:
-        # socket faults before a status line exists — e.g. a mid-upload
-        # reset when the server rejects early on headers alone (413
-        # body-cap) — are transport errors under the same contract as
-        # URLError; don't leak raw errno classes to callers.
-        raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
+        # Socket faults before a status line, including a 413 body-cap reset,
+        # are transport errors under the same contract as URLError.
+        raise HarnessTransportError(fault(url, exc)) from exc
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
@@ -295,9 +310,8 @@ class HarnessClient:
     ) -> None:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"base_url must be http(s)://host[:port], got {base_url!r}")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
+            raise ValueError(bad_base_url(base_url))
+        timeout_s = checked_timeout(timeout_s)
         if max_retries < 0:
             raise ValueError(f"max_retries must be >= 0, got {max_retries}")
         if retry_backoff_s <= 0:

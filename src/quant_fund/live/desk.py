@@ -54,7 +54,24 @@ _VISIBLE = {
 
 
 class LiveDeskError(ValueError):
-    """The desk refused the call before a risk decision existed."""
+    """The desk refused the command. No new ticket was sent."""
+
+
+def _fresh_mark(
+    marks: dict[str, float],
+    mark_ts: dict[str, int],
+    symbol: str,
+    ts_ns: int,
+    max_age: int,
+) -> float | None:
+    """Last mark that is still inside the pre-trade age window."""
+    mark = marks.get(symbol)
+    if mark is None or mark <= 0.0:
+        return None
+    seen = mark_ts.get(symbol)
+    if seen is None or ts_ns - int(seen) > max_age:
+        return None
+    return float(mark)
 
 
 @dataclass
@@ -137,6 +154,7 @@ class LiveDesk:
     _drop: DropBridge | None = None
     _by_client: dict[str, str] = field(default_factory=dict)
     _lock_path: Path | None = None
+    _lock_fd: int | None = None
     _closed: bool = False
     _integrity_frozen: bool = False
     _settled_before: float = 0.0
@@ -198,10 +216,16 @@ class LiveDesk:
 
     def close(self) -> None:
         self._closed = True
+        fd = self._lock_fd
         path = self._lock_path
+        self._lock_fd = None
         self._lock_path = None
-        if path is not None and path.exists():
-            path.unlink()
+        if fd is None:
+            return
+        try:
+            _release_desk_lock(fd, path)
+        finally:
+            os.close(fd)
 
     def __enter__(self) -> LiveDesk:
         return self
@@ -300,14 +324,7 @@ class LiveDesk:
         _client(client)
         prior = self._by_client.get(client)
         if prior is not None:
-            order = self.orders[prior]
-            return self._envelope(
-                accepted=order.status not in {"denied", "rejected"},
-                status=order.status,
-                transmitted=order.transmitted,
-                idempotent=True,
-                order=order.as_dict(),
-            )
+            return self._idempotent_order(prior, symbol, side, qty, px)
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
         self.marks[symbol] = px
@@ -441,8 +458,14 @@ class LiveDesk:
         for symbol, qty in list(self.positions.items()):
             if abs(qty) <= _EPS:
                 continue
-            mark = self.marks.get(symbol)
-            if mark is None or mark <= 0.0:
+            mark = _fresh_mark(
+                self.marks,
+                self.mark_ts,
+                symbol,
+                ts_ns,
+                int(self.config.limits.max_mark_age_ns),
+            )
+            if mark is None:
                 reports.append({"symbol": symbol, "accepted": False, "reasons": ["stale_data"]})
                 continue
             side = "SELL" if qty > 0.0 else "BUY"
@@ -660,6 +683,30 @@ class LiveDesk:
         self.orders[order.order_id] = order
         self.order_ids.append(order.order_id)
         self._by_client[order.client_order_id] = order.order_id
+
+    def _idempotent_order(
+        self,
+        order_id: str,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+    ) -> dict[str, object]:
+        order = self.orders[order_id]
+        if (
+            order.symbol != symbol
+            or order.side != side
+            or abs(order.qty - qty) > 1e-8
+            or abs(order.px - px) > 1e-8
+        ):
+            raise LiveDeskError("client_order_id conflicts with a different order")
+        return self._envelope(
+            accepted=order.status not in {"denied", "rejected"},
+            status=order.status,
+            transmitted=order.transmitted,
+            idempotent=True,
+            order=order.as_dict(),
+        )
 
     def _deny(
         self,
@@ -1089,22 +1136,8 @@ class LiveDesk:
 
     def _acquire(self) -> None:
         path = self.root / ".lock"
-        for _ in range(2):
-            try:
-                fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            except FileExistsError:
-                if _lock_alive(path):
-                    raise LiveDeskError(f"desk is locked: {path}") from None
-                try:
-                    path.unlink()
-                except OSError as exc:
-                    raise LiveDeskError(f"desk is locked: {path}") from exc
-                continue
-            os.write(fd, str(os.getpid()).encode())
-            os.close(fd)
-            self._lock_path = path
-            return
-        raise LiveDeskError(f"desk is locked: {path}")
+        self._lock_fd = _claim_desk_lock(path)
+        self._lock_path = path
 
 
 def _positive(value: float | None, default: float | None) -> float:
@@ -1282,20 +1315,102 @@ def _dump_opened(engine: PretradeEngine) -> dict[str, int]:
     return opened
 
 
-def _lock_alive(path: Path) -> bool:
+def _windows_lock(fd: int, operation: str) -> None:
+    """Byte-range lock via the Windows C runtime."""
+    import importlib
+    from operator import attrgetter
+
+    runtime = importlib.import_module("msvcrt")
+    os.lseek(fd, 0, os.SEEK_SET)
+    attrgetter("locking")(runtime)(fd, attrgetter(operation)(runtime), 1)
+
+
+def _lock_fd_exclusive(fd: int, path: Path) -> None:
+    """Non-blocking exclusive lock. A busy lock fails closed."""
+    if os.name == "nt":
+        try:
+            _windows_lock(fd, "LK_NBLCK")
+        except OSError as exc:
+            raise LiveDeskError(f"desk is locked: {path}") from exc
+        return
+    import fcntl
+
     try:
-        raw = path.read_text(encoding="utf-8").strip()
-        pid = int(raw)
-    except (OSError, ValueError):
-        return True
-    if pid <= 0:
-        return False
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        raise LiveDeskError(f"desk is locked: {path}") from exc
+
+
+def _unlock_fd(fd: int) -> None:
+    if os.name == "nt":
+        try:
+            _windows_lock(fd, "LK_UNLCK")
+        except OSError:
+            return
+        return
+    import fcntl
+
+    fcntl.flock(fd, fcntl.LOCK_UN)
+
+
+def _ensure_lock_byte(fd: int) -> None:
+    if os.fstat(fd).st_size == 0:
+        os.write(fd, b"\0")
+    os.lseek(fd, 0, os.SEEK_SET)
+
+
+def _require_same_file(fd: int, path: Path) -> None:
+    """Refuse a lock whose directory entry was replaced after we opened it."""
     try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
+        current = path.stat()
+    except OSError as exc:
+        raise LiveDeskError(f"desk is locked: {path}") from exc
+    owned = os.fstat(fd)
+    if owned.st_ino != 0 and owned.st_ino != current.st_ino:
+        raise LiveDeskError(f"desk is locked: {path}")
+
+
+def _write_owner(fd: int) -> None:
+    os.lseek(fd, 0, os.SEEK_SET)
+    if os.name != "nt":
+        os.ftruncate(fd, 0)
+    os.write(fd, str(os.getpid()).encode("ascii"))
+    os.fsync(fd)
+
+
+def _finish_claim(fd: int, path: Path) -> int:
+    if os.name == "nt":
+        _ensure_lock_byte(fd)
+    _lock_fd_exclusive(fd, path)
+    _require_same_file(fd, path)
+    if hasattr(os, "fchmod"):
+        os.fchmod(fd, 0o600)
+    _write_owner(fd)
+    return fd
+
+
+def _claim_desk_lock(path: Path) -> int:
+    """Own ``path`` until the returned fd is released.
+
+    The kernel drops the lock when this process exits, so a crashed desk
+    can be reclaimed without unlinking a file another process just created.
+    """
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        return _finish_claim(fd, path)
+    except BaseException:
+        _unlock_fd(fd)
+        os.close(fd)
+        raise
+
+
+def _release_desk_lock(fd: int, path: Path | None) -> None:
+    try:
+        if path is not None and path.exists():
+            current = path.stat()
+            owned = os.fstat(fd)
+            if owned.st_ino == 0 or owned.st_ino == current.st_ino:
+                path.unlink()
     except OSError:
-        return False
-    return True
+        pass
+    _unlock_fd(fd)

@@ -52,6 +52,7 @@ UNSEALED_WRITERS: dict[str, str] = {
     ),
     "paper/sim_live.py": "sealed on PR #258",
     "research/auditor_bundle.py": "bundle writer self-digests — files_sha256 map + auditor_self_sha256 cover every emitted artifact",
+    "research/evidence_base.py": "stdout JSON for the CI evidence-base probe — not a durable receipt",
     "research/evidence_export.py": "export manifest carries gate_pins_sig_sha256 — the digest of the signature pins it exports",
     "research/research100_cli.py": "catalog/benchmark emitter — stdout/report output, not a receipt writer",
     "research/sota_protocol.py": "sealed on PR #254",

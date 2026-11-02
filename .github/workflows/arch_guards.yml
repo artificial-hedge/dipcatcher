@@ -6,19 +6,35 @@ name: arch-guards
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/check_import_boundaries.py"
+      - "tests/unit/arch/**"
+      - "configs/arch_boundaries.toml"
+      - ".github/workflows/arch_guards.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/check_import_boundaries.py"
+      - "tests/unit/arch/**"
+      - "configs/arch_boundaries.toml"
+      - ".github/workflows/arch_guards.yml"
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   import-boundaries:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 10
     steps:
@@ -30,6 +46,6 @@ jobs:
           python-version: "3.12"
       - name: Import boundary check
         # stdlib-only script; --no-project avoids syncing the workspace env.
-        run: uv run --no-project python scripts/check_import_boundaries.py
+        run: uv run --locked --no-build --no-project python scripts/check_import_boundaries.py
       - name: Checker unit tests
-        run: uv run --no-project python -m unittest tests.unit.arch.test_import_boundaries
+        run: uv run --locked --no-build --no-project python -m unittest tests.unit.arch.test_import_boundaries

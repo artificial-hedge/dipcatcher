@@ -1557,7 +1557,7 @@ def _run() -> tuple[dict[str, bool], dict[str, dict[str, str]]]:
     # byok/hosted configs own a loopback stub. Production BYOK stays
     # public-network-only unless this opt-in is set; the audit context
     # restores the caller's environment on the way out.
-    os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     out: dict[str, bool] = {}
     matrix: dict[str, dict[str, str]] = {}
     for fn in (

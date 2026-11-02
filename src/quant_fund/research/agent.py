@@ -2364,7 +2364,7 @@ from quant_fund.research.catalog import (
 )
 from quant_fund.utils.hashing import canonical_frame_fingerprint, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
-from quant_fund.utils.seeds import set_global_seed
+from quant_fund.utils.seeds import pin_catalog_threads, set_global_seed
 
 
 def _atomic_write_text(path: Path, content: str) -> None:
@@ -2797,10 +2797,8 @@ def _provenance(
             default=lambda obj: getattr(obj, "__name__", str(obj)),
         ).encode("utf-8")
     )
-    # Shape-only provenance is insufficient: two datasets can share the same
-    # dimensions while containing different observations.  Polars' row hash
-    # is deterministic for the materialized frame and keeps the receipt
-    # independent of filesystem paths and cache locations.
+    # Row hash, not shape: equal dimensions can hide different observations.
+    # Polars' hash is deterministic and independent of paths and caches.
     content_hash = canonical_frame_fingerprint(frame)
     northset_inputs: dict[str, Any] = {}
     if northset_frame is not None:
@@ -4199,6 +4197,7 @@ def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
 
 def _live_optional_family_blobs() -> dict[str, Any]:
     """Seeded live-optional benches. Default ``run_research`` still runs them."""
+    pin_catalog_threads()
     return {
         "anytime_valid": bench_anytime_valid(),
         "energy_score": bench_energy_score(),
@@ -5618,6 +5617,7 @@ def _merge_live_optional(families: dict[str, Any], *, include: bool) -> None:
 
 
 def run_research(config: AppConfig, *, include_live_optional: bool = True) -> ResearchNotebook:
+    pin_catalog_threads()
     set_global_seed(config.train.random_seed)
     build_gold(config, refresh=config.data.source == "synthetic")
     df = panel(config)

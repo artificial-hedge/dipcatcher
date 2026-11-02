@@ -276,10 +276,11 @@ def _git_revision() -> str:
             ["git", "rev-parse", "HEAD"],
             capture_output=True,
             text=True,
+            timeout=15,
             check=True,
         )
-        return out.stdout.strip()
-    except Exception:  # noqa: BLE001 — receipt must not fail on a missing .git
+        return out.stdout.strip() or "unknown"
+    except (OSError, subprocess.SubprocessError):
         return "unknown"
 
 

@@ -1,0 +1,57 @@
+name: cursor-ci
+
+# Heavy CI runs in a Cursor cloud agent. This job only launches and polls.
+# It is fail-closed: a missing CURSOR_API_KEY, an API error, a timeout, or an
+# unparseable report fails the job. Set repository variable USE_CURSOR_CI to
+# the string false to skip this job and let the legacy workflows run on
+# pull_request and push again. See docs/CURSOR_CI.md.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cursor-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: read
+  pull-requests: write
+
+jobs:
+  cursor-ci:
+    name: cursor-ci
+    if: "vars.USE_CURSOR_CI != 'false'"
+    runs-on: instabox-large
+    timeout-minutes: 100
+    steps:
+      - name: Check out the commit under test
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Launch and poll the Cursor cloud agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CURSOR_CI_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CURSOR_CI_REF_NAME: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          CURSOR_CI_REPOSITORY_URL: "${{ github.event.pull_request.head.repo.clone_url || format('https://github.com/{0}', github.repository) }}"
+          CURSOR_CI_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          CURSOR_CI_BASE_REPO: ${{ github.repository }}
+          CURSOR_CI_PR_NUMBER: "${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}"
+          CURSOR_CI_EVENT: ${{ github.event_name }}
+          CURSOR_CI_TIMEOUT_SECONDS: "5400"
+          CURSOR_CI_POLL_SECONDS: "30"
+          PYTHONUNBUFFERED: "1"
+        run: uv run --no-project python scripts/ci/cursor_ci.py

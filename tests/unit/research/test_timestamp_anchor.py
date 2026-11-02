@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -111,6 +112,24 @@ def test_verify_manifest_token_mismatch_fails(tmp_path: Path) -> None:
     res = verify_timestamps(root)
     assert res["ok"] is False
     assert res["errors"] == ["imprint_mismatch:quality/epoch_heads.json"]
+
+
+def test_openssl_verify_timeout_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _anchored_repo(tmp_path)
+    (root / TIMESTAMPS_DIR / ta.CACERT_NAME).write_text("not a cert\n", encoding="utf-8")
+    monkeypatch.setattr(ta, "_openssl_available", lambda: True)
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        assert kwargs.get("timeout") == ta._OPENSSL_VERIFY_TIMEOUT_S
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=ta._OPENSSL_VERIFY_TIMEOUT_S)
+
+    monkeypatch.setattr(ta.subprocess, "run", fake_run)
+    res = verify_timestamps(root)
+    assert res["ok"] is False
+    assert res["chain"]["quality/epoch_heads.json"] == "chain_failed"
+    assert "chain_verify_failed:quality/epoch_heads.json" in res["errors"]
 
 
 def test_verify_missing_target_fails(tmp_path: Path) -> None:

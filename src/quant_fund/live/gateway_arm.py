@@ -56,15 +56,15 @@ def load_hmac_key(path: Path) -> bytes:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = os.urandom(32)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    stored = False
     try:
         os.write(fd, data)
         os.fsync(fd)
-    except OSError:
+        stored = True
+    finally:
         os.close(fd)
-        path.unlink(missing_ok=True)
-        raise
-    else:
-        os.close(fd)
+        if not stored:
+            path.unlink(missing_ok=True)
     os.chmod(path, 0o600)
     return data
 

@@ -155,7 +155,7 @@ _NAMED_PINS = frozenset(
 )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def measured() -> dict[str, Any]:
     return audit.retrieval_audit()
 

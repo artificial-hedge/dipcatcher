@@ -22,6 +22,8 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.flowbars.checks import positive_finite, positive_series
+
 FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
@@ -32,13 +34,8 @@ def information_bar_ids(prices: FloatArray, threshold: float) -> IntArray:
     The first trade opens bar 0 (no return observed yet); the final open bar
     is closed at the last trade.
     """
-    prices = np.asarray(prices, dtype=np.float64)
-    if prices.ndim != 1:
-        raise ValueError("prices must be one-dimensional")
-    if threshold <= 0:
-        raise ValueError("threshold must be positive")
-    if np.any(prices <= 0):
-        raise ValueError("prices must be positive for log-returns")
+    prices = positive_series(prices, "prices", message="prices must be positive for log-returns")
+    threshold = positive_finite(threshold, "threshold")
     n = len(prices)
     ids = np.zeros(n, dtype=np.int64)
     if n == 0:
@@ -58,9 +55,7 @@ def information_bar_ids(prices: FloatArray, threshold: float) -> IntArray:
 
 def cumulative_quadratic_variation(prices: FloatArray) -> FloatArray:
     """Running sum of squared log-returns (diagnostic; starts at 0)."""
-    prices = np.asarray(prices, dtype=np.float64)
-    if np.any(prices <= 0):
-        raise ValueError("prices must be positive for log-returns")
+    prices = positive_series(prices, "prices", message="prices must be positive for log-returns")
     r = np.diff(np.log(prices))
     out = np.zeros(len(prices), dtype=np.float64)
     out[1:] = np.cumsum(r * r)

@@ -107,6 +107,18 @@ def test_fail_closed_without_api_key() -> None:
         VendorHttpAdapter(_config(environ={}), transport=FakeTransport({}), clock=_fixed_clock)
 
 
+def test_bad_base_url_does_not_echo_credentials() -> None:
+    with pytest.raises(VendorEntitlementError, match="HTTP\\(S\\)") as exc:
+        VendorHttpAdapter(
+            _config(base_url="ftp://user:s3cret-synthetic@vendor.example/v1?api_key=SECRETKEY"),
+            transport=FakeTransport({}),
+            clock=_fixed_clock,
+        )
+    text = str(exc.value)
+    assert "s3cret-synthetic" not in text
+    assert "SECRETKEY" not in text
+
+
 def test_fail_closed_with_blank_api_key() -> None:
     with pytest.raises(VendorEntitlementError, match="missing API key"):
         VendorHttpAdapter(

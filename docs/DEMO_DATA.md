@@ -90,9 +90,10 @@ fail-closed edge, worked around here deliberately for the demo).
   prefer the backtest receipt above, which labels from row `source`. The
   ranking-side benches also want more history than 140 sessions provides.
 - The daily panel mirrors `SyntheticMarketProvider` output with the
-  deliberately delisted name dropped — a delist would strand an unvalued
-  hold in the naive `dipcatcher backtest` demo path (see
-  `tests/end_to_end/test_synthetic_pipeline.py` for the causal workaround).
+  deliberately delisted name dropped so the demo stays on names that print
+  through the last session. `dipcatcher backtest` flattens a name when
+  bronze `security_master.parquet` has already published an in-sample
+  `valid_to` (see [`E2E_SMOKE.md`](E2E_SMOKE.md)).
 - Demo data is a correctness fixture: no splits beyond one 2:1, one dividend,
   no delisting, no restatements, no real-world microstructure.
 

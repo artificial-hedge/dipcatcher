@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import polars as pl
 
 _MEMBERSHIP_FLAG = "_in_universe"
@@ -24,6 +26,16 @@ def decision_eligible_expr(df: pl.DataFrame) -> pl.Expr:
     return eligible
 
 
+def _require_winsor_p(winsor_p: float) -> float:
+    """Refuse a winsor level that is not a finite number in ``[0, 0.5)``."""
+    if isinstance(winsor_p, bool) or not isinstance(winsor_p, (int, float)):
+        raise ValueError(f"winsor_p must be a finite number in [0, 0.5), got {winsor_p!r}")
+    level = float(winsor_p)
+    if not math.isfinite(level) or level < 0.0 or level >= 0.5:
+        raise ValueError(f"winsor_p must be a finite number in [0, 0.5), got {winsor_p!r}")
+    return level
+
+
 def apply_cross_sectional(
     df: pl.DataFrame,
     columns: list[str],
@@ -37,6 +49,7 @@ def apply_cross_sectional(
     are average ranks; MAD falls back to the group standard deviation) without
     replanning one window query per column.
     """
+    winsor_p = _require_winsor_p(winsor_p)
     if not columns:
         return df
     lo, hi = winsor_p, 1.0 - winsor_p

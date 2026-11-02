@@ -56,6 +56,8 @@ class _SyntheticProcess:
     def kill(self) -> None:
         assert not self.lock.locked(), "kill must run outside the engine lock"
         self.calls.append(("kill", None))
+        # SIGKILL is not catchable; the following bounded wait must be able to reap.
+        self.stubborn = False
 
 
 class TestLocalEngineStartupCleanup(unittest.TestCase):
@@ -82,7 +84,9 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         # Any unexpected network access fails without opening a socket.
         self.urlopen = self.enterContext(
             patch.object(
-                backends.urllib.request, "urlopen", side_effect=AssertionError("unexpected I/O")
+                backends,
+                "_pinned_models_probe",
+                side_effect=AssertionError("unexpected I/O"),
             )
         )
         self.addCleanup(self.backend.close)
@@ -127,7 +131,7 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         self._assert_cleaned()
         self.assertEqual(
             self.proc.calls,
-            [("terminate", None), ("wait", 5), ("kill", None), ("wait", None)],
+            [("terminate", None), ("wait", 5), ("kill", None), ("wait", 5)],
         )
 
     def test_unexpected_startup_error_reaps_child(self) -> None:

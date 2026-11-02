@@ -47,14 +47,32 @@ def _is_synthetic(config: AppConfig, metrics: dict[str, Any]) -> bool:
     return str(metrics.get("data_source", "")).upper() == "SYNTHETIC"
 
 
+def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject last-win duplicate keys so evidence cannot be laundered."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _read_json_value(path: Path) -> Any:
+    """Load JSON. Undecodable bytes and duplicate keys are errors."""
+    return json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=_object_without_duplicate_keys,
+    )
+
+
 def _load_metrics(path: Path | None) -> dict[str, Any]:
     if path is None:
         return {}
     if not path.is_file():
         return {"_metrics_file_missing": True, "path": str(path)}
     try:
-        raw = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
+        raw = _read_json_value(path)
+    except (OSError, UnicodeError, ValueError):
         return {"_metrics_file_invalid": True, "path": str(path)}
     if not isinstance(raw, dict):
         return {"_metrics_file_invalid": True, "path": str(path)}
@@ -66,8 +84,8 @@ def _load_research_notebook(config: AppConfig) -> dict[str, Any] | None:
     if not path.is_file():
         return None
     try:
-        raw = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
+        raw = _read_json_value(path)
+    except (OSError, UnicodeError, ValueError):
         return {"_notebook_invalid": True}
     return raw if isinstance(raw, dict) else {"_notebook_invalid": True}
 

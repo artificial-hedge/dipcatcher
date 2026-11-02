@@ -402,14 +402,14 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             *_BYOK_ENVS,
             *_LOCAL_ENVS,
             "MOONSHOT_API_KEY",
-            "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+            "FX1_PRIVATE_ALLOW_CIDRS",
         )
     }
     try:
         os.environ.pop(_API_KEY_ENV, None)
         # The webhook probes deliver to a loopback sink; production
         # callbacks stay public-network-only unless opted in.
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
 
         sdk, client = _surfaces(_ParityBackend)
         msg = [{"role": "user", "content": "ping"}]
@@ -3103,8 +3103,8 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     _bw, _bw_hits, _bw_srv = _start_hook_sink()
     # The webhook probes deliver to a loopback sink; the outer env save/set
     # above already restored ambient state, so scope the SSRF opt-in here.
-    _bw_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    _bw_hook_prev = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
         bwsub = c_b.create_batch(
@@ -3150,9 +3150,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             # Never leak the private-network callback opt-in if server
             # cleanup raises while unwinding the probe.
             if _bw_hook_prev is None:
-                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+                os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
             else:
-                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bw_hook_prev
+                os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = _bw_hook_prev
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])

@@ -51,6 +51,7 @@ from quant_fund.research.epoch_merkle import (
     merkle_root,
     verify_inclusion,
 )
+from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 EPOCH_DELTA_SCHEMA = "epoch_delta.v1"
@@ -352,5 +353,5 @@ def write_epoch_delta(
     out_root = Path(out_dir)
     out_root.mkdir(parents=True, exist_ok=True)
     path = out_root / f"epoch_delta_{body['receipt_sha256'][:16]}.json"
-    path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(body, indent=2, sort_keys=True) + "\n")
     return path

@@ -9,6 +9,7 @@ fails closed because the payload is absent.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -58,6 +59,51 @@ class QualityThresholds:
     stale_run_length: int = 5
     max_stale_runs: int = 0
 
+    def __post_init__(self) -> None:
+        for name in (
+            "max_duplicate_keys",
+            "max_non_monotone",
+            "max_ohlc_violations",
+            "max_gaps",
+            "max_outliers",
+            "max_stale_runs",
+        ):
+            _require_non_negative_int(name, getattr(self, name))
+        _require_min_int("stale_run_length", self.stale_run_length, 2)
+        _require_positive_number("max_abs_log_return", self.max_abs_log_return)
+        if self.max_gap is not None and (
+            not isinstance(self.max_gap, timedelta) or self.max_gap.total_seconds() <= 0
+        ):
+            raise DataContractError("max_gap must be a positive duration")
+
+
+def _require_non_negative_int(name: str, value: object) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise DataContractError(f"{name} must be a non-negative integer")
+
+
+def _require_min_int(name: str, value: object, minimum: int) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise DataContractError(f"{name} must be an integer >= {minimum}")
+
+
+def _require_positive_number(name: str, value: object) -> None:
+    if isinstance(value, bool):
+        raise DataContractError(f"{name} must be finite and positive")
+    try:
+        number = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError) as exc:
+        raise DataContractError(f"{name} must be finite and positive") from exc
+    if not math.isfinite(number) or number <= 0.0:
+        raise DataContractError(f"{name} must be finite and positive")
+
+
+def _require_quality_frame(frame: pl.DataFrame) -> None:
+    if not isinstance(frame, pl.DataFrame):
+        raise DataContractError("quality report requires a polars DataFrame")
+    if frame.is_empty():
+        raise DataContractError("quality report requires a non-empty frame")
+
 
 def quality_report(
     frame: pl.DataFrame,
@@ -66,6 +112,7 @@ def quality_report(
     enforce: bool = False,
 ) -> dict[str, Any]:
     """Score one frame. ``enforce=True`` raises :class:`QualityThresholdError`."""
+    _require_quality_frame(frame)
     limits = thresholds or QualityThresholds()
     symbol = _symbol_column(frame)
     clock = _clock_column(frame)

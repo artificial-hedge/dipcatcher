@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data e2e-smoke release-dry-run prod-readiness lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
 
 .DEFAULT_GOAL := help
 
@@ -43,19 +43,19 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 	# partial data files and applies the same threshold once.
 	uv run pytest -n auto --dist loadfile -m "not network and not slow" --cov --cov-report=term-missing --cov-report=xml
 
-lint: ## Ruff check + format check repo-wide
-	uv run ruff check .
-	uv run ruff format --check .
-	uv run python scripts/check_mypy_strict_allowlist.py
-	uv run python scripts/check_mccabe_ratchet.py
+lint: ## Ruff check + format check (matches ci.yml lint job scope)
+	uv run --locked --no-build --no-binary-package fx-1 ruff check src tests
+	uv run --locked --no-build --no-binary-package fx-1 ruff format --check src tests
+	uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mypy_strict_allowlist.py
+	uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mccabe_ratchet.py
 
 fmt: ## Auto-fix lint + format repo-wide
 	uv run ruff check --fix .
 	uv run ruff format .
 
 typecheck: ## mypy on the harness (public modules are strict; see pyproject)
-	uv run mypy src/quant_fund
-	uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
+	uv run --locked --no-build --no-binary-package fx-1 mypy src/quant_fund
+	uv run --locked --no-build --no-binary-package fx-1 mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
 
 arch-guard: ## Import-boundary guard (same commands as arch_guards.yml; stdlib-only)
 	uv run --no-project python scripts/check_import_boundaries.py
@@ -103,6 +103,15 @@ doctor: ## Harness environment check
 demo-data: ## Generate labeled-SYNTHETIC offline demo dataset into data/demo/
 	uv run python scripts/gen_demo_data.py
 
+e2e-smoke: ## Deterministic SYNTHETIC ingest-to-report and paper-session smoke
+	$(TEST_ENV) uv run pytest -q -m e2e_smoke
+
+release-dry-run: ## Build the wheel offline and run dipcatcher/fx1 --help
+	$(TEST_ENV) uv run pytest -q -m release_dry_run
+
+prod-readiness: ## Pass/fail/needs-owner scorecard; nonzero when any check fails
+	$(TEST_ENV) uv run python -m quant_fund.simtest.prod_readiness --out "$${PROD_READINESS_OUT:-/tmp/prod-readiness.json}"
+
 native: ## Build optional quant_core (Rust + maturin). NumPy stays the fallback.
 	uv pip install "maturin>=1.7,<2"
 	uv run maturin develop --release --manifest-path rust/quant_core/Cargo.toml
@@ -117,7 +126,7 @@ native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` fi
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
-ci: lint typecheck coverage ## Local mirror of the CI gate
+ci: lint typecheck security coverage ## Local mirror of the CI gate
 
 code-inventory: ## Report tracked semantic Python LOC and feature/test counts
 	uv run python scripts/code_quality_inventory.py --summary-only
@@ -176,10 +185,10 @@ perf-check: ## Compare current timings against the stored local baseline (1.5x g
 
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
-	PYTHONPATH=src uv run pytest tests/fx1 -q
+	PYTHONPATH=src uv run --locked --no-build --no-binary-package fx-1 pytest tests/fx1 -q
 
 fx1-lint: ## fx-1 lint
-	uv run ruff check src/fx1 tests/fx1
+	uv run --locked --no-build --no-binary-package fx-1 ruff check src/fx1 tests/fx1
 
 fx1-corpus: ## Build fx-1 SFT corpus from harness receipts + lab research runs
 	# data/metadata/research/runs is host-local (gitignored, regenerable via

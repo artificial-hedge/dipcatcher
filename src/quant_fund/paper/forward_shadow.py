@@ -292,7 +292,7 @@ def _configured_books(spec: dict[str, Any], scenario: str) -> AppConfig:
     execution = ReplayConfig(**spec["execution"])
     execution.validate()
     multiplier = 2.0 if scenario == "double_impact" else 1.0
-    return AppConfig(
+    cfg = AppConfig(
         costs=CostConfig(
             commission_bps=execution.commission_bps,
             half_spread_bps=execution.half_spread_bps,
@@ -310,6 +310,8 @@ def _configured_books(spec: dict[str, Any], scenario: str) -> AppConfig:
             max_predicted_vol=10.0,
         ),
     )
+    cfg.kill_switch.state = "ENABLED"
+    return cfg
 
 
 def _initial(manifest: dict[str, Any]) -> dict[str, Any]:

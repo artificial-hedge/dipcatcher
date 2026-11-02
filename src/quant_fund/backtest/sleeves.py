@@ -26,6 +26,7 @@ from datetime import datetime
 import numpy as np
 import polars as pl
 
+from quant_fund.backtest.inputs import finite_positive
 from quant_fund.northset.sweeps import liquidity_sweep_frame
 
 _WCOLS = ("event_time", "security_id", "target_weight")
@@ -55,6 +56,8 @@ def _cap_and_emit(
     ``gross_scale`` bounds sum(|w|) per timestamp — the engine's leverage cap
     still applies on top.
     """
+    max_name = finite_positive(max_name, "max_name")
+    gross_scale = finite_positive(gross_scale, "gross_scale")
     out = (
         frame.filter(pl.col(raw_col).is_not_null() & pl.col(raw_col).is_finite())
         .with_columns(

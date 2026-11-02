@@ -22,8 +22,10 @@ from __future__ import annotations
 
 import base64
 import json
+import shutil
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +50,16 @@ _TIMESTAMPS_DIR = Path("quality/timestamps")
 
 def _b64(data: bytes) -> str:
     return base64.b64encode(data).decode()
+
+
+@contextmanager
+def _scratch_dir(prefix: str) -> Iterator[Path]:
+    """Private directory removed on every exit, including failure."""
+    root = Path(tempfile.mkdtemp(prefix=prefix))
+    try:
+        yield root
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 def _unb64(s: Any) -> bytes | None:
@@ -466,101 +478,102 @@ def verify_custody_bundle(
     layers["chain"] = {"ok": chain_ok}
 
     # Materialize a synthetic root and hand off to the existing verifiers.
-    tmp = Path(tempfile.mkdtemp(prefix="custody_verify_"))
-    corpus_root = tmp / corpus_dir
-    corpus_root.mkdir(parents=True, exist_ok=True)
-    for hop, raw in zip(hops, hop_bytes, strict=True):
-        (corpus_root / str(hop["name"])).write_bytes(raw)
-    (corpus_root / str(bundle["member"])).write_bytes(member_bytes)
+    with _scratch_dir("custody_verify_") as tmp:
+        corpus_root = tmp / corpus_dir
+        corpus_root.mkdir(parents=True, exist_ok=True)
+        for hop, raw in zip(hops, hop_bytes, strict=True):
+            (corpus_root / str(hop["name"])).write_bytes(raw)
+        (corpus_root / str(bundle["member"])).write_bytes(member_bytes)
 
-    embedded = bundle["embedded_files"]
-    if not (isinstance(embedded, Mapping)):
-        raise ValueError("isinstance(embedded, Mapping)")
-    for rel, b64v in embedded.items():
-        raw = _unb64(b64v)
-        if not (raw is not None):
-            raise ValueError("raw is not None")
-        dest = tmp / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(raw)
-
-    # The signed pin must bind the claimed head hop.
-    try:
-        heads_doc = json.loads((tmp / "quality/epoch_heads.json").read_text())
-        pin_key = f"{corpus_dir}/{bundle['pattern']}"
-        pinned = (heads_doc.get("heads") or {}).get(pin_key) or {}
-        pin_ok = (
-            pinned.get("receipt") == hops[-1]["name"] and pinned.get("sha256") == hops[-1]["sha256"]
-        )
-    except (OSError, ValueError):
-        pin_ok = False
-    if not pin_ok:
-        errors.append("pin_head_mismatch")
-    layers["pins"] = {"ok": pin_ok}
-
-    if (tmp / "gate_pins.sig").is_file():
-        from quant_fund.research.gate_signatures import verify_pin_signatures
-
-        sig = verify_pin_signatures(tmp)
-        layers["signature"] = {"ok": bool(sig["ok"]), "signed": sig["signed"]}
-        if not sig["ok"] or not sig["signed"]:
-            errors.append(f"signature:{sig['errors']}")
-    else:
-        layers["signature"] = {"ok": True, "signed": False}
-
-    if (tmp / _CP_FILE).is_file():
-        from quant_fund.research.integrity_checkpoint import verify_checkpoint
-
-        cp = verify_checkpoint(tmp)
-        layers["checkpoint"] = {"ok": bool(cp["ok"]), "current": cp.get("current")}
-        if not cp["ok"]:
-            errors.append(f"checkpoint:{cp['errors']}")
-    else:
-        layers["checkpoint"] = {"ok": True, "absent": True}
-
-    witnesses = bundle["witness_proofs"]
-    if not (isinstance(witnesses, Mapping)):
-        raise ValueError("isinstance(witnesses, Mapping)")
-    if witnesses:
-        from quant_fund.research.integrity_witness import verify_witness_file
-
-        w_ok = False
-        w_errors: list[str] = []
-        for rel, b64v in witnesses.items():
+        embedded = bundle["embedded_files"]
+        if not (isinstance(embedded, Mapping)):
+            raise ValueError("isinstance(embedded, Mapping)")
+        for rel, b64v in embedded.items():
             raw = _unb64(b64v)
             if not (raw is not None):
                 raise ValueError("raw is not None")
             dest = tmp / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(raw)
-            res = verify_witness_file(tmp, rel)
-            if res["ok"]:
-                w_ok = True
-            else:
-                w_errors.extend(f"{rel}:{e}" for e in res["errors"])
-        layers["witness"] = {"ok": w_ok}
-        if not w_ok:
-            errors.extend(w_errors or ["witness_invalid"])
-    else:
-        layers["witness"] = {"ok": True, "absent": True}
 
-    # RFC 3161 layer: the anchored targets (checkpoint/pins) are embedded, so
-    # verify_timestamps gets a live synthetic root — ``fresh`` confirms each
-    # token still commits to those bytes, and the openssl chain check pins the
-    # TSA certs.
-    ts_manifest = tmp / _TIMESTAMPS_DIR / "anchors.json"
-    if ts_manifest.is_file():
-        from quant_fund.research.timestamp_anchor import verify_timestamps
+        # The signed pin must bind the claimed head hop.
+        try:
+            heads_doc = json.loads((tmp / "quality/epoch_heads.json").read_text())
+            pin_key = f"{corpus_dir}/{bundle['pattern']}"
+            pinned = (heads_doc.get("heads") or {}).get(pin_key) or {}
+            pin_ok = (
+                pinned.get("receipt") == hops[-1]["name"]
+                and pinned.get("sha256") == hops[-1]["sha256"]
+            )
+        except (OSError, ValueError):
+            pin_ok = False
+        if not pin_ok:
+            errors.append("pin_head_mismatch")
+        layers["pins"] = {"ok": pin_ok}
 
-        ts = verify_timestamps(tmp)
-        layers["timestamps"] = {
-            "ok": bool(ts["ok"]),
-            "anchored": ts.get("anchored"),
-            "fresh": ts.get("fresh"),
-        }
-        if not ts["ok"]:
-            errors.extend(f"timestamps:{e}" for e in ts["errors"])
-    else:
-        layers["timestamps"] = {"ok": True, "absent": True}
+        if (tmp / "gate_pins.sig").is_file():
+            from quant_fund.research.gate_signatures import verify_pin_signatures
 
-    return {"ok": not errors, "errors": errors, "layers": layers}
+            sig = verify_pin_signatures(tmp)
+            layers["signature"] = {"ok": bool(sig["ok"]), "signed": sig["signed"]}
+            if not sig["ok"] or not sig["signed"]:
+                errors.append(f"signature:{sig['errors']}")
+        else:
+            layers["signature"] = {"ok": True, "signed": False}
+
+        if (tmp / _CP_FILE).is_file():
+            from quant_fund.research.integrity_checkpoint import verify_checkpoint
+
+            cp = verify_checkpoint(tmp)
+            layers["checkpoint"] = {"ok": bool(cp["ok"]), "current": cp.get("current")}
+            if not cp["ok"]:
+                errors.append(f"checkpoint:{cp['errors']}")
+        else:
+            layers["checkpoint"] = {"ok": True, "absent": True}
+
+        witnesses = bundle["witness_proofs"]
+        if not (isinstance(witnesses, Mapping)):
+            raise ValueError("isinstance(witnesses, Mapping)")
+        if witnesses:
+            from quant_fund.research.integrity_witness import verify_witness_file
+
+            w_ok = False
+            w_errors: list[str] = []
+            for rel, b64v in witnesses.items():
+                raw = _unb64(b64v)
+                if not (raw is not None):
+                    raise ValueError("raw is not None")
+                dest = tmp / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(raw)
+                res = verify_witness_file(tmp, rel)
+                if res["ok"]:
+                    w_ok = True
+                else:
+                    w_errors.extend(f"{rel}:{e}" for e in res["errors"])
+            layers["witness"] = {"ok": w_ok}
+            if not w_ok:
+                errors.extend(w_errors or ["witness_invalid"])
+        else:
+            layers["witness"] = {"ok": True, "absent": True}
+
+        # RFC 3161 layer: the anchored targets (checkpoint/pins) are embedded, so
+        # verify_timestamps gets a live synthetic root — ``fresh`` confirms each
+        # token still commits to those bytes, and the openssl chain check pins the
+        # TSA certs.
+        ts_manifest = tmp / _TIMESTAMPS_DIR / "anchors.json"
+        if ts_manifest.is_file():
+            from quant_fund.research.timestamp_anchor import verify_timestamps
+
+            ts = verify_timestamps(tmp)
+            layers["timestamps"] = {
+                "ok": bool(ts["ok"]),
+                "anchored": ts.get("anchored"),
+                "fresh": ts.get("fresh"),
+            }
+            if not ts["ok"]:
+                errors.extend(f"timestamps:{e}" for e in ts["errors"])
+        else:
+            layers["timestamps"] = {"ok": True, "absent": True}
+
+        return {"ok": not errors, "errors": errors, "layers": layers}

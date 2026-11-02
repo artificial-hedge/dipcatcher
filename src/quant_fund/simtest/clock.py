@@ -50,7 +50,7 @@ class SimClock:
     """Injectable clock. Does not read the wall clock."""
 
     def __init__(self, start: datetime) -> None:
-        if start.tzinfo is None:
+        if start.tzinfo is None or start.utcoffset() is None:
             raise ValueError("SimClock requires a timezone-aware start")
         self.true_time = start.astimezone(UTC)
         self._offset = timedelta(0)
@@ -62,7 +62,7 @@ class SimClock:
         return self.true_time + self._offset
 
     def advance_to(self, target: datetime, faults: tuple[Fault, ...]) -> ClockReading:
-        if target.tzinfo is None:
+        if target.tzinfo is None or target.utcoffset() is None:
             raise ValueError("clock target must be timezone-aware")
         target_utc = target.astimezone(UTC)
         if target_utc < self.true_time:
@@ -113,9 +113,11 @@ class SimClock:
 
 
 def _ny_offset_seconds(moment: datetime) -> int:
+    if moment.tzinfo is None or moment.utcoffset() is None:
+        raise ValueError("DST comparison requires timezone-aware datetimes")
     offset = moment.astimezone(_NY).utcoffset()
     if offset is None:
-        return 0
+        raise ValueError("DST comparison requires a concrete UTC offset")
     return int(offset.total_seconds())
 
 

@@ -44,6 +44,7 @@ cfg = AppConfig(
         stale_model_hours=1e9,
     ),
 )
+cfg.kill_switch.state = "ENABLED"
 from quant_fund.backtest.engine import run_backtest  # noqa: E402
 from quant_fund.backtest.fast_replay import run_backtest_fast  # noqa: E402
 

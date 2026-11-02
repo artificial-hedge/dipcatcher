@@ -57,10 +57,15 @@ def _key(root: Path) -> bytes:
     root.mkdir(parents=True, exist_ok=True)
     key = secrets.token_bytes(32)
     fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    stored = False
     try:
         os.write(fd, key)
+        os.fsync(fd)
+        stored = True
     finally:
         os.close(fd)
+        if not stored:
+            path.unlink(missing_ok=True)
     return key
 
 
@@ -408,8 +413,15 @@ def live_kill(
     ts_ns: int | None = typer.Option(None, "--ts-ns"),
     at: str | None = typer.Option(None, "--at"),
     state_dir: Path | None = typer.Option(None, "--state-dir"),
+    kill_switch_file: Path | None = typer.Option(
+        None, "--kill-switch-file", help="Shared kill file. Overrides DIPCATCHER_KILL_SWITCH_PATH."
+    ),
 ) -> None:
-    """Latch the kill switch on the desk, or on the gateway."""
+    """Latch the kill switch on the desk, or on the gateway, and write the shared file."""
+    from quant_fund.utils.operator_kill import HALT_NEW_ORDERS, publish_operator_kill
+
+    kill_path = publish_operator_kill(_resolve(root), HALT_NEW_ORDERS, kill_switch_file)
+    typer.echo(f"kill_switch_file={kill_path}")
     if _use_gateway(config, actor=actor, state_dir=state_dir, root=root, at=at):
 
         def action() -> dict[str, Any]:
@@ -433,8 +445,13 @@ def live_reset(
     ts_ns: int | None = typer.Option(None, "--ts-ns"),
     at: str | None = typer.Option(None, "--at"),
     state_dir: Path | None = typer.Option(None, "--state-dir"),
+    kill_switch_file: Path | None = typer.Option(
+        None, "--kill-switch-file", help="Shared kill file. Overrides DIPCATCHER_KILL_SWITCH_PATH."
+    ),
 ) -> None:
-    """Clear a desk halt, or the gateway kill latch."""
+    """Clear a desk halt, or the gateway kill latch, then write ENABLED."""
+    from quant_fund.utils.operator_kill import ENABLED, publish_operator_kill
+
     if _use_gateway(config, actor=actor, state_dir=state_dir, root=root, at=at):
 
         def action() -> dict[str, Any]:
@@ -443,10 +460,12 @@ def live_reset(
             return result
 
         _invoke_gateway(action)
-        return
-    stamp = _stamp(ts_ns)
-    who = actor or "operator"
-    _desk(root, _desk_config(config), lambda desk: desk.reset(who, reason, stamp), ts_ns=stamp)
+    else:
+        stamp = _stamp(ts_ns)
+        who = actor or "operator"
+        _desk(root, _desk_config(config), lambda desk: desk.reset(who, reason, stamp), ts_ns=stamp)
+    cleared = publish_operator_kill(_resolve(root), ENABLED, kill_switch_file)
+    typer.echo(f"kill_switch_file={cleared}")
 
 
 @live_app.command("flatten")

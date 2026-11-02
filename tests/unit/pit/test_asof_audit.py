@@ -30,3 +30,21 @@ def test_bench_deterministic_seal():
     r1 = asof_audit_bench(seed=2)
     r2 = asof_audit_bench(seed=2)
     assert r1 == r2
+
+
+def test_read_errors_count_as_violations(monkeypatch, tmp_path):
+    import quant_fund.pit.asof_audit as mod
+    from quant_fund.pit.corrections import RestatementPolicy
+
+    original = mod.PitVault.asof
+
+    def fail_strict(self, name, t, *, policy=RestatementPolicy.LATEST_KNOWN, **kwargs):
+        if policy == RestatementPolicy.STRICT_FIRST:
+            raise RuntimeError("manifest read failed")
+        return original(self, name, t, policy=policy, **kwargs)
+
+    monkeypatch.setattr(mod.PitVault, "asof", fail_strict)
+    result = mod.asof_storm_audit(tmp_path, n_restatements=2, n_probes=4)
+    assert result["probes"] == 0
+    assert result["violations"]["probe_error"] == 4
+    assert result["total_violations"] == 4

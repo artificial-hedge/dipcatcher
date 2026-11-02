@@ -14,10 +14,14 @@ Promotion dry-run compares champion vs shadow; never moves live capital.
 from __future__ import annotations
 
 import json
+import signal
+import threading
 from collections.abc import Callable
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from functools import wraps
+from typing import Any, cast
 from uuid import uuid4
 
 import numpy as np
@@ -50,6 +54,50 @@ from quant_fund.portfolio.portfolio_conformal import SplitPortfolioCQR, gaussian
 from quant_fund.utils.hashing import hash_bytes
 
 WeightFn = Callable[[datetime, AppConfig], dict[str, float]]
+# Set only for the duration of ``run_paper_loop``. A SIGTERM sets the event;
+# the current step still flushes, then the loop exits into the trailing publish.
+_PAPER_STOP: ContextVar[threading.Event | None] = ContextVar("paper_sigterm_stop", default=None)
+
+
+class _StopClock:
+    """End a wall or replay clock once SIGTERM has been requested."""
+
+    def __init__(self, inner: WallClock | ReplayClock, stop: threading.Event | None) -> None:
+        self._inner = inner
+        self._stop = stop
+
+    def exhausted(self) -> bool:
+        if self._stop is not None and self._stop.is_set():
+            return True
+        return self._inner.exhausted()
+
+    def tick(self) -> datetime | None:
+        if self._stop is not None and self._stop.is_set():
+            return None
+        return self._inner.tick()
+
+
+def _until_sigterm[F: Callable[..., Any]](fn: F) -> F:
+    """Run ``fn`` with SIGTERM recorded on ``_PAPER_STOP``, then restore the handler."""
+
+    @wraps(fn)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        stop = threading.Event()
+        previous = signal.getsignal(signal.SIGTERM)
+
+        def _on_term(signum: int, frame: object | None) -> None:
+            del signum, frame
+            stop.set()
+
+        signal.signal(signal.SIGTERM, _on_term)
+        token = _PAPER_STOP.set(stop)
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            _PAPER_STOP.reset(token)
+            signal.signal(signal.SIGTERM, previous)
+
+    return cast(F, wrapped)
 
 
 @dataclass
@@ -333,6 +381,7 @@ def _paper_portfolio_conformal(returns: np.ndarray) -> dict[str, Any]:
     return out
 
 
+@_until_sigterm
 def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
     bars: pl.DataFrame,
     config: AppConfig,
@@ -370,9 +419,11 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
     after that many *new* steps (E2E infrastructure test).
 
     ``prepare_broker``, when set, is called on each constructed broker after
-    restore and before the first step. The default ``None`` leaves construction,
+    restore and before the first step. The default ``None`` leaves     construction,
     ids, and submission unchanged.
     """
+    from quant_fund.paper.operator_book import enforce_operator_book
+
     resume_id = resume_run_id or getattr(config.paper, "resume_run_id", None) or run_id
     prior_state: dict[str, Any] | None = None
     resume_step = 0
@@ -569,6 +620,9 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
         clock: WallClock | ReplayClock = WallClock()
     else:
         clock = ReplayClock(event_times=list(decision_dates))
+    # SIGTERM finishes the in-flight step (its ledger flush) and then this
+    # clock reports exhaustion so the trailing broker-state publish still runs.
+    stepping = _StopClock(clock, _PAPER_STOP.get())
 
     champ_eq: list[dict[str, Any]] = []
     shadow_eq: list[dict[str, Any]] = []
@@ -614,8 +668,8 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
     mark_ages: dict[str, int] = {
         str(security_id): int(age) for security_id, age in raw_resume_ages.items()
     }
-    while not clock.exhausted():
-        dt = clock.tick()
+    while not stepping.exhausted():
+        dt = stepping.tick()
         if dt is None:
             break
         # Map decision date index into dates list
@@ -642,8 +696,10 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
         # Never let an execution-day close leak into a next-open decision. Fresh
         # opens plus bounded prior marks are the only pre-trade valuation inputs.
         champ.mark(pretrade_marks)
+        enforce_operator_book(champ, at=exec_dt)
         if shadow is not None:
             shadow.mark(pretrade_marks)
+            enforce_operator_book(shadow, at=exec_dt)
 
         c_tgt = champion_fn(dt, config)
         s_tgt = shadow_fn(dt, config) if shadow_fn is not None else {}

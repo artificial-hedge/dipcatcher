@@ -3,11 +3,22 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Iterator
 
 import numpy as np
 import polars as pl
+import pytest
 
 from quant_fund.data.adapters.synthetic import SyntheticMarketProvider
+
+
+@pytest.fixture(autouse=True)
+def _restore_global_rng() -> Iterator[None]:
+    py_state = random.getstate()
+    np_state = np.random.get_state()
+    yield
+    random.setstate(py_state)
+    np.random.set_state(np_state)
 
 
 def test_provider_frames_are_fully_deterministic() -> None:

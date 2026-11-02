@@ -751,6 +751,11 @@ class TrainConfig(StrictConfigModel):
         return self
 
 
+def _require_unit_interval(value: float, name: str) -> None:
+    if not np.isfinite(value) or not 0.0 < float(value) <= 1.0:
+        raise ValueError(f"{name} must be finite and in (0, 1]")
+
+
 class RiskGateConfig(StrictConfigModel):
     max_order_notional: float = 1_000_000.0
     max_gross: float = 2.0
@@ -760,6 +765,8 @@ class RiskGateConfig(StrictConfigModel):
     max_predicted_vol: float = 0.4
     stale_price_bars: int = 3
     stale_model_hours: float = 24.0
+    # 1.0 disables the floor (nav must still be positive). Tighter books opt in.
+    max_daily_loss_fraction: float = 1.0
 
     @model_validator(mode="after")
     def valid_risk_limits(self) -> RiskGateConfig:
@@ -778,6 +785,7 @@ class RiskGateConfig(StrictConfigModel):
             raise ValueError("max_participation must be finite and in (0, 1]")
         if self.stale_price_bars < 0:
             raise ValueError("stale_price_bars must be non-negative")
+        _require_unit_interval(float(self.max_daily_loss_fraction), "max_daily_loss_fraction")
         return self
 
 
@@ -923,7 +931,9 @@ class PaperConfig(StrictConfigModel):
 
 
 class KillSwitchConfig(StrictConfigModel):
-    state: str = "ENABLED"
+    """New orders stay blocked until ``state`` is set to ``ENABLED``."""
+
+    state: str = "HALT_NEW_ORDERS"
     allow_auto_flatten: bool = False
 
 

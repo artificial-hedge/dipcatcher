@@ -19,15 +19,17 @@ SYNTHETIC fills in tests are correctness fixtures only, never market evidence.
 from __future__ import annotations
 
 import math
+import numbers
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from quant_fund.schemas.errors import ConfigError, KillSwitchActive
 
 #: Float slack for filled-quantity comparisons. Not a price tolerance.
 _QTY_EPS = 1e-9
+_FLATTEN_STAMP = datetime(2026, 11, 2, tzinfo=UTC)
 
 #: The only endpoint kinds this paper/simulated adapter accepts.
 ALLOWED_ENDPOINT_KINDS: frozenset[str] = frozenset({"paper", "simulated"})
@@ -107,6 +109,65 @@ def _signed_qty(side: Side, quantity: float) -> float:
     return quantity if side == "BUY" else -quantity
 
 
+def _positive_mark(price: object) -> bool:
+    if isinstance(price, bool) or not isinstance(price, numbers.Real):
+        return False
+    value = float(price)
+    return math.isfinite(value) and value > 0.0
+
+
+def _marks_cover(positions: dict[str, float], marks: dict[str, float] | None) -> bool:
+    for name, quantity in positions.items():
+        if abs(float(quantity)) <= _QTY_EPS:
+            continue
+        price = None if marks is None else marks.get(name)
+        if not _positive_mark(price):
+            return False
+    return True
+
+
+def _flatten_positions(
+    ledger: OrderFillLedger, marks: dict[str, float], stamp: datetime
+) -> list[str]:
+    names = sorted(
+        name
+        for name, quantity in ledger._computed_positions.items()
+        if abs(float(quantity)) > _QTY_EPS
+    )
+    for name in names:
+        _flatten_name(ledger, name, float(marks[name]), stamp)
+    return names
+
+
+def _flatten_name(ledger: OrderFillLedger, name: str, price: float, stamp: datetime) -> None:
+    quantity = float(ledger._computed_positions.get(name, 0.0))
+    if abs(quantity) <= _QTY_EPS:
+        return
+    side: Side = "SELL" if quantity > 0.0 else "BUY"
+    order_id = f"flatten:{name}"
+    if order_id not in ledger._orders:
+        ledger._orders[order_id] = _OrderState(
+            order=Order(
+                order_id=order_id,
+                security_id=name,
+                side=side,
+                quantity=abs(quantity),
+                submitted_time=stamp,
+            )
+        )
+        ledger._counters["orders"] += 1
+    ledger.record_fill(
+        Fill(
+            fill_id=f"flatten-fill:{name}",
+            order_id=order_id,
+            security_id=name,
+            quantity=abs(quantity),
+            price=price,
+            fill_time=stamp,
+        )
+    )
+
+
 class OrderFillLedger:
     """Order-id <-> fill-id ledger with reconciliation and a kill switch.
 
@@ -123,18 +184,29 @@ class OrderFillLedger:
         starting_cash: float = 0.0,
         cash_tolerance: float = 1e-6,
         position_tolerance: float = 1e-6,
+        accept_orders: bool = False,
     ) -> None:
+        if not isinstance(accept_orders, bool):
+            raise OrderLedgerError("accept_orders must be a bool")
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
-        self._cash_tolerance = float(cash_tolerance)
-        self._position_tolerance = float(position_tolerance)
+        cash, cash_tol, position_tol = _finite_ledger_limits(
+            starting_cash, cash_tolerance, position_tolerance
+        )
+        self._cash_tolerance = cash_tol
+        self._position_tolerance = position_tol
         self._orders: dict[str, _OrderState] = {}
         self._fills: dict[str, Fill] = {}
-        self._computed_cash = float(starting_cash)
+        self._computed_cash = cash
         self._computed_positions: dict[str, float] = {}
         self._declared_cash: float | None = None
         self._declared_positions: dict[str, float] | None = None
-        self._kill_state: KillState = "ENABLED"
-        self._kill_reason: str | None = None
+        # Halted until the caller opts in. clear_kill() is the same opt-in.
+        if accept_orders:
+            self._kill_state: KillState = "ENABLED"
+            self._kill_reason: str | None = None
+        else:
+            self._kill_state = "HALT_NEW_ORDERS"
+            self._kill_reason = "orders_require_explicit_opt_in"
         self._counters: dict[str, int] = {
             "orders": 0,
             "duplicate_orders": 0,
@@ -168,9 +240,16 @@ class OrderFillLedger:
 
     def submit(self, order: Order) -> str:
         """Record an order idempotently; refuse new orders after a kill trip."""
+        from quant_fund.utils.operator_kill import orders_blocked_by_env
+
+        blocked = orders_blocked_by_env()
+        if blocked is not None:
+            raise KillSwitchActive(blocked)
         if self._kill_state != "ENABLED":
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
+        _validate_order(order)
         if order.order_id in self._orders:
+            _require_same_order(self._orders[order.order_id].order, order)
             self._counters["duplicate_orders"] += 1
             return "duplicate_order"
         self._orders[order.order_id] = _OrderState(order=order)
@@ -196,6 +275,36 @@ class OrderFillLedger:
         state.cancelled = True
         self._counters["cancels"] += 1
         return "cancelled"
+
+    def cancel_operator_orders(self) -> list[str]:
+        """Cancel working residuals in sorted id order."""
+        cancelled: list[str] = []
+        for order_id in self._working_ids():
+            if self.cancel(order_id) == "cancelled":
+                cancelled.append(order_id)
+        return cancelled
+
+    def flatten_operator_book(
+        self, marks: dict[str, float] | None = None, *, at: datetime | None = None
+    ) -> dict[str, Any]:
+        """Cancel working orders, then record deterministic closing fills.
+
+        Orders are inserted directly so a blocking kill file cannot reject the
+        close. A second call is a no-op once positions are flat. ``marks is
+        None`` leaves every position and still cancels working orders.
+        """
+        cancelled = self.cancel_operator_orders()
+        if not _marks_cover(self._computed_positions, marks):
+            return {"ok": False, "problem": "flatten_unmarked", "cancelled": cancelled, "names": []}
+        names = _flatten_positions(self, {} if marks is None else marks, at or _FLATTEN_STAMP)
+        return {"ok": True, "problem": None, "cancelled": cancelled, "names": names}
+
+    def _working_ids(self) -> list[str]:
+        return sorted(
+            order_id
+            for order_id, state in self._orders.items()
+            if not state.cancelled and state.filled_qty + _QTY_EPS < state.order.quantity
+        )
 
     # -- fill intake --
 
@@ -261,8 +370,9 @@ class OrderFillLedger:
     # -- declaration (broker-reported) state, for drift alarms --
 
     def declare_state(self, *, cash: float, positions: dict[str, float]) -> None:
-        self._declared_cash = float(cash)
-        self._declared_positions = {str(k): float(v) for k, v in positions.items()}
+        declared_cash, declared_positions = _finite_declaration(cash, positions)
+        self._declared_cash = declared_cash
+        self._declared_positions = declared_positions
 
     # -- reconciliation --
 
@@ -352,6 +462,65 @@ class OrderFillLedger:
             "research_only": True,
             "live_pnl_claim": False,
         }
+
+
+def _finite_ledger_limits(
+    starting_cash: float,
+    cash_tolerance: float,
+    position_tolerance: float,
+) -> tuple[float, float, float]:
+    cash = float(starting_cash)
+    cash_tol = float(cash_tolerance)
+    position_tol = float(position_tolerance)
+    if not math.isfinite(cash):
+        raise OrderLedgerError("starting cash must be finite")
+    if not math.isfinite(cash_tol) or cash_tol < 0.0:
+        raise OrderLedgerError("cash tolerance must be finite and non-negative")
+    if not math.isfinite(position_tol) or position_tol < 0.0:
+        raise OrderLedgerError("position tolerance must be finite and non-negative")
+    return cash, cash_tol, position_tol
+
+
+def _validate_order(order: Order) -> None:
+    _require_order_quantity(order.quantity)
+    if order.side not in {"BUY", "SELL"}:
+        raise OrderLedgerError("order side must be BUY or SELL")
+    _require_token(order.order_id, "order_id")
+    _require_token(order.security_id, "security_id")
+
+
+def _require_order_quantity(quantity: float) -> None:
+    if isinstance(quantity, bool) or not isinstance(quantity, (int, float)):
+        raise OrderLedgerError("order quantity must be a finite number")
+    if not math.isfinite(float(quantity)) or float(quantity) <= 0.0:
+        raise OrderLedgerError("order quantity must be finite and positive")
+
+
+def _require_token(value: str, label: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise OrderLedgerError(f"{label} must be a non-empty string")
+
+
+def _require_same_order(prior: Order, order: Order) -> None:
+    if (
+        prior.security_id != order.security_id
+        or prior.side != order.side
+        or abs(float(prior.quantity) - float(order.quantity)) > _QTY_EPS
+    ):
+        raise OrderLedgerError("order_id conflicts with a different order")
+
+
+def _finite_declaration(cash: float, positions: dict[str, float]) -> tuple[float, dict[str, float]]:
+    number = float(cash)
+    if not math.isfinite(number):
+        raise OrderLedgerError("declared cash must be finite")
+    parsed: dict[str, float] = {}
+    for key, value in positions.items():
+        qty = float(value)
+        if not math.isfinite(qty):
+            raise OrderLedgerError("declared position must be finite")
+        parsed[str(key)] = qty
+    return number, parsed
 
 
 def _validate_fill(fill: Fill) -> None:

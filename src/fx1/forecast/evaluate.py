@@ -14,19 +14,21 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
+from numbers import Integral
 from typing import Any, cast
 
 import numpy as np
 import polars as pl
 
 from fx1.forecast.config import Fx1HarnessConfig
-from fx1.forecast.features import normalize_bar_times
+from fx1.forecast.features import normalize_bar_times, require_positive_close
 from fx1.forecast.schema import SchemaError, validate_forecast_schema
 from fx1.forecast.signals import PLACEHOLDER_NOT_A_STRATEGY, map_signals
 from quant_fund.config.models import ValidationConfig
 from quant_fund.metrics.direction import pesaran_timmermann
 from quant_fund.metrics.returns import turnover
 from quant_fund.metrics.scoring import pearson_ic, rank_ic
+from quant_fund.schemas.errors import PointInTimeError
 from quant_fund.validation.walk_forward import (
     assert_no_label_overlap,
     fold_ic_stability,
@@ -52,10 +54,22 @@ def json_ready(value: Any) -> Any:
 
 
 def forward_simple_returns(bars: pl.DataFrame, horizon: int) -> pl.DataFrame:
-    """Simple return from t to t+h. This is a label. Do not pass it to ``predict``."""
-    if horizon < 1:
-        raise ValueError("horizon must be >= 1")
-    frame = normalize_bar_times(bars).sort(["security_id", "event_time"])
+    """Simple return from t to t+h. This is a label. Do not pass it to ``predict``.
+
+    Closes must be finite and positive. Anything else raises before a label
+    is computed.
+    """
+    if isinstance(horizon, bool) or not isinstance(horizon, Integral) or horizon < 1:
+        raise ValueError("horizon must be an integer >= 1")
+    horizon = int(horizon)
+    frame = normalize_bar_times(bars)
+    for name in ("security_id", "event_time", "close"):
+        if name not in frame.columns:
+            raise PointInTimeError(f"forward labels missing {name}")
+    if frame.select(["security_id", "event_time"]).is_duplicated().any():
+        raise PointInTimeError("duplicate (security_id, event_time) bars")
+    require_positive_close(frame, where="forward labels")
+    frame = frame.sort(["security_id", "event_time"])
     return frame.with_columns(
         (pl.col("close").shift(-horizon).over("security_id") / pl.col("close") - 1.0).alias(
             "realized_return"
@@ -181,12 +195,36 @@ def _horizon_metrics(frame: pl.DataFrame) -> dict[str, Any]:
     }
 
 
+def _require_cost(cost_bps: float) -> None:
+    if isinstance(cost_bps, bool) or not math.isfinite(cost_bps) or cost_bps < 0.0:
+        raise ValueError("cost_bps must be finite and >= 0")
+
+
+def _require_stride(stride: int) -> None:
+    if isinstance(stride, bool) or not isinstance(stride, int) or stride < 1:
+        raise ValueError("stride must be an integer >= 1")
+
+
+def _check_signal_inputs(frame: pl.DataFrame, *, cost_bps: float, stride: int) -> None:
+    """Reject a portfolio diagnostic built from bad cost, stride, or keys."""
+    _require_cost(cost_bps)
+    _require_stride(stride)
+    missing = [
+        name for name in ("event_time", "security_id", "signal") if name not in frame.columns
+    ]
+    if missing:
+        raise SchemaError(f"signal diagnostics missing columns: {missing}")
+    if frame.select(["event_time", "security_id"]).is_duplicated().any():
+        raise SchemaError("signal frame has duplicate (event_time, security_id) rows")
+
+
 def _signal_diagnostics(
     frame: pl.DataFrame,
     *,
     cost_bps: float,
     stride: int,
 ) -> dict[str, Any]:
+    _check_signal_inputs(frame, cost_bps=cost_bps, stride=stride)
     times = _decision_times(frame)
     if stride > 1:
         times = times[::stride]

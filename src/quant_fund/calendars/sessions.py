@@ -46,8 +46,14 @@ class Session:
         return self.close_utc - self.open_utc
 
     def contains(self, ts: datetime) -> bool:
-        """True when aware ``ts`` lies in ``[open_utc, close_utc)``."""
-        return self.open_utc <= ts < self.close_utc
+        """True when aware ``ts`` lies in ``[open_utc, close_utc)``.
+
+        Naive timestamps are refused here, the same way ``session_at`` refuses
+        them. A raw comparison would raise ``TypeError`` and a non-UTC aware
+        instant would still be a valid member of the interval.
+        """
+        aware = require_aware(ts, name="timestamp")
+        return self.open_utc <= aware < self.close_utc
 
 
 @runtime_checkable
@@ -68,6 +74,20 @@ class TradingCalendar(Protocol):
     def session_on(self, d: date) -> Session | None:
         """The session labeled ``d``, or None when ``d`` is not a session day."""
         ...
+
+
+def require_label_range(start: date, end: date) -> None:
+    """Refuse a swapped or non-date session label range.
+
+    ``datetime`` is a ``date``, but a timestamp is not a trading-day label.
+    An inverted range must not look like a calendar with no sessions.
+    """
+    if isinstance(start, datetime) or not isinstance(start, date):
+        raise TypeError(f"start must be a date, got {type(start).__name__}")
+    if isinstance(end, datetime) or not isinstance(end, date):
+        raise TypeError(f"end must be a date, got {type(end).__name__}")
+    if end < start:
+        raise ValueError(f"session range end {end.isoformat()} is before start {start.isoformat()}")
 
 
 def require_aware(ts: datetime, *, name: str = "timestamp") -> datetime:

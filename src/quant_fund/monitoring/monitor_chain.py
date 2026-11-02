@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.path_safety import PathSafetyError, open_private
 
 _GENESIS_PREV = "0" * 64
 KINDS = ("dashboard", "drift", "kill_switch", "gate", "other")
@@ -44,10 +45,16 @@ def _record(
 
 
 def _read(path: Path) -> list[dict[str, Any]]:
+    if path.is_symlink():
+        raise PathSafetyError(f"monitor chain refuses a symlink: {path}")
     if not path.exists():
         return []
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"monitor_chain {path} is not valid UTF-8: {exc}") from exc
     out: list[dict[str, Any]] = []
-    for line_no, line in enumerate(path.read_text().splitlines(), 1):
+    for line_no, line in enumerate(raw.splitlines(), 1):
         if not line.strip():
             continue
         try:
@@ -89,8 +96,7 @@ class MonitorChain:
             prev=recs[-1]["sha256"] if recs else _GENESIS_PREV,
         )
         line = json.dumps(rec, separators=(",", ":")) + "\n"
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_BINARY", 0))
+        fd = open_private(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT)
         try:
             os.write(fd, line.encode())
             os.fsync(fd)

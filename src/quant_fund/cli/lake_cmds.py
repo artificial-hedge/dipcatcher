@@ -13,6 +13,7 @@ from pathlib import Path
 import typer
 
 from quant_fund.cli._app import app
+from quant_fund.schemas.errors import DataContractError
 
 lineage_app = typer.Typer(help="Lineage DAG for derived datasets.")
 lake_app = typer.Typer(help="Content-addressed market-data lake. Research storage only.")
@@ -27,7 +28,6 @@ def lineage_show(
 ) -> None:
     """Print the lineage DAG for a derived dataset."""
     from quant_fund.data.lakehouse.lineage import format_dag
-    from quant_fund.schemas.errors import DataContractError
 
     try:
         text = format_dag(root, dataset)
@@ -83,12 +83,15 @@ def lake_quality(
         report_json,
     )
 
-    gap = None if max_gap_days is None else timedelta(days=max_gap_days)
-    thresholds = QualityThresholds(
-        max_abs_log_return=max_abs_log_return,
-        max_gap=gap,
-        stale_run_length=stale_run_length,
-    )
+    try:
+        gap = None if max_gap_days is None else timedelta(days=float(max_gap_days))
+        thresholds = QualityThresholds(
+            max_abs_log_return=max_abs_log_return,
+            max_gap=gap,
+            stale_run_length=stale_run_length,
+        )
+    except (DataContractError, OverflowError, ValueError, TypeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
     try:
         report = quality_report_path(path, thresholds, enforce=enforce)
     except QualityThresholdError as exc:

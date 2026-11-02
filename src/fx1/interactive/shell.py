@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import cmd
 import getpass
+import os
 import shlex
 import subprocess
 from collections.abc import Callable
@@ -21,6 +22,10 @@ import typer
 from fx1.interactive import actions, profiles
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
+from fx1.process_signals import sigterm_as_keyboard_interrupt
+
+# Operator escape hatch. Bounded so a hung ``!`` command cannot pin the REPL.
+_SHELL_TIMEOUT_S = 120.0
 
 _HELP = """\
 keys                              list model endpoints (presence-only)
@@ -36,7 +41,7 @@ harness describe <name>           one harness command's metadata
 harness run <name> [args]         execute a registered harness command
 verify <path>                     dipcatcher verify-research on a receipt/artifact
 run <tool> <args...>              launch fx1 | dipcatcher | quant with the session env
-!<shell command>                  run a raw shell command
+!<shell command>                  run a raw shell command (FX1_ALLOW_SHELL=1)
 exit                              leave the shell
 """
 
@@ -270,7 +275,22 @@ class FxiShell(cmd.Cmd):
         if not arg.strip():
             self._say_error(ValueError("usage: !<shell command>"))
             return
-        subprocess.run(arg, shell=True, check=False)  # noqa: S602  # nosec B602 — explicit operator escape hatch
+        allowed = os.environ.get("FX1_ALLOW_SHELL", "").strip().lower() in {"1", "true", "yes"}
+        if not allowed:
+            self._say_error(ValueError("shell passthrough is disabled; set FX1_ALLOW_SHELL=1"))
+            return
+        try:
+            proc = subprocess.run(  # noqa: S602  # nosec B602 — explicit operator escape hatch
+                arg,
+                shell=True,
+                check=False,
+                timeout=_SHELL_TIMEOUT_S,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            self._say_error(exc)
+            return
+        if proc.returncode:
+            typer.secho(f"shell exited {proc.returncode}", err=True, fg=typer.colors.RED)
 
     do_bang = do_shell
 
@@ -298,4 +318,5 @@ class FxiShell(cmd.Cmd):
 
 def run_shell(model: str = DEFAULT_MODEL, *, output_fn: Callable[..., None] = typer.echo) -> None:
     output_fn(orb_banner(model, _endpoint_host(model)))
-    FxiShell(model=model).cmdloop()
+    with sigterm_as_keyboard_interrupt(on_interrupt=lambda: output_fn("")):
+        FxiShell(model=model).cmdloop()

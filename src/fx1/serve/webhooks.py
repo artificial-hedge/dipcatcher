@@ -20,9 +20,18 @@ import http.client
 import ipaddress
 import math
 import os
+import random
 import socket
 import ssl
 import urllib.parse
+
+from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_attempts, require_timeout
+from quant_fund.utils.outbound import (
+    PRIVATE_ALLOW_CIDRS_ENV,
+    address_permitted,
+    parse_allow_cidrs,
+)
+from quant_fund.utils.secrets import redact_text
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -41,30 +50,12 @@ WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
-_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
 
 
-def _private_networks_allowed() -> bool:
-    """Return whether this process explicitly permits private callbacks."""
-    return os.environ.get(_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-    }
-
-
-def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Classify an address conservatively for an outbound callback."""
-    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
-        address = address.ipv4_mapped
-    return address.is_global and not (
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_multicast
-        or address.is_reserved
-        or address.is_unspecified
-    )
+def _address_permitted(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Public unicast, plus hosts inside ``FX1_PRIVATE_ALLOW_CIDRS``."""
+    networks = parse_allow_cidrs(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, ""))
+    return address_permitted(address, networks)
 
 
 def _validate_literal_host(host: str) -> None:
@@ -74,16 +65,17 @@ def _validate_literal_host(host: str) -> None:
         address = ipaddress.ip_address(candidate)
     except ValueError:
         return
-    if not _private_networks_allowed() and not _is_public_unicast(address):
+    if not _address_permitted(address):
         raise ValueError("callback_url must not target a private or special-use address")
 
 
-def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
+def _resolved_addresses(host: str, port: int, timeout: float) -> tuple[str, ...]:
     """Resolve a host and return only validated, distinct numeric addresses."""
     addresses: list[str] = []
-    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
+    for family, socktype, _proto, _canonname, sockaddr in bounded_getaddrinfo(
         host,
         port,
+        timeout,
         type=socket.SOCK_STREAM,
     ):
         if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
@@ -91,7 +83,7 @@ def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
         raw = str(sockaddr[0])
         candidate = raw.split("%", 1)[0]
         address = ipaddress.ip_address(candidate)
-        if not _private_networks_allowed() and not _is_public_unicast(address):
+        if not _address_permitted(address):
             raise ValueError(
                 f"callback_url resolved to a private or special-use address: {address}"
             )
@@ -242,16 +234,52 @@ def check_callback_url(url: str | None) -> str | None:
         or parsed.password is not None
     ):
         raise ValueError(
-            f"callback_url must be an http(s) URL with a host and no "
-            f"userinfo credentials, got {url!r}"
+            "callback_url must be an http(s) URL with a host and no userinfo credentials"
         )
     try:
         if parsed.port == 0:
             raise ValueError("port zero is not a callback destination")
     except ValueError as exc:
-        raise ValueError(f"callback_url has an invalid port, got {url!r}") from exc
+        raise ValueError("callback_url has an invalid port") from exc
     _validate_literal_host(parsed.hostname)
     return url
+
+
+def _delivery_arg_error(max_attempts: int, backoff_s: float, timeout_s: float) -> str | None:
+    if max_attempts < 1:
+        return "ValueError: max_attempts must be positive"
+    if not math.isfinite(backoff_s) or backoff_s < 0:
+        return "ValueError: backoff_s must be finite and non-negative"
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        return "ValueError: timeout_s must be finite and positive"
+    return None
+
+
+def _callback_endpoint(url: str) -> tuple[urllib.parse.ParseResult, str, int]:
+    check_callback_url(url)
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname
+    if host is None:
+        raise ValueError("callback_url has no host")
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+    return parsed, host, port
+
+
+def _retry_delay(
+    attempt: int,
+    backoff_s: float,
+    *,
+    jitter: bool,
+    rng: random.Random | None,
+) -> float:
+    """Capped exponential backoff. Jitter is drawn from ``[0, cap]``."""
+    delay = min(30.0, backoff_s * (1 << (attempt - 1)))
+    if jitter and delay > 0:
+        uniform = rng.uniform if rng is not None else random.uniform
+        return uniform(0.0, delay)
+    return delay
 
 
 def deliver_signed(
@@ -262,39 +290,40 @@ def deliver_signed(
     max_attempts: int = WEBHOOK_MAX_ATTEMPTS,
     backoff_s: float = WEBHOOK_BACKOFF_S,
     timeout_s: float = 10.0,
+    jitter: bool = True,
+    rng: random.Random | None = None,
 ) -> tuple[bool, str | None, int]:
     """POST ``body`` to a webhook ``url`` — HMAC-signed when ``secret`` is
     set. Returns ``(delivered, error, attempts)``.
 
     Transient faults (network errors, 5xx) retry ``max_attempts`` times
-    with capped exponential backoff; a 4xx is a definitive rejection and
-    is never retried. Delivery faults return as the error string — this
-    helper never raises into its caller's worker."""
+    with bounded exponential backoff and jitter; a 4xx is a definitive
+    rejection and is never retried. Delivery faults return as the error
+    string — this helper never raises into its caller's worker."""
     import time  # noqa: PLC0415 — local import keeps the module leaf
+
+    arg_error = _delivery_arg_error(max_attempts, backoff_s, timeout_s)
+    if arg_error is not None:
+        return False, arg_error, 0
 
     error: str | None = None
     try:
-        check_callback_url(url)
-        parsed = urllib.parse.urlparse(url)
-        host = parsed.hostname
-        if host is None:
-            raise ValueError("callback_url has no host")
-        port = parsed.port
-        if port is None:
-            port = 443 if parsed.scheme == "https" else 80
+        timeout_s = require_timeout(timeout_s, name="timeout_s")
+        max_attempts = require_attempts(max_attempts)
+        parsed, host, port = _callback_endpoint(url)
     except Exception as exc:  # noqa: BLE001 — invalid targets are delivery data
-        return False, f"{type(exc).__name__}: {exc}", 0
+        return False, redact_text(f"{type(exc).__name__}: {exc}"), 0
 
     for attempt in range(max_attempts):
         if attempt:
-            time.sleep(backoff_s * (1 << (attempt - 1)))
+            time.sleep(_retry_delay(attempt, backoff_s, jitter=jitter, rng=rng))
         try:
             headers = {"Content-Type": "application/json"}
             if secret:
                 ts = str(int(time.time()))
                 headers[WEBHOOK_TIMESTAMP_HEADER] = ts
                 headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(secret, ts, body)
-            addresses = _resolved_addresses(host, port)
+            addresses = _resolved_addresses(host, port, timeout_s)
             last_exception: Exception | None = None
             for address in addresses:
                 try:
@@ -312,5 +341,5 @@ def deliver_signed(
                 if last_exception is not None:
                     raise last_exception
         except Exception as exc:  # noqa: BLE001 — delivery faults are data, never raised
-            error = f"{type(exc).__name__}: {exc}"
+            error = redact_text(f"{type(exc).__name__}: {exc}")
     return False, error, max_attempts

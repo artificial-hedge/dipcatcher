@@ -327,9 +327,9 @@ def harness_describe_operation(
     ),
 ) -> None:
     """Print the exact input/output schema of one registered operation."""
-    from fx1.operations.registry import get_operation
+    from fx1.cli_errors import describe_operation_text
 
-    typer.echo(json.dumps(get_operation(operation_id).describe(), indent=2))
+    typer.echo(describe_operation_text(operation_id))
 
 
 _OPERATION_ARGUMENT_MAX_BYTES = 2_000_000
@@ -377,10 +377,9 @@ def harness_execute_operation(
         raise typer.BadParameter(
             f"cannot resolve workspace root: {exc}", param_hint="--workspace-root"
         ) from exc
-    from fx1.operations.registry import execute_operation
+    from fx1.cli_errors import execute_operation_text
 
-    result = execute_operation(operation_id, payload, workspace_root=resolved_root)
-    typer.echo(json.dumps(result, indent=2))
+    typer.echo(execute_operation_text(operation_id, payload, resolved_root))
 
 
 @corpus_app.command("build")
@@ -591,9 +590,8 @@ def harness_serve(
     ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
-    import uvicorn
-
     from fx1.serve.api import create_app
+    from fx1.serve.kill_drain import serve_until_signal
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
@@ -619,7 +617,7 @@ def harness_serve(
     except ValueError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=2) from exc
-    uvicorn.run(harness_api, host=host, port=port, reload=False, server_header=False)
+    serve_until_signal(harness_api, host=host, port=port)
 
 
 _BACKEND_HELP = (
@@ -1182,7 +1180,7 @@ def harness_selftest(
         "golden path.",
     ),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
-    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", min=1e-9, help=_TIMEOUT_HELP),
     state_dir: str | None = typer.Option(
         None,
         "--state-dir",
@@ -1192,12 +1190,13 @@ def harness_selftest(
 ) -> None:
     """Golden-path smoke: zero-config proof the harness actually works.
 
-    Local mode spins a stub OpenAI engine and the production app on
-    loopback, then walks auth, commands, a BYOK completion, SSE stream,
-    idempotent replay, the async job lifecycle, sealed-receipt verify,
-    drain, and in-process parity. Remote mode runs read-only checks only.
-    Exits 0 when every check passes, 2 otherwise — usable as a deploy gate."""
+    Local mode walks auth, commands, BYOK, SSE, replay, jobs, receipts, and
+    parity on loopback. Remote mode is read-only. Exit 0 on pass, else 2.
+    """
+    from fx1.cli_errors import reject_remote_state_dir
     from fx1.selftest import run_selftest
+
+    reject_remote_state_dir(remote, state_dir)
 
     report = run_selftest(
         remote=remote,

@@ -62,8 +62,8 @@ def portfolio_returns(asset_returns: Array, weights: Array) -> Array:
     w = np.asarray(weights, dtype=float).reshape(-1)
     if r.ndim != 2 or w.size != r.shape[1]:
         raise ValueError("asset_returns must be (T, N) and weights length N")
-    r = np.where(np.isfinite(r), r, 0.0)
-    w = np.where(np.isfinite(w), w, 0.0)
+    if not np.all(np.isfinite(r)) or not np.all(np.isfinite(w)):
+        raise ValueError("asset returns and weights must be finite")
     return np.asarray(r @ w, dtype=float)
 
 
@@ -105,8 +105,10 @@ def component_var(asset_returns: Array, weights: Array, *, alpha: float = 0.95) 
     w = np.asarray(weights, dtype=float).reshape(-1)
     if r.ndim != 2 or r.shape[0] < 8 or w.size != r.shape[1]:
         return np.full(w.size, np.nan)
-    r = np.where(np.isfinite(r), r, 0.0)
-    w = np.where(np.isfinite(w), w, 0.0)
+    if not np.all(np.isfinite(r)) or not np.all(np.isfinite(w)):
+        raise ValueError("asset returns and weights must be finite")
+    if not np.isfinite(alpha) or not 0.0 < float(alpha) < 1.0:
+        raise ValueError("alpha must lie in (0, 1)")
     cov = np.cov(r, rowvar=False, ddof=1)
     if cov.ndim == 0:
         return np.full(w.size, np.nan)
@@ -134,7 +136,9 @@ def scale_weights_to_es(
     w = np.asarray(weights, dtype=float).reshape(-1)
     if not np.isfinite(es_limit) or es_limit <= 0:
         raise ValueError("es_limit must be finite and positive")
-    if not np.isfinite(es) or es <= 0:
+    if not np.isfinite(es):
+        raise ValueError("predicted ES is not finite; refusing to leave the book fully sized")
+    if es <= 0.0:
         return w, {**blob, "scale": 1.0, "capped": False}
     scale = float(min(1.0, es_limit / es))
     return w * scale, {**blob, "scale": scale, "capped": bool(scale < 1.0 - 1e-12)}
