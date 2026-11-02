@@ -65,6 +65,12 @@ uv run --no-sync dipcatcher quorum-rotate \
 uv run --no-sync dipcatcher crown-jewels --write
 
 # epoch_chains. After the jewel pin, the rotation record, and the quorum registry.
+# Receipts are append-only. receipts/fx1_retrieval_audit.json was edited after
+# its stamp; stamping that digest records member_mutated and the chain fails.
+# Put every drifted receipts member back to the digest the head epoch already
+# names. The bytes come from this checkout's git history. A clean chain prints
+# nothing. This does not sign, and it does not invent a receipt.
+uv run --no-sync python scripts/owner_rehearsal.py --restore-stamped-receipts
 make stamp-epochs
 
 # pin_signatures. A committed quorum registry rejects a lone-key v1 signature.

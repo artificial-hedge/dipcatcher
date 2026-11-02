@@ -18,6 +18,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
 
 from quant_fund.research.gate_signatures import (
@@ -126,6 +127,195 @@ def _retarget_artifact_paths(artifacts: dict[str, object], prefix: str, dest: Pa
     return moved
 
 
+def receipt_drift(root: Path) -> list[tuple[str, str]]:
+    """Receipt members whose live bytes differ from the pinned head epoch.
+
+    Receipts are append-only. A later stamp records a digest change as
+    ``member_mutated`` and the chain fails. The list is ``(name, stamped
+    sha256)`` for missing files and for files whose bytes moved.
+    """
+    allowed = _allowed_removals(root)
+    drifted: list[tuple[str, str]] = []
+    for name, digest in _head_receipt_members(root).items():
+        path = _receipt_member_path(root, name)
+        if path.is_symlink():
+            drifted.append((name, digest))
+            continue
+        if not path.is_file():
+            if allowed.get(name) != digest:
+                drifted.append((name, digest))
+            continue
+        if hash_bytes(path.read_bytes()) != digest:
+            drifted.append((name, digest))
+    return drifted
+
+
+def historical_receipt_bytes(root: Path, name: str, digest: str) -> bytes | None:
+    """Bytes of ``receipts/<name>`` from git history whose sha256 is ``digest``."""
+    _receipt_member_path(root, name)
+    if not _sha256_hex(digest):
+        return None
+    rel = f"receipts/{name}"
+    listed = subprocess.run(
+        ["git", "-C", str(root), "rev-list", "HEAD", "--", rel],
+        capture_output=True,
+        check=False,
+    )
+    if listed.returncode != 0:
+        return None
+    for rev in listed.stdout.split():
+        if not _git_rev(rev):
+            continue
+        shown = subprocess.run(
+            ["git", "-C", str(root), "show", f"{rev.decode('ascii')}:{rel}"],
+            capture_output=True,
+            check=False,
+        )
+        if shown.returncode == 0 and hash_bytes(shown.stdout) == digest:
+            return bytes(shown.stdout)
+    return None
+
+
+def restore_stamped_receipts(root: Path) -> tuple[list[str], list[str]]:
+    """Put drifted receipts back to the digest the head epoch already names.
+
+    The bytes come from this checkout's git history. A member with no such
+    blob is listed as unrestored and left untouched. Symlinks and paths that
+    leave ``receipts/`` are refused. Epoch receipt files are not rewritten.
+    """
+    restored: list[str] = []
+    missing: list[str] = []
+    for name, digest in receipt_drift(root):
+        if _epoch_receipt_name(name):
+            missing.append(name)
+            continue
+        blob = historical_receipt_bytes(root, name, digest)
+        if blob is None:
+            missing.append(name)
+            continue
+        path = _receipt_member_path(root, name)
+        _replace_receipt(path, blob)
+        if path.is_symlink() or hash_bytes(path.read_bytes()) != digest:
+            raise RehearsalRefusal(f"restore did not land {name}")
+        restored.append(name)
+    return restored, missing
+
+
+def _allowed_removals(root: Path) -> dict[str, str]:
+    """Name to sha256 pins for receipts the chain already allowed to leave."""
+    path = root / "quality" / "epoch_allowed_removals.json"
+    if not path.is_file() or path.is_symlink():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RehearsalRefusal("allowed removals pin is unreadable") from exc
+    if not isinstance(raw, dict):
+        raise RehearsalRefusal("allowed removals pin is malformed")
+    return {
+        key: value
+        for key, value in raw.items()
+        if isinstance(key, str) and isinstance(value, str) and _sha256_hex(value)
+    }
+
+
+def _head_receipt_members(root: Path) -> dict[str, str]:
+    pin_path = root / "quality" / "epoch_heads.json"
+    try:
+        pin = json.loads(pin_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RehearsalRefusal("epoch heads pin is unreadable") from exc
+    if not isinstance(pin, dict):
+        raise RehearsalRefusal("epoch heads pin is not an object")
+    heads = pin.get("heads")
+    if not isinstance(heads, dict):
+        raise RehearsalRefusal("epoch heads pin has no heads map")
+    entry = heads.get("receipts/*.json")
+    if not isinstance(entry, dict):
+        raise RehearsalRefusal("epoch heads pin has no receipts chain")
+    receipt = entry.get("receipt")
+    if not isinstance(receipt, str) or "/" in receipt or not _epoch_receipt_name(receipt):
+        raise RehearsalRefusal("epoch heads pin names a bad receipts receipt")
+    epoch_path = _receipt_member_path(root, receipt)
+    if epoch_path.is_symlink() or not epoch_path.is_file():
+        raise RehearsalRefusal("pinned receipts epoch is not a regular file")
+    try:
+        payload = json.loads(epoch_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RehearsalRefusal("pinned receipts epoch is unreadable") from exc
+    if not isinstance(payload, dict):
+        raise RehearsalRefusal("pinned receipts epoch is not an object")
+    return _epoch_member_digests(payload)
+
+
+def _epoch_member_digests(payload: Mapping[str, object]) -> dict[str, str]:
+    members = payload.get("members")
+    if not isinstance(members, list):
+        raise RehearsalRefusal("pinned receipts epoch has no members list")
+    out: dict[str, str] = {}
+    for entry in members:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        digest = entry.get("sha256")
+        if isinstance(name, str) and isinstance(digest, str) and _sha256_hex(digest):
+            out[name] = digest
+    return out
+
+
+def _receipt_member_path(root: Path, name: str) -> Path:
+    if (
+        not name
+        or name.startswith(("/", "\\"))
+        or "\\" in name
+        or "\x00" in name
+        or "\n" in name
+        or "\r" in name
+    ):
+        raise RehearsalRefusal(f"refusing receipt member {name!r}")
+    rel = Path(name)
+    if rel.is_absolute() or ".." in rel.parts:
+        raise RehearsalRefusal(f"refusing receipt member {name!r}")
+    link = root / "receipts"
+    base = link.resolve()
+    if link.is_symlink() or not base.is_dir():
+        raise RehearsalRefusal("refusing a receipts directory that is not a real directory")
+    candidate = base / rel
+    if candidate.is_symlink():
+        raise RehearsalRefusal(f"refusing symlink receipt member {name!r}")
+    parent = candidate.parent.resolve()
+    if parent != base and base not in parent.parents:
+        raise RehearsalRefusal(f"refusing receipt member {name!r}")
+    return parent / candidate.name
+
+
+def _replace_receipt(path: Path, data: bytes) -> None:
+    if path.is_symlink():
+        raise RehearsalRefusal("refusing to write a symlink receipt")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.restore")
+    if tmp.exists() or tmp.is_symlink():
+        raise RehearsalRefusal("refusing to replace over a restore temp")
+    tmp.write_bytes(data)
+    if path.is_symlink():
+        tmp.unlink()
+        raise RehearsalRefusal("refusing to write a symlink receipt")
+    os.replace(tmp, path)
+
+
+def _epoch_receipt_name(name: str) -> bool:
+    return Path(name).name.startswith("corpus_epoch_") and name.endswith(".json")
+
+
+def _sha256_hex(value: str) -> bool:
+    return len(value) == 64 and all(char in "0123456789abcdef" for char in value)
+
+
+def _git_rev(rev: bytes) -> bool:
+    text = rev.decode("ascii", errors="ignore")
+    return text.encode("ascii") == rev and len(text) >= 7 and text.isalnum()
+
+
 def write_quorum_registry(pubkey_hex: str, path: Path) -> None:
     """Write a threshold-1 gate_quorum.v1 registry containing one public key."""
     pub = pubkey_hex.strip()
@@ -145,10 +335,26 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Throwaway owner-ceremony rehearsal")
     parser.add_argument("--public-hex", metavar="ENV")
     parser.add_argument("--quorum-registry", metavar="PATH")
+    parser.add_argument("--restore-stamped-receipts", action="store_true")
     args = parser.parse_args(argv)
+    if args.restore_stamped_receipts:
+        if args.public_hex or args.quorum_registry:
+            parser.error("--restore-stamped-receipts does not combine with other modes")
+        return _restore_cli()
     if args.public_hex or args.quorum_registry:
         return _helpers(args.public_hex, args.quorum_registry)
     return rehearse()
+
+
+def _restore_cli() -> int:
+    root = _git_root(Path.cwd())
+    restored, missing = restore_stamped_receipts(root)
+    for name in restored:
+        print(f"restored {name}")
+    if missing:
+        print("unrestored " + ", ".join(missing), file=sys.stderr)
+        return 1
+    return 0
 
 
 def _helpers(public_env: str | None, registry_path: str | None) -> int:
