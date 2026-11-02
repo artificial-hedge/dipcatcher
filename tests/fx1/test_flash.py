@@ -332,6 +332,17 @@ def test_malformed_evidence_timestamps_fail_stale() -> None:
     assert "stale" in reasons
 
 
+def test_naive_evidence_timestamps_fail_stale() -> None:
+    entry = FlashEntry(
+        text="time-sensitive inflation finding",
+        stale_after_s=60,
+        created_at="2026-10-09T00:00:00",
+        updated_at="2030-01-01T00:00:00+00:00",
+    )
+    _, reasons = score_entry(entry, "inflation", now=0)
+    assert "stale" in reasons
+
+
 def test_refresh_missing_id(store: FlashStore) -> None:
     assert refresh(store, "nope", fetch_fn=lambda url: None) is None
 
