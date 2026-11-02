@@ -77,6 +77,12 @@ two minutes. The receipt schema is `e2e_paper_soak.v1`.
 uv run pytest -q tests/end_to_end/test_paper_soak.py
 ```
 
+## Readiness scorecard
+
+`make prod-readiness` runs the smoke, the paper session, this soak, the
+wheel dry-run, the kill switch, and the other checkout checks described in
+`INSTITUTIONAL_READINESS.md`.
+
 ## Release dry-run
 
 CI's package job builds the sdist and wheel and runs the installed
