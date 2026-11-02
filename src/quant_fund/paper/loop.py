@@ -370,9 +370,11 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
     after that many *new* steps (E2E infrastructure test).
 
     ``prepare_broker``, when set, is called on each constructed broker after
-    restore and before the first step. The default ``None`` leaves construction,
+    restore and before the first step. The default ``None`` leaves     construction,
     ids, and submission unchanged.
     """
+    from quant_fund.paper.operator_book import enforce_operator_book
+
     resume_id = resume_run_id or getattr(config.paper, "resume_run_id", None) or run_id
     prior_state: dict[str, Any] | None = None
     resume_step = 0
@@ -642,8 +644,10 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
         # Never let an execution-day close leak into a next-open decision. Fresh
         # opens plus bounded prior marks are the only pre-trade valuation inputs.
         champ.mark(pretrade_marks)
+        enforce_operator_book(champ, at=exec_dt)
         if shadow is not None:
             shadow.mark(pretrade_marks)
+            enforce_operator_book(shadow, at=exec_dt)
 
         c_tgt = champion_fn(dt, config)
         s_tgt = shadow_fn(dt, config) if shadow_fn is not None else {}

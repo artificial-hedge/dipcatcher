@@ -76,3 +76,22 @@ def __getattr__(name: str) -> object:
 
 def __dir__() -> list[str]:
     return sorted(set(__all__) | set(globals()))
+
+
+def _install_module_entry_hook() -> None:
+    """Arm the kill-file watcher only for ``python -m fx1.serve.api``.
+
+    runpy sets ``sys.argv[0]`` to ``-m`` before this package is imported, and
+    rewrites it to the module path only after ``loader.get_code`` returns.
+    A normal import never sees that argv, so the hook stays out of tests.
+    """
+    import sys
+
+    if sys.argv[:1] != ["-m"]:
+        return
+    from fx1.serve.module_entry import install_module_entry_hook
+
+    install_module_entry_hook()
+
+
+_install_module_entry_hook()
