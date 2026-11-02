@@ -21,9 +21,11 @@ Evidence roots (all read-only, resolved at app construction):
 ``<data_root>`` defaults to ``$RESEARCH_API_DATA_ROOT``, then
 ``$QUANT_DATA_ROOT``, then ``<repo>/data``.
 
-Secure default: ``/health`` is the only unauthenticated route. When
-``RESEARCH_API_KEY`` is set every other route requires ``X-API-Key``; when it
-is unset only loopback clients are served. An app built with
+Secure default: ``/health`` and ``/ready`` are the only unauthenticated
+routes. ``/health`` is liveness. ``/ready`` is readiness: it is 200 only when
+the evidence roots the process serves are directories, and 503 otherwise.
+When ``RESEARCH_API_KEY`` is set every other route requires ``X-API-Key``;
+when it is unset only loopback clients are served. An app built with
 ``ResearchApiSettings.from_env`` reads that variable on each request. An
 explicit ``api_key`` is a test override and is not taken from the
 environment. The service holds no credentials and exposes no trading
@@ -64,7 +66,7 @@ from quant_fund.api.http_controls import (
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-_PUBLIC_PATHS = frozenset({"/health"})
+_PUBLIC_PATHS = frozenset({"/health", "/ready"})
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _RUN_ID_RE = re.compile(r"^[0-9a-f]{64}$")
 _RECEIPT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
@@ -419,6 +421,30 @@ def research_api_key(cfg: ResearchApiSettings) -> str | None:
     return None
 
 
+def _evidence_checks(cfg: ResearchApiSettings) -> dict[str, bool]:
+    """Directory presence for the readiness probe. No branch, no evidence read."""
+    return {
+        "data_root": cfg.data_root.is_dir(),
+        "receipts_dir": cfg.receipts_dir.is_dir(),
+        "verifier_dir": cfg.verifier_dir.is_dir(),
+        "artifacts_dir": cfg.artifacts_dir.is_dir(),
+    }
+
+
+def _ready_payload(checks: dict[str, bool]) -> tuple[int, dict[str, object]]:
+    """200 when every evidence root is a directory; 503 otherwise."""
+    ok = all(checks.values())
+    return (
+        200 if ok else 503,
+        {
+            "status": "ready" if ok else "not_ready",
+            "service": "dipcatcher-research-api",
+            "claim": "research_only",
+            "checks": checks,
+        },
+    )
+
+
 async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiSettings) -> Any:
     """Auth, body cap, and rate limit for one research-API request."""
     rejection = reject_declared_body(request, MAX_BODY_BYTES)
@@ -764,6 +790,11 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         )
 
     # -- routes ----------------------------------------------------------------
+
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        code, body = _ready_payload(_evidence_checks(cfg))
+        return JSONResponse(status_code=code, content=body)
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
