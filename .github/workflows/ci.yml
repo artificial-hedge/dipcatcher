@@ -528,7 +528,7 @@ jobs:
           python-version: ${{ matrix.python }}
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # 2026-09-03
         with:
           toolchain: "1.85.0"
           components: rustfmt, clippy
@@ -550,7 +550,7 @@ jobs:
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
