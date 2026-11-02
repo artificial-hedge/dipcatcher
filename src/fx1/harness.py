@@ -196,6 +196,9 @@ class HarnessResult(BaseModel):
 # Runner signature: (argv, timeout_s) -> (exit_code, stdout, stderr)
 Runner = Callable[[list[str], int], tuple[int, str, str]]
 
+# 124 is the conventional shell status for "command timed out".
+_TIMEOUT_EXIT_CODE = 124
+
 
 def _subprocess_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
     proc = subprocess.run(  # noqa: S603 - argv is registry-constrained
@@ -262,5 +265,20 @@ class Harness:
                 elif arg.startswith("--config="):
                     check_contained(arg.split("=", 1)[1])
             argv += list(extra_args)
-        code, out, err = self._runner(argv, command.timeout_s)
+        try:
+            code, out, err = self._runner(argv, command.timeout_s)
+        except subprocess.TimeoutExpired as exc:
+            # A command that outlived its registered budget is a *result*, not
+            # a crash: surface it on the typed contract the caller already
+            # reads, the same way the jobs twin folds a runner fault into the
+            # record instead of letting it escape as a bare 500.
+            return HarnessResult(
+                command=name,
+                exit_code=_TIMEOUT_EXIT_CODE,
+                stdout="",
+                stderr=(
+                    f"harness command {name!r} timed out after "
+                    f"{getattr(exc, 'timeout', command.timeout_s)}s (argv={argv!r})"
+                ),
+            )
         return HarnessResult(command=name, exit_code=code, stdout=out, stderr=err)

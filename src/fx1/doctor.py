@@ -15,6 +15,11 @@ import fx1
 
 
 def _count_jsonl(path: Path) -> int | str | None:
+    """Count non-blank lines.
+
+    ``None`` means the path is absent. ``"unreadable"`` means it exists but
+    cannot be decoded. The doctor reports that instead of crashing.
+    """
     try:
         if not path.is_file():
             return None
@@ -25,6 +30,11 @@ def _count_jsonl(path: Path) -> int | str | None:
 
 
 def _count_receipts(path: Path) -> int | str | None:
+    """Count receipt JSON files.
+
+    ``None`` means the directory is absent. ``"unreadable"`` means listing it
+    failed.
+    """
     try:
         if not path.is_dir():
             return None
@@ -44,12 +54,21 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
         "moonshot_key": "set" if os.environ.get("MOONSHOT_API_KEY") else "unset",
         "signing_key": "set" if os.environ.get("FX1_SIGNING_KEY") else "unset",
     }
-    receipts = _count_receipts(root / "receipts")
-    status["receipts"] = receipts if receipts is not None else "missing"
+    receipts_path = root / "receipts"
+    receipts = _count_receipts(receipts_path)
+    if receipts is not None:
+        status["receipts"] = receipts
+    else:
+        # Present-but-unreadable is a different defect from absent.
+        status["receipts"] = "unreadable" if receipts_path.is_dir() else "missing"
     for name in ("corpus", "corpus_runs", "eval", "manifest"):
         path = root / "data" / "fx1" / f"{name}.{'json' if name == 'manifest' else 'jsonl'}"
         n = _count_jsonl(path)
-        status[f"data_fx1_{name}"] = n if n is not None else "missing"
+        if n is not None:
+            status[f"data_fx1_{name}"] = n
+        else:
+            # Present-but-unreadable is a different defect from absent.
+            status[f"data_fx1_{name}"] = "unreadable" if path.is_file() else "missing"
     ledger_path = root / "data" / "fx1" / "corpus_ledger.jsonl"
     if ledger_path.is_file():
         try:
