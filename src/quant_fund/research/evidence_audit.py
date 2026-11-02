@@ -120,15 +120,16 @@ def evidence_audit_findings(
 
 
 # Regenerating the evidence index is a local script, not an open-ended job.
-_INDEX_BUILD_TIMEOUT_S = 180
+_INDEX_BUILD_TIMEOUT_S = 180.0
+_INDEX_TIMEOUT_S = _INDEX_BUILD_TIMEOUT_S
 
 
 def check_evidence_index_fresh(root: Path) -> bool | None:
     """Regenerate ``docs/evidence/index.md`` to a temp file and byte-compare.
 
-    Returns None when the index or the builder script is absent (nothing to
-    compare). Returns False when the builder fails, times out, or the bytes
-    differ — an unproven index is not fresh.
+    Returns None when the index or the builder script is absent. Returns
+    False when the builder fails, the spawn errors, the deadline hits, or
+    the bytes differ — an unproven index is not fresh.
     """
     script = root / "scripts" / "build_evidence_report.py"
     index_path = root / "docs" / "evidence" / "index.md"
@@ -142,9 +143,10 @@ def check_evidence_index_fresh(root: Path) -> bool | None:
                 [sys.executable, str(script), "--root", str(root), "--out", str(tmp_path)],
                 capture_output=True,
                 text=True,
-                timeout=_INDEX_BUILD_TIMEOUT_S,
+                timeout=_INDEX_TIMEOUT_S,
+                check=False,
             )
-        except subprocess.TimeoutExpired:
+        except (OSError, subprocess.SubprocessError):
             return False
         if proc.returncode != 0:
             return False

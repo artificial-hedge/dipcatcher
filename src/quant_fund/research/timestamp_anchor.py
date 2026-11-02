@@ -325,7 +325,7 @@ def _openssl_chain_ok(cmd: list[str]) -> bool:
             check=False,
             timeout=_OPENSSL_VERIFY_TIMEOUT_S,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.SubprocessError):
         return False
     return res.returncode == 0
 
@@ -339,5 +339,5 @@ def _openssl_available() -> bool:
             timeout=_OPENSSL_PROBE_TIMEOUT_S,
         )
         return res.returncode in (0, 1)
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.SubprocessError):
         return False

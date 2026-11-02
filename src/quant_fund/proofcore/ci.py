@@ -30,11 +30,16 @@ from quant_fund.proofcore.contracts import ProofcoreError
 # read from pyproject; this dict pins which packages MUST have a floor entry.
 REQUIRED_FLOOR_PACKAGES: tuple[str, ...] = ("pit", "proof", "leakage", "reality", "proofcore")
 
+# Shelled-out gates must die on a hang. A missing deadline looks like a
+# still-running check instead of a failure.
+_GIT_TIMEOUT_S = 15.0
+_COVERAGE_TIMEOUT_S = 120.0
+_VERIFY_TIMEOUT_S = 60.0
+# Alias kept so both deadline pins name the same fail-closed budget.
+_VERIFIER_TIMEOUT_S = _VERIFY_TIMEOUT_S
+
 VerifyFn = Callable[[Path], bool]
 RunFn = Callable[..., subprocess.CompletedProcess[str]]
-
-# One receipt verify is a short CLI. A hang must fail the gate, not pass it.
-_VERIFIER_TIMEOUT_S = 120
 
 
 def coverage_floors(pyproject_path: Path = Path("pyproject.toml")) -> dict[str, int]:
@@ -90,18 +95,24 @@ def coverage_gate(
     """
     failures: list[str] = []
     for pkg, floor in coverage_floors(pyproject_path).items():
-        proc = runner(
-            [
-                sys.executable,
-                "-m",
-                "coverage",
-                "report",
-                f"--include={_include_pattern(src_root, pkg)}",
-                f"--fail-under={floor}",
-            ],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            proc = runner(
+                [
+                    sys.executable,
+                    "-m",
+                    "coverage",
+                    "report",
+                    f"--include={_include_pattern(src_root, pkg)}",
+                    f"--fail-under={floor}",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=_COVERAGE_TIMEOUT_S,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            failures.append(f"{pkg}: coverage report failed ({type(exc).__name__})")
+            continue
         if proc.returncode != 0:
             detail = (proc.stdout + proc.stderr).strip().splitlines()
             failures.append(
@@ -168,6 +179,7 @@ def _git_revision(root: Path, *, runner: RunFn = subprocess.run) -> str | None:
             [git, "-C", str(root), "rev-parse", "HEAD"],
             capture_output=True,
             text=True,
+            timeout=_GIT_TIMEOUT_S,
             check=False,
         )
     except (OSError, subprocess.SubprocessError):
@@ -296,9 +308,10 @@ def _cli_verifier(path: Path) -> bool:
             [sys.executable, "-m", "quant_fund.cli.main", "verify-receipt", str(path)],
             capture_output=True,
             text=True,
-            timeout=_VERIFIER_TIMEOUT_S,
+            timeout=_VERIFY_TIMEOUT_S,
+            check=False,
         )
-    except subprocess.TimeoutExpired:
+    except (OSError, subprocess.SubprocessError):
         return False
     return proc.returncode == 0
 

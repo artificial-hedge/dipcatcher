@@ -200,4 +200,19 @@ def test_local_backend_reaps_engine_after_forced_kill() -> None:
     assert backend._proc is None
     proc.terminate.assert_called_once_with()
     proc.kill.assert_called_once_with()
-    assert proc.wait.call_args_list == [call(timeout=5), call()]
+    assert proc.wait.call_args_list == [call(timeout=5), call(timeout=5)]
+
+
+def test_local_backend_fails_closed_when_kill_does_not_reap() -> None:
+    proc = Mock()
+    proc.poll.return_value = None
+    proc.wait.side_effect = subprocess.TimeoutExpired("engine", 5)
+    backend = object.__new__(backends.LocalFx1Backend)
+    backend._engine_lock = threading.Lock()
+    backend._proc = proc
+
+    with pytest.raises(RuntimeError, match="did not exit within 5s after kill"):
+        backend.close()
+
+    proc.kill.assert_called_once_with()
+    assert proc.wait.call_args_list == [call(timeout=5), call(timeout=5)]

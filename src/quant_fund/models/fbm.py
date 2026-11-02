@@ -257,10 +257,14 @@ def _git_revision() -> str:
 
     try:
         out = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
         )
         return out.stdout.strip() or "unknown"
-    except OSError:
+    except (OSError, subprocess.SubprocessError):
         return "unknown"
 
 

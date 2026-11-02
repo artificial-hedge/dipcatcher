@@ -30,6 +30,10 @@ from fx1.serve.backends import HostedK3Backend
 # Console scripts shipped in the fx-1 distribution that fxi may launch.
 TOOLS: tuple[str, ...] = ("fxi", "fx1", "dipcatcher", "quant", "verify-ledger", "mc-engine")
 
+# Console scripts inherit the session env. The ceiling is long enough for an
+# eval bank and still fails closed if the child never returns.
+_TOOL_TIMEOUT_S = 600.0
+
 BackendFactory = Callable[..., HostedK3Backend]
 
 
@@ -55,7 +59,12 @@ def run_eval(out: Path | None, model: str = DEFAULT_MODEL) -> int:
     argv = [_which("fx1"), "eval", "--backend", "hosted_k3", "--model", model]
     if out is not None:
         argv += ["--out", str(out)]
-    proc = subprocess.run(argv, check=False)  # noqa: S603 — argv built from literals
+    try:
+        proc = subprocess.run(  # noqa: S603 — argv built from literals
+            argv, check=False, timeout=_TOOL_TIMEOUT_S
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"fx1 eval exceeded {_TOOL_TIMEOUT_S:g}s") from exc
     return proc.returncode
 
 
@@ -64,7 +73,12 @@ def run_tool(tool: str, args: list[str], model: str = DEFAULT_MODEL) -> int:
     if tool not in TOOLS:
         raise KeyError(f"unknown tool {tool!r}; choose from {sorted(TOOLS)}")
     _apply(model)
-    proc = subprocess.run([_which(tool), *args], check=False)  # noqa: S603
+    try:
+        proc = subprocess.run(  # noqa: S603
+            [_which(tool), *args], check=False, timeout=_TOOL_TIMEOUT_S
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"{tool} exceeded {_TOOL_TIMEOUT_S:g}s") from exc
     return proc.returncode
 
 
