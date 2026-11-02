@@ -231,18 +231,25 @@ _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 def data_manifest_contract_errors(manifest: Mapping[str, Any]) -> list[str]:
     """Contract errors for a sealed data manifest (verify-receipt dispatch)."""
     errors: list[str] = []
-    if manifest.get("schema_version") != 1:
+    schema_version = manifest.get("schema_version")
+    if type(schema_version) is not int or schema_version != 1:
         errors.append("schema_version_not_1")
-    if not manifest.get("source"):
+    source = manifest.get("source")
+    if not isinstance(source, str) or not source.strip():
         errors.append("source_missing")
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, dict) or not artifacts:
         errors.append("artifacts_missing")
         return errors
     for name, item in artifacts.items():
+        if not isinstance(name, str) or not name.strip():
+            errors.append(f"artifact:{name}:name_invalid")
         if not isinstance(item, dict):
             errors.append(f"artifact:{name}:not_object")
             continue
+        path = item.get("path")
+        if not isinstance(path, str) or not path.strip():
+            errors.append(f"artifact:{name}:path_invalid")
         digest = item.get("sha256")
         if not (isinstance(digest, str) and _SHA256_HEX.fullmatch(digest)):
             errors.append(f"artifact:{name}:sha256_invalid")

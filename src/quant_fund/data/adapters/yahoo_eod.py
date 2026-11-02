@@ -19,6 +19,7 @@ import urllib.error
 from datetime import UTC, datetime
 from email.message import Message
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 import polars as pl
@@ -125,44 +126,66 @@ def fetch_yahoo_chart(
 def parse_yahoo_chart(
     payload: dict[str, object], *, security_id: str, yahoo_symbol: str
 ) -> pl.DataFrame:
-    chart = payload.get("chart") if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        raise ValueError("yahoo chart payload must be an object")
+    chart = payload.get("chart")
     if not isinstance(chart, dict):
-        return pl.DataFrame()
+        raise ValueError("yahoo chart payload missing chart object")
     result = chart.get("result")
-    if not isinstance(result, list) or not result:
-        return pl.DataFrame()
+    if not isinstance(result, list) or len(result) != 1:
+        raise ValueError("yahoo chart payload must contain exactly one result")
     block = result[0]
     if not isinstance(block, dict):
-        return pl.DataFrame()
-    stamps = block.get("timestamp") or []
-    indicators = block.get("indicators") or {}
-    quotes = (indicators.get("quote") or [{}])[0]
-    opens = quotes.get("open") or []
-    highs = quotes.get("high") or []
-    lows = quotes.get("low") or []
-    closes = quotes.get("close") or []
-    volumes = quotes.get("volume") or []
+        raise ValueError("yahoo chart result must be an object")
+    stamps = block.get("timestamp")
+    indicators = block.get("indicators")
+    if not isinstance(stamps, list):
+        raise ValueError("yahoo chart timestamp must be a list")
+    if not isinstance(indicators, dict):
+        raise ValueError("yahoo chart indicators must be an object")
+    quotes = indicators.get("quote")
+    if not isinstance(quotes, list) or len(quotes) != 1:
+        raise ValueError("yahoo chart indicators must contain exactly one quote")
+    quote = quotes[0]
+    if not isinstance(quote, dict):
+        raise ValueError("yahoo chart quote must be an object")
+    columns: dict[str, list[Any]] = {}
+    for field in ("open", "high", "low", "close", "volume"):
+        values = quote.get(field)
+        if not isinstance(values, list):
+            raise ValueError(f"yahoo chart {field} must be a list")
+        columns[field] = values
+    n = len(stamps)
+    if any(len(values) != n for values in columns.values()):
+        raise ValueError("yahoo chart timestamp and OHLCV lists must have equal lengths")
+    opens = columns["open"]
+    highs = columns["high"]
+    lows = columns["low"]
+    closes = columns["close"]
+    volumes = columns["volume"]
     ingested = datetime.now(tz=UTC)
     suffix = ".uk" if yahoo_symbol.endswith(".L") else ".us"
     rows: list[dict[str, object]] = []
-    n = min(len(stamps), len(opens), len(highs), len(lows), len(closes), len(volumes))
     for i in range(n):
+        try:
+            day = datetime.fromtimestamp(int(stamps[i]), tz=UTC).date()
+            ts = session_close(day, suffix)
+        except (TypeError, ValueError, OverflowError, OSError) as exc:
+            raise ValueError(f"yahoo chart timestamp at row {i} is invalid") from exc
         try:
             opn = float(opens[i])
             high = float(highs[i])
             low = float(lows[i])
             close = float(closes[i])
-            volume = float(volumes[i] or 0.0)
-        except (TypeError, ValueError):
-            continue
+            volume = float(volumes[i])
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"yahoo chart OHLCV at row {i} must be numeric") from exc
         if not all(np_finite(v) and v > 0 for v in (opn, high, low, close)):
-            continue
+            raise ValueError(f"yahoo chart OHLC at row {i} must be finite and positive")
         if volume < 0 or not np_finite(volume):
-            continue
-        lo = min(opn, high, low, close)
-        hi = max(opn, high, low, close)
-        day = datetime.fromtimestamp(int(stamps[i]), tz=UTC).date()
-        ts = session_close(day, suffix)
+            raise ValueError(f"yahoo chart volume at row {i} must be finite and non-negative")
+        if high < low or not (low <= opn <= high and low <= close <= high):
+            raise ValueError(f"yahoo chart OHLC envelope at row {i} is invalid")
         rows.append(
             {
                 "security_id": security_id,
@@ -172,11 +195,11 @@ def parse_yahoo_chart(
                 "ingested_time": ingested,
                 "source": SOURCE,
                 "revision_id": REVISION,
-                "open": float(opn),
-                "high": float(hi),
-                "low": float(lo),
-                "close": float(close),
-                "volume": float(volume),
+                "open": opn,
+                "high": high,
+                "low": low,
+                "close": close,
+                "volume": volume,
                 "currency": "GBP" if suffix == ".uk" else "USD",
                 "session": "rth",
             }
