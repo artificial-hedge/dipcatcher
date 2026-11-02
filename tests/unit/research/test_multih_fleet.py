@@ -122,6 +122,23 @@ def test_run_multih_fleet_eval_smoke(tmp_path: Path) -> None:
     assert any("leader_mismatch" in e or "seal" in e for e in bad["errors"])
 
 
+def test_receipt_write_preserves_prior_file_on_crash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    receipt = {"kind": "test", "payload": {"value": 1}}
+    path = write_multih_receipt(receipt, tmp_path)
+    prior = path.read_bytes()
+
+    def crash(_fd: int, _mode: str) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("quant_fund.utils.atomicio.os.fdopen", crash)
+    with pytest.raises(KeyboardInterrupt):
+        write_multih_receipt(receipt, tmp_path)
+    assert path.read_bytes() == prior
+    assert list(tmp_path.iterdir()) == [path]
+
+
 def test_bad_horizon_fails_closed() -> None:
     fac = multih_factories(TAUS, 11, names=["empirical"])
     gens = resolve_shard_generators(["iid_gaussian"])

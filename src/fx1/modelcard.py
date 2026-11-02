@@ -11,6 +11,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 
+from quant_fund.utils.atomicio import atomic_write_text
+
 
 class EvalDelta(BaseModel):
     """Eval comparison of a candidate checkpoint against its base."""
@@ -58,9 +60,7 @@ class ModelCard(BaseModel):
         return self
 
     def save(self, path: str | Path) -> None:
-        out = Path(path)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(self.model_dump_json(indent=2), encoding="utf-8")
+        atomic_write_text(path, self.model_dump_json(indent=2))
 
     @classmethod
     def load(cls, path: str | Path) -> ModelCard:
