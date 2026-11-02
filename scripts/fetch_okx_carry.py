@@ -23,6 +23,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import polars as pl
+from vendor_http import read_vendor
 
 BASE = "https://www.okx.com"
 
@@ -33,8 +34,7 @@ def _get(path: str, *, retries: int = 6) -> dict:
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "dipcatcher-research/1.0"})
-            with urllib.request.urlopen(req, timeout=20) as r:
-                payload = json.load(r)
+            payload = json.loads(read_vendor(req, timeout=20))
             if payload.get("code") not in ("0", 0):
                 raise RuntimeError(f"okx error {payload.get('code')}: {payload.get('msg')}")
             return payload

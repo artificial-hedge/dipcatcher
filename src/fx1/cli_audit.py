@@ -25,6 +25,7 @@ import hashlib
 import math
 from typing import Any
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -2688,7 +2689,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             rr.exit_code == 0
             and rr.stdout.strip() == "remote-text"
             and remotes[0].base_url == "http://h.test"
-            and remotes[0].api_key == "k"
+            and secrets_equal(remotes[0].api_key, "k")
         )
         rbw = runner.invoke(
             app,
@@ -3417,7 +3418,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 rft_cb.exit_code == 0
                 and remotes[-1].last_ft_create is not None
                 and remotes[-1].last_ft_create.get("callback_url") == "https://hooks.test/ft"
-                and remotes[-1].last_ft_create.get("callback_secret") == "whsec-cli"
+                and secrets_equal(remotes[-1].last_ft_create.get("callback_secret"), "whsec-cli")
             )
             rft_nw = runner.invoke(
                 app,

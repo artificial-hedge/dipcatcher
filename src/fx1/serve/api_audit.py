@@ -1076,8 +1076,8 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
     # The probes below submit loopback callback_urls — the SSRF guard
     # refuses them unless the private-networks opt-in is set for this leg,
     # read per request (saved/restored verbatim).
-    saved_webhook_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_webhook_env = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
         jid_cb = ok_job.json()["job_id"]
@@ -1273,9 +1273,9 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         cb_srv.shutdown()
         cb_srv.server_close()
         if saved_webhook_env is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
         else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_webhook_env
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_webhook_env
 
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
     try:
@@ -4052,8 +4052,8 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
     # loopback callback_url is refused by the SSRF guard without the
     # private-networks opt-in, read per request (saved/restored verbatim).
-    saved_wh_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_wh_env = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
 
     def _wait_cb(job_id: str) -> dict[str, Any]:
         deadline = time.monotonic() + 10.0
@@ -4132,9 +4132,9 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.shutdown()
     _ft_srv.server_close()
     if saved_wh_env is None:
-        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
     else:
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_wh_env
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_wh_env
 
 
 def _probe_backend_probes(  # NOSONAR
@@ -5314,8 +5314,8 @@ def _probe_backend_probes(  # NOSONAR
     _dsock.close()
     # loopback callback_url needs the private-networks opt-in, read per
     # request (saved/restored verbatim).
-    saved_ev_wh = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_ev_wh = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         sub_cb = eval_app.post(
             "/harness/evals",
@@ -5429,9 +5429,9 @@ def _probe_backend_probes(  # NOSONAR
         ev_srv.shutdown()
         ev_srv.server_close()
         if saved_ev_wh is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
         else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_ev_wh
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_ev_wh
 
     # --- OpenAI-compatible ingress ------------------------------------------
     # POST /v1/chat/completions is a drop-in OpenAI surface over the gated
@@ -8196,8 +8196,8 @@ def _probe_backend_probes(  # NOSONAR
     _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
     # loopback callback_url needs the private-networks opt-in, read per
     # request (saved/restored verbatim).
-    saved_bwh_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_bwh_env = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     bwh_fid = _upload(fb)["id"]
     bwh = fb.post(
         "/v1/batches",
@@ -8264,9 +8264,9 @@ def _probe_backend_probes(  # NOSONAR
     _bwh_srv.shutdown()
     _bwh_srv.server_close()
     if saved_bwh_env is None:
-        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
     else:
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_bwh_env
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_bwh_env
     # Submit-time guards: a secret without a url is a 422, never a zombie.
     bad_cb = fb.post(
         "/v1/batches",

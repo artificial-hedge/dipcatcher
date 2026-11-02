@@ -226,7 +226,9 @@ def test_export_protocol_failure_never_reaches_the_caller(
         def close(self) -> None:
             pass
 
-    monkeypatch.setattr(http.client, "HTTPConnection", GarbageConnection)
+    import quant_fund.observe.tracing as tracing
+
+    monkeypatch.setattr(tracing, "pinned_connection", lambda *_args, **_kwargs: GarbageConnection())
 
     def work() -> int:
         with span("decision"):

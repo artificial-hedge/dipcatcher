@@ -64,6 +64,8 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+from quant_fund.utils.outbound import open_pinned  # noqa: E402
+
 _PROBE_KEY = (
     "goldenpath-changeme-probe"  # obvious placeholder token — a probe string, not a credential
 )
@@ -73,8 +75,7 @@ _ENV_KEYS = (
     "FX1_BYOK_BASE_URL",
     "FX1_BYOK_API_KEY",
     "FX1_BYOK_MODEL",
-    "FX1_BYOK_ALLOW_PRIVATE_NETWORKS",
-    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    "FX1_PRIVATE_ALLOW_CIDRS",
     "FX1_CHECKPOINT_DIR",
     "FX1_LOCAL_SERVE_URL",
     "FX1_LOCAL_SERVE_CMD",
@@ -162,7 +163,7 @@ def _wait_health(base: str, timeout_s: float) -> str:
     while time.monotonic() < deadline:
         try:
             req = urllib.request.Request(f"{base}/health")
-            with urllib.request.urlopen(req, timeout=2) as resp:  # noqa: S310 — loopback URL built by this module  # nosec B310
+            with open_pinned(req, timeout=2, allow_loopback=True) as resp:
                 if resp.status == 200:
                     return ""
                 err = f"health http {resp.status}"
@@ -557,8 +558,7 @@ def run_goldenpath(
             "FX1_BYOK_BASE_URL": stub_url,
             "FX1_BYOK_API_KEY": "stub-engine-key",
             "FX1_BYOK_MODEL": "stub-v0",
-            "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
-            "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
+            "FX1_PRIVATE_ALLOW_CIDRS": "127.0.0.0/8,::1/128",
         }
     )
     engine_sock: socket.socket | None = None
@@ -625,7 +625,7 @@ def run_goldenpath(
             os.environ["FX1_BYOK_BASE_URL"] = stub_url
             os.environ["FX1_BYOK_API_KEY"] = "stub-engine-key"
             os.environ["FX1_BYOK_MODEL"] = "stub-v0"
-            os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
             fx = Fx1Harness(harness=Harness())
             ip = fx.complete([{"role": "user", "content": "inproc"}], backend="byok")
             legs.record(
