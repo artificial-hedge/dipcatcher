@@ -315,3 +315,56 @@ def test_calibration_drill_forged_eval_length_caught() -> None:
     forged["params"]["n_eval"] = forged["params"]["n_eval"] + 1
     errors = script_receipt_contract_errors(forged["schema"], forged)
     assert "n_eval_not_echoed" in errors
+
+
+def test_envelope_probe_committed_receipts_rederive() -> None:
+    """Every newly registered envelope schema passes on its committed body."""
+    from quant_fund.research.script_receipts import (
+        envelope_probe_contract_errors,
+        vine_dominance_receipt_contract_errors,
+        vine_panel_receipt_contract_errors,
+    )
+
+    covered = {
+        envelope_probe_contract_errors,
+        vine_dominance_receipt_contract_errors,
+        vine_panel_receipt_contract_errors,
+    }
+    seen = 0
+    for path in sorted(RECEIPTS.glob("*.json")):
+        if path.name.endswith(".seal.json"):
+            continue
+        payload = json.loads(path.read_text())
+        schema = payload.get("schema")
+        key = schema if isinstance(schema, str) else payload.get("kind")
+        if SCRIPT_RECEIPT_CONTRACTS.get(key) not in covered:
+            continue
+        seen += 1
+        assert script_receipt_contract_errors(schema, payload) == [], path.name
+    assert seen >= 130
+
+
+def test_envelope_probe_forged_ok_caught() -> None:
+    payload = _load("api_audit.json")
+    forged = copy.deepcopy(payload)
+    forged["claim"]["ok"] = False
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "ok_mismatch" in errors
+
+
+def test_envelope_probe_forged_violation_tally_caught() -> None:
+    payload = _load("cache_audit.json")
+    forged = copy.deepcopy(payload)
+    forged["claim"]["n_violations"] = 1
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "n_violations_mismatch" in errors
+    assert "interpretation_echo_mismatch:n_violations" in errors
+    assert "verdict_ok_with_violations" in errors
+
+
+def test_vine_panel_forged_probe_count_caught() -> None:
+    payload = _load("vine_panel.json")
+    forged = copy.deepcopy(payload)
+    forged["claim"]["n_probes"] = forged["claim"]["n_probes"] + 1
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "n_probes_mismatch" in errors
