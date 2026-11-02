@@ -272,8 +272,6 @@ def test_cli_scores_parquet(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     assert written["passed"] is False
 
 
-def test_empty_frame_scores_vacuously() -> None:
-    report = score_bars(_clean().head(0))
-    assert report.rows == 0
-    assert report.passed is True
-    assert report.score == 1.0
+def test_empty_frame_is_refused() -> None:
+    with pytest.raises(ValueError, match="non-empty"):
+        score_bars(_clean().head(0))

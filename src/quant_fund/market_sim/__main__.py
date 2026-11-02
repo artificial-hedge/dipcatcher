@@ -13,6 +13,26 @@ import sys
 from pathlib import Path
 
 
+def _events(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("events must be an integer in [1, 20000000]") from exc
+    if number < 1 or number > 20_000_000:
+        raise argparse.ArgumentTypeError("events must be an integer in [1, 20000000]")
+    return number
+
+
+def _seed(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("seed must be a non-negative integer") from exc
+    if number < 0:
+        raise argparse.ArgumentTypeError("seed must be a non-negative integer")
+    return number
+
+
 def _parser() -> argparse.ArgumentParser:
     from quant_fund import __version__
 
@@ -26,8 +46,8 @@ def _parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     bench = sub.add_parser("bench", help="time the matching core")
-    bench.add_argument("--events", type=int, default=1_000_000)
-    bench.add_argument("--seed", type=int, default=1)
+    bench.add_argument("--events", type=_events, default=1_000_000)
+    bench.add_argument("--seed", type=_seed, default=1)
 
     stylized = sub.add_parser("stylized", help="run the pre-registered fact tests")
     stylized.add_argument("--skip-impact", action="store_true")
@@ -36,7 +56,7 @@ def _parser() -> argparse.ArgumentParser:
     sub.add_parser("stress", help="stress momentum and mean-reversion weights")
 
     report = sub.add_parser("report", help="bench, stylized facts, scenarios, and stress")
-    report.add_argument("--events", type=int, default=1_000_000)
+    report.add_argument("--events", type=_events, default=1_000_000)
     report.add_argument("--out", type=Path, default=None)
     return parser
 

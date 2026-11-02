@@ -35,6 +35,9 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, pl.exceptions.PolarsError) as exc:
         sys.stderr.write(f"error: cannot read parquet {args.parquet}: {exc}\n")
         return 2
+    if frame.is_empty():
+        sys.stderr.write(f"error: {args.parquet} has no rows\n")
+        return 2
     report = score_bars(frame, dataset=str(args.parquet))
     text = report_json(report)
     if args.out is not None:
