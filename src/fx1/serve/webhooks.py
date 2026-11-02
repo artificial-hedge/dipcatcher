@@ -24,6 +24,8 @@ import socket
 import ssl
 import urllib.parse
 
+from quant_fund.utils.outbound import address_allowed
+
 __all__ = [
     "WEBHOOK_BACKOFF_S",
     "WEBHOOK_MAX_ATTEMPTS",
@@ -53,18 +55,10 @@ def _private_networks_allowed() -> bool:
     }
 
 
-def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Classify an address conservatively for an outbound callback."""
-    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
-        address = address.ipv4_mapped
-    return address.is_global and not (
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_multicast
-        or address.is_reserved
-        or address.is_unspecified
-    )
+def _address_permitted(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Public unicast, or RFC1918/loopback when the operator opted in."""
+    allow = _private_networks_allowed()
+    return address_allowed(address, allow_loopback=allow, allow_private=allow)
 
 
 def _validate_literal_host(host: str) -> None:
@@ -74,7 +68,7 @@ def _validate_literal_host(host: str) -> None:
         address = ipaddress.ip_address(candidate)
     except ValueError:
         return
-    if not _private_networks_allowed() and not _is_public_unicast(address):
+    if not _address_permitted(address):
         raise ValueError("callback_url must not target a private or special-use address")
 
 
@@ -91,7 +85,7 @@ def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
         raw = str(sockaddr[0])
         candidate = raw.split("%", 1)[0]
         address = ipaddress.ip_address(candidate)
-        if not _private_networks_allowed() and not _is_public_unicast(address):
+        if not _address_permitted(address):
             raise ValueError(
                 f"callback_url resolved to a private or special-use address: {address}"
             )

@@ -55,6 +55,7 @@ from fx1.sdk import (
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
+from quant_fund.utils.outbound import literal_destination_refusal
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -111,6 +112,20 @@ class HarnessCompatError(RuntimeError):
         self.code = code
 
 
+def _refuse_disallowed_literal(url: str) -> None:
+    """Block metadata and other non-routable literals before ``urlopen``.
+
+    Hostnames are left to the caller's transport so tests can stub DNS.
+    Operator LAN literals (loopback and RFC1918) stay allowed.
+    """
+    host = urllib.parse.urlparse(url).hostname
+    if not host:
+        return
+    reason = literal_destination_refusal(host, allow_loopback=True, allow_private=True)
+    if reason:
+        raise HarnessTransportError(f"harness destination refused: {reason}")
+
+
 def _urllib_transport(
     method: str,
     url: str,
@@ -127,6 +142,7 @@ def _urllib_transport(
     elif payload is not None:
         data = json.dumps(payload).encode()
         req_headers["Content-Type"] = "application/json"
+    _refuse_disallowed_literal(url)
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
     try:
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310

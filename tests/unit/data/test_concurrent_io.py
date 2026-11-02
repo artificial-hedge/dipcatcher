@@ -420,12 +420,21 @@ class _BoomConn:
         pass
 
 
+def _stub_public_hop(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep fake-host pool tests off the network. The checkout double is the subject."""
+    monkeypatch.setattr(
+        "quant_fund.data.concurrent_io.public_addresses",
+        lambda _host, _port, **_kwargs: ("203.0.113.10",),
+    )
+
+
 @pytest.mark.parametrize("boom", [KeyboardInterrupt, SystemExit])
 def test_pooled_stream_base_exception_leaves_no_partial_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, boom: type[BaseException]
 ) -> None:
     """Interrupts mid-stream must not leave a truncated ``dest``."""
     pool = ConnectionPool()
+    _stub_public_hop(monkeypatch)
     monkeypatch.setattr(pool, "checkout", lambda *_a, **_k: _BoomConn(boom))
     dest = tmp_path / "interrupted.bin"
     dest.write_bytes(b"stale-prior-content")
@@ -448,6 +457,7 @@ def test_pooled_stream_replaces_existing_dest_atomically(
         real_replace(src, dst)  # type: ignore[arg-type]
 
     monkeypatch.setattr("quant_fund.data.concurrent_io.os.replace", spy_replace)
+    _stub_public_hop(monkeypatch)
     pool = ConnectionPool()
     body = b"complete-payload"
 
@@ -687,3 +697,36 @@ def test_probe_names_overlap_and_keep_input_order(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr("fx1.data.sources.router.build_adapter", build_adapter)
     assert probe_names(["wind", "ifind"]) == ["probe:wind", "probe:ifind"]
     assert probe_names(["only"]) == ["probe:only"]
+
+
+def test_pooled_request_refuses_special_use_and_pins_loopback(
+    http_server: _Server, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import socket
+
+    real_getaddrinfo = socket.getaddrinfo
+
+    def resolve(host: str, port: int, *args: object, **kwargs: object) -> list[tuple[object, ...]]:
+        if host == "evil.example":
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.169.254", port))]
+        return real_getaddrinfo(host, port, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr("quant_fund.utils.outbound.socket.getaddrinfo", resolve)
+    with pytest.raises(IoError, match="non-public"):
+        pooled_request("GET", "http://evil.example/latest/", timeout=1, max_bytes=10)
+    with pytest.raises(IoError):
+        pooled_request("GET", "http://169.254.169.254/", timeout=1, max_bytes=10)
+    with pytest.raises(IoError):
+        pooled_request("GET", "http://192.88.99.1/", timeout=1, max_bytes=10)
+
+    seen: list[object] = []
+    real = socket.create_connection
+
+    def spy(address: object, *args: object, **kwargs: object) -> object:
+        seen.append(address)
+        return real(address, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr("quant_fund.utils.outbound.socket.create_connection", spy)
+    status, body = pooled_request("GET", _url(http_server, "/ok"), timeout=2, max_bytes=100)
+    assert (status, body) == (200, b"ok")
+    assert seen and seen[0][0] == "127.0.0.1"  # type: ignore[index]
