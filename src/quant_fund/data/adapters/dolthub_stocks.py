@@ -72,10 +72,14 @@ def parse_symbols(value: str | Sequence[str] | None) -> list[str]:
     """Uppercase, de-duplicated ticker list. Dots (``BRK.B``) are kept."""
     if value is None:
         return []
-    parts = value.split(",") if isinstance(value, str) else list(value)
+    if not isinstance(value, Sequence):
+        raise ValueError("symbols must be a string or sequence of strings")
+    parts = value.split(",") if isinstance(value, str) else value
     out: list[str] = []
     for part in parts:
-        symbol = str(part).strip().upper()
+        if not isinstance(part, str):
+            raise ValueError("ticker values must be strings")
+        symbol = part.strip().upper()
         if not symbol:
             continue
         if any(ch in symbol for ch in "/\\") or any(ch.isspace() for ch in symbol):
@@ -85,18 +89,28 @@ def parse_symbols(value: str | Sequence[str] | None) -> list[str]:
 
 
 def parse_bound(value: date | datetime | str, *, role: str) -> date:
-    """Inclusive calendar bound for SQL date filters."""
+    """Inclusive calendar bound for SQL date filters.
+
+    Aware datetimes are converted to UTC before taking their calendar date.
+    Naive datetimes keep their calendar date.
+    """
     if isinstance(value, datetime):
         return value.astimezone(UTC).date() if value.tzinfo else value.date()
     if isinstance(value, date):
         return value
-    text = str(value).strip()
+    if not isinstance(value, str):
+        raise ValueError(f"invalid {role} date {value!r}")
+    text = value.strip()
     try:
-        if "T" in text:
-            return parse_bound(datetime.fromisoformat(text.replace("Z", "+00:00")), role=role)
-        return date.fromisoformat(text[:10])
+        return date.fromisoformat(text)
+    except ValueError:
+        pass
+    raw = text[:-1] + "+00:00" if text.endswith("Z") else text
+    try:
+        parsed = datetime.fromisoformat(raw)
     except ValueError as exc:
         raise ValueError(f"invalid {role} date {value!r}") from exc
+    return parse_bound(parsed, role=role)
 
 
 def _sql_string_list(values: Sequence[str]) -> str:

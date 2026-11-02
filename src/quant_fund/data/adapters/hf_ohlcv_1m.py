@@ -168,10 +168,14 @@ def parse_symbols(value: str | list[str] | tuple[str, ...] | None) -> list[str]:
     """Split a comma-separated ticker list. Matching is uppercase, dots kept."""
     if value is None:
         return []
-    parts = value.split(",") if isinstance(value, str) else list(value)
+    if not isinstance(value, str | list | tuple):
+        raise ValueError("symbols must be a string, list, or tuple of strings")
+    parts = value.split(",") if isinstance(value, str) else value
     out: list[str] = []
     for part in parts:
-        symbol = str(part).strip().upper()
+        if not isinstance(part, str):
+            raise ValueError("ticker values must be strings")
+        symbol = part.strip().upper()
         if not symbol:
             continue
         if any(ch in symbol for ch in "/\\") or any(ch.isspace() for ch in symbol):

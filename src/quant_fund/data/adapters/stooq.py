@@ -74,7 +74,7 @@ def session_close(day: date, suffix: str) -> datetime:
 
 def parse_stooq_csv(text: str, *, security_id: str, stooq_symbol: str) -> pl.DataFrame:
     """Parse Stooq ``Date,Open,High,Low,Close,Volume`` into PIT bars."""
-    reader = csv.DictReader(io.StringIO(text))
+    reader = csv.DictReader(io.StringIO(text, newline=""))
     ingested = datetime.now(tz=UTC)
     rows: list[dict[str, object]] = []
     for raw in reader:
