@@ -52,3 +52,5 @@ def stop_metrics_server() -> None:
         server.server_close()
     if thread is not None:
         thread.join(timeout=2)
+        if thread.is_alive():
+            raise RuntimeError("metrics server thread did not stop within 2 seconds")
