@@ -385,23 +385,13 @@ class AlpacaBroker:
             if found is None:
                 raise BrokerRejected("order is not at the broker")
             target = found.broker_order_id
-        payload = self._request("DELETE", f"/v2/orders/{quote(target, safe='')}", None)
-        if payload == {}:
-            recovered = self.recover(client_order_id)
-            if recovered is not None:
-                return recovered
-            return BrokerAck(
-                client_order_id=client_order_id,
-                broker_order_id=target,
-                status="canceled",
-                filled_quantity=0.0,
-                fill_price=None,
-                fills=(),
-                reason="",
-            )
-        if not isinstance(payload, dict):
-            raise BrokerRejected("broker cancel response was not an object")
-        return self._ack(payload)
+        try:
+            payload = self._request("DELETE", f"/v2/orders/{quote(target, safe='')}", None)
+        except BrokerRejected as exc:
+            return _reconciled_cancel(self, client_order_id, cause=exc)
+        except OSError as exc:
+            return _reconciled_cancel(self, client_order_id, cause=exc)
+        return _cancel_ack(self, payload, client_order_id)
 
     def recover(self, client_order_id: str) -> BrokerAck | None:
         # Alpaca documents a query parameter, not a path segment. A path
@@ -487,7 +477,11 @@ class AlpacaBroker:
         symbol = str(payload.get("symbol") or "")
         side = str(payload.get("side") or "")
         fills: tuple[BrokerFill, ...] = ()
-        if status in {"filled", "partially_filled"} and filled > 0.0 and fill_price is not None:
+        if (
+            status in {"filled", "partially_filled", "canceled"}
+            and filled > 0.0
+            and fill_price is not None
+        ):
             when = (
                 payload.get("filled_at") or payload.get("updated_at") or payload.get("submitted_at")
             )
@@ -614,3 +608,40 @@ def _broker_error(status: int, parsed: Any, secrets: tuple[str, str]) -> str:
     message = _redact(message, secrets)[:300]
     detail = f": {message}" if message else ""
     return f"broker HTTP {status}{detail}"
+
+
+def _cancel_unconfirmed(client_order_id: str) -> str:
+    return (
+        f"cancel of {client_order_id} could not be confirmed; "
+        "reconcile before retrying and do not assume the cancel succeeded"
+    )
+
+
+def _reconciled_cancel(
+    broker: AlpacaBroker,
+    client_order_id: str,
+    *,
+    cause: BaseException | None = None,
+) -> BrokerAck:
+    """Return the broker's order when a cancel response is not itself proof."""
+    try:
+        found = broker.recover(client_order_id)
+    except (BrokerRejected, OSError) as exc:
+        raise LiveGateError(_cancel_unconfirmed(client_order_id)) from exc
+    if found is None or found.status == "unmapped":
+        raise LiveGateError(_cancel_unconfirmed(client_order_id)) from cause
+    return found
+
+
+def _cancel_ack(broker: AlpacaBroker, payload: Any, client_order_id: str) -> BrokerAck:
+    """Trust a cancel body only when it names this order with a known status."""
+    if payload == {} or not isinstance(payload, dict):
+        return _reconciled_cancel(broker, client_order_id)
+    ack = broker._ack(payload)
+    if (
+        ack.client_order_id != client_order_id
+        or ack.status == "unmapped"
+        or not ack.broker_order_id
+    ):
+        return _reconciled_cancel(broker, client_order_id)
+    return ack
