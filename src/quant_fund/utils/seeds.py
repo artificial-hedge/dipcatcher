@@ -26,3 +26,17 @@ def set_global_seed(seed: int) -> None:
             torch.cuda.manual_seed_all(seed)
     except ImportError:
         pass
+
+
+def pin_catalog_threads() -> None:
+    """One intra-op thread before the research catalog runs.
+
+    OpenMP and BLAS are pinned separately. PyTorch keeps its own pool at
+    the host CPU count, and intra-op threads lock after the first parallel
+    region. A checkout without torch is a no-op.
+    """
+    try:
+        import torch
+    except ImportError:
+        return
+    torch.set_num_threads(1)
