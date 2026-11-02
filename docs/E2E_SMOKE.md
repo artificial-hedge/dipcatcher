@@ -43,3 +43,24 @@ uv run python -m quant_fund.pipeline.e2e_smoke --root /tmp/e2e-smoke
 thread. The direct module entry prints the receipt JSON, including `digest`.
 Repeat it with a second `--root` and the same `--seed` to compare digests.
 A laptop run is well under five minutes.
+
+## Paper sessions
+
+The same fixture continues into a simulated paper book. Four session dates,
+two names, one share each, filled at that session's close. The book is
+checkpointed halfway and resumed. After the fills:
+
+- an order above the quantity cap is rejected
+- the kill switch rejects a later submit
+- cancel of a working order still succeeds while new orders are halted
+- a fresh session opened from the checkpoint reproduces positions and cash
+
+A NaN, an infinity, or an empty book raises. Nothing in this path opens a
+socket. The receipt schema is `e2e_paper.v1`, labeled SYNTHETIC, with
+`live_pnl_claim` false. Two roots and the same seed share a digest.
+
+```bash
+uv run python -m quant_fund.simtest.e2e_paper --root /tmp/e2e-paper
+```
+
+`make e2e-smoke` collects this stage with the ingest-to-report smoke.

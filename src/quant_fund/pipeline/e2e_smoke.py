@@ -69,6 +69,17 @@ def default_config_path() -> Path:
     return Path(__file__).resolve().parents[3] / "configs" / "e2e_smoke.yaml"
 
 
+def load_smoke_config(
+    root: str | Path,
+    *,
+    config_path: str | Path | None = None,
+    seed: int | None = None,
+) -> AppConfig:
+    """Load the bounded SYNTHETIC smoke config with ``root`` as the lake."""
+    chosen = None if config_path is None else Path(config_path)
+    return _load_smoke_config(Path(root), chosen, seed)
+
+
 def require_rows(stage: str, frame: pl.DataFrame) -> None:
     """Reject a frame with no rows."""
     if frame.height == 0:

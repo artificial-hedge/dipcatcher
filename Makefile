@@ -103,7 +103,7 @@ doctor: ## Harness environment check
 demo-data: ## Generate labeled-SYNTHETIC offline demo dataset into data/demo/
 	uv run python scripts/gen_demo_data.py
 
-e2e-smoke: ## Deterministic SYNTHETIC ingest-to-report smoke (<5 min)
+e2e-smoke: ## Deterministic SYNTHETIC ingest-to-report and paper-session smoke
 	$(TEST_ENV) uv run pytest -q -m e2e_smoke
 
 native: ## Build optional quant_core (Rust + maturin). NumPy stays the fallback.

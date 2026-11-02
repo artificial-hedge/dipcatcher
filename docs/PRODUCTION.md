@@ -23,7 +23,9 @@ managed keys).
       re-resolving.
 - [ ] `make lint` and `make typecheck` pass.
 - [ ] `make test` passes (the PR-gate lane: not network, not slow).
-- [ ] `make e2e-smoke` passes. Same seed, two offline runs, one digest.
+- [ ] `make e2e-smoke` passes. Same seed, two offline runs, one digest
+      for the ingest-to-report path and one for the paper-session loop
+      (kill switch, oversize reject, cancel while halted, restart).
       See [`E2E_SMOKE.md`](E2E_SMOKE.md). The smoke is a SYNTHETIC
       correctness check, not market evidence.
 - [ ] `uv run dipcatcher doctor --config configs/research.yaml` exits `0`
