@@ -63,8 +63,12 @@ env:
   TOKENIZERS_PARALLELISM: "false"
   HYPOTHESIS_PROFILE: ci
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   test:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     name: ${{ matrix.os }} / py${{ matrix.python }} / shard${{ matrix.shard }}
     runs-on: ${{ matrix.os }}
     # macOS/Windows shards regularly brush the old 45-min ceiling after

@@ -51,8 +51,12 @@ concurrency:
 permissions:
   contents: read
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   reproduce-native-merge:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
@@ -90,6 +94,7 @@ jobs:
   # be reproduced without them. Enable by committing the bars or setting
   # SOTA_ARTIFACT_URI to an s3:// prefix that mirrors data/raw/sources/.
   reproduce-kronos-merge:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
