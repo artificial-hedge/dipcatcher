@@ -156,7 +156,7 @@ def test_url_policy_blocks_non_http_and_private() -> None:
     assert url_policy_error("http://192.168.1.1/") is not None
     assert url_policy_error("http://10.0.0.5/") is not None
     assert url_policy_error("http://[::1]/") is not None
-    assert url_policy_error("https://example.com/page") is None
+    assert url_policy_error("https://example.com/page", resolve_fn=_public_resolve) is None
 
 
 def test_url_policy_blocks_dns_rebinding_to_private() -> None:

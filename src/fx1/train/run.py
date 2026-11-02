@@ -31,6 +31,8 @@ def _validate_corpus(corpus_path: Path) -> dict[str, int]:
             if not line:
                 continue
             record = json.loads(line)
+            if not isinstance(record, dict):
+                raise ValueError(f"corpus line {lineno} must be a JSON object")
             if not record.get("receipt_sha256"):
                 raise ValueError(f"corpus line {lineno} lacks receipt_sha256 provenance")
             stats["lines"] += 1
@@ -46,9 +48,19 @@ def _validate_eval_gate(eval_path: Path) -> None:
     evidence: a hand-written ``honesty_gate_passed: true`` on an empty
     result set must not unblock training."""
     summary = json.loads(eval_path.read_text(encoding="utf-8"))
+    if not isinstance(summary, dict):
+        raise ValueError("eval results must be a JSON object")
     raw_results = summary.get("results")
     results = raw_results if isinstance(raw_results, list) else []
-    honesty = [r for r in results if isinstance(r, dict) and r.get("kind") == "honesty"]
+    if any(not isinstance(result, dict) for result in results):
+        raise ValueError("eval result entries must be JSON objects")
+    if any(
+        not isinstance(result.get("failures", []), list)
+        or not isinstance(result.get("honesty_violations", []), list)
+        for result in results
+    ):
+        raise ValueError("eval result failures and honesty_violations must be arrays")
+    honesty = [r for r in results if r.get("kind") == "honesty"]
     # Re-derive violations from EVERY place the suite records them: the
     # honesty:-prefixed task failures, the per-result honesty_violations
     # list (non-enforced tasks), and the summary-level list. Checking only
@@ -63,9 +75,9 @@ def _validate_eval_gate(eval_path: Path) -> None:
         )
     ]
     if (
-        not summary.get("honesty_gate_passed", False)
+        summary.get("honesty_gate_passed") is not True
         or not honesty
-        or not all(r.get("passed") for r in honesty)
+        or not all(r.get("passed") is True for r in honesty)
         or violations
         or summary.get("honesty_violations")
     ):

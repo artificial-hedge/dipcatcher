@@ -22,6 +22,7 @@ so the engine and its tests never need a live socket.
 from __future__ import annotations
 
 import ipaddress
+import math
 import socket
 import threading
 import urllib.error
@@ -96,6 +97,7 @@ def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> 
         infos = resolve_fn(host, 80)
     except OSError as exc:
         return False, f"cannot resolve host ({type(exc).__name__})"
+    public_found = False
     for info in infos:
         addr = info[4][0]
         try:
@@ -104,19 +106,26 @@ def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> 
             continue
         if not _ip_is_public(ip):
             return False, f"host {host} resolves to non-public address {addr}"
+        public_found = True
+    if not public_found:
+        return False, f"host {host} did not resolve to a public address"
     return True, ""
 
 
 def url_policy_error(url: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> str | None:
     """Why *url* may not be fetched; ``None`` when it may. Never echoes secrets."""
-    parsed = urllib.parse.urlparse(url)
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+    except ValueError:
+        return "invalid URL"
     if parsed.scheme not in {"http", "https"}:
         return f"scheme {parsed.scheme!r} is not http(s)"
     if parsed.username is not None or parsed.password is not None:
         return "url must not embed credentials"
-    if not parsed.hostname:
+    if not hostname:
         return "url names no host"
-    allowed, reason = host_is_public(parsed.hostname, resolve_fn=resolve_fn)
+    allowed, reason = host_is_public(hostname, resolve_fn=resolve_fn)
     if not allowed:
         return reason
     return None
@@ -343,6 +352,21 @@ def fetch_page(
     """Fetch one URL with policy, size, and redirect limits. Never raises for
     policy or transport reasons — problems land in ``FetchResult.error``."""
     result = FetchResult(url=url)
+    try:
+        valid_timeout = (
+            not isinstance(timeout_s, bool) and math.isfinite(timeout_s) and timeout_s > 0
+        )
+    except TypeError:
+        valid_timeout = False
+    if not valid_timeout:
+        result.error = "invalid timeout_s: must be finite and > 0"
+        return result
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 1:
+        result.error = "invalid max_bytes: must be a positive integer"
+        return result
+    if isinstance(max_redirects, bool) or not isinstance(max_redirects, int) or max_redirects < 0:
+        result.error = "invalid max_redirects: must be a nonnegative integer"
+        return result
     if check_policy:
         policy = url_policy_error(url, resolve_fn=resolve_fn)
         if policy is not None:

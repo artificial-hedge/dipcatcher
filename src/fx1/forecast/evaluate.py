@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
+from numbers import Integral
 from typing import Any, cast
 
 import numpy as np
@@ -58,8 +59,9 @@ def forward_simple_returns(bars: pl.DataFrame, horizon: int) -> pl.DataFrame:
     Closes must be finite and positive. Anything else raises before a label
     is computed.
     """
-    if horizon < 1:
-        raise ValueError("horizon must be >= 1")
+    if isinstance(horizon, bool) or not isinstance(horizon, Integral) or horizon < 1:
+        raise ValueError("horizon must be an integer >= 1")
+    horizon = int(horizon)
     frame = normalize_bar_times(bars)
     for name in ("security_id", "event_time", "close"):
         if name not in frame.columns:
