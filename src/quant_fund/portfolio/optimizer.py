@@ -233,7 +233,7 @@ def component_risk(weights: Array, sigma: Array) -> tuple[Array, Array, float]:
     if not np.isfinite(v) or v < -1e-10:
         raise ValueError("sigma produces an invalid portfolio variance")
     sig_p = float(np.sqrt(max(v, 0.0)))
-    if sig_p == 0:
+    if sig_p <= 0.0:
         z = np.zeros_like(w)
         return z, z, 0.0
     sw = s @ w

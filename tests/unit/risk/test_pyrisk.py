@@ -144,10 +144,12 @@ def test_ewma_variance_and_var_es() -> None:
 
 
 def test_portfolio_returns_and_validation() -> None:
-    a = np.array([[0.01, 0.02], [0.03, 0.04], [np.nan, 0.01]])
+    a = np.array([[0.01, 0.02], [0.03, 0.04], [0.02, 0.01]])
     w = np.array([0.5, 0.5])
     pr = portfolio_returns(a, w)
-    assert pr.tolist() == pytest.approx([0.015, 0.035, 0.005])
+    assert pr.tolist() == pytest.approx([0.015, 0.035, 0.015])
+    with pytest.raises(ValueError, match="finite"):
+        portfolio_returns(np.array([[0.01, 0.02], [np.nan, 0.01]]), w)
     with pytest.raises(ValueError, match="T, N"):
         portfolio_returns(np.ones(5), w)
     with pytest.raises(ValueError, match="length N"):
