@@ -74,9 +74,8 @@ def _link_or_copy(src: Path, dst: Path) -> None:
         shutil.copy2(src, dst)
 
 
-def _shadow_corpus(corpus_dir: Path, extra: Path | None = None) -> Path:
+def _shadow_corpus(corpus_dir: Path, shadow: Path, extra: Path | None = None) -> Path:
     """Link the corpus (+ optional extra receipt) into a private dir."""
-    shadow = Path(tempfile.mkdtemp(prefix="admit_corpus_"))
     for path in sorted(corpus_dir.glob("*.json")):
         if path.is_file():
             _link_or_copy(path, shadow / path.name)
@@ -167,36 +166,40 @@ def admission_check(
     # -- 3. lattice delta -------------------------------------------------------
     from quant_fund.research.receipt_lattice import receipt_lattice
 
-    before_shadow = _shadow_corpus(corpus_dir)
-    after_shadow = _shadow_corpus(corpus_dir, extra=candidate)
-    pins = dict(known_inconsistent or {})
-    before = receipt_lattice(before_shadow, known_inconsistent=pins)
-    after = receipt_lattice(after_shadow, known_inconsistent=pins)
-    new_inconsistent = _inconsistent_groups(after) - _inconsistent_groups(before)
-    checks.append(
-        {
-            "name": "lattice",
-            "ok": not new_inconsistent,
-            "new_inconsistent_groups": len(new_inconsistent),
-            "groups_after": after.get("n_claim_groups"),
-        }
-    )
+    with (
+        tempfile.TemporaryDirectory(prefix="admit_corpus_") as before_tmp,
+        tempfile.TemporaryDirectory(prefix="admit_corpus_") as after_tmp,
+    ):
+        before_shadow = _shadow_corpus(corpus_dir, Path(before_tmp))
+        after_shadow = _shadow_corpus(corpus_dir, Path(after_tmp), extra=candidate)
+        pins = dict(known_inconsistent or {})
+        before = receipt_lattice(before_shadow, known_inconsistent=pins)
+        after = receipt_lattice(after_shadow, known_inconsistent=pins)
+        new_inconsistent = _inconsistent_groups(after) - _inconsistent_groups(before)
+        checks.append(
+            {
+                "name": "lattice",
+                "ok": not new_inconsistent,
+                "new_inconsistent_groups": len(new_inconsistent),
+                "groups_after": after.get("n_claim_groups"),
+            }
+        )
 
-    # -- 4. corpus FDR delta (evidence — never gate-driving on its own) ---------
-    from quant_fund.research.corpus_inference import corpus_audit
+        # -- 4. corpus FDR delta (evidence — never gate-driving on its own) -----
+        from quant_fund.research.corpus_inference import corpus_audit
 
-    corpus_before = corpus_audit(before_shadow, q=q)
-    corpus_after = corpus_audit(after_shadow, q=q)
-    added = sorted(_survivors(corpus_after) - _survivors(corpus_before))
-    removed = sorted(_survivors(corpus_before) - _survivors(corpus_after))
-    checks.append(
-        {
-            "name": "corpus",
-            "ok": True,
-            "survivors_added": len(added),
-            "survivors_removed": len(removed),
-        }
-    )
+        corpus_before = corpus_audit(before_shadow, q=q)
+        corpus_after = corpus_audit(after_shadow, q=q)
+        added = sorted(_survivors(corpus_after) - _survivors(corpus_before))
+        removed = sorted(_survivors(corpus_before) - _survivors(corpus_after))
+        checks.append(
+            {
+                "name": "corpus",
+                "ok": True,
+                "survivors_added": len(added),
+                "survivors_removed": len(removed),
+            }
+        )
 
     corpus_files = sorted(p for p in corpus_dir.glob("*.json") if p.is_file())
     inputs_sha256 = hash_bytes(
@@ -357,25 +360,26 @@ def admit_batch(
             raise ValueError(f"candidate receipt {cand} does not exist")
 
     changed_names = {c.name for c in ordered}
-    shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
-    for path in sorted(corpus_dir.glob("*.json")):
-        if path.is_file() and path.name not in changed_names:
-            _link_or_copy(path, shadow / path.name)
-
     results: list[dict[str, Any]] = []
-    for cand in ordered:
-        result = admission_check(
-            cand,
-            shadow,
-            q=q,
-            known_inconsistent=known_inconsistent,
-            tombstone_dir=corpus_dir,
-        )
-        results.append(result)
-        # Post-merge coexistence: a merged diff lands all of its files
-        # together, so each later candidate must clear a corpus that already
-        # contains the earlier ones — whatever verdict they drew.
-        _link_or_copy(cand, shadow / cand.name)
+    with tempfile.TemporaryDirectory(prefix="admit_batch_base_") as temporary:
+        shadow = Path(temporary)
+        for path in sorted(corpus_dir.glob("*.json")):
+            if path.is_file() and path.name not in changed_names:
+                _link_or_copy(path, shadow / path.name)
+
+        for cand in ordered:
+            result = admission_check(
+                cand,
+                shadow,
+                q=q,
+                known_inconsistent=known_inconsistent,
+                tombstone_dir=corpus_dir,
+            )
+            results.append(result)
+            # Post-merge coexistence: a merged diff lands all of its files
+            # together, so each later candidate must clear a corpus that already
+            # contains the earlier ones — whatever verdict they drew.
+            _link_or_copy(cand, shadow / cand.name)
 
     verdicts = [r["verdict"] for r in results]
     if "reject" in verdicts:
