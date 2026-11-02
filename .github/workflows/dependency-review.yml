@@ -21,6 +21,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Security gate instruction
+        run: printf '%s\n' 'make -f deploy/security.mk security-gate'
+
       - name: Dependency review
         # Fail closed. A missing dependency graph is a repository setting, and
         # a green review must not be reported when the action cannot run.
