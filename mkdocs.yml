@@ -189,6 +189,7 @@ nav:
       - P6.10 deps audit: AUDIT_P610_DEPS.md
       - Dependency audit 2026-10: DEPENDENCY_AUDIT_2026_10_01.md
       - Security evidence: SECURITY_EVIDENCE.md
+      - HTTP threat model: THREAT_MODEL.md
       - Forward shadow record: FORWARD_SHADOW_RECORD.md
       - Ranker probability experiment: RANKER_PROBABILITY_EXPERIMENT.md
       - Performance: PERF.md

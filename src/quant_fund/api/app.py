@@ -15,6 +15,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from quant_fund import __firm__, __version__
+from quant_fund.api.http_controls import (
+    apply_security_headers,
+    enforce_closed_cors,
+    install_plain_errors,
+    ip_rate_response,
+    key_rate_response,
+    keys_match,
+)
 from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 from quant_fund.config import load_config
 from quant_fund.config.models import AppConfig
@@ -31,6 +39,7 @@ from quant_fund.pipeline.forecast import (
 from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 
 app = FastAPI(title=f"{__firm__} Dipcatcher", version=__version__, lifespan=service_lifespan)
+install_plain_errors(app)
 
 
 def discover_configs_dir(module_file: Path, container_dir: Path = Path("/app/configs")) -> Path:
@@ -139,11 +148,18 @@ async def _authenticate_request(
 ) -> Any:
     if path in _PUBLIC_PATHS:
         return await call_next(request)
+    limited = ip_rate_response(request, "QUANT_API")
+    if limited is not None:
+        return limited
     if expected:
-        from quant_fund.utils.api_auth import credential_matches, presented_api_key
+        from quant_fund.utils.api_auth import presented_api_key
 
-        if not credential_matches(presented_api_key(request.headers), expected):
+        presented = presented_api_key(request.headers)
+        if not presented or not keys_match(presented, expected):
             return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
+        limited_key = key_rate_response(request, "QUANT_API", presented)
+        if limited_key is not None:
+            return limited_key
         return await call_next(request)
     if not _client_is_loopback(request):
         return JSONResponse(
@@ -211,16 +227,8 @@ async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-u
             content={"detail": "request body exceeds the 64 KiB limit"},
         )
 
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-        "connect-src 'self'; frame-ancestors 'none'"
-    )
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    response.headers["Cache-Control"] = "no-store"
+    apply_security_headers(response, request.url.scheme)
+    enforce_closed_cors(response)
     if request.url.scheme == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
@@ -344,9 +352,9 @@ def readiness(config_path: str = "configs/research.yaml") -> JSONResponse:
     try:
         report = doctor(str(resolved))
     except (yaml.YAMLError, ValidationError, ValueError) as exc:
-        # Genuine configuration problems fail closed as not_ready. Internal
-        # bugs (any other exception type) are NOT masked here — they propagate
-        # so an operator sees the real traceback instead of "invalid config".
+        # Genuine configuration problems fail closed as not_ready. Any other
+        # exception leaves this function and becomes the generic 500 body.
+        # It is not relabeled as invalid config, and the body has no traceback.
         return JSONResponse(
             status_code=503,
             content={
