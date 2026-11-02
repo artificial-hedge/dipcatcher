@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -48,6 +49,12 @@ _RESEARCH_GUARD = (
 _FIXTURE_MARK = "not an fx-1 release candidate"
 _WEIGHT_SUFFIXES = (".safetensors", ".bin", ".gguf", ".pt", ".ckpt")
 _SECRET_MARKERS = ("ghp_", "ghs_", "github_pat_", "AKIA", "BEGIN PRIVATE")
+_CI_CONTEXT = "cursor-ci"
+_CI_SCHEMA = "cursor_ci_result.v1"
+_CI_RESULT_RE = re.compile(r"CURSOR_CI_RESULT:\s*(pass|fail)\b")
+_SHA_RE = re.compile(r"[0-9a-f]{40}")
+_GIT_NAME_RE = re.compile(r"[A-Za-z0-9_.-]+")
+_CI_DOC_KEYS = frozenset({"schema", "context", "sha", "result"})
 
 
 class ProdReadinessError(RuntimeError):
@@ -176,12 +183,7 @@ def _collect(root: Path, work: Path) -> list[dict[str, Any]]:
             "this checkout is not the Windows fleet host; WMI spawn and Defender exclusion are not observable here",
         )
     )
-    checks.append(
-        _owner(
-            "pr_test_suite",
-            "the full pytest suite belongs to the CI test job; this scorecard does not execute it",
-        )
-    )
+    checks.append(_capture("pr_test_suite", lambda: _pr_test_suite(root, work)))
     return checks
 
 
@@ -466,6 +468,302 @@ def _qualifying_feed() -> dict[str, Any]:
     return _pass(
         "qualifying_feed_closed", "an unentitled feed stays unavailable with no synthetic fill-in"
     )
+
+
+def _pr_test_suite(root: Path, work: Path) -> dict[str, Any]:
+    """Read an external cursor-ci attestation. This function does not sign or post one."""
+    sha = _head_sha(root)
+    if sha is None:
+        return _owner("pr_test_suite", "this checkout has no commit sha to attest")
+    status_word = _status_channel(root, sha)
+    file_word = _file_channel(root, work, sha)
+    return _ci_attestation_row(status_word, file_word, sha)
+
+
+def _ci_attestation_row(status_word: str | None, file_word: str | None, sha: str) -> dict[str, Any]:
+    words = [word for word in (status_word, file_word) if word in {"pass", "fail"}]
+    broken = file_word in {"bad-signature", "malformed"}
+    if "fail" in words or broken:
+        if "pass" in words or broken:
+            return _fail(
+                "pr_test_suite",
+                "cursor-ci attestation is not a clean pass for this sha",
+                sha=sha,
+            )
+        return _fail("pr_test_suite", "cursor-ci reported failure for this sha", sha=sha)
+    if "pass" in words:
+        return _pass("pr_test_suite", "cursor-ci attested the full suite for this sha", sha=sha)
+    return _owner(
+        "pr_test_suite",
+        "the full pytest suite belongs to the CI test job; no cursor-ci attestation for this sha",
+        sha=sha,
+    )
+
+
+def _status_channel(root: Path, sha: str) -> str | None:
+    payload = _load_commit_status(root, sha)
+    if not isinstance(payload, dict):
+        return None
+    reported = payload.get("sha")
+    if isinstance(reported, str) and reported != sha:
+        return None
+    return _judge_status_payload(payload)
+
+
+def _judge_status_payload(payload: Mapping[str, Any]) -> str | None:
+    entries = payload.get("statuses")
+    if not isinstance(entries, list):
+        return None
+    matches = [
+        item for item in entries if isinstance(item, dict) and item.get("context") == _CI_CONTEXT
+    ]
+    if not matches:
+        return None
+    matches.sort(key=lambda item: str(item.get("updated_at") or item.get("created_at") or ""))
+    chosen = matches[-1]
+    state = chosen.get("state")
+    description = chosen.get("description")
+    token = _one_result_token(description if isinstance(description, str) else None)
+    if not isinstance(state, str):
+        return "fail"
+    if state == "success" and token == "pass":
+        return "pass"
+    if state == "failure" and token == "fail":
+        return "fail"
+    if state == "pending" and token is None:
+        return None
+    return "fail"
+
+
+def _one_result_token(text: str | None) -> str | None:
+    if not text:
+        return None
+    found = _CI_RESULT_RE.findall(text)
+    if len(found) != 1:
+        return None
+    if found[0] == "pass":
+        return "pass"
+    if found[0] == "fail":
+        return "fail"
+    return None
+
+
+def _file_channel(root: Path, work: Path, sha: str) -> str | None:
+    raw = os.environ.get("CURSOR_CI_RESULT_FILE", "").strip()
+    if not raw:
+        return None
+    path = Path(raw)
+    if not path.is_file() or _refused_result_path(root, work, path):
+        return None
+    try:
+        public = _attestation_pubkey()
+    except ValueError:
+        return "malformed"
+    if public is None:
+        return None
+    signature_path = _signature_path(path)
+    if signature_path is None or _refused_result_path(root, work, signature_path):
+        return "bad-signature"
+    try:
+        body = path.read_bytes()
+        signature = bytes.fromhex(signature_path.read_text(encoding="utf-8").strip())
+        document = json.loads(body)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return "malformed"
+    if not _ed25519_verify(public, signature, body):
+        return "bad-signature"
+    return _judge_result_document(document, sha)
+
+
+def _signature_path(result: Path) -> Path | None:
+    raw = os.environ.get("CURSOR_CI_RESULT_SIG", "").strip()
+    path = Path(raw) if raw else result.with_name(result.name + ".sig")
+    if path.is_file():
+        return path
+    return None
+
+
+def _judge_result_document(document: object, sha: str) -> str | None:
+    if not isinstance(document, dict) or set(document) != _CI_DOC_KEYS:
+        return "malformed"
+    if document.get("schema") != _CI_SCHEMA or document.get("context") != _CI_CONTEXT:
+        return "malformed"
+    if document.get("sha") != sha:
+        return None
+    result = document.get("result")
+    if result == "pass":
+        return "pass"
+    if result == "fail":
+        return "fail"
+    return "malformed"
+
+
+def _ed25519_verify(public: bytes, signature: bytes, message: bytes) -> bool:
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    try:
+        Ed25519PublicKey.from_public_bytes(public).verify(signature, message)
+    except (InvalidSignature, ValueError):
+        return False
+    return True
+
+
+def _attestation_pubkey() -> bytes | None:
+    hex_key = os.environ.get("CURSOR_CI_ATTESTATION_PUBKEY", "").strip()
+    file_key = os.environ.get("CURSOR_CI_ATTESTATION_PUBKEY_FILE", "").strip()
+    if hex_key:
+        return _raw_public_key(hex_key)
+    if not file_key:
+        return None
+    text = Path(file_key).read_text(encoding="utf-8")
+    if any(marker in text for marker in _SECRET_MARKERS):
+        raise ValueError("attestation public key is not a public key")
+    return _raw_public_key(text.strip())
+
+
+def _raw_public_key(text: str) -> bytes:
+    try:
+        key = bytes.fromhex(text)
+    except ValueError as exc:
+        raise ValueError("attestation public key is malformed") from exc
+    if len(key) != 32:
+        raise ValueError("attestation public key is malformed")
+    return key
+
+
+def _refused_result_path(root: Path, work: Path, path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    try:
+        resolved = path.resolve()
+        work_resolved = work.resolve()
+        root_resolved = root.resolve()
+    except OSError:
+        return True
+    if resolved == work_resolved or work_resolved in resolved.parents:
+        return True
+    if resolved == root_resolved or root_resolved not in resolved.parents:
+        return False
+    relative = resolved.relative_to(root_resolved).as_posix()
+    return _tracked(root, relative)
+
+
+def _tracked(root: Path, relative: str) -> bool:
+    proc = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "--error-unmatch", "--", relative],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return proc.returncode == 0
+
+
+def _head_sha(root: Path) -> str | None:
+    proc = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    sha = proc.stdout.strip()
+    if proc.returncode == 0 and _SHA_RE.fullmatch(sha):
+        return sha
+    return None
+
+
+def _load_commit_status(root: Path, sha: str) -> object | None:
+    slug = _github_slug(root)
+    if slug is None:
+        return None
+    token = os.environ.get("GITHUB_TOKEN", "").strip() or os.environ.get("GH_TOKEN", "").strip()
+    if token:
+        return _fetch_status(slug, sha, token)
+    return _fetch_status_gh(slug, sha)
+
+
+def _decoded_json(raw: bytes | str) -> object | None:
+    try:
+        parsed: object = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return parsed
+
+
+def _fetch_status(slug: str, sha: str, token: str) -> object | None:
+    import urllib.request
+
+    from quant_fund.utils.net_timeout import read_pinned
+
+    request = urllib.request.Request(
+        f"https://api.github.com/repos/{slug}/commits/{sha}/status",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "dipcatcher-prod-readiness",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        method="GET",
+    )
+    try:
+        raw = read_pinned(request, timeout=10, max_bytes=1_000_000)
+    except Exception:  # noqa: BLE001 — a missing status is needs-owner, and the error can carry a token
+        return None
+    return _decoded_json(raw)
+
+
+def _fetch_status_gh(slug: str, sha: str) -> object | None:
+    env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    env["GH_PROMPT_DISABLED"] = "1"
+    try:
+        proc = subprocess.run(
+            ["gh", "api", f"repos/{slug}/commits/{sha}/status"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=20,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    return _decoded_json(proc.stdout)
+
+
+def _github_slug(root: Path) -> str | None:
+    proc = subprocess.run(
+        ["git", "-C", str(root), "remote", "get-url", "origin"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        return None
+    return _slug_from_remote(proc.stdout.strip())
+
+
+def _slug_from_remote(url: str) -> str | None:
+    text = url.strip()
+    if text.endswith(".git"):
+        text = text[:-4]
+    marker = "github.com"
+    index = text.rfind(marker)
+    if index < 0:
+        return None
+    tail = text[index + len(marker) :]
+    if tail.startswith(":") or tail.startswith("/"):
+        tail = tail[1:]
+    else:
+        return None
+    parts = [part for part in tail.split("/") if part]
+    if len(parts) < 2:
+        return None
+    owner, repo = parts[0], parts[1]
+    if _GIT_NAME_RE.fullmatch(owner) is None or _GIT_NAME_RE.fullmatch(repo) is None:
+        return None
+    return f"{owner}/{repo}"
 
 
 def _kill_switch(work: Path) -> dict[str, Any]:
