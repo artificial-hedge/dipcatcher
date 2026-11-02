@@ -1524,7 +1524,7 @@ def byok_audit() -> dict[str, Any]:
     with _audit_context():
         # This synthetic audit intentionally owns its loopback provider.
         # Production BYOK remains public-network-only by default.
-        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
         out.update(_probe_wire())
         out.update(_probe_hygiene())
         out.update(_probe_validation())

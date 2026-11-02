@@ -73,8 +73,7 @@ _ENV_KEYS = (
     "FX1_BYOK_BASE_URL",
     "FX1_BYOK_API_KEY",
     "FX1_BYOK_MODEL",
-    "FX1_BYOK_ALLOW_PRIVATE_NETWORKS",
-    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    "FX1_PRIVATE_ALLOW_CIDRS",
     "FX1_CHECKPOINT_DIR",
     "FX1_LOCAL_SERVE_URL",
     "FX1_LOCAL_SERVE_CMD",
@@ -557,8 +556,7 @@ def run_goldenpath(
             "FX1_BYOK_BASE_URL": stub_url,
             "FX1_BYOK_API_KEY": "stub-engine-key",
             "FX1_BYOK_MODEL": "stub-v0",
-            "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
-            "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
+            "FX1_PRIVATE_ALLOW_CIDRS": "127.0.0.0/8,::1/128",
         }
     )
     engine_sock: socket.socket | None = None
@@ -625,7 +623,7 @@ def run_goldenpath(
             os.environ["FX1_BYOK_BASE_URL"] = stub_url
             os.environ["FX1_BYOK_API_KEY"] = "stub-engine-key"
             os.environ["FX1_BYOK_MODEL"] = "stub-v0"
-            os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
             fx = Fx1Harness(harness=Harness())
             ip = fx.complete([{"role": "user", "content": "inproc"}], backend="byok")
             legs.record(

@@ -42,6 +42,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.outbound import directory_child, read_http, repo_file, repo_relative
 
 TIMESTAMPS_DIR = Path("quality/timestamps")
 ANCHORS_MANIFEST = "anchors.json"
@@ -189,32 +190,27 @@ def stamp_timestamp(
     digest it commits to (atomic writes both). Network call — only the
     32-byte digest leaves the machine.
     """
-    import urllib.parse
     import urllib.request
 
     from quant_fund.utils.atomicio import atomic_write_bytes, atomic_write_text
 
-    root_path = Path(root)
+    root_path, target_path = repo_file(root, target)
     target_rel = Path(target)
-    digest = hash_bytes((root_path / target_rel).read_bytes())
-    # Scheme allowlist before the request — urlopen would honor file:/ too.
-    if urllib.parse.urlparse(tsr_url).scheme not in {"https", "http"}:
-        raise ValueError(f"tsr_url scheme must be http(s): {tsr_url!r}")
+    digest = hash_bytes(target_path.read_bytes())
     req = urllib.request.Request(
         tsr_url,
         data=build_tsq(digest),
         headers={"Content-Type": "application/timestamp-query"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        token = resp.read()
+    token = read_http(req, timeout=timeout)
     # Fail closed: never register a token that doesn't commit to this digest.
     if extract_imprint(token) != bytes.fromhex(digest):
         raise ValueError("tsr token does not commit to the file digest")
-    ts_dir = root_path / TIMESTAMPS_DIR
+    ts_dir = repo_relative(root_path, TIMESTAMPS_DIR)
     ts_dir.mkdir(parents=True, exist_ok=True)
     name = target_rel.as_posix().replace("/", "__") + ".tsr"
-    token_path = ts_dir / name
+    token_path = directory_child(ts_dir, name)
     atomic_write_bytes(token_path, token)
     anchors = load_anchors(ts_dir)
     anchors[name] = {"target": target_rel.as_posix(), "sha256": digest}
@@ -259,13 +255,14 @@ def verify_timestamps(
     tsa_cert = tdir / TSA_CERT_NAME
     openssl_ok = _openssl_available() and cacert.is_file()
     for name, entry in sorted(anchors.items()):
-        token_path = tdir / name
         if not isinstance(entry, dict):
             errors.append(f"anchor_malformed:{name}")
             continue
         target_rel = str(entry.get("target", ""))
         declared = str(entry.get("sha256", ""))
         label = target_rel or name
+        token_path = directory_child(tdir, str(name))
+        target = repo_relative(root_path, target_rel)
         if not token_path.is_file():
             errors.append(f"tsr_missing:{name}")
             continue
@@ -277,7 +274,6 @@ def verify_timestamps(
         if imprint != declared:
             errors.append(f"imprint_mismatch:{label}")
             continue
-        target = root_path / target_rel
         if not target.is_file():
             errors.append(f"anchor_target_missing:{label}")
             continue
