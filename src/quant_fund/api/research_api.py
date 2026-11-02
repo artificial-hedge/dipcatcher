@@ -22,8 +22,9 @@ Evidence roots (all read-only, resolved at app construction):
 ``$QUANT_DATA_ROOT``, then ``<repo>/data``.
 
 Secure default: ``/health`` is the only unauthenticated route. When
-``RESEARCH_API_KEY`` is set every other route requires ``X-API-Key``; when it
-is unset only loopback clients are served. The service holds no credentials
+``RESEARCH_API_KEY`` is set every other route requires ``X-API-Key`` or
+``Authorization: Bearer``; when it is unset only loopback clients are served.
+The service holds no credentials
 and exposes no trading surface, but it must still never be bound to a
 non-loopback interface without ``RESEARCH_API_KEY``.
 """
@@ -31,7 +32,6 @@ non-loopback interface without ``RESEARCH_API_KEY``.
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 import os
 import re
@@ -453,15 +453,14 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         if request.url.path in _PUBLIC_PATHS:
             response = await call_next(request)
         elif cfg.api_key:
-            provided = request.headers.get("X-API-Key")
-            if not provided or not hmac.compare_digest(
-                provided.encode("utf-8"), cfg.api_key.encode("utf-8")
-            ):
+            from quant_fund.utils.api_auth import credential_matches, presented_api_key
+
+            if credential_matches(presented_api_key(request.headers), cfg.api_key):
+                response = await call_next(request)
+            else:
                 response = JSONResponse(
                     status_code=401, content={"detail": "invalid or missing X-API-Key"}
                 )
-            else:
-                response = await call_next(request)
         else:
             host = (request.client.host if request.client else "") or ""
             if host not in _LOOPBACK_HOSTS:

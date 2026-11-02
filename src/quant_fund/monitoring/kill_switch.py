@@ -31,6 +31,12 @@ class KillSwitch:
         self.state = state
 
     def assert_new_orders_allowed(self) -> None:
+        """Refuse new orders when this switch or the shared kill file blocks."""
+        from quant_fund.utils.operator_kill import orders_blocked_by_env
+
+        blocked = orders_blocked_by_env()
+        if blocked is not None:
+            raise KillSwitchActive(blocked)
         # Only ENABLED permits new orders. Unknown / halt / flatten all raise.
         if self.state != ENABLED:
             raise KillSwitchActive(f"kill switch state={self.state}")

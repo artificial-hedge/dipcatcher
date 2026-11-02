@@ -8,6 +8,7 @@ drain latch before uvicorn stops accepting connections.
 from __future__ import annotations
 
 import argparse
+import os
 from contextlib import suppress
 from typing import Any
 
@@ -52,6 +53,9 @@ def run_uvicorn(
 
 def _serve(settings: ServiceSettings, application: Any) -> None:
     emit_service_event("service_start", **settings.public_dict())
+    os.environ["DIPCATCHER_METRICS_KEY_ENV"] = (
+        "QUANT_API_KEY" if settings.service == "lab" else "RESEARCH_API_KEY"
+    )
     arm(settings)
     try:
         from quant_fund.observe.install import install_passive_hooks

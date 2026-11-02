@@ -10,9 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from quant_fund.monitoring.kill_switch import ENABLED, VALID_STATES
-
-_MAX_BYTES = 64
+from quant_fund.utils.operator_kill import read_operator_kill
 
 
 @dataclass(frozen=True)
@@ -24,21 +22,8 @@ class KillSwitchReading:
 
 def inspect_kill_switch(path: Path) -> KillSwitchReading:
     """Read ``path``. Does not follow a symlink."""
-    if path.is_symlink():
-        return KillSwitchReading(None, True, "kill_switch_symlink")
-    if path.is_dir():
-        return KillSwitchReading(None, True, "kill_switch_directory")
-    if not path.exists():
-        return KillSwitchReading(ENABLED, False, None)
-    try:
-        if path.stat().st_size > _MAX_BYTES:
-            return KillSwitchReading(None, True, "kill_switch_invalid")
-        token = path.read_text(encoding="utf-8").strip()
-    except OSError:
-        return KillSwitchReading(None, True, "kill_switch_unreadable")
-    if token not in VALID_STATES:
-        return KillSwitchReading(None, True, "kill_switch_invalid")
-    return KillSwitchReading(token, token != ENABLED, None)
+    reading = read_operator_kill(path)
+    return KillSwitchReading(reading.state, reading.blocking, reading.problem)
 
 
 def validate_kill_switch_path(path: Path) -> str | None:

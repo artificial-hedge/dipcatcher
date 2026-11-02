@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 import os
 from datetime import datetime
@@ -141,10 +140,9 @@ async def _authenticate_request(
     if path in _PUBLIC_PATHS:
         return await call_next(request)
     if expected:
-        provided = request.headers.get("X-API-Key")
-        if not provided or not hmac.compare_digest(
-            provided.encode("utf-8"), expected.encode("utf-8")
-        ):
+        from quant_fund.utils.api_auth import credential_matches, presented_api_key
+
+        if not credential_matches(presented_api_key(request.headers), expected):
             return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
         return await call_next(request)
     if not _client_is_loopback(request):
@@ -164,7 +162,7 @@ async def _authenticate_request(
 async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Secure default:
 
-    - If ``QUANT_API_KEY`` is set: require matching ``X-API-Key`` on all non-public routes.
+    - If ``QUANT_API_KEY`` is set: require it as ``X-API-Key`` or ``Authorization: Bearer`` on non-public routes.
     - If unset: allow only loopback clients (refuse remote unauthenticated access).
     - Reject malformed or oversized request bodies before route work is performed.
     """

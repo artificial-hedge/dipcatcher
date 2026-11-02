@@ -35,6 +35,7 @@ _SERVICE_ENV = (
     "DIPCATCHER_KILL_SWITCH_PATH",
     "DIPCATCHER_LOG_LEVEL",
     "DIPCATCHER_METRICS_HOST",
+    "DIPCATCHER_METRICS_LOOPBACK_SCRAPE",
     "DIPCATCHER_METRICS_PORT",
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
@@ -106,8 +107,12 @@ def test_container_contract() -> None:
         assert "HEALTHCHECK" in text
         assert "/app/healthcheck.py" in text
     assert 'CMD ["dipcatcher", "api"]' in lab
+    assert "--require-hashes" in lab
+    assert "docker/uv-requirements.txt" in lab
     assert "DIPCATCHER_BIND_PORT=8000" in lab
     assert "RESEARCH_API_PORT=8010" in research
+    assert "--require-hashes" in research
+    assert "docker/uv-requirements.txt" in research
     assert "DIPCATCHER_BIND_PORT" not in research
 
 

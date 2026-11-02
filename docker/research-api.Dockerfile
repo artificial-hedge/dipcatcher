@@ -25,7 +25,11 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
-RUN pip install --no-cache-dir uv==0.11.23
+# uv 0.11.23 wheels and sdist, hash-pinned in docker/uv-requirements.txt.
+COPY docker/uv-requirements.txt /tmp/uv-requirements.txt
+RUN python -m pip install --no-cache-dir --require-hashes --no-deps \
+        -r /tmp/uv-requirements.txt \
+    && rm /tmp/uv-requirements.txt
 # LICENSE is mandatory here: pyproject has `license = { file = "LICENSE" }` and
 # hatchling aborts the in-image wheel build (`uv sync --no-editable`) with
 # "OSError: License file does not exist: LICENSE" when it is absent — proven

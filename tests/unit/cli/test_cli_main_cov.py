@@ -1048,6 +1048,7 @@ def _clear_service_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "DIPCATCHER_KILL_SWITCH_PATH",
         "DIPCATCHER_LOG_LEVEL",
         "DIPCATCHER_METRICS_HOST",
+        "DIPCATCHER_METRICS_LOOPBACK_SCRAPE",
         "DIPCATCHER_METRICS_PORT",
         "DIPCATCHER_OBSERVE",
         "DIPCATCHER_OTEL_ENDPOINT",

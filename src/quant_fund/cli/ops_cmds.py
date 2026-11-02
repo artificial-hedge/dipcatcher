@@ -34,6 +34,21 @@ def _reject_halt_flags(halt: bool, clear_halt: bool) -> None:
         raise typer.BadParameter("pass only one of --halt / --clear-halt")
 
 
+def _publish_paper_halt(state: str) -> None:
+    """Write the shared kill file when the operator set a path. Otherwise no-op."""
+    import os
+
+    from quant_fund.utils.operator_kill import ENV_PATH, OperatorKillError, write_operator_kill
+
+    raw = os.environ.get(ENV_PATH, "").strip()
+    if not raw:
+        return
+    try:
+        write_operator_kill(Path(raw), state)
+    except OperatorKillError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
 @app.command()
 def paper(
     config: Path = typer.Option(Path("configs/paper.yaml")),
@@ -190,8 +205,10 @@ def paper(
     _reject_halt_flags(halt, clear_halt)
     if halt:
         cfg.kill_switch.state = "HALT_NEW_ORDERS"
+        _publish_paper_halt("HALT_NEW_ORDERS")
     if clear_halt:
         cfg.kill_switch.state = "ENABLED"
+        _publish_paper_halt("ENABLED")
     bars = ensure_silver(cfg)
     feat = build_features(bars, cfg)
     # Same gold-panel overlap contract as execution-sensitivity/backtest:

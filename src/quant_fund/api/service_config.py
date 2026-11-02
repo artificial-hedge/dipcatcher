@@ -23,6 +23,7 @@ ENV_CONTRACT = (
     "DIPCATCHER_KILL_SWITCH_PATH",
     "DIPCATCHER_LOG_LEVEL",
     "DIPCATCHER_METRICS_HOST",
+    "DIPCATCHER_METRICS_LOOPBACK_SCRAPE",
     "DIPCATCHER_METRICS_PORT",
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
@@ -67,6 +68,7 @@ class ServiceSettings:
     slo_path: str | None
     alert_interval_s: int
     api_key_configured: bool
+    metrics_loopback_scrape: bool = False
 
     def public_dict(self) -> dict[str, str | int | bool | None]:
         return {
@@ -77,6 +79,7 @@ class ServiceSettings:
             "kill_switch_path": self.kill_switch_path,
             "log_level": self.log_level,
             "metrics_host": self.metrics_host,
+            "metrics_loopback_scrape": self.metrics_loopback_scrape,
             "metrics_port": self.metrics_port,
             "observe": self.observe,
             "otel_configured": self.otel_configured,
@@ -284,7 +287,41 @@ def _required_int(name: str, default: int, low: int, high: int) -> tuple[int, st
     return value, None
 
 
-def _metrics(observe: bool) -> tuple[str, int | None, list[str]]:
+def _metrics_flag_without_port() -> list[str]:
+    if _env("DIPCATCHER_METRICS_LOOPBACK_SCRAPE"):
+        return ["DIPCATCHER_METRICS_LOOPBACK_SCRAPE requires DIPCATCHER_METRICS_PORT"]
+    return []
+
+
+def _metrics_bind_auth(host: str, enabled: bool, key_name: str) -> list[str]:
+    problems: list[str] = []
+    loopback = host in _LOOPBACK
+    keyed = _key_configured(key_name)
+    if enabled and not loopback:
+        problems.append(
+            "DIPCATCHER_METRICS_LOOPBACK_SCRAPE requires a loopback DIPCATCHER_METRICS_HOST"
+        )
+    if not loopback and not keyed:
+        problems.append(f"off-loopback /metrics requires {key_name}")
+    if not enabled and not keyed:
+        problems.append(
+            f"DIPCATCHER_METRICS_PORT requires {key_name} or DIPCATCHER_METRICS_LOOPBACK_SCRAPE=1"
+        )
+    return problems
+
+
+def _metrics_auth(host: str, port: int | None, key_name: str) -> tuple[bool, list[str]]:
+    problems: list[str] = []
+    enabled, flag_problem = _flag("DIPCATCHER_METRICS_LOOPBACK_SCRAPE", default=False)
+    if flag_problem:
+        problems.append(flag_problem)
+    if port is None:
+        return False, problems + _metrics_flag_without_port()
+    problems.extend(_metrics_bind_auth(host, enabled, key_name))
+    return bool(enabled and host in _LOOPBACK), problems
+
+
+def _metrics(observe: bool, key_name: str) -> tuple[str, int | None, bool, list[str]]:
     problems: list[str] = []
     metrics_port, metrics_problem = _int_env(
         "DIPCATCHER_METRICS_PORT", default=None, low=1, high=65535
@@ -297,7 +334,9 @@ def _metrics(observe: bool) -> tuple[str, int | None, list[str]]:
             problems.append("DIPCATCHER_METRICS_HOST is invalid")
         if not observe:
             problems.append("DIPCATCHER_METRICS_PORT requires DIPCATCHER_OBSERVE=1")
-    return metrics_host, metrics_port, problems
+    scrape, auth_problems = _metrics_auth(metrics_host, metrics_port, key_name)
+    problems.extend(auth_problems)
+    return metrics_host, metrics_port, scrape, problems
 
 
 def _otel(observe: bool) -> tuple[bool, list[str]]:
@@ -342,7 +381,9 @@ def _assemble(
     interval, interval_problem = _required_int("DIPCATCHER_ALERT_INTERVAL_S", 60, 1, 86400)
     if interval_problem:
         problems.append(interval_problem)
-    metrics_host, metrics_port, metric_problems = _metrics(observe)
+    metrics_host, metrics_port, metrics_loopback_scrape, metric_problems = _metrics(
+        observe, key_name
+    )
     problems.extend(metric_problems)
     otel_configured, otel_problems = _otel(observe)
     problems.extend(otel_problems)
@@ -373,5 +414,6 @@ def _assemble(
         slo_path=slo_path,
         alert_interval_s=interval,
         api_key_configured=_key_configured(key_name),
+        metrics_loopback_scrape=metrics_loopback_scrape,
     )
     return settings, problems

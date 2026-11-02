@@ -1,7 +1,8 @@
 # Lab API for research and simulated paper. No live broker and no order path.
 # Export QUANT_API_KEY before `docker compose -f deploy/compose.prod.yml up`.
 # The interpolation below refuses to start when that variable is missing.
-# Do not publish 9464: /metrics is unauthenticated.
+# Metrics stay on the container loopback. The scrape opt-out is loopback-only.
+# smoke-up plants a SYNTHETIC manifest and receipt, then serves the lab API.
 
 services:
   lab-api:
@@ -9,6 +10,7 @@ services:
       context: ..
       dockerfile: Dockerfile
     image: dipcatcher:local
+    command: ["dipcatcher", "smoke-up"]
     ports:
       - "127.0.0.1:8000:8000"
     environment:
@@ -19,12 +21,8 @@ services:
       DIPCATCHER_OBSERVE: "1"
       DIPCATCHER_METRICS_HOST: 127.0.0.1
       DIPCATCHER_METRICS_PORT: "9464"
+      DIPCATCHER_METRICS_LOOPBACK_SCRAPE: "1"
       DIPCATCHER_LOG_LEVEL: INFO
       DIPCATCHER_SHUTDOWN_GRACE_S: "20"
-    volumes:
-      - lab-data:/app/data
     stop_signal: SIGTERM
     stop_grace_period: 30s
-
-volumes:
-  lab-data:

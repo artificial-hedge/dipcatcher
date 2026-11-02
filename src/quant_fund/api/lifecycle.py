@@ -5,14 +5,12 @@ Importing this module does not bind a socket or read configuration files.
 
 from __future__ import annotations
 
-import os
 import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Protocol
 
-from quant_fund.api.kill_file import inspect_kill_switch
+from quant_fund.utils.operator_kill import orders_blocked_by_env
 
 _draining = threading.Event()
 _managed: ManagedRuntime | None = None
@@ -70,15 +68,7 @@ def acceptance_block() -> str | None:
     """
     if _draining.is_set():
         return "draining"
-    raw = os.environ.get("DIPCATCHER_KILL_SWITCH_PATH", "").strip()
-    if not raw:
-        return None
-    reading = inspect_kill_switch(Path(raw))
-    if reading.problem:
-        return reading.problem
-    if reading.blocking and reading.state:
-        return f"kill_switch:{reading.state}"
-    return None
+    return orders_blocked_by_env()
 
 
 def _stop_metrics() -> None:

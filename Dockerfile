@@ -6,7 +6,11 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
-RUN pip install --no-cache-dir uv==0.11.23
+# uv 0.11.23 wheels and sdist, hash-pinned in docker/uv-requirements.txt.
+COPY docker/uv-requirements.txt /tmp/uv-requirements.txt
+RUN python -m pip install --no-cache-dir --require-hashes --no-deps \
+        -r /tmp/uv-requirements.txt \
+    && rm /tmp/uv-requirements.txt
 COPY pyproject.toml uv.lock README.md LICENSE ./
 # Dependencies first (cache-friendly), project last.
 RUN --mount=type=cache,target=/root/.cache/uv \
