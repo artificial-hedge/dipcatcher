@@ -52,6 +52,7 @@ from quant_fund.api.http_controls import (
     RequestBodyTooLarge,
     apply_security_headers,
     attach_body_limit,
+    buffer_capped_body,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
@@ -455,6 +456,7 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
     if rejection is not None:
         return rejection
     attach_body_limit(request, MAX_BODY_BYTES)
+    await buffer_capped_body(request)
     path = request.url.path
     if path in _PUBLIC_PATHS:
         return await call_next(request)

@@ -17,11 +17,13 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from quant_fund import __firm__, __version__
 from quant_fund.api.http_controls import (
     apply_security_headers,
+    buffer_capped_body,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
     keys_match,
+    reject_bad_headers,
 )
 from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 from quant_fund.config import load_config
@@ -146,6 +148,10 @@ def _client_is_loopback(request: Request) -> bool:
 async def _authenticate_request(
     request: Request, call_next: Any, path: str, expected: str | None
 ) -> Any:
+    bad = reject_bad_headers(request)
+    if bad is not None:
+        return bad
+    await buffer_capped_body(request)
     if path in _PUBLIC_PATHS:
         return await call_next(request)
     limited = ip_rate_response(request, "QUANT_API")
