@@ -33,15 +33,20 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.flowbars.checks import (
+    non_negative_series,
+    positive_finite,
+    positive_int,
+    positive_series,
+)
+
 FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
 
 def tick_rule_signs(prices: FloatArray) -> IntArray:
     """Trade signs from price changes; zeros inherit the previous sign."""
-    prices = np.asarray(prices, dtype=np.float64)
-    if prices.ndim != 1:
-        raise ValueError("prices must be one-dimensional")
+    prices = positive_series(prices, "prices")
     delta = np.diff(prices, prepend=prices[0])
     signs = np.sign(delta).astype(np.int64)
     out = np.empty(len(signs), dtype=np.int64)
@@ -63,11 +68,10 @@ def imbalance_bar_ids(signs: IntArray, values: FloatArray, threshold: float) -> 
     (dollar imbalance). The final open bar is closed at the last trade.
     """
     signs = np.asarray(signs, dtype=np.int64)
-    values = np.asarray(values, dtype=np.float64)
+    values = non_negative_series(values, "values")
     if signs.shape != values.shape:
         raise ValueError("signs and values must have the same shape")
-    if threshold <= 0:
-        raise ValueError("threshold must be positive")
+    threshold = positive_finite(threshold, "threshold")
     n = len(signs)
     ids = np.zeros(n, dtype=np.int64)
     if n == 0:
@@ -114,7 +118,10 @@ def adaptive_imbalance_bar_ids(
     trade. Expectations update only at bar closes, as in the reference.
     """
     signs = np.asarray(signs, dtype=np.int64)
-    values = np.asarray(values, dtype=np.float64)
+    values = non_negative_series(values, "values")
+    warm_up = positive_int(warm_up, "warm_up")
+    min_threshold = positive_finite(min_threshold, "min_threshold")
+    ema_halflife = positive_finite(ema_halflife, "ema_halflife")
     if signs.shape != values.shape:
         raise ValueError("signs and values must have the same shape")
     n = len(signs)
@@ -148,7 +155,7 @@ def adaptive_imbalance_bar_ids(
 def signed_flow_imbalance(signs: IntArray, sizes: FloatArray) -> FloatArray:
     """Cumulative signed volume from the tape start (stateless diagnostic)."""
     signs = np.asarray(signs, dtype=np.int64)
-    sizes = np.asarray(sizes, dtype=np.float64)
+    sizes = non_negative_series(sizes, "sizes")
     if signs.shape != sizes.shape:
         raise ValueError("signs and sizes must have the same shape")
     return np.cumsum(signs.astype(np.float64) * sizes)

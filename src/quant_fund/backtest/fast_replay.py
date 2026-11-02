@@ -44,6 +44,7 @@ from quant_fund.backtest.engine import (
     _validate_bar_panel,
     run_backtest,
 )
+from quant_fund.backtest.inputs import finite_non_negative
 from quant_fund.config.models import AppConfig, CostConfig, FillConvention, RiskGateConfig
 from quant_fund.execution.spread_calibration import is_calibrated_spread_estimator
 from quant_fund.monitoring.kill_switch import KillSwitch
@@ -925,6 +926,7 @@ def run_backtest_fast(
     Fails closed — ``ValueError`` — on any workload outside the class the
     vectorized path reproduces bit-identically; it never approximates.
     """
+    initial_nav = finite_non_negative(initial_nav, "initial_nav")
     if config.execution.allow_close_auction:
         raise ValueError("fast replay does not support allow_close_auction")
     if is_calibrated_spread_estimator(config.costs.spread_estimator):
