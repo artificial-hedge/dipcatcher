@@ -102,6 +102,7 @@ def main() -> int:
     bars = pl.read_parquet(args.data_dir / "perp_bars.parquet")
     funding = pl.read_parquet(args.data_dir / "funding.parquet")
     cfg = AppConfig()
+    cfg.kill_switch.state = "ENABLED"
     ev = Evaluator(bars, funding, cfg, 1e6, vol_window=168, ppy=8766.0)
 
     feats = _features(bars, funding)

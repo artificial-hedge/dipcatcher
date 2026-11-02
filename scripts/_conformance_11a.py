@@ -82,6 +82,7 @@ cfg = AppConfig(
         stale_model_hours=1e9,
     ),
 )
+cfg.kill_switch.state = "ENABLED"
 
 ref = run_backtest(bars, weights, cfg, initial_nav=INIT_NAV)
 fast = run_backtest_fast(bars, weights, cfg, initial_nav=INIT_NAV)

@@ -23,6 +23,7 @@ def _config() -> AppConfig:
     cfg.risk_gate.max_order_notional = 1e15
     cfg.risk_gate.max_participation = 1.0
     cfg.risk_gate.max_predicted_vol = 100.0
+    cfg.kill_switch.state = "ENABLED"
     return cfg
 
 

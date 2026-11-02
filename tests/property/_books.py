@@ -31,6 +31,7 @@ def research_config(**cost_overrides: float | bool) -> AppConfig:
     cfg.risk_gate.max_participation = 1.0
     cfg.risk_gate.max_predicted_vol = 100.0
     cfg.risk_gate.stale_price_bars = 10
+    cfg.kill_switch.state = "ENABLED"
     for name, value in cost_overrides.items():
         setattr(cfg.costs, name, value)
     return cfg
