@@ -44,6 +44,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
 from quant_fund import __firm__, __version__
+from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -389,6 +390,36 @@ def _int_or_none(value: object) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
+def research_ready(cfg: ResearchApiSettings) -> JSONResponse:
+    """Directory presence, plus the process drain and kill-switch file."""
+    blocked = acceptance_block()
+    if blocked is not None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "checks": {"accepting_work": False},
+                "report": {"accepting_work": blocked},
+            },
+        )
+    checks = {
+        "data_root": cfg.data_root.is_dir(),
+        "receipts_dir": cfg.receipts_dir.is_dir(),
+        "verifier_dir": cfg.verifier_dir.is_dir(),
+        "artifacts_dir": cfg.artifacts_dir.is_dir(),
+    }
+    ready = all(checks.values())
+    state = "ready" if ready else "not_ready"
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={
+            "status": state,
+            "checks": checks,
+            "report": {"accepting_work": "ok" if ready else "directories"},
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
@@ -413,6 +444,7 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
             "acceptance history, and benchmark results. No trading, order, "
             "broker, or execution endpoints exist in this app."
         ),
+        lifespan=service_lifespan,
     )
 
     @app.middleware("http")
@@ -730,6 +762,10 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
             artifacts_dir_present=cfg.artifacts_dir.is_dir(),
         )
 
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        return research_ready(cfg)
+
     @app.get("/runs", response_model=RunListResponse)
     def list_runs(
         limit: int = Query(default=50, ge=1, le=_MAX_LIST_LIMIT),
@@ -966,14 +1002,10 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    # `python -m quant_fund.api.research_api` — same loopback guard as
-    # `dipcatcher api`: refuse non-loopback binds without RESEARCH_API_KEY.
-    import uvicorn
+    from quant_fund.api.serve import serve_research
+    from quant_fund.api.service_config import ServiceConfigError
 
-    host = os.environ.get("RESEARCH_API_HOST", "127.0.0.1")
-    port = int(os.environ.get("RESEARCH_API_PORT", "8010"))
-    if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("RESEARCH_API_KEY"):
-        raise SystemExit(
-            "non-loopback binding requires RESEARCH_API_KEY; refusing unauthenticated exposure"
-        )
-    uvicorn.run(app, host=host, port=port, reload=False)
+    try:
+        serve_research(app)
+    except ServiceConfigError as exc:
+        raise SystemExit(str(exc)) from exc
