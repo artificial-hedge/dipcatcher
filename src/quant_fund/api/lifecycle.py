@@ -53,6 +53,11 @@ def begin_drain() -> None:
     _draining.set()
 
 
+def is_draining() -> bool:
+    """True after SIGTERM has closed readiness. This latch does not clear."""
+    return _draining.is_set()
+
+
 def reset_runtime_state() -> None:
     """Test helper. Clears the drain latch and the managed-service pointer."""
     disarm()
