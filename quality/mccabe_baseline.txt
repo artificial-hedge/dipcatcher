@@ -132,7 +132,7 @@ src/fx1/serve/vectorstores.py:VectorStoreStore.file_batch_create 10
 src/fx1/serve/vectorstores.py:VectorStoreStore.search 17
 src/fx1/serve/vectorstores.py:_filters_match 14
 src/fx1/serve/vectorstores.py:validate_filters 14
-src/fx1/serve/webhooks.py:deliver_signed 13
+src/fx1/serve/webhooks.py:deliver_signed 12
 src/fx1/train/pipeline.py:Pipeline.run_eval_candidate 10
 src/fx1/webresearch/engine.py:Researcher._fetch_doc 11
 src/fx1/webresearch/engine.py:Researcher.run 14
@@ -198,7 +198,6 @@ src/quant_fund/data/adapters/hf_ohlcv_1m.py:stream_https 12
 src/quant_fund/data/adapters/parquet.py:ParquetMarketProvider.get_corporate_actions 16
 src/quant_fund/data/concurrent_io.py:amap_ordered 10
 src/quant_fund/data/concurrent_io.py:map_ordered 14
-src/quant_fund/data/concurrent_io.py:pooled_request 11
 src/quant_fund/data/concurrent_io.py:pooled_stream 14
 src/quant_fund/data/lakehouse/lineage.py:_verify_dataset 20
 src/quant_fund/data/quality/checks.py:check_missing_bars 12

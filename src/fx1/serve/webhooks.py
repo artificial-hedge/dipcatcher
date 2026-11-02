@@ -258,6 +258,43 @@ def check_callback_url(url: str | None) -> str | None:
     return url
 
 
+def _delivery_arg_error(max_attempts: int, backoff_s: float, timeout_s: float) -> str | None:
+    if max_attempts < 1:
+        return "ValueError: max_attempts must be positive"
+    if not math.isfinite(backoff_s) or backoff_s < 0:
+        return "ValueError: backoff_s must be finite and non-negative"
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        return "ValueError: timeout_s must be finite and positive"
+    return None
+
+
+def _callback_endpoint(url: str) -> tuple[urllib.parse.ParseResult, str, int]:
+    check_callback_url(url)
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname
+    if host is None:
+        raise ValueError("callback_url has no host")
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+    return parsed, host, port
+
+
+def _retry_delay(
+    attempt: int,
+    backoff_s: float,
+    *,
+    jitter: bool,
+    rng: random.Random | None,
+) -> float:
+    """Capped exponential backoff. Jitter is drawn from ``[0, cap]``."""
+    delay = min(30.0, backoff_s * (1 << (attempt - 1)))
+    if jitter and delay > 0:
+        uniform = rng.uniform if rng is not None else random.uniform
+        return uniform(0.0, delay)
+    return delay
+
+
 def deliver_signed(
     url: str,
     secret: str | None,
@@ -278,35 +315,21 @@ def deliver_signed(
     string — this helper never raises into its caller's worker."""
     import time  # noqa: PLC0415 — local import keeps the module leaf
 
-    if max_attempts < 1:
-        return False, "ValueError: max_attempts must be positive", 0
-    if not math.isfinite(backoff_s) or backoff_s < 0:
-        return False, "ValueError: backoff_s must be finite and non-negative", 0
-    if not math.isfinite(timeout_s) or timeout_s <= 0:
-        return False, "ValueError: timeout_s must be finite and positive", 0
+    arg_error = _delivery_arg_error(max_attempts, backoff_s, timeout_s)
+    if arg_error is not None:
+        return False, arg_error, 0
 
     error: str | None = None
     try:
         timeout_s = require_timeout(timeout_s, name="timeout_s")
         max_attempts = require_attempts(max_attempts)
-        check_callback_url(url)
-        parsed = urllib.parse.urlparse(url)
-        host = parsed.hostname
-        if host is None:
-            raise ValueError("callback_url has no host")
-        port = parsed.port
-        if port is None:
-            port = 443 if parsed.scheme == "https" else 80
+        parsed, host, port = _callback_endpoint(url)
     except Exception as exc:  # noqa: BLE001 — invalid targets are delivery data
         return False, redact_text(f"{type(exc).__name__}: {exc}"), 0
 
     for attempt in range(max_attempts):
         if attempt:
-            delay = min(30.0, backoff_s * (1 << (attempt - 1)))
-            if jitter and delay > 0:
-                uniform = rng.uniform if rng is not None else random.uniform
-                delay = uniform(0.0, delay)
-            time.sleep(delay)
+            time.sleep(_retry_delay(attempt, backoff_s, jitter=jitter, rng=rng))
         try:
             headers = {"Content-Type": "application/json"}
             if secret:

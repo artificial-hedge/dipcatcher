@@ -26,7 +26,8 @@ import json
 import os
 import shutil
 import tempfile
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -74,14 +75,26 @@ def _link_or_copy(src: Path, dst: Path) -> None:
         shutil.copy2(src, dst)
 
 
-def _shadow_corpus(corpus_dir: Path, shadow: Path, extra: Path | None = None) -> Path:
+@contextmanager
+def _scratch_dir(prefix: str) -> Iterator[Path]:
+    """Private directory removed on every exit, including failure."""
+    shadow = Path(tempfile.mkdtemp(prefix=prefix))
+    try:
+        yield shadow
+    finally:
+        shutil.rmtree(shadow, ignore_errors=True)
+
+
+@contextmanager
+def _shadow_corpus(corpus_dir: Path, extra: Path | None = None) -> Iterator[Path]:
     """Link the corpus (+ optional extra receipt) into a private dir."""
-    for path in sorted(corpus_dir.glob("*.json")):
-        if path.is_file():
-            _link_or_copy(path, shadow / path.name)
-    if extra is not None:
-        _link_or_copy(extra, shadow / extra.name)
-    return shadow
+    with _scratch_dir("admit_corpus_") as shadow:
+        for path in sorted(corpus_dir.glob("*.json")):
+            if path.is_file():
+                _link_or_copy(path, shadow / path.name)
+        if extra is not None:
+            _link_or_copy(extra, shadow / extra.name)
+        yield shadow
 
 
 def _inconsistent_groups(lattice: Mapping[str, Any]) -> set[str]:
@@ -166,13 +179,11 @@ def admission_check(
     # -- 3. lattice delta -------------------------------------------------------
     from quant_fund.research.receipt_lattice import receipt_lattice
 
+    pins = dict(known_inconsistent or {})
     with (
-        tempfile.TemporaryDirectory(prefix="admit_corpus_") as before_tmp,
-        tempfile.TemporaryDirectory(prefix="admit_corpus_") as after_tmp,
+        _shadow_corpus(corpus_dir) as before_shadow,
+        _shadow_corpus(corpus_dir, extra=candidate) as after_shadow,
     ):
-        before_shadow = _shadow_corpus(corpus_dir, Path(before_tmp))
-        after_shadow = _shadow_corpus(corpus_dir, Path(after_tmp), extra=candidate)
-        pins = dict(known_inconsistent or {})
         before = receipt_lattice(before_shadow, known_inconsistent=pins)
         after = receipt_lattice(after_shadow, known_inconsistent=pins)
         new_inconsistent = _inconsistent_groups(after) - _inconsistent_groups(before)
@@ -360,13 +371,12 @@ def admit_batch(
             raise ValueError(f"candidate receipt {cand} does not exist")
 
     changed_names = {c.name for c in ordered}
-    results: list[dict[str, Any]] = []
-    with tempfile.TemporaryDirectory(prefix="admit_batch_base_") as temporary:
-        shadow = Path(temporary)
+    with _scratch_dir("admit_batch_base_") as shadow:
         for path in sorted(corpus_dir.glob("*.json")):
             if path.is_file() and path.name not in changed_names:
                 _link_or_copy(path, shadow / path.name)
 
+        results: list[dict[str, Any]] = []
         for cand in ordered:
             result = admission_check(
                 cand,
@@ -381,19 +391,19 @@ def admit_batch(
             # contains the earlier ones — whatever verdict they drew.
             _link_or_copy(cand, shadow / cand.name)
 
-    verdicts = [r["verdict"] for r in results]
-    if "reject" in verdicts:
-        verdict = "reject"
-    elif "quarantine" in verdicts:
-        verdict = "quarantine"
-    else:
-        verdict = "admit"
-    return {
-        "verdict": verdict,
-        "n_candidates": len(ordered),
-        "results": results,
-        "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
-    }
+        verdicts = [r["verdict"] for r in results]
+        if "reject" in verdicts:
+            verdict = "reject"
+        elif "quarantine" in verdicts:
+            verdict = "quarantine"
+        else:
+            verdict = "admit"
+        return {
+            "verdict": verdict,
+            "n_candidates": len(ordered),
+            "results": results,
+            "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
+        }
 
 
 def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:

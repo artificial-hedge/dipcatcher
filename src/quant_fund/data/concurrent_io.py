@@ -363,6 +363,21 @@ class ConnectionPool:
     def discard(self, conn: http.client.HTTPConnection) -> None:
         conn.close()
 
+    def close(self) -> None:
+        """Close every idle connection. Callers still own in-use sockets."""
+        with self._lock:
+            idle = list(self._idle.values())
+            self._idle.clear()
+        for bucket in idle:
+            for conn in bucket:
+                conn.close()
+
+    def __enter__(self) -> ConnectionPool:
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
+
 
 _POOL_LOCK = threading.Lock()
 _DEFAULT_POOL: ConnectionPool | None = None
@@ -401,6 +416,38 @@ def _read_capped(response: http.client.HTTPResponse, max_bytes: int) -> tuple[by
         chunks.append(block)
 
 
+def _exchange(
+    pool: ConnectionPool,
+    method: str,
+    url: str,
+    *,
+    headers: Mapping[str, str] | None,
+    timeout: float,
+    max_bytes: int,
+) -> tuple[int, bytes, str | None]:
+    """One pooled exchange. The socket is released or closed before return."""
+    scheme, host, port, path = _split(url)
+    conn = pool.checkout(scheme, host, port, timeout)
+    handed_off = False
+    try:
+        conn.request(method, path, headers=dict(headers or {}))
+        response = conn.getresponse()
+        status = int(response.status)
+        location = response.getheader("Location")
+        body, too_big = _read_capped(response, max_bytes)
+        if too_big:
+            raise IoError(f"response exceeded {max_bytes} bytes: {redact_text(url)}")
+        if response.will_close:
+            pool.discard(conn)
+        else:
+            pool.release(scheme, host, port, conn)
+        handed_off = True
+        return status, body, location
+    finally:
+        if not handed_off:
+            pool.discard(conn)
+
+
 def pooled_request(
     method: str,
     url: str,
@@ -414,7 +461,8 @@ def pooled_request(
     """GET/HEAD (or other methods without a body) through the connection pool.
 
     Redirects are followed for GET and HEAD. Responses over ``max_bytes``
-    raise :class:`IoError` and the connection is not reused.
+    raise :class:`IoError` and the connection is not reused. Any failure
+    closes the socket instead of leaving it checked out.
     """
     timeout = require_timeout(timeout)
     if max_bytes < 1:
@@ -425,30 +473,14 @@ def pooled_request(
     current = url
     redirects = 0
     while True:
-        scheme, host, port, path = _split(current)
-        conn = pool.checkout(scheme, host, port, timeout)
-        try:
-            conn.request(method, path, headers=dict(headers or {}))
-            response = conn.getresponse()
-            status = int(response.status)
-            location = response.getheader("Location")
-            body, too_big = _read_capped(response, max_bytes)
-            reusable = (not too_big) and (not response.will_close)
-            if too_big:
-                pool.discard(conn)
-                raise IoError(f"response exceeded {max_bytes} bytes: {redact_text(current)}")
-            if reusable:
-                pool.release(scheme, host, port, conn)
-            else:
-                pool.discard(conn)
-        except IoError:
-            raise
-        except (OSError, http.client.HTTPException, ValueError, TypeError):
-            # Narrowed from `except Exception` (quality ratchet): request/response
-            # faults are socket/HTTP-protocol errors plus int()/header conversion
-            # failures; exotic errors propagate. Connection is still discarded.
-            pool.discard(conn)
-            raise
+        status, body, location = _exchange(
+            pool,
+            method,
+            current,
+            headers=headers,
+            timeout=timeout,
+            max_bytes=max_bytes,
+        )
         if status in {301, 302, 303, 307, 308} and method.upper() in {"GET", "HEAD"} and location:
             if redirects >= max_redirects:
                 raise IoError(f"too many redirects: {redact_text(url)}")
