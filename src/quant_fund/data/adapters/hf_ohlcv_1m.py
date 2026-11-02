@@ -18,6 +18,7 @@ fabricates pseudo-intraday paths and is intentionally not used.
 from __future__ import annotations
 
 import os
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -609,8 +610,9 @@ def stream_https(
         dest.unlink(missing_ok=True)
         raise SourceError(f"GET failed: {url}") from exc
     total = 0
+    tmp_path = dest.with_name(f".{dest.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     try:
-        with response, dest.open("wb") as handle:
+        with response, tmp_path.open("wb") as handle:
             while True:
                 chunk = response.read(1024 * 1024)
                 if not chunk:
@@ -621,15 +623,19 @@ def stream_https(
                         f"monthly parquet exceeded {max_bytes} bytes; download aborted: {url}"
                     )
                 handle.write(chunk)
-    except SourceError:
-        dest.unlink(missing_ok=True)
-        raise
     except (OSError, URLError, TimeoutError) as exc:
+        tmp_path.unlink(missing_ok=True)
         dest.unlink(missing_ok=True)
         raise SourceError(f"GET failed while streaming: {url}") from exc
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        dest.unlink(missing_ok=True)
+        raise
     if total < 1:
+        tmp_path.unlink(missing_ok=True)
         dest.unlink(missing_ok=True)
         raise SourceError(f"empty response: {url}")
+    os.replace(tmp_path, dest)
 
 
 class HfOhlcv1mProvider:
