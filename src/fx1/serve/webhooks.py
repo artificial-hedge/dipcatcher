@@ -20,6 +20,7 @@ import http.client
 import ipaddress
 import math
 import os
+import random
 import socket
 import ssl
 import urllib.parse
@@ -262,15 +263,24 @@ def deliver_signed(
     max_attempts: int = WEBHOOK_MAX_ATTEMPTS,
     backoff_s: float = WEBHOOK_BACKOFF_S,
     timeout_s: float = 10.0,
+    jitter: bool = True,
+    rng: random.Random | None = None,
 ) -> tuple[bool, str | None, int]:
     """POST ``body`` to a webhook ``url`` — HMAC-signed when ``secret`` is
     set. Returns ``(delivered, error, attempts)``.
 
     Transient faults (network errors, 5xx) retry ``max_attempts`` times
-    with capped exponential backoff; a 4xx is a definitive rejection and
-    is never retried. Delivery faults return as the error string — this
-    helper never raises into its caller's worker."""
+    with bounded exponential backoff and jitter; a 4xx is a definitive
+    rejection and is never retried. Delivery faults return as the error
+    string — this helper never raises into its caller's worker."""
     import time  # noqa: PLC0415 — local import keeps the module leaf
+
+    if max_attempts < 1:
+        return False, "ValueError: max_attempts must be positive", 0
+    if not math.isfinite(backoff_s) or backoff_s < 0:
+        return False, "ValueError: backoff_s must be finite and non-negative", 0
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        return False, "ValueError: timeout_s must be finite and positive", 0
 
     error: str | None = None
     try:
@@ -287,7 +297,11 @@ def deliver_signed(
 
     for attempt in range(max_attempts):
         if attempt:
-            time.sleep(backoff_s * (1 << (attempt - 1)))
+            delay = backoff_s * (1 << (attempt - 1))
+            if jitter and delay > 0:
+                uniform = rng.uniform if rng is not None else random.uniform
+                delay = uniform(0.0, delay)
+            time.sleep(delay)
         try:
             headers = {"Content-Type": "application/json"}
             if secret:
