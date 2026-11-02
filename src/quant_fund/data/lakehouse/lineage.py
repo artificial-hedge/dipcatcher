@@ -59,6 +59,12 @@ class DriftReport:
         return {"ok": self.ok, "errors": list(self.errors)}
 
 
+def _require_dataset_name(dataset: str) -> str:
+    if not isinstance(dataset, str) or not dataset.strip() or "\n" in dataset or "\x00" in dataset:
+        raise DataContractError("dataset name must be a non-empty single line")
+    return dataset
+
+
 def record_lineage(
     root: Path,
     *,
@@ -70,8 +76,10 @@ def record_lineage(
     code_path: str | None = None,
 ) -> LineageRecord:
     """Append an immutable lineage record and point the dataset index at it."""
+    dataset = _require_dataset_name(dataset)
     load_snapshot(root, snapshot_id)
     for item in inputs:
+        _require_dataset_name(item.dataset)
         load_snapshot(root, item.snapshot_id)
     digest, bound_path = _code_identity(code, code_path)
     params = parameters or {}
@@ -108,6 +116,7 @@ def record_lineage(
 
 def format_dag(root: Path, dataset: str) -> str:
     """Text DAG for ``lineage show``. Input snapshots are the pinned ids."""
+    dataset = _require_dataset_name(dataset)
     lines: list[str] = []
     _render(root, dataset, "", set(), lines, pinned_snapshot=None)
     if not lines:
@@ -117,6 +126,8 @@ def format_dag(root: Path, dataset: str) -> str:
 
 def verify_lineage(root: Path, dataset: str | None = None) -> DriftReport:
     """Recompute snapshot, object, and code hashes. Drift is a failed report."""
+    if dataset is not None:
+        dataset = _require_dataset_name(dataset)
     errors: list[str] = []
     names = [dataset] if dataset is not None else sorted(_index(root))
     if dataset is not None and dataset not in _index(root):
