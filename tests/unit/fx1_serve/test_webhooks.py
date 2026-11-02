@@ -563,6 +563,54 @@ class TestWebhooks(unittest.TestCase):
         finally:
             response.close()
 
+    def test_invalid_retry_settings_fail_before_dns_or_delivery(self) -> None:
+        cases = [
+            ({"max_attempts": 0}, "max_attempts must be positive"),
+            ({"max_attempts": -1}, "max_attempts must be positive"),
+            ({"backoff_s": -0.1}, "backoff_s must be finite and non-negative"),
+            ({"backoff_s": float("nan")}, "backoff_s must be finite and non-negative"),
+            ({"timeout_s": 0}, "timeout_s must be finite and positive"),
+            ({"timeout_s": float("inf")}, "timeout_s must be finite and positive"),
+        ]
+        for kwargs, message in cases:
+            with (
+                self.subTest(kwargs=kwargs),
+                patch("fx1.serve.webhooks._resolved_addresses") as resolve,
+                patch("fx1.serve.webhooks._post_once") as post,
+            ):
+                delivered, error, attempts = deliver_signed(
+                    "https://example.com/hook", None, self.body, **kwargs
+                )
+                self.assertFalse(delivered)
+                self.assertIn(message, error or "")
+                self.assertEqual(attempts, 0)
+                resolve.assert_not_called()
+                post.assert_not_called()
+
+    def test_retry_backoff_uses_jitter(self) -> None:
+        with (
+            patch(
+                "fx1.serve.webhooks._resolved_addresses",
+                return_value=("93.184.216.34",),
+            ),
+            patch("fx1.serve.webhooks._post_once", side_effect=[503, 204]) as post,
+            patch("fx1.serve.webhooks.random.uniform", return_value=0.25) as uniform,
+            patch("time.sleep") as sleep,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://8.8.8.8/hook",
+                None,
+                self.body,
+                max_attempts=2,
+                backoff_s=0.5,
+            )
+        self.assertTrue(delivered)
+        self.assertIsNone(error)
+        self.assertEqual(attempts, 2)
+        self.assertEqual(post.call_count, 2)
+        uniform.assert_called_once_with(0.0, 0.5)
+        sleep.assert_called_once_with(0.25)
+
 
 if __name__ == "__main__":
     unittest.main()
