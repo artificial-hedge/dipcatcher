@@ -105,9 +105,11 @@ jobs:
         run: uv sync --frozen --all-groups
       - name: Fetch bar parquets from artifact store
         if: vars.SOTA_ARTIFACT_URI != ''
+        env:
+          SOTA_ARTIFACT_URI: ${{ vars.SOTA_ARTIFACT_URI }}
         run: |
           set -euo pipefail
-          uri="${{ vars.SOTA_ARTIFACT_URI }}"
+          uri="$SOTA_ARTIFACT_URI"
           case "$uri" in
             s3://*) aws s3 sync "$uri" data/raw/sources/ ;;
             *) echo "::error::unsupported SOTA_ARTIFACT_URI scheme (s3:// only)"; exit 1 ;;
