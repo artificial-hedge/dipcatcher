@@ -24,7 +24,6 @@ import io
 import json
 import sys
 import urllib.error
-import urllib.request
 import zipfile
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -403,27 +402,14 @@ def test_fetch_coin_tail_skips_missing_archives(monkeypatch: pytest.MonkeyPatch)
 # --------------------------------------------------------------------------- #
 
 
-class _FakeResponse:
-    def __init__(self, payload: object) -> None:
-        self._payload = payload
-
-    def read(self) -> bytes:
-        return json.dumps(self._payload).encode()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc) -> bool:
-        return False
-
-
 def test_fapi_funding_returns_single_page(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = [{"fundingTime": 1, "fundingRate": "0.0001"}]
 
-    def _fake_urlopen(req, timeout=None):
-        return _FakeResponse(payload)
+    def _fake_read(req, *, timeout):
+        del req, timeout
+        return json.dumps(payload).encode()
 
-    monkeypatch.setattr(daily.urllib.request, "urlopen", _fake_urlopen)
+    monkeypatch.setattr(daily, "read_vendor", _fake_read)
     assert daily._fapi_funding("BTC", 0, 10) == payload
 
 
@@ -433,33 +419,36 @@ def test_fapi_funding_paginates_on_full_page(monkeypatch: pytest.MonkeyPatch) ->
     pages = [full, tail]
     calls = {"n": 0}
 
-    def _fake_urlopen(req, timeout=None):
+    def _fake_read(req, *, timeout):
+        del req, timeout
         data = pages[min(calls["n"], len(pages) - 1)]
         calls["n"] += 1
-        return _FakeResponse(data)
+        return json.dumps(data).encode()
 
-    monkeypatch.setattr(daily.urllib.request, "urlopen", _fake_urlopen)
+    monkeypatch.setattr(daily, "read_vendor", _fake_read)
     rows = daily._fapi_funding("BTC", 0, 10_000)
     assert len(rows) == 1001
     assert calls["n"] == 2
 
 
 def test_fapi_funding_stops_on_empty_page(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_urlopen(req, timeout=None):
-        return _FakeResponse([])
+    def _fake_read(req, *, timeout):
+        del req, timeout
+        return json.dumps([]).encode()
 
-    monkeypatch.setattr(daily.urllib.request, "urlopen", _fake_urlopen)
+    monkeypatch.setattr(daily, "read_vendor", _fake_read)
     assert daily._fapi_funding("BTC", 0, 10) == []
 
 
 def test_fapi_funding_raises_after_exhausted_retries(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = {"n": 0}
 
-    def _fake_urlopen(req, timeout=None):
+    def _fake_read(req, *, timeout):
+        del req, timeout
         calls["n"] += 1
         raise urllib.error.URLError("down")
 
-    monkeypatch.setattr(daily.urllib.request, "urlopen", _fake_urlopen)
+    monkeypatch.setattr(daily, "read_vendor", _fake_read)
     monkeypatch.setattr(daily.time, "sleep", lambda _s: None)
     with pytest.raises(urllib.error.URLError):
         daily._fapi_funding("BTC", 0, 10)
@@ -749,10 +738,11 @@ def test_okx_list_universe_requires_live_spot_pair(monkeypatch: pytest.MonkeyPat
 def test_okx_get_raises_on_error_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(okx.time, "sleep", lambda _s: None)
 
-    def _fake_urlopen(req, timeout=None):
-        return _FakeResponse({"code": "50011", "msg": "boom"})
+    def _fake_read(req, *, timeout):
+        del req, timeout
+        return json.dumps({"code": "50011", "msg": "boom"}).encode()
 
-    monkeypatch.setattr(okx.urllib.request, "urlopen", _fake_urlopen)
+    monkeypatch.setattr(okx, "read_vendor", _fake_read)
     with pytest.raises(RuntimeError, match="okx error"):
         okx._get("/api/v5/public/instruments?instType=SWAP")
 
