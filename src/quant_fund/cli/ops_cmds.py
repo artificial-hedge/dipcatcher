@@ -384,6 +384,22 @@ def _probe_git_sha() -> str | None:
     return proc.stdout.strip() or None
 
 
+def _book_stat_text(value: object, spec: str) -> str:
+    """Format a book stat. Null and non-numeric receipts print as nan."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return "nan"
+    return format(value, spec)
+
+
+def _book_rank(item: tuple[object, object]) -> float:
+    """Sort key. A null total return ranks last."""
+    stats = item[1]
+    value = stats.get("total_return") if isinstance(stats, dict) else None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return float("-inf")
+    return float(value)
+
+
 @app.command("sim-live")
 def sim_live(
     config: Path = typer.Option(Path("configs/sim_live.yaml")),
@@ -578,17 +594,14 @@ def sim_live(
     typer.echo(json.dumps(result.receipt["loop_metrics"], indent=2, default=str))
     if result.receipt.get("book_stats"):
         typer.echo("book leaderboard (same bars/costs/gates, simulated):")
-        rows = sorted(
-            result.receipt["book_stats"].items(),
-            key=lambda kv: kv[1].get("total_return", float("-inf")),
-            reverse=True,
-        )
+        rows = sorted(result.receipt["book_stats"].items(), key=_book_rank, reverse=True)
         for name, st in rows:
             if st.get("status") == "ok":
                 typer.echo(
-                    f"  {name:<18} ret={st['total_return']:+.4%} "
-                    f"sharpe={st['sharpe_simulated']:+.3f} maxDD={st['max_drawdown']:+.3%} "
-                    f"vol={st['ann_vol']:.3%} fills={st.get('n_fills')}"
+                    f"  {name:<18} ret={_book_stat_text(st.get('total_return'), '+.4%')} "
+                    f"sharpe={_book_stat_text(st.get('sharpe_simulated'), '+.3f')} "
+                    f"maxDD={_book_stat_text(st.get('max_drawdown'), '+.3%')} "
+                    f"vol={_book_stat_text(st.get('ann_vol'), '.3%')} fills={st.get('n_fills')}"
                 )
             else:
                 typer.echo(f"  {name:<18} {st.get('status', 'failed')}")
