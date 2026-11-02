@@ -25,6 +25,7 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import polars as pl
+from vendor_http import read_vendor
 
 S3 = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision"
 NS = "{http://s3.amazonaws.com/doc/2006-03-01/}"
@@ -105,8 +106,8 @@ def _http(url: str, *, retries: int = 6, binary: bool = False):
     for attempt in range(retries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "dipcatcher-research/1.0"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return r.read() if binary else r.read().decode("utf-8", "replace")
+            body = read_vendor(req, timeout=30)
+            return body if binary else body.decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 raise FileNotFoundError(url) from e
