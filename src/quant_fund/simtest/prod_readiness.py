@@ -40,8 +40,8 @@ _FX1_GUARD = (
     "non-loopback binding requires FX1_API_KEY",
     "127.0.0.1",
 )
-_RESEARCH_GUARD = (
-    "hmac.compare_digest",
+_RESEARCH_APP_GUARD = (
+    "keys_match",
     "X-API-Key",
     "QUANT_API_KEY",
     "127.0.0.1",
@@ -115,12 +115,7 @@ def _collect(root: Path, work: Path) -> list[dict[str, Any]]:
             "api_auth_guard",
             lambda: _guard(root, "src/fx1/serve/api.py", _FX1_GUARD, "api_auth_guard"),
         ),
-        _capture(
-            "research_api_auth_guard",
-            lambda: _guard(
-                root, "src/quant_fund/api/app.py", _RESEARCH_GUARD, "research_api_auth_guard"
-            ),
-        ),
+        _capture("research_api_auth_guard", lambda: _research_api_guard(root)),
         _capture("fx1_weights", lambda: _fx1_weights(root)),
         _capture("release_tag", lambda: _release_tags(root)),
         _capture("allow_live", lambda: _allow_live()),
@@ -365,6 +360,29 @@ def _ci_token(root: Path) -> dict[str, Any]:
         )
     return _pass(
         "ci_token_scope", f"{len(files)} workflows grant no contents write", files=len(files)
+    )
+
+
+def _research_api_guard(root: Path) -> dict[str, Any]:
+    """The lab API compares keys in http_controls.keys_match, which app.py calls."""
+    app = _guard(
+        root,
+        "src/quant_fund/api/app.py",
+        _RESEARCH_APP_GUARD,
+        "research_api_auth_guard",
+    )
+    if app["status"] != "pass":
+        return app
+    compare = root / "src/quant_fund/api/http_controls.py"
+    marker = "hmac.compare_digest"
+    if not compare.is_file() or marker not in compare.read_text(encoding="utf-8"):
+        return _fail(
+            "research_api_auth_guard",
+            f"missing guard marker in src/quant_fund/api/http_controls.py: {marker}",
+        )
+    return _pass(
+        "research_api_auth_guard",
+        "auth guard markers present in src/quant_fund/api/app.py",
     )
 
 

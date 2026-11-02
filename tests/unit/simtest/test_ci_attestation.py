@@ -14,6 +14,7 @@ from quant_fund.simtest.prod_readiness import (
     _ci_attestation_row,
     _judge_status_payload,
     _pr_test_suite,
+    _research_api_guard,
     _slug_from_remote,
 )
 
@@ -189,6 +190,14 @@ def test_slug_parser_drops_userinfo() -> None:
     assert slug == "acme/widgets"
     assert _slug_from_remote("git@github.com:acme/widgets.git") == "acme/widgets"
     assert "s3cret" not in (slug or "")
+
+
+def test_research_api_guard_follows_the_extracted_compare() -> None:
+    row = _research_api_guard(Path("."))
+    assert row["status"] == "pass"
+    text = (Path("src/quant_fund/api/http_controls.py")).read_text(encoding="utf-8")
+    assert "hmac.compare_digest" in text
+    assert "def keys_match" in text
 
 
 def test_scorecard_source_does_not_sign_or_post() -> None:
