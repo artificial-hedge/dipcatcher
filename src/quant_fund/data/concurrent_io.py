@@ -327,13 +327,15 @@ def _new_connection(
     timeout: float,
     address: str | None,
 ) -> http.client.HTTPConnection:
-    if address is not None:
-        return pinned_connection(scheme, host, port, address, timeout)
-    if scheme == "https":
-        return http.client.HTTPSConnection(host, port, timeout=timeout)
-    if scheme == "http":
-        return http.client.HTTPConnection(host, port, timeout=timeout)
-    raise IoError(f"unsupported URL scheme: {scheme}")
+    if scheme not in {"http", "https"}:
+        raise IoError(f"unsupported URL scheme: {scheme}")
+    dial = address
+    if dial is None:
+        try:
+            dial = public_addresses(host, port, allow_loopback=True)[0]
+        except OutboundRefused as exc:
+            raise IoError(str(exc)) from exc
+    return pinned_connection(scheme, host, port, dial, timeout)
 
 
 class ConnectionPool:
