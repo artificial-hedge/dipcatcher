@@ -19,12 +19,22 @@ def api(host: str = "127.0.0.1", port: int = 8000) -> None:
 
     import uvicorn
 
+    from quant_fund.api.http_controls import serve_banner_kwargs
+
     loopback_hosts = {"127.0.0.1", "::1", "localhost"}
     if host not in loopback_hosts and not os.environ.get("QUANT_API_KEY"):
         raise typer.BadParameter(
             "non-loopback API binding requires QUANT_API_KEY; refusing unauthenticated exposure"
         )
-    uvicorn.run("quant_fund.api.app:app", host=host, port=port, reload=False)
+    banner = serve_banner_kwargs()
+    uvicorn.run(
+        "quant_fund.api.app:app",
+        host=host,
+        port=port,
+        reload=False,
+        server_header=banner["server_header"],
+        date_header=banner["date_header"],
+    )
 
 
 def _reject_halt_flags(halt: bool, clear_halt: bool) -> None:

@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 
 from fx1.serve import backends
+from quant_fund.utils.outbound import PRIVATE_ALLOW_CIDRS_ENV
 
 
 def _request(url: str = "http://provider.example/v1/chat/completions") -> urllib.request.Request:
@@ -29,7 +30,7 @@ def test_private_and_mixed_dns_answers_refuse_before_connect(
         attempts.append(args)
         raise AssertionError("a prohibited destination must not be contacted")
 
-    monkeypatch.delenv(backends.BYOK_ALLOW_PRIVATE_NETWORKS_ENV, raising=False)
+    monkeypatch.delenv(PRIVATE_ALLOW_CIDRS_ENV, raising=False)
     monkeypatch.setattr(socket, "create_connection", no_connect)
     for answers in (
         [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 80))],
@@ -50,7 +51,7 @@ def test_private_and_mixed_dns_answers_refuse_before_connect(
 def test_private_opt_in_is_strict_and_never_admits_metadata(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv(backends.BYOK_ALLOW_PRIVATE_NETWORKS_ENV, "true")
+    monkeypatch.setenv(PRIVATE_ALLOW_CIDRS_ENV, "10.0.0.0/8,127.0.0.0/8,fd00::/8")
     assert backends._byok_address_allowed(  # noqa: SLF001 - security policy unit boundary
         backends._normalized_address("10.1.2.3"), allow_private=True
     )
@@ -60,7 +61,23 @@ def test_private_opt_in_is_strict_and_never_admits_metadata(
     assert backends._byok_address_allowed(
         backends._normalized_address("fd00::1"), allow_private=True
     )
-    for raw in ("169.254.169.254", "100.64.0.1", "192.0.2.1", "::", "ff02::1"):
+    assert not backends._byok_address_allowed(
+        backends._normalized_address("192.168.1.1"), allow_private=True
+    )
+    assert not backends._byok_address_allowed(
+        backends._normalized_address("10.1.2.3"), allow_private=False
+    )
+    monkeypatch.setenv(PRIVATE_ALLOW_CIDRS_ENV, "0.0.0.0/0,::/0,169.254.0.0/16")
+    for raw in (
+        "169.254.169.254",
+        "100.64.0.1",
+        "192.0.2.1",
+        "198.18.0.1",
+        "::",
+        "ff02::1",
+        "192.88.99.1",
+        "2001:db8::1",
+    ):
         assert not backends._byok_address_allowed(
             backends._normalized_address(raw), allow_private=True
         )
@@ -148,7 +165,7 @@ def test_byok_policy_reaches_all_five_provider_routes(monkeypatch: pytest.Monkey
         seen.append(request)
         yield Response(request.full_url)
 
-    monkeypatch.delenv(backends.BYOK_ALLOW_PRIVATE_NETWORKS_ENV, raising=False)
+    monkeypatch.delenv(PRIVATE_ALLOW_CIDRS_ENV, raising=False)
     monkeypatch.setattr(backends, "_openai_urlopen", fake_open)
     backend = backends.OpenAICompatBackend(
         base_url="https://provider.example/v1", api_key="secret", model="chat"
@@ -164,26 +181,50 @@ def test_byok_policy_reaches_all_five_provider_routes(monkeypatch: pytest.Monkey
     assert not any(getattr(request, "_fx1_byok_allow_private", False) for request in seen)
 
 
-def test_non_byok_transport_keeps_existing_urllib_path(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_unflagged_transport_pins_loopback_and_refuses_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     built: list[tuple[Any, ...]] = []
+    seen: list[tuple[str, int, str]] = []
 
     class Response:
+        status = 200
+        reason = "OK"
+        headers: dict[str, str] = {}
+
         def close(self) -> None:
             pass
 
-    class Opener:
-        def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
-            assert request.full_url == "http://127.0.0.1/private"
-            assert timeout == 2
+    class Connection:
+        def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+            del timeout
+            seen.append((host, port, address))
+
+        def request(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def getresponse(self) -> Response:
             return Response()
 
-    def build(*handlers: Any) -> Opener:
-        built.append(handlers)
-        return Opener()
+        def close(self) -> None:
+            return None
 
-    monkeypatch.setattr(urllib.request, "build_opener", build)
+    def refuse_dns(*_args: Any, **_kwargs: Any) -> list[object]:
+        raise AssertionError("a literal must not reach DNS")
+
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: built.append(handlers))
+    monkeypatch.setattr(socket, "getaddrinfo", refuse_dns)
+    monkeypatch.setattr(backends, "_ByokPinnedHTTPConnection", Connection)
     with backends._openai_urlopen(
         urllib.request.Request("http://127.0.0.1/private"), timeout_s=2
     ) as response:
-        assert isinstance(response, Response)
-    assert len(built) == 1
+        assert response.status == 200
+    assert seen == [("127.0.0.1", 80, "127.0.0.1")]
+    assert built == []
+    with (
+        pytest.raises(urllib.error.URLError, match="prohibited network address"),
+        backends._openai_urlopen(
+            urllib.request.Request("http://169.254.169.254/latest/"), timeout_s=2
+        ),
+    ):
+        pass
