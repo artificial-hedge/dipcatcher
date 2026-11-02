@@ -330,7 +330,10 @@ def _byok_address_allowed(
 def _raise_byok_resolution(host: str, exc: OutboundRefused) -> NoReturn:
     if str(exc) == "allowlist CIDR is invalid":
         raise exc
-    if isinstance(exc.__cause__, OSError) or str(exc) in {
+    cause = exc.__cause__
+    if isinstance(cause, TimeoutError):
+        raise TimeoutError(str(cause)) from exc
+    if isinstance(cause, OSError) or str(exc) in {
         "cannot resolve host",
         "destination host did not resolve to an IP address",
     }:
