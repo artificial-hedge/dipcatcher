@@ -33,6 +33,7 @@ import polars as pl
 from quant_fund.data.calendars import session_days
 from quant_fund.data.concurrent_io import IoError, call_with_retry, map_ordered, pooled_stream
 from quant_fund.data.sources.base import HttpClient, SourceAdapter, SourceError, utc_now
+from quant_fund.utils.secrets import redact_text
 
 DATASET_ID = "mito0o852/OHLCV-1m"
 # Hub commit inspected 2026-09-26. resolve/ URLs pin this snapshot.
@@ -563,16 +564,16 @@ def http_download(url: str, dest: Path) -> None:
         except IoError as exc:
             text = str(exc)
             if "exceeded" in text:
-                raise SourceError(text) from exc
-            raise SourceError(f"GET failed: {url}") from exc
+                raise SourceError(redact_text(text)) from exc
+            raise SourceError(f"GET failed: {redact_text(url)}") from exc
         if status == 404:
-            raise MonthNotFound(f"monthly parquet not found: {url}")
+            raise MonthNotFound(f"monthly parquet not found: {redact_text(url)}")
         if status in (429, 500, 502, 503, 504):
-            raise OSError(status, f"HTTP {status} for {url}")
+            raise OSError(status, f"HTTP {status} for {redact_text(url)}")
         if status >= 400:
-            raise SourceError(f"GET failed ({status}): {url}")
+            raise SourceError(f"GET failed ({status}): {redact_text(url)}")
         if not dest.is_file() or dest.stat().st_size < 1:
-            raise SourceError(f"empty response: {url}")
+            raise SourceError(f"empty response: {redact_text(url)}")
 
     call_with_retry(
         once,
@@ -594,7 +595,7 @@ def stream_https(
 ) -> None:
     """Download ``url`` with a hard byte cap. Oversize and HTTP errors raise."""
     if urlsplit(url).scheme.lower() != "https":
-        raise SourceError(f"refusing non-HTTPS dataset URL: {url}")
+        raise SourceError(f"refusing non-HTTPS dataset URL: {redact_text(url)}")
     if max_bytes < 1:
         raise ValueError("max_bytes must be positive")
     request = Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
@@ -603,11 +604,11 @@ def stream_https(
     except HTTPError as exc:
         dest.unlink(missing_ok=True)
         if exc.code == 404:
-            raise MonthNotFound(f"monthly parquet not found: {url}") from exc
-        raise SourceError(f"GET failed ({exc.code}): {url}") from exc
+            raise MonthNotFound(f"monthly parquet not found: {redact_text(url)}") from exc
+        raise SourceError(f"GET failed ({exc.code}): {redact_text(url)}") from exc
     except (OSError, URLError, TimeoutError) as exc:
         dest.unlink(missing_ok=True)
-        raise SourceError(f"GET failed: {url}") from exc
+        raise SourceError(f"GET failed: {redact_text(url)}") from exc
     total = 0
     try:
         with response, dest.open("wb") as handle:
@@ -618,7 +619,8 @@ def stream_https(
                 total += len(chunk)
                 if total > max_bytes:
                     raise SourceError(
-                        f"monthly parquet exceeded {max_bytes} bytes; download aborted: {url}"
+                        f"monthly parquet exceeded {max_bytes} bytes; download aborted: "
+                        f"{redact_text(url)}"
                     )
                 handle.write(chunk)
     except SourceError:
@@ -626,10 +628,10 @@ def stream_https(
         raise
     except (OSError, URLError, TimeoutError) as exc:
         dest.unlink(missing_ok=True)
-        raise SourceError(f"GET failed while streaming: {url}") from exc
+        raise SourceError(f"GET failed while streaming: {redact_text(url)}") from exc
     if total < 1:
         dest.unlink(missing_ok=True)
-        raise SourceError(f"empty response: {url}")
+        raise SourceError(f"empty response: {redact_text(url)}")
 
 
 class HfOhlcv1mProvider:

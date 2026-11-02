@@ -22,6 +22,7 @@ from typing import cast
 from urllib.parse import urljoin, urlsplit
 
 from quant_fund.utils.net_timeout import require_retries, require_timeout
+from quant_fund.utils.secrets import redact_text
 
 _CHUNK = 1024 * 1024
 
@@ -379,7 +380,7 @@ def _split(url: str) -> tuple[str, str, int, str]:
     parts = urlsplit(url)
     scheme = parts.scheme.lower()
     if scheme not in {"http", "https"} or not parts.hostname:
-        raise IoError(f"unsupported URL: {url}")
+        raise IoError(f"unsupported URL: {redact_text(url)}")
     port = parts.port or (443 if scheme == "https" else 80)
     path = urljoin("/", parts.path or "/")
     if parts.query:
@@ -435,7 +436,7 @@ def pooled_request(
             reusable = (not too_big) and (not response.will_close)
             if too_big:
                 pool.discard(conn)
-                raise IoError(f"response exceeded {max_bytes} bytes: {current}")
+                raise IoError(f"response exceeded {max_bytes} bytes: {redact_text(current)}")
             if reusable:
                 pool.release(scheme, host, port, conn)
             else:
@@ -450,7 +451,7 @@ def pooled_request(
             raise
         if status in {301, 302, 303, 307, 308} and method.upper() in {"GET", "HEAD"} and location:
             if redirects >= max_redirects:
-                raise IoError(f"too many redirects: {url}")
+                raise IoError(f"too many redirects: {redact_text(url)}")
             redirects += 1
             current = urljoin(current, location)
             if status == 303:
@@ -528,9 +529,9 @@ def pooled_stream(
                 _release_redirect_conn(pool, scheme, host, port, conn, response, too_big)
                 handed_off = True
                 if too_big:
-                    raise IoError(f"response exceeded {max_bytes} bytes: {current}")
+                    raise IoError(f"response exceeded {max_bytes} bytes: {redact_text(current)}")
                 if redirects >= max_redirects:
-                    raise IoError(f"too many redirects: {url}")
+                    raise IoError(f"too many redirects: {redact_text(url)}")
                 redirects += 1
                 current = urljoin(current, location)
                 continue
@@ -550,7 +551,9 @@ def pooled_stream(
                         if total > max_bytes:
                             pool.discard(conn)
                             handed_off = True
-                            raise IoError(f"response exceeded {max_bytes} bytes: {current}")
+                            raise IoError(
+                                f"response exceeded {max_bytes} bytes: {redact_text(current)}"
+                            )
                         handle.write(block)
             except BaseException:
                 tmp_path.unlink(missing_ok=True)

@@ -25,6 +25,7 @@ import ssl
 import urllib.parse
 
 from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_attempts, require_timeout
+from quant_fund.utils.secrets import redact_text
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -245,14 +246,13 @@ def check_callback_url(url: str | None) -> str | None:
         or parsed.password is not None
     ):
         raise ValueError(
-            f"callback_url must be an http(s) URL with a host and no "
-            f"userinfo credentials, got {url!r}"
+            "callback_url must be an http(s) URL with a host and no userinfo credentials"
         )
     try:
         if parsed.port == 0:
             raise ValueError("port zero is not a callback destination")
     except ValueError as exc:
-        raise ValueError(f"callback_url has an invalid port, got {url!r}") from exc
+        raise ValueError("callback_url has an invalid port") from exc
     _validate_literal_host(parsed.hostname)
     return url
 
@@ -288,7 +288,7 @@ def deliver_signed(
         if port is None:
             port = 443 if parsed.scheme == "https" else 80
     except Exception as exc:  # noqa: BLE001 — invalid targets are delivery data
-        return False, f"{type(exc).__name__}: {exc}", 0
+        return False, redact_text(f"{type(exc).__name__}: {exc}"), 0
 
     for attempt in range(max_attempts):
         if attempt:
@@ -317,5 +317,5 @@ def deliver_signed(
                 if last_exception is not None:
                     raise last_exception
         except Exception as exc:  # noqa: BLE001 — delivery faults are data, never raised
-            error = f"{type(exc).__name__}: {exc}"
+            error = redact_text(f"{type(exc).__name__}: {exc}")
     return False, error, max_attempts

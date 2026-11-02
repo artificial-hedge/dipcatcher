@@ -35,6 +35,7 @@ from typing import Any, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
 from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_timeout
+from quant_fund.utils.secrets import redact_text
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
@@ -1652,7 +1653,9 @@ class LocalFx1Backend(_UsageTracker):
         if url:
             parsed = urllib.parse.urlparse(url)
             if parsed.scheme not in ("http", "https") or not parsed.netloc:
-                raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
+                raise RuntimeError(
+                    f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {redact_text(url)!r}"
+                )
         self._url = _chat_completions_url(url) if url else ""
         cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
         self._serve_cmd = cmd
