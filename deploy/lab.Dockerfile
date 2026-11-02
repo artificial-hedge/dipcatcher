@@ -15,10 +15,11 @@
 ARG BASE=dipcatcher:supply
 FROM ${BASE}
 
-# The parent image is the crown-jewel Dockerfile, which still has the
-# digest-pinned Debian packages. These versions are the `apt-get -s upgrade`
-# candidates from that base (2026-11-02). The same RUN is an owner step for
-# the root Dockerfile.
+# Package pins for the current crown base
+# python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+# (`apt-get -s upgrade` on 2026-11-02). After the owner step in pr_body.md
+# replaces that digest, delete this RUN. The replacement digest already
+# contains these updates.
 USER 0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
