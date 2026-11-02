@@ -12,7 +12,7 @@
 # unverified per-Dockerfile ignore-file convention. ~5.4MB total. Image
 # content is decided by COPY lines, so the root image still carries none of
 # them (root Dockerfile COPYs: pyproject.toml, uv.lock, README.md, LICENSE,
-# src/, configs/ only).
+# src/, configs/, docker/healthcheck.py, and deploy/observability/slo.yml).
 
 # --- VCS / CI / agent state ---
 .git

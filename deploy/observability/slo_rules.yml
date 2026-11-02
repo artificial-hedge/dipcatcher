@@ -1,0 +1,82 @@
+# Operational HTTP objectives for the lab and research APIs.
+# Availability: 99.9% of requests are not 5xx, measured over 30d.
+# Error budget: 0.1% of requests. A fast burn is 14.4x for 5m and 1h.
+# A slow burn is 6x for 30m and 6h. Both windows must agree.
+# Latency: p99 under 0.25 seconds over 5m.
+# These are process objectives. They are not research scores.
+
+groups:
+  - name: dipcatcher-slo-recording
+    rules:
+      - record: dipcatcher:http_requests:error_ratio_5m
+        expr: |
+          sum by (service) (rate(dipcatcher_http_requests_total{code=~"5.."}[5m]))
+          /
+          sum by (service) (rate(dipcatcher_http_requests_total[5m]))
+      - record: dipcatcher:http_requests:error_ratio_30m
+        expr: |
+          sum by (service) (rate(dipcatcher_http_requests_total{code=~"5.."}[30m]))
+          /
+          sum by (service) (rate(dipcatcher_http_requests_total[30m]))
+      - record: dipcatcher:http_requests:error_ratio_1h
+        expr: |
+          sum by (service) (rate(dipcatcher_http_requests_total{code=~"5.."}[1h]))
+          /
+          sum by (service) (rate(dipcatcher_http_requests_total[1h]))
+      - record: dipcatcher:http_requests:error_ratio_6h
+        expr: |
+          sum by (service) (rate(dipcatcher_http_requests_total{code=~"5.."}[6h]))
+          /
+          sum by (service) (rate(dipcatcher_http_requests_total[6h]))
+      - record: dipcatcher:http_requests:error_ratio_30d
+        expr: |
+          sum by (service) (rate(dipcatcher_http_requests_total{code=~"5.."}[30d]))
+          /
+          sum by (service) (rate(dipcatcher_http_requests_total[30d]))
+      - record: dipcatcher:http_requests:availability_ratio_5m
+        expr: 1 - dipcatcher:http_requests:error_ratio_5m
+      - record: dipcatcher:http_requests:availability_ratio_30d
+        expr: 1 - dipcatcher:http_requests:error_ratio_30d
+      - record: dipcatcher:http_latency:p99_5m
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (service, le) (rate(dipcatcher_http_request_duration_seconds_bucket[5m]))
+          )
+      - record: dipcatcher:slo:error_budget_remaining_30d
+        expr: |
+          1 - ((1 - dipcatcher:http_requests:availability_ratio_30d) / (1 - 0.999))
+  - name: dipcatcher-slo-alerts
+    rules:
+      - alert: DipcatcherErrorBudgetBurn
+        expr: |
+          (
+            dipcatcher:http_requests:error_ratio_5m > (14.4 * 0.001)
+            and
+            dipcatcher:http_requests:error_ratio_1h > (14.4 * 0.001)
+          )
+          or
+          (
+            dipcatcher:http_requests:error_ratio_30m > (6 * 0.001)
+            and
+            dipcatcher:http_requests:error_ratio_6h > (6 * 0.001)
+          )
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: HTTP error budget is burning.
+      - alert: DipcatcherLatencyP99
+        expr: dipcatcher:http_latency:p99_5m > 0.25
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: HTTP p99 latency is above 0.25 seconds.
+      - alert: DipcatcherErrorBudgetExhausted
+        expr: dipcatcher:slo:error_budget_remaining_30d < 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The 30 day HTTP error budget is exhausted.
