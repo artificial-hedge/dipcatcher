@@ -27,6 +27,10 @@ def user_error_message(exc: BaseException) -> str | None:
         return f"expected a directory: {_target(exc)}"
     if isinstance(exc, UnicodeDecodeError):
         return "file is not valid UTF-8"
+    if isinstance(exc, OSError):
+        return f"I/O error: {_target(exc)}"
+    if isinstance(exc, RecursionError):
+        return "input is too deeply nested"
     if isinstance(exc, json.JSONDecodeError):
         return f"invalid JSON: {exc.msg} (line {exc.lineno})"
     yaml_message = _yaml_message(exc)

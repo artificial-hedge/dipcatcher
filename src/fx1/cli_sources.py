@@ -7,8 +7,28 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import typer
+
+if TYPE_CHECKING:
+    from fx1.data.sources.registry import SourceSpec
+
+
+def _source_spec(name: str) -> SourceSpec:
+    from fx1.data.sources.registry import get_spec
+
+    try:
+        return get_spec(name)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc.args[0]), param_hint="name") from exc
+
+
+def _params(raw: str) -> dict[str, Any]:
+    params = json.loads(raw)
+    if not isinstance(params, dict):
+        raise typer.BadParameter("must be a JSON object", param_hint="--params-json")
+    return params
 
 
 def register_source_commands(sources_app: typer.Typer, corpus_app: typer.Typer) -> None:
@@ -41,10 +61,10 @@ def sources_probe(
     name: str | None = typer.Argument(None, help="Source name (default: all)."),
 ) -> None:
     """Probe availability (script + credentials) without leaking secrets."""
-    from fx1.data.sources.registry import get_spec, list_sources, roots_status
+    from fx1.data.sources.registry import list_sources, roots_status
     from fx1.data.sources.router import probe_names
 
-    specs = [get_spec(name)] if name else list_sources()
+    specs = [_source_spec(name)] if name else list_sources()
     probes = probe_names([spec.name for spec in specs])
     report = {
         "roots": roots_status(),
@@ -56,9 +76,8 @@ def sources_probe(
 def sources_describe(name: str = typer.Argument(...)) -> None:
     """Print the source's own capability docs (straight from its CLI)."""
     from fx1.data.sources.adapters import build_adapter
-    from fx1.data.sources.registry import get_spec
 
-    result = build_adapter(get_spec(name)).describe()
+    result = build_adapter(_source_spec(name)).describe()
     if result.ok:
         typer.echo(result.text)
     else:
@@ -76,14 +95,9 @@ def sources_fetch(
     """Fetch from one datasource. Failure is reported, never patched over."""
     from fx1.data.sources.adapters import build_adapter
     from fx1.data.sources.base import FetchRequest
-    from fx1.data.sources.registry import get_spec
 
-    params = json.loads(params_json)
-    if not isinstance(params, dict):
-        typer.echo("--params-json must be a JSON object", err=True)
-        raise typer.Exit(code=2)
-    result = build_adapter(get_spec(name)).fetch(
-        FetchRequest(api=api, params=params, as_of=as_of, timeout_s=timeout)
+    result = build_adapter(_source_spec(name)).fetch(
+        FetchRequest(api=api, params=_params(params_json), as_of=as_of, timeout_s=timeout)
     )
     if result.ok:
         typer.echo(result.text)
@@ -146,10 +160,9 @@ def corpus_ingest_source(
     from fx1.data.sources.adapters import build_adapter
     from fx1.data.sources.base import FetchRequest
     from fx1.data.sources.ingest import fetch_to_example, record_fetch_in_ledger
-    from fx1.data.sources.registry import get_spec
 
-    result = build_adapter(get_spec(name)).fetch(
-        FetchRequest(api=api, params=json.loads(params_json), as_of=as_of)
+    result = build_adapter(_source_spec(name)).fetch(
+        FetchRequest(api=api, params=_params(params_json), as_of=as_of)
     )
     decision = fetch_to_example(result, _system_prompt())
     ledger = CorpusLedger(ledger_path)

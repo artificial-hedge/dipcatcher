@@ -14,16 +14,23 @@ from pathlib import Path
 import fx1
 
 
-def _count_jsonl(path: Path) -> int | None:
-    if not path.is_file():
-        return None
-    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+def _count_jsonl(path: Path) -> int | str | None:
+    try:
+        if not path.is_file():
+            return None
+        with path.open(encoding="utf-8") as stream:
+            return sum(1 for line in stream if line.strip())
+    except (OSError, UnicodeError):
+        return "unreadable"
 
 
-def _count_receipts(path: Path) -> int | None:
-    if not path.is_dir():
-        return None
-    return sum(1 for _ in path.rglob("*.json"))
+def _count_receipts(path: Path) -> int | str | None:
+    try:
+        if not path.is_dir():
+            return None
+        return sum(1 for _ in path.rglob("*.json"))
+    except OSError:
+        return "unreadable"
 
 
 def collect_status(root: Path | None = None) -> dict[str, object]:
