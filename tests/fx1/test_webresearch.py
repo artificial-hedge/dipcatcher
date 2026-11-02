@@ -324,6 +324,38 @@ def test_searcher_uses_injected_opener() -> None:
     assert len(result.hits) >= 2
 
 
+def test_searcher_rejects_oversized_response_with_bounded_reads() -> None:
+    read_sizes: list[int] = []
+
+    class RecordingResponse(FakeResponse):
+        def read(self, n: int = -1) -> bytes:
+            read_sizes.append(n)
+            return super().read(n)
+
+    def open_fn(request, timeout_s):  # noqa: ANN001
+        return RecordingResponse(b"x" * 33)
+
+    searcher = DuckDuckGoLiteSearcher(open_fn=open_fn, max_response_bytes=32)
+    result = searcher.search("anything")
+    assert result.hits == []
+    assert result.error == "search response exceeds 32-byte limit"
+    assert read_sizes == [33, 33]
+
+
+def test_searcher_accepts_response_at_size_limit() -> None:
+    def open_fn(request, timeout_s):  # noqa: ANN001
+        return FakeResponse(b"x" * 32)
+
+    searcher = DuckDuckGoLiteSearcher(open_fn=open_fn, max_response_bytes=32)
+    assert searcher._get("https://lite.duckduckgo.com/lite/", 1.0) == b"x" * 32
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_searcher_rejects_nonpositive_response_limit(limit: int) -> None:
+    with pytest.raises(ValueError, match="max_response_bytes must be positive"):
+        DuckDuckGoLiteSearcher(max_response_bytes=limit)
+
+
 def test_searcher_get_rejects_unapproved_endpoint() -> None:
     opened = False
 
