@@ -16,6 +16,7 @@ from quant_fund.models.informer_attn import bench_informer_attn
 from quant_fund.models.kan_forecaster import bench_kan_forecaster
 from quant_fund.models.mask_autoencoder import bench_mask_autoencoder
 from quant_fund.models.ts_mixer import bench_ts_mixer
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -67,7 +68,9 @@ def bench_ts_mixer_family() -> dict[str, float]:
 
 def bench_informer_attn_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("informer_attn", bench_informer_attn(seed=_SEED + 758)))
+        return _floats(
+            _finite_blob("informer_attn", call_bench(bench_informer_attn, seed=_SEED + 758))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:
