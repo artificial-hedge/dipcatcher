@@ -849,7 +849,7 @@ sequenceDiagram
 | `quant_fund.realized` | 2 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 1861 |
+| `quant_fund.research` | 1862 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 9 |
@@ -858,7 +858,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 14 |
 
-- Modules scanned: **13403**
+- Modules scanned: **13404**
 - Packages: **97**
 - Cross-package import edges: **407**
 
