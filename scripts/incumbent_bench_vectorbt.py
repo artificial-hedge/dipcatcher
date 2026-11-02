@@ -135,6 +135,7 @@ def run_dipcatcher(bars: pl.DataFrame, weights: pl.DataFrame, cost_bps: float, e
             stale_model_hours=1e9,
         ),
     )
+    cfg.kill_switch.state = "ENABLED"
     res = _run(bars, weights, cfg, initial_nav=INIT_NAV)
     return res.equity, res.metrics, res.fills
 

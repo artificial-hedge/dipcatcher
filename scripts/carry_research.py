@@ -83,6 +83,7 @@ def make_cfg() -> AppConfig:
     cfg.risk_gate.max_gross = 10.0
     cfg.risk_gate.max_net = 10.0
     cfg.kill_switch.allow_auto_flatten = False
+    cfg.kill_switch.state = "ENABLED"
     return cfg
 
 

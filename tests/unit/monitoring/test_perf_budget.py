@@ -59,7 +59,7 @@ def test_qualifying_gate_wall_budget() -> None:
 
 
 def _build_ledger(with_replays: bool) -> OrderFillLedger:
-    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=1_000_000.0)
+    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=1_000_000.0, accept_orders=True)
     for i in range(N_FILLS):
         side = "BUY" if i % 2 == 0 else "SELL"
         qty = 1.0 + (i % 5)

@@ -123,7 +123,10 @@ class OrderFillLedger:
         starting_cash: float = 0.0,
         cash_tolerance: float = 1e-6,
         position_tolerance: float = 1e-6,
+        accept_orders: bool = False,
     ) -> None:
+        if not isinstance(accept_orders, bool):
+            raise OrderLedgerError("accept_orders must be a bool")
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
         self._cash_tolerance = float(cash_tolerance)
         self._position_tolerance = float(position_tolerance)
@@ -133,8 +136,13 @@ class OrderFillLedger:
         self._computed_positions: dict[str, float] = {}
         self._declared_cash: float | None = None
         self._declared_positions: dict[str, float] | None = None
-        self._kill_state: KillState = "ENABLED"
-        self._kill_reason: str | None = None
+        # Halted until the caller opts in. clear_kill() is the same opt-in.
+        if accept_orders:
+            self._kill_state: KillState = "ENABLED"
+            self._kill_reason: str | None = None
+        else:
+            self._kill_state = "HALT_NEW_ORDERS"
+            self._kill_reason = "orders_require_explicit_opt_in"
         self._counters: dict[str, int] = {
             "orders": 0,
             "duplicate_orders": 0,

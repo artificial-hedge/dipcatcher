@@ -48,6 +48,7 @@ costs:
 execution:
   fill: next_open
   allow_close_auction: false
+# Paper fills are simulated. ENABLED is the opt-in; live endpoints stay refused.
 kill_switch:
   state: ENABLED
   allow_auto_flatten: false

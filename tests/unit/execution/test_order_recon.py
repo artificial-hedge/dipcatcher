@@ -46,7 +46,7 @@ def _fill(
 
 
 def _ledger(**kw) -> OrderFillLedger:
-    return OrderFillLedger(endpoint_kind="paper", **kw)
+    return OrderFillLedger(endpoint_kind="paper", accept_orders=True, **kw)
 
 
 # -- live-endpoint refusal (hard no-live guarantee) --

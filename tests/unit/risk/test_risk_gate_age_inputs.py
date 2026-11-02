@@ -69,7 +69,9 @@ def test_invalid_age_is_a_gate_rejection(field, age):
 @pytest.mark.parametrize("field", _AGE_FIELDS)
 @pytest.mark.parametrize("age", _INVALID_AGES)
 def test_broker_records_invalid_age_as_risk_rejection(field, age):
-    broker = SimulatedBroker(AppConfig())
+    cfg = AppConfig()
+    cfg.kill_switch.state = "ENABLED"
+    broker = SimulatedBroker(cfg)
     cash_before = broker.cash
     rec = broker.submit(_order(), price=1.0, adv_dollars=1e9, **{field: age})
     assert rec.order.status is OrderStatus.REJECTED
@@ -91,6 +93,7 @@ def test_broker_records_invalid_age_as_risk_rejection(field, age):
 )
 def test_finite_age_boundaries_preserve_gate_and_broker_behavior(field, case):
     cfg = AppConfig()
+    cfg.kill_switch.state = "ENABLED"
     limit = (
         cfg.risk_gate.stale_price_bars
         if field == "price_age_bars"
