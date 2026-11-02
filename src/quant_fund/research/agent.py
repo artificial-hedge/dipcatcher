@@ -11,6 +11,7 @@ Proper scores only — no Sharpe.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import platform
@@ -4195,7 +4196,7 @@ def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
     return {name: payload for name, payload in families.items() if name not in retired}
 
 
-def _live_optional_family_blobs() -> dict[str, Any]:
+def _build_live_optional_family_blobs() -> dict[str, Any]:
     """Seeded live-optional benches. Default ``run_research`` still runs them."""
     pin_catalog_threads()
     return {
@@ -5609,6 +5610,25 @@ def _live_optional_family_blobs() -> dict[str, Any]:
         "swim_gossip": bench_swim_gossip_family(),
         "two_three_pc": bench_two_three_pc_family(),
     }
+
+
+# Pytest sets DIP_SCORECARD_BUDGET=ci. Those benches are seeded and do not
+# read the research panel, so a second run_research in the same process
+# (the fingerprint test on the same xdist worker) reuses the blob.
+_CI_OPTIONAL_BLOBS: dict[str, dict[str, Any]] = {}
+
+
+def _live_optional_family_blobs() -> dict[str, Any]:
+    """Return live-optional benches, cached when the CI scorecard budget is on."""
+    budget = os.environ.get("DIP_SCORECARD_BUDGET", "full")
+    if budget == "ci":
+        cached = _CI_OPTIONAL_BLOBS.get(budget)
+        if cached is not None:
+            return copy.deepcopy(cached)
+    blobs = _build_live_optional_family_blobs()
+    if budget == "ci":
+        _CI_OPTIONAL_BLOBS[budget] = copy.deepcopy(blobs)
+    return blobs
 
 
 def _merge_live_optional(families: dict[str, Any], *, include: bool) -> None:

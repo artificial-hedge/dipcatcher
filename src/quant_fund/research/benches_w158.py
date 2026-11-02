@@ -16,6 +16,7 @@ from quant_fund.models.listmle_ltr import bench_listmle_ltr
 from quant_fund.models.listnet_ltr import bench_listnet_ltr
 from quant_fund.models.neural_sort_ltr import bench_neural_sort_ltr
 from quant_fund.models.ranknet_ltr import bench_ranknet_ltr
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -67,7 +68,7 @@ def bench_listnet_ltr_family() -> dict[str, float]:
 
 def bench_listmle_ltr_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("listmle_ltr", bench_listmle_ltr(seed=_SEED + 938)))
+        return _floats(_finite_blob("listmle_ltr", call_bench(bench_listmle_ltr, seed=_SEED + 938)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:
