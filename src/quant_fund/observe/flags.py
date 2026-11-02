@@ -36,6 +36,16 @@ def metrics_host() -> str:
     return value or "127.0.0.1"
 
 
+def metrics_loopback_scrape() -> bool:
+    """Allow an unauthenticated ``/metrics`` scrape. Startup rejects this off loopback."""
+    return os.environ.get("DIPCATCHER_METRICS_LOOPBACK_SCRAPE", "").strip().lower() in _TRUE
+
+
+def metrics_key_env() -> str:
+    """Environment variable name whose value is the metrics credential. Not the secret."""
+    return os.environ.get("DIPCATCHER_METRICS_KEY_ENV", "").strip()
+
+
 def metrics_port() -> int | None:
     raw = os.environ.get("DIPCATCHER_METRICS_PORT", "").strip()
     if not raw:

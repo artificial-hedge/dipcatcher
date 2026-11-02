@@ -7,7 +7,7 @@ from quant_fund.monitoring.kill_audit import kill_audit_bench, kill_switch_audit
 
 def test_full_matrix_clean():
     r = kill_switch_audit()
-    assert r["n_checks"] == 57
+    assert r["n_checks"] == 63
     assert r["n_violations"] == 0
     assert r["verdict"] == "ok"
 

@@ -8,7 +8,9 @@ they are not a live P&L claim.
 from __future__ import annotations
 
 import math
+import re
 import threading
+from collections.abc import Callable
 from typing import Any
 
 from quant_fund.observe.flags import STAGES, observe_enabled
@@ -29,7 +31,17 @@ METRIC_HELP = {
     "dipcatcher_simulation_net_exposure": (
         "Simulated net exposure. Not a live trading position and not a research score."
     ),
+    "dipcatcher_ready": "1 when the lab process may accept work. 0 when readiness is closed.",
+    "dipcatcher_draining": "1 when the lab SIGTERM drain latch is set.",
+    "dipcatcher_kill_switch_blocking": "1 when the operator kill file blocks new orders.",
+    "dipcatcher_kill_switch_info": (
+        "Current operator kill code. The code label is a stable reader code, never the file body."
+    ),
 }
+
+_OPS_CODE = re.compile(r"^[A-Za-z0-9_:-]{1,64}$")
+_OpsSampler = Callable[[], tuple[float, float, float, str]]
+_OPS_SAMPLER: _OpsSampler | None = None
 
 
 class _Histogram:
@@ -153,6 +165,47 @@ def histogram_quantile_upper(stage: str, quantile: float) -> float:
     return math.inf
 
 
+def register_ops_sampler(sampler: _OpsSampler) -> None:
+    """Register the lab scrape sampler. Values are read on each exposition."""
+    global _OPS_SAMPLER
+    _OPS_SAMPLER = sampler
+
+
+def clear_ops_sampler() -> None:
+    """Drop the lab scrape sampler. Used when the process stops and in tests."""
+    global _OPS_SAMPLER
+    _OPS_SAMPLER = None
+
+
+def _append_operator_gauges(lines: list[str]) -> None:
+    """Add readiness, drain, and kill series when the lab process registered them.
+
+    The series are operator signals, not research scores. A missing sampler
+    leaves the exposition unchanged. The kill label is the reader code.
+    """
+    sampler = _OPS_SAMPLER
+    if sampler is None:
+        return
+    ready, draining, blocking, code = sampler()
+    if not _unit_gauge(ready) or not _unit_gauge(draining) or not _unit_gauge(blocking):
+        return
+    safe = code if _OPS_CODE.fullmatch(code) else "kill_switch_invalid"
+    _emit_gauge(lines, "dipcatcher_ready", ready)
+    _emit_gauge(lines, "dipcatcher_draining", draining)
+    _emit_gauge(lines, "dipcatcher_kill_switch_blocking", blocking)
+    _help(lines, "dipcatcher_kill_switch_info", "gauge")
+    lines.append(f'dipcatcher_kill_switch_info{{code="{safe}"}} 1')
+
+
+def _unit_gauge(value: object) -> bool:
+    return isinstance(value, float) and value in {0.0, 1.0}
+
+
+def _emit_gauge(lines: list[str], name: str, value: float) -> None:
+    _help(lines, name, "gauge")
+    lines.append(f"{name} {_num(value)}")
+
+
 def render_prometheus() -> str:
     """Prometheus text exposition 0.0.4 for the in-process registry."""
     snap = REGISTRY.snapshot()
@@ -191,6 +244,7 @@ def render_prometheus() -> str:
         if name in snap["gauges"]:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
+    _append_operator_gauges(lines)
     text = "\n".join(lines)
     if text:
         text += "\n"
