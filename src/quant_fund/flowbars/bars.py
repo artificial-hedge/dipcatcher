@@ -30,6 +30,18 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.flowbars.checks import (
+    finite_number,
+    finite_series,
+    min_int,
+    non_negative_finite,
+    non_negative_int,
+    non_negative_series,
+    positive_finite,
+    positive_int,
+    positive_series,
+)
+
 FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
@@ -48,8 +60,10 @@ def synth_tape(
     ``dollar`` (price × size) per trade. Labeled synthetic — never market
     evidence.
     """
-    if n_trades < 2:
-        raise ValueError("n_trades must be >= 2")
+    n_trades = min_int(n_trades, "n_trades", 2)
+    size_lambda = non_negative_finite(size_lambda, "size_lambda")
+    vol = non_negative_finite(vol, "vol")
+    drift = finite_number(drift, "drift")
     rng = np.random.default_rng(seed)
     sizes = rng.poisson(lam=size_lambda, size=n_trades).astype(np.float64) + 1.0
     shocks = rng.normal(loc=drift, scale=vol, size=n_trades)
@@ -63,10 +77,8 @@ def synth_tape(
 
 
 def _threshold_bar_ids(cumulative: FloatArray, threshold: float) -> IntArray:
-    if threshold <= 0:
-        raise ValueError("threshold must be positive")
-    if cumulative.ndim != 1:
-        raise ValueError("cumulative must be one-dimensional")
+    threshold = positive_finite(threshold, "threshold")
+    cumulative = finite_series(cumulative, "cumulative")
     ids = np.floor(cumulative / threshold).astype(np.int64)
     # A single trade can cross several threshold multiples at once; the
     # intervening multiples correspond to bars with no trades. Compress to
@@ -78,21 +90,21 @@ def _threshold_bar_ids(cumulative: FloatArray, threshold: float) -> IntArray:
 
 def dollar_bar_ids(dollar: FloatArray, threshold: float) -> IntArray:
     """Bar index per trade for dollar bars (cumulative $ value crossing)."""
-    return _threshold_bar_ids(np.cumsum(np.asarray(dollar, dtype=np.float64)), threshold)
+    values = non_negative_series(dollar, "dollar")
+    return _threshold_bar_ids(np.cumsum(values), threshold)
 
 
 def volume_bar_ids(sizes: FloatArray, threshold: float) -> IntArray:
     """Bar index per trade for volume bars (cumulative quantity crossing)."""
-    return _threshold_bar_ids(np.cumsum(np.asarray(sizes, dtype=np.float64)), threshold)
+    values = non_negative_series(sizes, "sizes")
+    return _threshold_bar_ids(np.cumsum(values), threshold)
 
 
 def tick_bar_ids(n_trades: int, every: int) -> IntArray:
     """Bar index per trade for tick bars (one bar per ``every`` trades)."""
-    if n_trades < 0:
-        raise ValueError("n_trades must be non-negative")
-    if every <= 0:
-        raise ValueError("every must be positive")
-    return (np.arange(n_trades, dtype=np.int64) // every).astype(np.int64)
+    count = non_negative_int(n_trades, "n_trades")
+    stride = positive_int(every, "every")
+    return (np.arange(count, dtype=np.int64) // stride).astype(np.int64)
 
 
 def _group_ends(ids: IntArray) -> IntArray:
@@ -104,7 +116,7 @@ def _group_ends(ids: IntArray) -> IntArray:
 
 def bar_ohlc(prices: FloatArray, ids: IntArray) -> dict[str, FloatArray]:
     """OHLC per bar from per-trade prices and bar ids (sorted)."""
-    prices = np.asarray(prices, dtype=np.float64)
+    prices = positive_series(prices, "prices")
     ids = np.asarray(ids, dtype=np.int64)
     if prices.shape != ids.shape:
         raise ValueError("prices and ids must have the same shape")
@@ -126,7 +138,7 @@ def bar_ohlc(prices: FloatArray, ids: IntArray) -> dict[str, FloatArray]:
 
 def bar_last_prices(prices: FloatArray, ids: IntArray) -> FloatArray:
     """Closing price of each bar (last trade price inside the bar)."""
-    prices = np.asarray(prices, dtype=np.float64)
+    prices = positive_series(prices, "prices")
     ids = np.asarray(ids, dtype=np.int64)
     if prices.shape != ids.shape:
         raise ValueError("prices and ids must have the same shape")

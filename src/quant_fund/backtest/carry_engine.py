@@ -39,6 +39,7 @@ from quant_fund.backtest.engine import (
     _target_weight_map,
     _valid_price,
 )
+from quant_fund.backtest.inputs import finite_non_negative
 from quant_fund.backtest.perp_engine import (
     OverlayScaler,
     _bar_enrichment,
@@ -264,6 +265,8 @@ def run_carry_backtest(
     ``event_time`` supplies the label; explicit ``application_time`` mapping
     does not imply automatic interval bucketing.
     """
+    initial_nav = finite_non_negative(initial_nav, "initial_nav")
+    cash_buffer_frac = finite_non_negative(cash_buffer_frac, "cash_buffer_frac")
     if weights.height:
         _ = _target_weight_map(weights)
     if (weights["target_weight"] < 0).any() if weights.height else False:

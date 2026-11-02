@@ -36,6 +36,7 @@ from quant_fund.backtest.engine import (
     _target_weight_map,
     _valid_price,
 )
+from quant_fund.backtest.inputs import finite_non_negative
 from quant_fund.config.models import AppConfig
 from quant_fund.execution.costs import total_cost
 from quant_fund.metrics.analytics import book_diagnostics
@@ -221,6 +222,7 @@ def run_perp_backtest(
     and counted in ``funding_events_dropped``; see DATA_CONTRACTS.md
     for the scope of that diagnostic and input timestamp conventions.
     """
+    initial_nav = finite_non_negative(initial_nav, "initial_nav")
     if weights.height:
         _ = _target_weight_map(weights)
     # Pre-group target rows by event_time once — a per-bar frame filter is

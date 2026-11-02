@@ -22,6 +22,8 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.flowbars.checks import non_negative_series, positive_finite
+
 FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
@@ -33,11 +35,10 @@ def run_bar_ids(signs: IntArray, values: FloatArray, threshold: float) -> IntArr
     dollars → dollar runs). The final open bar is closed at the last trade.
     """
     signs = np.asarray(signs, dtype=np.int64)
-    values = np.asarray(values, dtype=np.float64)
+    values = non_negative_series(values, "values")
     if signs.shape != values.shape:
         raise ValueError("signs and values must have the same shape")
-    if threshold <= 0:
-        raise ValueError("threshold must be positive")
+    threshold = positive_finite(threshold, "threshold")
     n = len(signs)
     ids = np.zeros(n, dtype=np.int64)
     if n == 0:
@@ -80,7 +81,7 @@ def dollar_run_bar_ids(signs: IntArray, dollars: FloatArray, threshold: float) -
 def max_run_profile(signs: IntArray, values: FloatArray) -> FloatArray:
     """Per-trade maximum open same-sign run at that point (diagnostic)."""
     signs = np.asarray(signs, dtype=np.int64)
-    values = np.asarray(values, dtype=np.float64)
+    values = non_negative_series(values, "values")
     if signs.shape != values.shape:
         raise ValueError("signs and values must have the same shape")
     n = len(signs)
