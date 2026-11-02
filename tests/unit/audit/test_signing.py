@@ -44,10 +44,24 @@ def test_rejects_bad_key_material(tmp_path: Path) -> None:
         Ed25519Signer.from_private_bytes(b"\x00" * 31)
     path = tmp_path / "bad"
     path.write_text("zzzz\n", encoding="ascii")
-    with pytest.raises(AuditError):
+    if os.name != "nt":
+        os.chmod(path, 0o600)
+    with pytest.raises(AuditError, match="not hex"):
         Ed25519Signer.from_path(path)
     with pytest.raises(AuditError):
         load_public_key_hex(path)
+
+
+def test_world_readable_signing_key_is_refused(tmp_path: Path) -> None:
+    signer = Ed25519Signer.generate()
+    path = tmp_path / "ledger.key"
+    signer.write(path)
+    if os.name == "nt":
+        return
+    os.chmod(path, 0o644)
+    with pytest.raises(AuditError, match="world-readable") as raised:
+        Ed25519Signer.from_path(path)
+    assert signer.public_key_hex not in str(raised.value)
 
 
 def test_sigstore_refuses_without_a_token(monkeypatch: pytest.MonkeyPatch) -> None:

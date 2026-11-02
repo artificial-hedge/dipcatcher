@@ -22,6 +22,7 @@ from typing import Any
 
 from quant_fund.observe.flags import STAGES, observe_enabled, otel_endpoint
 from quant_fund.observe.metrics import record_error, record_latency
+from quant_fund.utils.outbound import OutboundRefused, pinned_connection, vetted_addresses
 
 _stack: ContextVar[tuple[Span, ...]] = ContextVar("dipcatcher_span_stack", default=())
 _finished: list[Span] = []
@@ -111,10 +112,8 @@ def _export(current: Span) -> None:
         path = f"{path}?{parsed.query}"
     connection: http.client.HTTPConnection | None = None
     try:
-        if parsed.scheme == "https":
-            connection = http.client.HTTPSConnection(parsed.hostname, port, timeout=1.0)
-        else:
-            connection = http.client.HTTPConnection(parsed.hostname, port, timeout=1.0)
+        addresses = vetted_addresses(parsed.hostname, port, None, allow_loopback=True)
+        connection = pinned_connection(parsed.scheme, parsed.hostname, port, addresses[0], 1.0)
         connection.request(
             "POST",
             path,
@@ -123,7 +122,7 @@ def _export(current: Span) -> None:
         )
         response = connection.getresponse()
         response.read()
-    except (OSError, http.client.HTTPException):
+    except (OSError, http.client.HTTPException, OutboundRefused):
         # A collector speaking garbage back is still a transport failure:
         # record it and never raise into the instrumented code path.
         record_error("otel_export")

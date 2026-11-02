@@ -217,8 +217,6 @@ def serve_audit() -> dict[str, Any]:
                     captured2["auth"] = req.headers.get("Authorization")
                 return _Resp2()
 
-            import urllib.request  # noqa: PLC0415
-
             import fx1.serve.backends as _be_mod  # noqa: PLC0415
 
             attached = LocalFx1Backend(
@@ -227,10 +225,10 @@ def serve_audit() -> dict[str, Any]:
                 serve_url="http://127.0.0.1:8011/v1",
                 api_key="local-key",
             )
-            # _engine_up probes raw urllib.request.urlopen; chat/stream
+            # _engine_up probes _pinned_models_probe; chat/stream
             # calls go through _openai_urlopen — fake both seams.
             with (
-                patch.object(urllib.request, "urlopen", fake_urlopen2),
+                patch.object(_be_mod, "_pinned_models_probe", fake_urlopen2),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen2),
             ):
                 text = attached.complete([{"role": "user", "content": "hi"}])
@@ -244,7 +242,7 @@ def serve_audit() -> dict[str, Any]:
             os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8012"
             env_be = LocalFx1Backend(root, require_signature=True)
             with (
-                patch.object(urllib.request, "urlopen", fake_urlopen2),
+                patch.object(_be_mod, "_pinned_models_probe", fake_urlopen2),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen2),
             ):
                 env_be.complete([{"role": "user", "content": "hi"}])
@@ -279,7 +277,7 @@ def serve_audit() -> dict[str, Any]:
                 )
 
             with (
-                patch.object(urllib.request, "urlopen", fake_stream),
+                patch.object(_be_mod, "_pinned_models_probe", fake_stream),
                 patch.object(_be_mod, "_openai_urlopen", fake_stream),
             ):
                 deltas = list(attached.stream([{"role": "user", "content": "hi"}]))
@@ -292,7 +290,7 @@ def serve_audit() -> dict[str, Any]:
                 return _StreamResp([b"data: {not json\n\n"])
 
             with (
-                patch.object(urllib.request, "urlopen", fake_bad_stream),
+                patch.object(_be_mod, "_pinned_models_probe", fake_bad_stream),
                 patch.object(_be_mod, "_openai_urlopen", fake_bad_stream),
             ):
                 out["local_stream_malformed_fails"] = (
@@ -328,14 +326,14 @@ def serve_audit() -> dict[str, Any]:
 
             with (
                 patch.object(subprocess, "Popen", tracking_popen),
-                patch.object(urllib.request, "urlopen", fake_urlopen_cold),
+                patch.object(_be_mod, "_pinned_models_probe", fake_urlopen_cold),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold),
             ):
                 spawned.complete([{"role": "user", "content": "hi"}])
             out["local_spawn_template_ran"] = spawned._proc is not None
             spawned.close()
             out["local_close_terminates"] = spawned._proc is None
-            # Real urlopen here: 127.0.0.1:9 refuses, so the spawn template
+            # Real pinned probe here: 127.0.0.1:9 refuses, so the spawn template
             # must run and its instant exit must surface as RuntimeError.
             dead = LocalFx1Backend(
                 root,
@@ -379,7 +377,7 @@ def serve_audit() -> dict[str, Any]:
             try:
                 with (
                     patch.object(subprocess, "Popen", counting_popen),
-                    patch.object(urllib.request, "urlopen", fake_urlopen_cold_locked),
+                    patch.object(_be_mod, "_pinned_models_probe", fake_urlopen_cold_locked),
                     patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold_locked),
                     ThreadPoolExecutor(max_workers=4) as pool,
                 ):

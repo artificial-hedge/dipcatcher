@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import urllib.parse
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -245,6 +246,34 @@ def test_health(client: TestClient) -> None:
     assert body.claim == "research_only"
 
 
+def test_ready_when_evidence_roots_exist(client: TestClient) -> None:
+    resp = client.get("/ready")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ready"
+    assert body["claim"] == "research_only"
+    assert body["checks"] == {
+        "data_root": True,
+        "receipts_dir": True,
+        "verifier_dir": True,
+        "artifacts_dir": True,
+    }
+
+
+def test_ready_fails_closed_when_a_root_is_missing(settings: ResearchApiSettings) -> None:
+    missing = replace(
+        settings,
+        receipts_dir=settings.receipts_dir / "absent",
+    )
+    resp = TestClient(create_app(missing)).get("/ready")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["status"] == "not_ready"
+    assert body["claim"] == "research_only"
+    assert body["checks"]["receipts_dir"] is False
+    assert body["checks"]["data_root"] is True
+
+
 def test_runs_list_and_pagination(client: TestClient) -> None:
     resp = client.get("/runs")
     assert resp.status_code == 200
@@ -398,6 +427,7 @@ def test_path_traversal_rejected(client: TestClient) -> None:
 def test_remote_client_refused_without_key(settings: ResearchApiSettings) -> None:
     remote = TestClient(create_app(settings), client=("203.0.113.7", 9))
     assert remote.get("/health").status_code == 200
+    assert remote.get("/ready").status_code == 200
     assert remote.get("/receipts").status_code == 403
     assert remote.get("/runs").status_code == 403
 
@@ -412,6 +442,7 @@ def test_api_key_gate(settings: ResearchApiSettings) -> None:
     )
     remote = TestClient(create_app(keyed), client=("203.0.113.7", 9))
     assert remote.get("/health").status_code == 200
+    assert remote.get("/ready").status_code == 200
     assert remote.get("/receipts").status_code == 401
     assert remote.get("/receipts", headers={"X-API-Key": "wrong"}).status_code == 401
     ok = remote.get("/receipts", headers={"X-API-Key": "s3cret"})

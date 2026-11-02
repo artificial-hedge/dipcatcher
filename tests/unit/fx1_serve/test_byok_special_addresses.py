@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import os
 import socket
 import unittest
 import urllib.error
@@ -10,6 +11,7 @@ import urllib.request
 from unittest.mock import patch
 
 from fx1.serve import backends
+from quant_fund.utils.outbound import PRIVATE_ALLOW_CIDRS_ENV
 
 
 class TestByokSpecialAddresses(unittest.TestCase):
@@ -48,15 +50,31 @@ class TestByokSpecialAddresses(unittest.TestCase):
                             backends._normalized_address(raw), allow_private=allow_private
                         )
                     )
-        for raw in ("10.1.2.3", "127.0.0.1", "172.16.0.1", "192.168.1.1", "::1", "fd00::1"):
-            for allow_private in (False, True):
-                with self.subTest(raw=raw, allow_private=allow_private):
-                    self.assertEqual(
-                        backends._byok_address_allowed(
-                            backends._normalized_address(raw), allow_private=allow_private
-                        ),
-                        allow_private,
-                    )
+        with patch.dict(os.environ, {PRIVATE_ALLOW_CIDRS_ENV: ""}):
+            for raw in ("10.1.2.3", "127.0.0.1", "172.16.0.1", "192.168.1.1", "::1", "fd00::1"):
+                for allow_private in (False, True):
+                    with self.subTest(raw=raw, allow_private=allow_private, allowlist=""):
+                        self.assertFalse(
+                            backends._byok_address_allowed(
+                                backends._normalized_address(raw), allow_private=allow_private
+                            )
+                        )
+        with patch.dict(os.environ, {PRIVATE_ALLOW_CIDRS_ENV: "10.0.0.0/8"}):
+            self.assertTrue(
+                backends._byok_address_allowed(
+                    backends._normalized_address("10.1.2.3"), allow_private=True
+                )
+            )
+            self.assertFalse(
+                backends._byok_address_allowed(
+                    backends._normalized_address("192.168.1.1"), allow_private=True
+                )
+            )
+            self.assertFalse(
+                backends._byok_address_allowed(
+                    backends._normalized_address("10.1.2.3"), allow_private=False
+                )
+            )
         for raw in ("169.254.169.254", "100.64.0.1", "192.0.2.1", "fe80::1", "::", "ff02::1"):
             for allow_private in (False, True):
                 with self.subTest(raw=raw, allow_private=allow_private):

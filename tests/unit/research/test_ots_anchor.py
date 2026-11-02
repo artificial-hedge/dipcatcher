@@ -121,19 +121,9 @@ def test_verify_ots_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     root = _repo_with_target(tmp_path)
     digest = hashlib.sha256((root / "quality/epoch_heads.json").read_bytes()).digest()
 
-    class _Resp:
-        def read(self) -> bytes:
-            return CALENDAR_RESP
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
-
     import quant_fund.research.ots_anchor as mod
 
-    monkeypatch.setattr(mod.urllib.request, "urlopen", lambda req, timeout=None: _Resp())
+    monkeypatch.setattr(mod, "_exchange", lambda req, timeout=None: CALENDAR_RESP)
     out = stamp_ots("quality/epoch_heads.json", root=root, calendars=("https://x",))
     assert out.name == "quality__epoch_heads.json.ots"
     res = verify_ots(root)
@@ -196,22 +186,7 @@ def _pending_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path
     target_bytes = (root / "quality/epoch_heads.json").read_bytes()
     digest = hashlib.sha256(target_bytes).digest()
 
-    class _Resp:
-        def __init__(self, body: bytes) -> None:
-            self._b = body
-
-        def read(self) -> bytes:
-            return self._b
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
-
-    monkeypatch.setattr(
-        mod.urllib.request, "urlopen", lambda req, timeout=None: _Resp(CALENDAR_RESP)
-    )
+    monkeypatch.setattr(mod, "_exchange", lambda req, timeout=None: CALENDAR_RESP)
     stamp_ots("quality/epoch_heads.json", root=root, calendars=("https://x",))
     return root, digest
 
