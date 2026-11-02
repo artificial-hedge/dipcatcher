@@ -16,6 +16,7 @@ from quant_fund.models.mpc_planning import bench_mpc_planning
 from quant_fund.models.ntm_memory import bench_ntm_memory
 from quant_fund.models.reformer_lsh import bench_reformer_lsh
 from quant_fund.models.rssm_world import bench_rssm_world
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -49,7 +50,9 @@ def _floats(out: dict[str, float]) -> dict[str, float]:
 
 def bench_reformer_lsh_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("reformer_lsh", bench_reformer_lsh(seed=_SEED + 816)))
+        return _floats(
+            _finite_blob("reformer_lsh", call_bench(bench_reformer_lsh, seed=_SEED + 816))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -59,7 +62,9 @@ def bench_reformer_lsh_family() -> dict[str, float]:
 def bench_memorizing_transformer_family() -> dict[str, float]:
     try:
         return _floats(
-            _finite_blob("memorizing_transformer", bench_memorizing_transformer(seed=_SEED + 817))
+            _finite_blob(
+                "memorizing_transformer", call_bench(bench_memorizing_transformer, seed=_SEED + 817)
+            )
         )
     except ImportError:
         raise
@@ -69,7 +74,7 @@ def bench_memorizing_transformer_family() -> dict[str, float]:
 
 def bench_ntm_memory_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("ntm_memory", bench_ntm_memory(seed=_SEED + 818)))
+        return _floats(_finite_blob("ntm_memory", call_bench(bench_ntm_memory, seed=_SEED + 818)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -78,7 +83,7 @@ def bench_ntm_memory_family() -> dict[str, float]:
 
 def bench_dnc_memory_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("dnc_memory", bench_dnc_memory(seed=_SEED + 819)))
+        return _floats(_finite_blob("dnc_memory", call_bench(bench_dnc_memory, seed=_SEED + 819)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:
