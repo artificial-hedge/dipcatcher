@@ -24,6 +24,38 @@ def test_store_dedups_objects_but_appends_index(tmp_path):
     assert all(r["sha256"] == a for r in listing)
 
 
+def test_concurrent_duplicate_writes_preserve_chain(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def write(_: int) -> str:
+        return ArtifactStore(tmp_path).store(b"same bytes", kind="receipt")
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        digests = list(pool.map(write, range(24)))
+
+    assert len(set(digests)) == 1
+    report = ArtifactStore(tmp_path).verify()
+    assert report["ok"], report["errors"]
+    assert report["n_index_records"] == 24
+    assert report["n_objects"] == 1
+
+
+def test_concurrent_distinct_writes_preserve_chain(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def write(index: int) -> str:
+        return ArtifactStore(tmp_path).store(f"payload-{index}".encode(), kind="receipt")
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        digests = list(pool.map(write, range(32)))
+
+    assert len(set(digests)) == 32
+    report = ArtifactStore(tmp_path).verify()
+    assert report["ok"], report["errors"]
+    assert report["n_index_records"] == 32
+    assert report["n_objects"] == 32
+
+
 def test_store_rejects_non_bytes(tmp_path):
     store = ArtifactStore(tmp_path)
     with pytest.raises(TypeError):
