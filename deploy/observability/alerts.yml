@@ -50,3 +50,10 @@ groups:
           severity: page
         annotations:
           summary: Data freshness is outside the 86400 second SLO.
+      - alert: DipcatcherTargetDown
+        expr: up{job=~"lab-api|research-api"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A dipcatcher scrape target is down.

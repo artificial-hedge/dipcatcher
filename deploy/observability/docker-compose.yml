@@ -1,6 +1,9 @@
-# Local observability stack. Bind addresses are loopback. Anonymous Grafana is a
-# viewer on this machine only; the image default admin password is unchanged
-# and this file does not set one. Do not publish these ports on a shared network.
+# Collector, Prometheus, and Grafana. Bind addresses are loopback. Anonymous
+# Grafana is a viewer on this machine only; the image default admin password
+# is unchanged and this file does not set one. Do not publish these ports on
+# a shared network. Prometheus scrapes lab-api and research-api, which exist
+# on the deploy/compose.prod.yml network. The full stack, including both
+# APIs, is that file. Token files are written at start and are not committed.
 services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.109.0
@@ -12,11 +15,15 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.54.1
+    entrypoint: ["/bin/sh", "/etc/prometheus/prometheus-entrypoint.sh"]
+    command: []
+    environment:
+      QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
+      RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alerts.yml:/etc/prometheus/alerts.yml:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - ./prometheus-entrypoint.sh:/etc/prometheus/prometheus-entrypoint.sh:ro
     ports:
       - "127.0.0.1:9090:9090"
 

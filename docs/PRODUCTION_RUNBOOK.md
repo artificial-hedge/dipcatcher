@@ -20,9 +20,10 @@ value.
 | `DIPCATCHER_SHUTDOWN_GRACE_S` | `20` | Seconds to finish requests after SIGTERM. `0`–`600`. |
 | `DIPCATCHER_OBSERVE` | unset (off) | `1` turns on metrics, JSON audit events, and the alert loop. |
 | `DIPCATCHER_METRICS_HOST` | `127.0.0.1` | Used only when `DIPCATCHER_METRICS_PORT` is set. |
-| `DIPCATCHER_METRICS_PORT` | unset | Requires `DIPCATCHER_OBSERVE=1`. `/metrics` requires the service API key as `X-API-Key` or `Authorization: Bearer`, unless the loopback scrape opt-out is set. |
+| `DIPCATCHER_METRICS_PORT` | unset | Requires `DIPCATCHER_OBSERVE=1`. `/metrics` requires the service API key as `X-API-Key` or `Authorization: Bearer`, unless the loopback scrape opt-out is set. `dipcatcher smoke-up` installs that server at import, so the lab CLI defaults `DIPCATCHER_METRICS_KEY_ENV` to `QUANT_API_KEY` when it is unset. The research process sets the name to `RESEARCH_API_KEY` before it binds. |
 | `DIPCATCHER_OTEL_ENDPOINT` | unset | `http` or `https` URL with a host and no userinfo. Requires `DIPCATCHER_OBSERVE=1`. |
-| `DIPCATCHER_RATE_LIMIT_RPS` | unset (off) | Finite rate from 0 to 1000000 for both APIs. `0` disables the limit. `/health` is exempt. Overload returns HTTP 429. An invalid value refuses startup. |
+| `DIPCATCHER_RATE_LIMIT_RPS` | unset (off) | Finite rate from 0 to 1000000 for both APIs. `0` or unset disables the limit outside production. `/health` is exempt. Overload returns HTTP 429. An invalid value refuses startup. A production profile refuses to boot unless this is set and above 0. |
+| `DIPCATCHER_PROFILE` | unset | `production` or `prod` requires `DIPCATCHER_RATE_LIMIT_RPS` set and above 0, and forces the data-dir write probe even when `DIPCATCHER_REQUIRE_DATA_WRITE=0`. Any other value keeps the non-production defaults. Set it in `deploy/prod.env`, not in the example env file. |
 | `DIPCATCHER_SLO_PATH` | shipped `deploy/observability/slo.yml` when observe is on and this is unset | Requires `DIPCATCHER_OBSERVE=1`. A symlink or invalid file refuses startup. |
 | `DIPCATCHER_ALERT_INTERVAL_S` | `60` | Alert loop period. `1`–`86400`. |
 | `DIPCATCHER_METRICS_LOOPBACK_SCRAPE` | unset (off) | Allows an unauthenticated `/metrics` scrape only when `DIPCATCHER_METRICS_HOST` is loopback. Any other host refuses startup. |
@@ -53,8 +54,19 @@ environment.
 
 ```bash
 docker build -t dipcatcher:local .
+docker build -f docker/research-api.Dockerfile -t dipcatcher-research-api .
 docker compose -f deploy/compose.prod.yml up -d
 ```
+
+That compose file starts the lab API, the research API, Prometheus, and
+Grafana. Published ports stay on `127.0.0.1`. The defaults are lab `8000`,
+research `8010`, Prometheus `9090`, and Grafana `3000`. Set
+`LAB_PUBLISH_PORT`, `RESEARCH_PUBLISH_PORT`, `PROMETHEUS_PUBLISH_PORT`, or
+`GRAFANA_PUBLISH_PORT` when a default is already taken. Do not publish
+`9464`. Prometheus reads bearer tokens from files it writes at start and
+scrapes `lab-api:9464` and `research-api:9464`. Those files are not in git.
+Grafana anonymous access is a local viewer. The compose file does not set
+an admin password.
 
 Equivalent `docker run`:
 
@@ -74,10 +86,16 @@ The image creates `/app/data` owned by uid 10001. The entrypoint
 to start when that directory is missing, is a symlink, or is not writable by
 uid 10001. The message names the path and the uid. A root-owned named volume
 fails that check. The smoke compose file uses the image directory. The
-research image sets `DIPCATCHER_REQUIRE_DATA_WRITE=0` so a `:ro` mount still
-starts, and it still refuses a symlink. A full data directory fails the lab
-entrypoint before bind. The message says the directory is full and names
-uid 10001.
+research image sets `DIPCATCHER_REQUIRE_DATA_WRITE=0`, so a `:ro` mount still
+starts when `DIPCATCHER_PROFILE` is unset, and it still refuses a symlink.
+`deploy/prod.env` sets `DIPCATCHER_PROFILE=production`,
+`DIPCATCHER_RATE_LIMIT_RPS=50`, and `DIPCATCHER_REQUIRE_DATA_WRITE=1`.
+The entrypoint also forces the write probe for `production` or `prod`, so
+a read-only research data mount fails closed the same way the lab mount
+does. A full data directory fails that probe before bind. The message says
+the directory is full and names uid 10001. A production boot with a missing,
+zero, or invalid rate exits before exec. The message names
+`DIPCATCHER_RATE_LIMIT_RPS` and does not print the value.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt
@@ -99,6 +117,9 @@ docker run --rm -p 127.0.0.1:8010:8010 \
   dipcatcher-research-api
 ```
 
+That `:ro` mount is the image default: the write flag is off and the
+production profile is unset. `deploy/prod.env` refuses the same mount.
+
 ## Stop
 
 `docker stop` sends SIGTERM. The process marks itself not ready, stops
@@ -114,6 +135,27 @@ docker stop dipcatcher
 
 SIGKILL skips the drain. Use it only when SIGTERM does not finish inside
 the grace period.
+
+## Rolling restart
+
+`scripts/rolling_restart.py` drains one container, waits until `/ready` is
+not 200, stops it, starts it, and waits until `/ready` is 200. SIGTERM sets
+the drain latch, so `/ready` returns 503 before the process exits. The load
+check uses `/health`, which stays 200 until the socket closes. A 503 from
+`/ready` is the drain signal. A single replica has a gap of transport
+errors while it is stopped. Those are not HTTP 5xx. The script exits 1
+when `scripts/http_load.py` reports any HTTP 5xx. The key is not printed.
+
+```bash
+python scripts/rolling_restart.py \
+  --container dipcatcher-ops6-lab-api-1 \
+  --ready-url http://127.0.0.1:8000/ready \
+  --env-file /secure/lab.env \
+  --key-env QUANT_API_KEY \
+  --load-url http://127.0.0.1:8000/health \
+  --load-seconds 45 \
+  --load-concurrency 10
+```
 
 ## Rollback
 
@@ -294,8 +336,12 @@ and `dipcatcher_kill_switch_info`. Stage latency, error rate, and freshness
 use the same names as `deploy/observability/slo.yml`. The alert rules in
 `deploy/observability/alerts.yml` page when readiness is 0, drain is 1, the
 kill file is blocking, p99 is above 2 seconds, the error ratio is at least
-0.01, or freshness is at least 86400 seconds. A non-zero error rate is a
-warning. The loopback metrics port stays unpublished.
+0.01, freshness is at least 86400 seconds, or the `lab-api` or
+`research-api` scrape target is down. A non-zero error rate is a warning.
+Tripping the kill file keeps the process up, so
+`DipcatcherKillSwitchBlocking` and `DipcatcherNotReady` fire. A full data
+directory makes the entrypoint exit before bind, the scrape target goes
+down, and `DipcatcherTargetDown` fires. The metrics port stays unpublished.
 
 ## Resilience
 
@@ -345,6 +391,26 @@ line is written. Do not add a new log field that copies a credential.
 Startup emits `service_start`. SIGTERM emits `service_draining`, then
 `service_shutdown`. With `DIPCATCHER_OBSERVE=1`, SLO and kill-switch
 transitions emit `alert`.
+
+## Crown-jewel edits in the ops series
+
+These are the crown-jewel paths that differ from `afaee12d4` through the
+ops commits. The pins are not re-signed here.
+
+| File | PR | Why |
+|---|---|---|
+| `.dockerignore` | 3058 | Image context note includes the healthcheck and the shipped SLO file. |
+| `.env.example` | 3058 | Document the lab bind, log, shutdown, kill-file, and SLO variables. |
+| `.env.example` | 3064 | Document the loopback metrics scrape opt-out and the live-kill file. |
+| `.env.example` | 3069 | Document paper halt cancel, harness drain debounce, and the data-dir write flag. |
+| `.env.example` | 3079 | Document `DIPCATCHER_RATE_LIMIT_RPS`. |
+| `Dockerfile` | 3058 | Non-root lab image, in-container healthcheck, SIGTERM, default bind port. |
+| `Dockerfile` | 3064 | Install uv 0.11.23 with `pip --require-hashes`. |
+| `Dockerfile` | 3069 | Entrypoint preflight and `DIPCATCHER_REQUIRE_DATA_WRITE=1`. |
+| `mkdocs.yml` | 3058 | Publish this runbook in the docs nav. |
+
+No other pinned crown-jewel path changed in that range. This slice does
+not edit `.env.example` or `Dockerfile`.
 
 ## What this does not do
 

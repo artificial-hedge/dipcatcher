@@ -1,22 +1,48 @@
-"""Fail fast when the lab data directory is not writable by uid 10001.
+"""Fail fast before the API process is executed.
 
-The research image sets ``DIPCATCHER_REQUIRE_DATA_WRITE=0`` so a read-only
-mount still starts. A symlink is refused in both modes. This file uses the
-stdlib only.
+A symlink is always refused. The write probe runs when
+``DIPCATCHER_REQUIRE_DATA_WRITE`` is on, and also when
+``DIPCATCHER_PROFILE`` is ``production`` or ``prod``. That profile also
+refuses to boot unless ``DIPCATCHER_RATE_LIMIT_RPS`` is set and above 0.
+The research image leaves the write flag off; ``deploy/prod.env`` turns
+the profile on. This file uses the stdlib only.
 """
 
 from __future__ import annotations
 
 import errno
+import math
 import os
 import sys
 
 _DIP_UID = 10001
 _TRUE = frozenset({"1", "true", "yes", "on"})
+_PRODUCTION = frozenset({"production", "prod"})
+_RATE_MESSAGE = "DIPCATCHER_RATE_LIMIT_RPS must be set above 0 in production"
 
 
 def _enabled(name: str, default: str) -> bool:
     return os.environ.get(name, default).strip().lower() in _TRUE
+
+
+def _production() -> bool:
+    return os.environ.get("DIPCATCHER_PROFILE", "").strip().lower() in _PRODUCTION
+
+
+def _production_rate_problem() -> str | None:
+    """Return the production rate message, or ``None`` when the boot may continue."""
+    if not _production():
+        return None
+    raw = os.environ.get("DIPCATCHER_RATE_LIMIT_RPS", "").strip()
+    if not raw:
+        return _RATE_MESSAGE
+    try:
+        value = float(raw)
+    except ValueError:
+        return _RATE_MESSAGE
+    if not math.isfinite(value) or value <= 0.0 or value > 1_000_000.0:
+        return _RATE_MESSAGE
+    return None
 
 
 def _probe_errno(path: str) -> int | None:
@@ -77,10 +103,17 @@ def check_data_dir(path: str, *, require_write: bool) -> str | None:
 
 
 def main(argv: list[str]) -> int:
+    problems: list[str] = []
+    rate = _production_rate_problem()
+    if rate is not None:
+        problems.append(rate)
     root = os.environ.get("DIPCATCHER_DATA_ROOT", "/app/data")
-    message = check_data_dir(root, require_write=_enabled("DIPCATCHER_REQUIRE_DATA_WRITE", "0"))
+    require_write = _enabled("DIPCATCHER_REQUIRE_DATA_WRITE", "0") or _production()
+    message = check_data_dir(root, require_write=require_write)
     if message is not None:
-        sys.stderr.write(message + "\n")
+        problems.append(message)
+    if problems:
+        sys.stderr.write("\n".join(problems) + "\n")
         return 1
     if len(argv) < 2:
         sys.stderr.write("entrypoint requires a command\n")
