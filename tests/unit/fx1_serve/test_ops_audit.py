@@ -27,7 +27,7 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "FX1_SDK_STATE_DIR",
         "FX1_CHECKPOINT_DIR",
         "MOONSHOT_API_KEY",
-        "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+        "FX1_PRIVATE_ALLOW_CIDRS",
     ):
         monkeypatch.delenv(name, raising=False)
 

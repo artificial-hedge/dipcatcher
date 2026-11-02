@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import yaml
-
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.observe.metrics import REGISTRY, histogram_quantile_upper
 
 
@@ -51,7 +50,7 @@ def default_slo_path() -> Path:
 
 
 def load_slos(path: Path | None = None) -> list[Slo]:
-    document = yaml.safe_load((path or default_slo_path()).read_text(encoding="utf-8"))
+    document = load_yaml_document((path or default_slo_path()).read_text(encoding="utf-8"))
     if not isinstance(document, dict) or document.get("version") != 1:
         raise ValueError("SLO file must be a mapping with version 1")
     rows = document.get("slos")

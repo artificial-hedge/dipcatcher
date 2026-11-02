@@ -422,6 +422,9 @@ Machine-checkable. Each row is a command that returns pass/fail. Re-run on every
 | 16 | Dependency audit | `make audit-all` | no high/critical |
 | 17 | Docs drift | drift checker enabled | pass |
 | 18 | Honesty ledger | `HONESTY_RATING.md` dated at `PROD_BASELINE` | current |
+| 19 | security_gate | `uv run python scripts/check_security_gate_summary.py` | `.tmp_security/summary.json` has `ok` true, `dirty` false, and `head` equal to `git rev-parse HEAD` |
+
+Row 19 reads `.tmp_security/summary.json`, written by `make -f deploy/security.mk security-gate`. The checker requires schema `dipcatcher.security_gate/1`, `ok` true, `dirty` false, an empty `new_findings` list, `head` equal to `git rev-parse HEAD`, and an `ok` record for bandit, gitleaks, hadolint, osv-scanner, pip-audit, service, trivy, and zap. `docs/SECURITY_GATE.md` records the command, the lab `GET /ready` 503 rule, the key-rotation runbook, the admin audit log, and the owner steps this row does not perform. `docs/THREAT_MODEL.md` maps STRIDE on each trust boundary to the test or gate that covers it.
 
 Rows 1–5 are the Tier-A gate. Tier A is **not** achieved until all five are green.
 

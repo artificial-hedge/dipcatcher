@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig, load_pretrade_config
 
 Venue = Literal["loopback", "alpaca-paper", "alpaca-live"]
@@ -32,7 +32,7 @@ class LiveConfig(BaseModel):
 def load_live_config(path: str | Path) -> LiveConfig:
     """Load YAML and reject unknown keys, versions, and non-finite limits."""
     text = Path(path).read_text(encoding="utf-8")
-    raw = yaml.safe_load(text)
+    raw = load_yaml_document(text)
     if not isinstance(raw, dict):
         raise ValueError("live config must be a YAML mapping")
     return LiveConfig.model_validate(raw)
