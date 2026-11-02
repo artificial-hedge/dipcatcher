@@ -2,10 +2,11 @@
 
 A symlink is always refused. The write probe runs when
 ``DIPCATCHER_REQUIRE_DATA_WRITE`` is on, and also when
-``DIPCATCHER_PROFILE`` is ``production`` or ``prod``. That profile also
-refuses to boot unless ``DIPCATCHER_RATE_LIMIT_RPS`` is set and above 0.
-The research image leaves the write flag off; ``deploy/prod.env`` turns
-the profile on. This file uses the stdlib only.
+``DIPCATCHER_PROFILE`` is ``production`` or ``prod``, unless the command is
+the research API. Production research must see a data directory it cannot
+write. That profile also refuses to boot unless ``DIPCATCHER_RATE_LIMIT_RPS``
+is set and above 0. The research image leaves the write flag off;
+``deploy/prod.env`` turns the profile on. This file uses the stdlib only.
 """
 
 from __future__ import annotations
@@ -19,6 +20,9 @@ _DIP_UID = 10001
 _TRUE = frozenset({"1", "true", "yes", "on"})
 _PRODUCTION = frozenset({"production", "prod"})
 _RATE_MESSAGE = "DIPCATCHER_RATE_LIMIT_RPS must be set above 0 in production"
+_RESEARCH_ARGV = "quant_fund.api.research_api"
+_READ_ONLY_ERRNO = frozenset({errno.EROFS, errno.EACCES, errno.EPERM})
+_RESEARCH_RO = "must be read-only when DIPCATCHER_PROFILE is production"
 
 
 def _enabled(name: str, default: str) -> bool:
@@ -88,6 +92,24 @@ def _write_problem(path: str, failure: int) -> str:
     )
 
 
+def _research_command(argv: list[str]) -> bool:
+    return any(_RESEARCH_ARGV in arg for arg in argv[1:])
+
+
+def check_research_data_dir(path: str) -> str | None:
+    """Return a message when production research can write ``path``."""
+    if os.path.islink(path):
+        return f"data directory {path} must not be a symlink; the dipcatcher user is uid {_DIP_UID}"
+    if not os.path.isdir(path):
+        return f"data directory {path} is not a directory; the dipcatcher user is uid {_DIP_UID}"
+    failure = _probe_errno(path)
+    if failure in _READ_ONLY_ERRNO:
+        return None
+    if failure == errno.ENOSPC:
+        return _write_problem(path, failure)
+    return f"research data directory {path} {_RESEARCH_RO}"
+
+
 def check_data_dir(path: str, *, require_write: bool) -> str | None:
     """Return a message when ``path`` cannot be used, else ``None``."""
     if os.path.islink(path):
@@ -108,8 +130,11 @@ def main(argv: list[str]) -> int:
     if rate is not None:
         problems.append(rate)
     root = os.environ.get("DIPCATCHER_DATA_ROOT", "/app/data")
-    require_write = _enabled("DIPCATCHER_REQUIRE_DATA_WRITE", "0") or _production()
-    message = check_data_dir(root, require_write=require_write)
+    if _research_command(argv) and _production():
+        message = check_research_data_dir(root)
+    else:
+        require_write = _enabled("DIPCATCHER_REQUIRE_DATA_WRITE", "0") or _production()
+        message = check_data_dir(root, require_write=require_write)
     if message is not None:
         problems.append(message)
     if problems:

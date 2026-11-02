@@ -4,6 +4,7 @@
 #   make -f deploy/prod.mk prod-up
 #   make -f deploy/prod.mk prod-down
 #   make -f deploy/prod.mk prod-restart
+#   make -f deploy/prod.mk prod-smoke
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. This file does not print
 # them. SUDO prefixes docker and chown. Set SUDO= on the command line when
@@ -33,6 +34,12 @@ export LAB_TLS_PORT
 export RESEARCH_TLS_PORT
 export PROMETHEUS_PUBLISH_PORT
 export GRAFANA_PUBLISH_PORT
+export SUDO
+export PROJECT
+export LAB_A
+export LAB_B
+export RESEARCH_A
+export RESEARCH_B
 
 ifeq ($(SUDO),)
 COMPOSE := docker compose -f $(COMPOSE_FILE)
@@ -40,7 +47,7 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-certs prod-data prod-build
+.PHONY: prod-up prod-down prod-restart prod-smoke prod-certs prod-data prod-build
 
 prod-up: prod-certs prod-data prod-build
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
@@ -79,6 +86,9 @@ prod-restart:
 		--load-concurrency 10 \
 		--docker "$(SUDO) docker" \
 		--zero-drops
+
+prod-smoke:
+	@cd $(ROOT) && uv run --quiet python scripts/prod_smoke.py
 
 prod-certs:
 	mkdir -p $(TLS_DIR)

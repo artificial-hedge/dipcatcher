@@ -5,8 +5,8 @@
 # when a required variable is missing. deploy/prod.env sets the production
 # profile, a positive rate limit, and the data-dir write probe. It contains
 # no secrets. DIPCATCHER_WRITE_OWNER is set per replica below, not in that
-# file: lab-a and research-a hold the write lock; lab-b and research-b refuse
-# ledger and kill-file writes.
+# file: lab-a holds the write lock. lab-b and both research replicas refuse
+# ledger and kill-file writes. The research data mount is read-only.
 # Replica API ports and 9464 are not published. Clients use the loopback TLS
 # listeners. Prometheus writes bearer tokens at start and scrapes both
 # replicas of each API. Host port overrides: LAB_TLS_PORT (8443),
@@ -61,7 +61,7 @@ x-research: &research
   stop_signal: SIGTERM
   stop_grace_period: 30s
   volumes:
-    - ${DIPCATCHER_RESEARCH_DATA:?set DIPCATCHER_RESEARCH_DATA to a directory owned by uid 10001}:/app/data
+    - ${DIPCATCHER_RESEARCH_DATA:?set DIPCATCHER_RESEARCH_DATA to a directory owned by uid 10001}:/app/data:ro
 
 x-research-env: &research-env
   RESEARCH_API_HOST: 0.0.0.0
@@ -100,7 +100,6 @@ services:
     command: ["python", "-m", "quant_fund.api.research_api"]
     environment:
       <<: *research-env
-      DIPCATCHER_WRITE_OWNER: "1"
 
   research-b:
     <<: *research

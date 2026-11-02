@@ -13,6 +13,11 @@ for the process lifetime. A second owner fails to boot.
 ``0``, ``false``, ``no``, or ``off`` is a reader. :func:`require_write_owner`
 raises before a ledger or kill-file write. Readers still read those files.
 An invalid value raises ``write_owner_invalid``.
+
+Unset keeps that one-process behavior only when ``DIPCATCHER_PROFILE`` is
+not ``production`` or ``prod``. Under that profile an unset value raises
+``write_owner_required`` from both the boot claim and every ledger or
+kill-file write.
 """
 
 from __future__ import annotations
@@ -23,8 +28,10 @@ from contextlib import suppress
 from pathlib import Path
 
 _ENV = "DIPCATCHER_WRITE_OWNER"
+_PROFILE = "DIPCATCHER_PROFILE"
 _OWNER = frozenset({"1", "true", "yes", "on"})
 _READER = frozenset({"0", "false", "no", "off"})
+_PRODUCTION = frozenset({"production", "prod"})
 _LOCK_NAME = ".dipcatcher-write.lock"
 _HELD: list[int] = []
 
@@ -44,6 +51,17 @@ def write_owner_mode() -> str:
     if token in _READER:
         return "reader"
     raise WriteOwnerError(f"write_owner_invalid: {_ENV} is invalid")
+
+
+def _production_profile() -> bool:
+    return os.environ.get(_PROFILE, "").strip().lower() in _PRODUCTION
+
+
+def _refuse_unset_in_production(mode: str) -> None:
+    if mode == "unset" and _production_profile():
+        raise WriteOwnerError(
+            f"write_owner_required: {_ENV} must be set when {_PROFILE} is production"
+        )
 
 
 def _root(data_root: Path | None) -> Path:
@@ -66,9 +84,12 @@ def _open_lock(root: Path) -> int:
 def claim_write_lock(data_root: Path | None = None) -> None:
     """Hold the data-directory lock when this process is the owner.
 
-    Readers and an unset variable return without creating the lock file.
+    Readers return without creating the lock file. An unset variable does
+    too, except under the production profile, which refuses to boot.
     """
-    if write_owner_mode() != "owner":
+    mode = write_owner_mode()
+    _refuse_unset_in_production(mode)
+    if mode != "owner":
         return
     root = _root(data_root)
     if root.is_symlink() or not root.is_dir():
@@ -89,8 +110,9 @@ def _deny_message(mode: str) -> str:
 
 
 def require_write_owner() -> None:
-    """Allow a write for unset and for an owner that holds the lock."""
+    """Allow a write for a non-production unset value, and for an owner lock."""
     mode = write_owner_mode()
+    _refuse_unset_in_production(mode)
     if mode == "reader" or (mode == "owner" and not _HELD):
         raise WriteOwnerError(_deny_message(mode))
 

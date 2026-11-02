@@ -96,6 +96,7 @@ def test_production_entrypoint_refuses_a_missing_rate(
     entry = _entrypoint()
     data = tmp_path / "data"
     data.mkdir()
+    data.chmod(0o555)
     monkeypatch.setenv("DIPCATCHER_DATA_ROOT", str(data))
     monkeypatch.setenv("DIPCATCHER_PROFILE", "production")
     monkeypatch.delenv("DIPCATCHER_RATE_LIMIT_RPS", raising=False)
@@ -106,7 +107,10 @@ def test_production_entrypoint_refuses_a_missing_rate(
         called.append(cmd)
 
     monkeypatch.setattr(entry.os, "execvp", _exec)
-    assert entry.main(["entrypoint", "python", "-m", "quant_fund.api.research_api"]) == 1
+    try:
+        assert entry.main(["entrypoint", "python", "-m", "quant_fund.api.research_api"]) == 1
+    finally:
+        data.chmod(0o755)
     assert called == []
     assert capsys.readouterr().err.strip() == (
         "DIPCATCHER_RATE_LIMIT_RPS must be set above 0 in production"

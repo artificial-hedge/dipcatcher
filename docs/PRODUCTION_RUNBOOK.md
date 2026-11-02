@@ -3,7 +3,9 @@
 This is the process contract for the lab API (`dipcatcher api`) and the
 read-only research API (`python -m quant_fund.api.research_api`). Both are
 research and simulated-paper surfaces. They do not place live orders, and a
-green healthcheck is not a live-trading claim.
+green healthcheck is not a live-trading claim. Restart, rollback,
+certificate renewal, and replica-failure drills are in
+`docs/OPS_RUNBOOK_PROD.md`.
 
 `dipcatcher api --host` and `--port` override `DIPCATCHER_BIND_HOST` and
 `DIPCATCHER_BIND_PORT`. The research API has no flags; it reads the
@@ -23,8 +25,8 @@ value.
 | `DIPCATCHER_METRICS_PORT` | unset | Requires `DIPCATCHER_OBSERVE=1`. `/metrics` requires the service API key as `X-API-Key` or `Authorization: Bearer`, unless the loopback scrape opt-out is set. `dipcatcher smoke-up` installs that server at import, so the lab CLI defaults `DIPCATCHER_METRICS_KEY_ENV` to `QUANT_API_KEY` when it is unset. The research process sets the name to `RESEARCH_API_KEY` before it binds. |
 | `DIPCATCHER_OTEL_ENDPOINT` | unset | `http` or `https` URL with a host and no userinfo. Requires `DIPCATCHER_OBSERVE=1`. |
 | `DIPCATCHER_RATE_LIMIT_RPS` | unset (off) | Finite rate from 0 to 1000000 for both APIs. `0` or unset disables the limit outside production. `/health` is exempt. Overload returns HTTP 429. An invalid value refuses startup. A production profile refuses to boot unless this is set and above 0. |
-| `DIPCATCHER_PROFILE` | unset | `production` or `prod` requires `DIPCATCHER_RATE_LIMIT_RPS` set and above 0, and forces the data-dir write probe even when `DIPCATCHER_REQUIRE_DATA_WRITE=0`. Any other value keeps the non-production defaults. Set it in `deploy/prod.env`, not in the example env file. |
-| `DIPCATCHER_WRITE_OWNER` | unset | Not in the example env file and not in the service env contract. Unset allows writes and takes no lock. `1`, `true`, `yes`, or `on` is the owner and holds `{DIPCATCHER_DATA_ROOT}/.dipcatcher-write.lock` for the process lifetime. `0`, `false`, `no`, or `off` is a reader and refuses paper-ledger and kill-file writes. Any other value refuses to boot. Compose sets this per replica. |
+| `DIPCATCHER_PROFILE` | unset | `production` or `prod` requires `DIPCATCHER_RATE_LIMIT_RPS` set and above 0. A lab command also forces the data-dir write probe even when `DIPCATCHER_REQUIRE_DATA_WRITE=0`. The research API command instead refuses to start when the data directory is writable. Any other value keeps the non-production defaults. Set it in `deploy/prod.env`, not in the example env file. |
+| `DIPCATCHER_WRITE_OWNER` | unset | Not in the example env file and not in the service env contract. Outside `production` and `prod`, unset allows writes and takes no lock. Under that profile an unset value refuses to boot and refuses paper-ledger and kill-file writes with `write_owner_required`. The message says `DIPCATCHER_WRITE_OWNER` must be set. `1`, `true`, `yes`, or `on` is the owner and holds `{DIPCATCHER_DATA_ROOT}/.dipcatcher-write.lock` for the process lifetime. `0`, `false`, `no`, or `off` is a reader and refuses those writes. Any other value refuses to boot. Compose sets this per replica. |
 | `DIPCATCHER_SLO_PATH` | shipped `deploy/observability/slo.yml` when observe is on and this is unset | Requires `DIPCATCHER_OBSERVE=1`. A symlink or invalid file refuses startup. |
 | `DIPCATCHER_ALERT_INTERVAL_S` | `60` | Alert loop period. `1`–`86400`. |
 | `DIPCATCHER_METRICS_LOOPBACK_SCRAPE` | unset (off) | Allows an unauthenticated `/metrics` scrape only when `DIPCATCHER_METRICS_HOST` is loopback. Any other host refuses startup. |
@@ -57,7 +59,14 @@ environment.
 make -f deploy/prod.mk prod-up
 make -f deploy/prod.mk prod-down
 make -f deploy/prod.mk prod-restart
+make -f deploy/prod.mk prod-smoke
 ```
+
+`prod-smoke` runs `prod-up`, checks TLS `/health`, the 64 KiB body cap, and
+the write lock, then runs `prod-down`. Stdout is one JSON object. The exit
+status is 0 only when the stack came up, every check passed, and the stack
+came down. It is 1 otherwise. A missing API key prints that JSON error and
+does not call `make`. The script does not print key values.
 
 The root Makefile does not define those targets. `deploy/prod.mk` builds
 the lab and research images one at a time, creates the data directories,
@@ -78,21 +87,28 @@ bearer tokens from files it writes at start and scrapes `lab-a:9464`,
 not in git. Grafana anonymous access is a local viewer. The compose file
 does not set an admin password.
 
-`lab-a` and `research-a` set `DIPCATCHER_WRITE_OWNER=1`. Each holds an
-exclusive flock on `/app/data/.dipcatcher-write.lock` until the process
-exits. `lab-b` and `research-b` set `DIPCATCHER_WRITE_OWNER=0`. A reader
+`lab-a` sets `DIPCATCHER_WRITE_OWNER=1` and holds an exclusive flock on
+`/app/data/.dipcatcher-write.lock` until the process exits. `lab-b`,
+`research-a`, and `research-b` set `DIPCATCHER_WRITE_OWNER=0`. A reader
 refuses paper-ledger writes and kill-file writes with
 `write_owner_required` before it creates a temporary file. A second owner
-exits before bind with `write_owner_busy`. The lab replicas share one data
-directory and the research replicas share another, so the two owners do
-not block each other. `lab-a` runs `dipcatcher smoke-up` and plants the
-SYNTHETIC manifest. `lab-b` runs `dipcatcher api` only after `lab-a` is
-healthy. The entrypoint still writes and unlinks
-`.dipcatcher-write-probe-<pid>` on every replica, including a reader. That
-probe is the only reader write. It does not touch the ledger or the kill
-file. Do not point an unset host paper job at a data directory an owner is
-using. A host writer sets `DIPCATCHER_WRITE_OWNER=1` and fails to start
-while the replica holds the lock.
+exits before bind with `write_owner_busy`. Under the production profile an
+unset `DIPCATCHER_WRITE_OWNER` refuses those writes and refuses to boot.
+Outside that profile, unset still writes and takes no lock. The lab
+replicas share one writable data directory. The research replicas share
+another directory, mounted read-only, so neither of them can create the
+lock file. `lab-a` runs `dipcatcher smoke-up` and plants the SYNTHETIC
+manifest. `lab-b` runs `dipcatcher api` only after `lab-a` is healthy. The
+entrypoint still writes and unlinks `.dipcatcher-write-probe-<pid>` on
+every lab replica, including a reader. That probe is the only reader write
+on the lab mount. It does not touch the ledger or the kill file. Production
+research treats a probe that stores a byte as a failure. The probe must
+fail with a read-only error. Do not point an unset host paper job at a
+data directory an owner is using. A host writer sets
+`DIPCATCHER_WRITE_OWNER=1` and fails to start while the replica holds the
+lock. The research kill file cannot be flipped by writing the read-only
+mount. Stop the replica or replace the mount. The lab kill file stays on
+the lab data directory, and only `lab-a` can write it.
 
 Override `LAB_DATA`, `RESEARCH_DATA`, and `TLS_DIR` when the defaults under
 `/tmp/dipcatcher-ops7-*` are not the ones you want. `SUDO` defaults to
@@ -114,19 +130,23 @@ docker run --detach --name dipcatcher \
 
 The image creates `/app/data` owned by uid 10001. The entrypoint
 (`DIPCATCHER_REQUIRE_DATA_WRITE=1`, `DIPCATCHER_DATA_ROOT=/app/data`) refuses
-to start when that directory is missing, is a symlink, or is not writable by
-uid 10001. The message names the path and the uid. A root-owned named volume
-fails that check. The smoke compose file uses the image directory. The
-research image sets `DIPCATCHER_REQUIRE_DATA_WRITE=0`, so a `:ro` mount still
-starts when `DIPCATCHER_PROFILE` is unset, and it still refuses a symlink.
-`deploy/prod.env` sets `DIPCATCHER_PROFILE=production`,
-`DIPCATCHER_RATE_LIMIT_RPS=50`, and `DIPCATCHER_REQUIRE_DATA_WRITE=1`.
-The entrypoint also forces the write probe for `production` or `prod`, so
-a read-only research data mount fails closed the same way the lab mount
-does. A full data directory fails that probe before bind. The message says
-the directory is full and names uid 10001. A production boot with a missing,
-zero, or invalid rate exits before exec. The message names
-`DIPCATCHER_RATE_LIMIT_RPS` and does not print the value.
+to start a lab command when that directory is missing, is a symlink, or is
+not writable by uid 10001. The message names the path and the uid. A
+root-owned named volume fails that check. The smoke compose file uses the
+image directory. The research image sets `DIPCATCHER_REQUIRE_DATA_WRITE=0`,
+so a `:ro` mount still starts when `DIPCATCHER_PROFILE` is unset, and it
+still refuses a symlink. `deploy/prod.env` sets
+`DIPCATCHER_PROFILE=production`, `DIPCATCHER_RATE_LIMIT_RPS=50`, and
+`DIPCATCHER_REQUIRE_DATA_WRITE=1`. For a lab command the entrypoint also
+forces the write probe for `production` or `prod`. A full lab data
+directory fails that probe before bind. The message says the directory is
+full and names uid 10001. For the research API command the same profile
+requires the data directory to be read-only. Compose mounts it `:ro`. A
+writable research directory exits before exec. The message says it must be
+read-only. A full research directory still fails with the full-disk
+message. A production boot with a missing, zero, or invalid rate exits
+before exec. The message names `DIPCATCHER_RATE_LIMIT_RPS` and does not
+print the value.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt
@@ -148,8 +168,10 @@ docker run --rm -p 127.0.0.1:8010:8010 \
   dipcatcher-research-api
 ```
 
-That `:ro` mount is the image default: the write flag is off and the
-production profile is unset. `deploy/prod.env` refuses the same mount.
+That `:ro` mount is the image default when the production profile is unset.
+`deploy/compose.prod.yml` mounts the research data directory `:ro` under
+`deploy/prod.env`, and the entrypoint refuses to start the research API
+when that directory is writable.
 
 ## Stop
 
