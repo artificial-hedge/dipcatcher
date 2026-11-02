@@ -1511,6 +1511,40 @@ def _free_tcp_port() -> int:
         sock.close()
 
 
+_CHECKPOINT_TOKEN = "FX1_CHECKPOINT_DIR_TOKEN"
+_PYTHON_TOKEN = "FX1_PYTHON_TOKEN"
+
+
+def _reject_engine_tokens(*values: str) -> None:
+    for value in values:
+        if _CHECKPOINT_TOKEN in value or _PYTHON_TOKEN in value:
+            raise ValueError("serve command contains a reserved token")
+
+
+def _expand_engine_token(token: str, checkpoint_dir: str, python: str) -> str:
+    if token == _CHECKPOINT_TOKEN:
+        return checkpoint_dir
+    if token == _PYTHON_TOKEN:
+        return python
+    if _CHECKPOINT_TOKEN in token or _PYTHON_TOKEN in token:
+        raise ValueError("serve command placeholder must be its own argument")
+    return token
+
+
+def engine_argv(template: str, *, checkpoint_dir: str, python: str) -> list[str]:
+    """Split a serve template without word-splitting the checkpoint path.
+
+    Placeholders are replaced with sentinels, ``shlex.split`` runs, then the
+    sentinels become the raw path and interpreter. A path containing spaces
+    or shell metacharacters stays one argv element. ``shell`` is never used.
+    """
+    _reject_engine_tokens(template, checkpoint_dir, python)
+    rendered = string.Template(template).substitute(
+        checkpoint_dir=_CHECKPOINT_TOKEN, python=_PYTHON_TOKEN
+    )
+    return [_expand_engine_token(token, checkpoint_dir, python) for token in shlex.split(rendered)]
+
+
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1725,11 +1759,7 @@ class LocalFx1Backend(_UsageTracker):
 
     def _spawn_engine(self) -> subprocess.Popen[bytes]:
         """Start the declared command; the caller owns the returned child."""
-        argv = shlex.split(
-            string.Template(self._serve_cmd).substitute(
-                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
-            )
-        )
+        argv = engine_argv(self._serve_cmd, checkpoint_dir=str(self._root), python=sys.executable)
         env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
         try:
             return subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
