@@ -3,6 +3,7 @@ global:
 
 rule_files:
   - alerts.yml
+  - slo_rules.yml
 
 scrape_configs:
   - job_name: lab-api

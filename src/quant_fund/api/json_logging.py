@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import sys
+from contextvars import ContextVar, Token
 from datetime import UTC, datetime
 from typing import Any
 
@@ -32,8 +33,24 @@ _SECRET_ENV_NAMES = (
     "RESEARCH_API_KEY",
     "VENDOR_HTTP_API_KEY",
     "WITNESS_SIGNING_KEY",
+    "DIPCATCHER_ALERT_WEBHOOK_SECRET",
 )
 _MIN_SECRET_LEN = 8
+_REQUEST_ID: ContextVar[str | None] = ContextVar("dipcatcher_request_id", default=None)
+
+
+def bind_request_id(value: str) -> Token[str | None]:
+    """Remember ``value`` for log lines written on this task."""
+    return _REQUEST_ID.set(value)
+
+
+def reset_request_id(token: Token[str | None]) -> None:
+    """Restore the request id that was current before :func:`bind_request_id`."""
+    _REQUEST_ID.reset(token)
+
+
+def current_request_id() -> str | None:
+    return _REQUEST_ID.get()
 
 
 def redact_text(text: str) -> str:
@@ -59,6 +76,9 @@ def emit_service_event(event: str, **fields: Any) -> None:
             record[str(key)] = redact_text(value)
         else:
             record[str(key)] = value
+    request_id = current_request_id()
+    if request_id and "request_id" not in record:
+        record["request_id"] = request_id
     sys.stderr.write(json.dumps(record, sort_keys=True, default=str) + "\n")
     sys.stderr.flush()
 
@@ -77,6 +97,9 @@ class JsonLineFormatter(logging.Formatter):
         }
         if record.exc_info:
             payload["exception"] = redact_text(self.formatException(record.exc_info))
+        request_id = current_request_id()
+        if request_id:
+            payload["request_id"] = request_id
         return json.dumps(payload, sort_keys=True, default=str)
 
 

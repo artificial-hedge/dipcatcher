@@ -5,12 +5,14 @@
 #   make -f deploy/prod.mk prod-up
 #   make -f deploy/prod.mk prod-down
 #   make -f deploy/prod.mk prod-restart
+#   make -f deploy/prod.mk prod-rollback
 #   make -f deploy/prod.mk prod-smoke
 #   make -f deploy/prod.mk prod-backup
 #   make -f deploy/prod.mk prod-restore
 #
-# Export QUANT_API_KEY and RESEARCH_API_KEY first. This file does not print
-# them. SUDO prefixes docker and chown. Set SUDO= on the command line when
+# Export QUANT_API_KEY and RESEARCH_API_KEY first. prod-secrets writes them
+# to files under SECRET_DIR and does not print them. Containers read those
+# files. SUDO prefixes docker and chown. Set SUDO= on the command line when
 # docker does not need sudo; the compose recipes then call docker directly.
 
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
@@ -29,7 +31,12 @@ LAB_B ?= $(PROJECT)-lab-b-1
 RESEARCH_A ?= $(PROJECT)-research-a-1
 RESEARCH_B ?= $(PROJECT)-research-b-1
 BACKUP_DIR ?= /tmp/dipcatcher-ops7-backup
-PRESERVE := QUANT_API_KEY,RESEARCH_API_KEY,DIPCATCHER_LAB_DATA,DIPCATCHER_RESEARCH_DATA,DIPCATCHER_TLS_DIR,LAB_TLS_PORT,RESEARCH_TLS_PORT,PROMETHEUS_PUBLISH_PORT,GRAFANA_PUBLISH_PORT
+SECRET_DIR ?= /tmp/dipcatcher-ops7-secrets
+LAB_IMAGE ?= dipcatcher:local
+LAB_PREVIOUS ?= dipcatcher:previous
+RESEARCH_IMAGE ?= dipcatcher-research-api:latest
+RESEARCH_PREVIOUS ?= dipcatcher-research-api:previous
+PRESERVE := QUANT_API_KEY,RESEARCH_API_KEY,DIPCATCHER_ALERT_WEBHOOK_SECRET,DIPCATCHER_ALERT_WEBHOOK_URL,DIPCATCHER_LAB_DATA,DIPCATCHER_RESEARCH_DATA,DIPCATCHER_TLS_DIR,DIPCATCHER_QUANT_API_KEY_FILE,DIPCATCHER_RESEARCH_API_KEY_FILE,DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE,LAB_TLS_PORT,RESEARCH_TLS_PORT,PROMETHEUS_PUBLISH_PORT,GRAFANA_PUBLISH_PORT
 
 export DIPCATCHER_LAB_DATA := $(LAB_DATA)
 export DIPCATCHER_RESEARCH_DATA := $(RESEARCH_DATA)
@@ -44,6 +51,9 @@ export LAB_A
 export LAB_B
 export RESEARCH_A
 export RESEARCH_B
+export DIPCATCHER_QUANT_API_KEY_FILE := $(SECRET_DIR)/quant_api_key
+export DIPCATCHER_RESEARCH_API_KEY_FILE := $(SECRET_DIR)/research_api_key
+export DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE := $(SECRET_DIR)/alert_webhook_secret
 
 ifeq ($(SUDO),)
 COMPOSE := docker compose -f $(COMPOSE_FILE)
@@ -51,20 +61,36 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-smoke prod-preflight prod-backup prod-restore prod-certs prod-data prod-build
+.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-restore prod-certs prod-data prod-build prod-secrets
 
 prod-preflight:
 	@cd $(ROOT) && uv run --quiet python scripts/prod_preflight.py
 
+prod-secrets:
+	@cd $(ROOT) && uv run --quiet python scripts/prod_secrets.py
+
 prod-up: prod-certs prod-data prod-preflight prod-build
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
 	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
+	@cd $(ROOT) && uv run --quiet python scripts/prod_secrets.py
 	cd $(ROOT) && $(COMPOSE) up -d --no-build --remove-orphans
 
 prod-down:
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
 	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
+	@cd $(ROOT) && uv run --quiet python scripts/prod_secrets.py
 	cd $(ROOT) && $(COMPOSE) down --remove-orphans
+
+prod-rollback:
+	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
+	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
+	@cd $(ROOT) && uv run --quiet python scripts/prod_secrets.py
+	$(SUDO) docker image inspect $(LAB_PREVIOUS) >/dev/null
+	$(SUDO) docker image inspect $(RESEARCH_PREVIOUS) >/dev/null
+	$(SUDO) docker tag $(LAB_PREVIOUS) $(LAB_IMAGE)
+	$(SUDO) docker tag $(RESEARCH_PREVIOUS) $(RESEARCH_IMAGE)
+	cd $(ROOT) && $(COMPOSE) up -d --no-build --force-recreate lab-a lab-b research-a research-b proxy
+	cd $(ROOT) && uv run --quiet python scripts/prod_rollback.py
 
 prod-restart:
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
@@ -121,5 +147,11 @@ prod-data:
 	$(SUDO) chown 10001:10001 $(LAB_DATA) $(RESEARCH_DATA)
 
 prod-build:
-	cd $(ROOT) && $(SUDO) docker build -t dipcatcher:local -f Dockerfile .
-	cd $(ROOT) && $(SUDO) docker build -t dipcatcher-research-api -f docker/research-api.Dockerfile .
+	@if $(SUDO) docker image inspect $(LAB_IMAGE) >/dev/null 2>&1; then \
+		$(SUDO) docker tag $(LAB_IMAGE) $(LAB_PREVIOUS); \
+	fi
+	@if $(SUDO) docker image inspect $(RESEARCH_IMAGE) >/dev/null 2>&1; then \
+		$(SUDO) docker tag $(RESEARCH_IMAGE) $(RESEARCH_PREVIOUS); \
+	fi
+	cd $(ROOT) && $(SUDO) docker build -t $(LAB_IMAGE) -f Dockerfile .
+	cd $(ROOT) && $(SUDO) docker build -t $(RESEARCH_IMAGE) -f docker/research-api.Dockerfile .

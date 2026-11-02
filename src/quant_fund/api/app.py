@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from quant_fund import __firm__, __version__
 from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 from quant_fund.api.rate_limit import RateLimitMiddleware
+from quant_fund.api.request_log import RequestLogMiddleware
 from quant_fund.config import load_config
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.analytics import validate_analytics_export
@@ -228,6 +229,7 @@ async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-u
 
 
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(RequestLogMiddleware, service="lab")
 
 
 class OptimizeRequest(BaseModel):

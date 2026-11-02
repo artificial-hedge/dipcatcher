@@ -402,6 +402,12 @@ def _kill_path() -> tuple[str | None, str | None]:
     return raw, None
 
 
+def _secret_problems() -> list[str]:
+    from quant_fund.api.secret_files import apply_secret_files
+
+    return apply_secret_files()
+
+
 def _assemble(
     service: str,
     host: str,
@@ -410,7 +416,8 @@ def _assemble(
     key_message: str,
     config_problem: str | None,
 ) -> tuple[ServiceSettings, list[str]]:
-    problems = _bind_problems(host, key_name, key_message)
+    problems = _secret_problems()
+    problems.extend(_bind_problems(host, key_name, key_message))
     level, level_problem = _log_level()
     if level_problem:
         problems.append(level_problem)

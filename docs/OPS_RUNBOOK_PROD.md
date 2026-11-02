@@ -29,9 +29,10 @@ status is 0 only when `prod-up` exited 0, every check passed, and
 on both listeners (200 and HSTS `max-age=31536000`), a small POST that is
 not 413, a POST of 65537 bytes that is 413, `write_owner_busy` from a
 second claim in `lab-a`, `is not the writer` from a kill-file write in
-`lab-b`, and errno `EROFS` from a create on the research data mount. Make
-and docker logs go to stderr with the key values redacted. If either key
-is missing, the object is
+`lab-b`, errno `EROFS` from a create on the research data mount, a request
+id in the proxy log and a replica log for each API, and `rollback` after
+`prod-rollback`. Make and docker logs go to stderr with the key values
+redacted. If either key is missing, the object is
 `{"error": "QUANT_API_KEY and RESEARCH_API_KEY are required", "ok": false}`
 and `make` is not invoked. After a `prod-up` attempt the script always
 attempts `prod-down`. `prod-up` runs `prod-preflight` first. A failed
@@ -94,7 +95,70 @@ so the restarted `lab-a` can claim it again. Do not set
 `DIPCATCHER_WRITE_OWNER=1` on `lab-b` while `lab-a` might still be running.
 A second owner exits before bind with `write_owner_busy`.
 
+## Secrets
+
+`prod-up` writes the shell keys to `SECRET_DIR` (default
+`/tmp/dipcatcher-ops7-secrets`) and mounts them as docker secrets. The
+directory is mode `0700` and each file is mode `0644`. Compose bind-mounts
+that inode and ignores a secret `mode`, and the API process is uid 10001,
+so a mode `0600` file owned by the host user is not readable in the
+container. The containers set `QUANT_API_KEY_FILE` and
+`RESEARCH_API_KEY_FILE`. They do not receive the plain values. Under `DIPCATCHER_PROFILE=production` a
+plain `QUANT_API_KEY`, `RESEARCH_API_KEY`, or
+`DIPCATCHER_ALERT_WEBHOOK_SECRET` refuses the boot. The message names the
+variable and does not print the value. The same refusal applies when the
+plain value and the file are both set.
+
+`DIPCATCHER_ALERT_WEBHOOK_URL` is optional. When it is set, the webhook
+secret file is required. The URL is http or https with a host and no
+userinfo. `prod-secrets` keeps an existing webhook token file when the
+shell variable is unset, or writes a random token. It does not print the
+token. Do not commit `SECRET_DIR`.
+
+## Request ids
+
+The proxy forwards `X-Request-Id` to the replica. When the header is
+absent it uses the request uuid. Access logs on the proxy are JSON on
+stdout. Each API replica writes one JSON object per request, with
+`request_id`, and echoes the id on the response. An id that is not a
+single token of letters, digits, `.`, `_`, or `-` is replaced before it
+is logged. `prod-smoke` sends one id to each listener and requires that
+id in the proxy log and in one replica log.
+
+## Service level objectives
+
+`deploy/observability/slo_rules.yml` is a Prometheus rule file. It records
+5 minute and 30 day availability, 5 minute p99 latency, and the fraction
+of the 30 day error budget that remains. The availability objective is
+99.9 percent of requests not answered with 5xx. The latency objective is
+p99 under 0.25 seconds. `DipcatcherErrorBudgetBurn` pages when the fast
+burn (14.4 times the budget, on both the 5 minute and 1 hour windows) or
+the slow burn (6 times the budget, on both the 30 minute and 6 hour
+windows) is true for 2 minutes. These are process objectives, not
+research scores. `promtool test rules deploy/observability/slo_rules_test.yml`
+checks the burn-rate alert.
+
 ## Rollback
+
+`prod-build` tags the current `dipcatcher:local` image as
+`dipcatcher:previous`, and the current `dipcatcher-research-api:latest`
+image as `dipcatcher-research-api:previous`, before it builds. Roll back
+with:
+
+```bash
+make -f deploy/prod.mk prod-rollback
+```
+
+The target tags those previous names back onto the running tags, recreates
+the four API replicas and the proxy without building, and then requires
+both TLS `/health` checks to be 200 with HSTS and the four replicas to be
+healthy. Stdout of the gate is one JSON object. Exit 0 is healthy. Exit 1
+leaves the new containers in place for inspection. Do not delete the lab
+data directory. The research mount stays `:ro`.
+
+`prod-smoke` points the previous tags at the image it just deployed and
+then runs `prod-rollback`, so the drill recreates that image and checks
+health. A rollback outside that drill uses the tags `prod-build` saved.
 
 `make -f deploy/prod.mk prod-up` rebuilds both images from the working
 tree. Do not use it to roll back. Tag the images you trust before you

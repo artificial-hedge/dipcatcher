@@ -32,10 +32,10 @@ value.
 | `DIPCATCHER_METRICS_LOOPBACK_SCRAPE` | unset (off) | Allows an unauthenticated `/metrics` scrape only when `DIPCATCHER_METRICS_HOST` is loopback. Any other host refuses startup. |
 | `DIPCATCHER_KILL_SWITCH_PATH` | unset | See below. Missing file means `ENABLED`. |
 | `PORT` | `8000` lab / `8010` research image | Fallback when the service's named port is unset. |
-| `QUANT_API_KEY` | unset | Required to bind the lab API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. |
+| `QUANT_API_KEY` | unset | Required to bind the lab API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. Under `production` or `prod`, the process reads it from `QUANT_API_KEY_FILE` and a plain value is refused. |
 | `RESEARCH_API_HOST` | `127.0.0.1` (image sets `0.0.0.0`) | Research bind host. Off-loopback requires `RESEARCH_API_KEY`. |
 | `RESEARCH_API_PORT` | unset, then `PORT`, then `8010` | Research bind port. |
-| `RESEARCH_API_KEY` | unset | Required to bind the research API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. |
+| `RESEARCH_API_KEY` | unset | Required to bind the research API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. Under `production` or `prod`, the process reads it from `RESEARCH_API_KEY_FILE` and a plain value is refused. |
 
 The lab image sets `PORT=8000` and `DIPCATCHER_BIND_PORT=8000`. The research
 image sets `PORT=8010` and `RESEARCH_API_PORT=8010`. The container probe
@@ -60,6 +60,7 @@ make -f deploy/prod.mk prod-preflight
 make -f deploy/prod.mk prod-up
 make -f deploy/prod.mk prod-down
 make -f deploy/prod.mk prod-restart
+make -f deploy/prod.mk prod-rollback
 make -f deploy/prod.mk prod-smoke
 make -f deploy/prod.mk prod-backup
 make -f deploy/prod.mk prod-restore
@@ -69,11 +70,19 @@ make -f deploy/prod.mk prod-restore
 after the certificate and data directories exist and before the image
 build. A failed preflight does not build and does not start the stack.
 
-`prod-smoke` runs `prod-up`, checks TLS `/health`, the 64 KiB body cap, and
-the write lock, then runs `prod-down`. Stdout is one JSON object. The exit
-status is 0 only when the stack came up, every check passed, and the stack
-came down. It is 1 otherwise. A missing API key prints that JSON error and
-does not call `make`. The script does not print key values.
+`prod-smoke` runs `prod-up`, checks TLS `/health`, the 64 KiB body cap, the
+write lock, and that one request id is in the proxy log and a replica log,
+then rolls back to the previous image tag and runs `prod-down`. Stdout is
+one JSON object. The exit status is 0 only when the stack came up, every
+check passed, and the stack came down. It is 1 otherwise. A missing API key
+prints that JSON error and does not call `make`. The script does not print
+key values.
+
+`prod-rollback` retags `dipcatcher:previous` onto `dipcatcher:local` and
+`dipcatcher-research-api:previous` onto `dipcatcher-research-api:latest`,
+recreates the API replicas and the proxy, and exits 0 only when both TLS
+listeners are healthy. `prod-build` saves the current tags as those
+previous names before it builds. The drill is in `docs/OPS_RUNBOOK_PROD.md`.
 
 The root Makefile does not define those targets. `deploy/prod.mk` builds
 the lab and research images one at a time, creates the data directories,
@@ -155,7 +164,14 @@ message. A production boot with an unset rate fills
 `DIPCATCHER_RATE_LIMIT_RPS=50` before exec, which is the same default the
 process uses when it is started without the entrypoint. Zero or an invalid
 rate still exits before exec. The message names `DIPCATCHER_RATE_LIMIT_RPS`
-and does not print the value.
+and does not print the value. Under the same profile the entrypoint refuses
+a plain `QUANT_API_KEY`, `RESEARCH_API_KEY`, or
+`DIPCATCHER_ALERT_WEBHOOK_SECRET`. Those values are read from the matching
+`*_FILE` variable. The message names the variable and does not print the
+file contents. Each request log is one JSON object and includes
+`request_id`. The proxy forwards `X-Request-Id`, or generates one when the
+header is absent. Prometheus rules in `deploy/observability/slo_rules.yml`
+record availability, p99 latency, and the 30 day error budget.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt

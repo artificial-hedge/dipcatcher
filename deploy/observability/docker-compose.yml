@@ -23,6 +23,7 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./slo_rules.yml:/etc/prometheus/slo_rules.yml:ro
       - ./prometheus-entrypoint.sh:/etc/prometheus/prometheus-entrypoint.sh:ro
     ports:
       - "127.0.0.1:9090:9090"

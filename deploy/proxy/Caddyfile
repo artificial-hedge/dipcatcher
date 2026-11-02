@@ -1,8 +1,11 @@
 # TLS termination in front of two lab replicas and two research replicas.
 # auto_https is off. Mount the certificate at /certs/dev.crt and the key at
 # /certs/dev.key. deploy/prod.mk generates a dev pair outside the repo.
-# {$QUANT_API_KEY} and {$RESEARCH_API_KEY} come from the environment and must
-# be a single token: no spaces, quotes, braces, or '#'.
+# {$QUANT_API_KEY} and {$RESEARCH_API_KEY} are loaded from *_FILE by
+# deploy/proxy/secret-entrypoint.sh. They must be a single token: no spaces,
+# quotes, braces, or '#'.
+# A client X-Request-Id is forwarded when it is present. Otherwise the
+# request uuid is. Access logs are JSON on stdout.
 # Active checks use /ready. Only HTTP 200 stays in the pool, so a drained
 # replica (503) is removed while the other replica still serves.
 {
@@ -10,7 +13,26 @@
 	auto_https off
 }
 
+(request_identity) {
+	map {http.request.header.X-Request-Id} {dip_request_id} {
+		"" {http.request.uuid}
+		default {http.request.header.X-Request-Id}
+	}
+	request_header X-Request-Id {dip_request_id}
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>headers>Authorization delete
+				request>headers>X-Api-Key delete
+			}
+		}
+	}
+}
+
 :8443 {
+	import request_identity
 	tls /certs/dev.crt /certs/dev.key
 	request_body {
 		max_size 64KiB
@@ -24,6 +46,7 @@
 		lb_retries 2
 		lb_try_duration 2s
 		lb_try_interval 100ms
+		header_up X-Request-Id {dip_request_id}
 		health_uri /ready
 		health_interval 1s
 		health_timeout 2s
@@ -38,6 +61,7 @@
 }
 
 :8444 {
+	import request_identity
 	tls /certs/dev.crt /certs/dev.key
 	request_body {
 		max_size 64KiB
@@ -51,6 +75,7 @@
 		lb_retries 2
 		lb_try_duration 2s
 		lb_try_interval 100ms
+		header_up X-Request-Id {dip_request_id}
 		health_uri /ready
 		health_interval 1s
 		health_timeout 2s

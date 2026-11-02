@@ -46,6 +46,8 @@ from pydantic import BaseModel, ConfigDict
 from quant_fund import __firm__, __version__
 from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 from quant_fund.api.rate_limit import RateLimitMiddleware
+from quant_fund.api.request_log import RequestLogMiddleware
+from quant_fund.api.secret_files import SecretFileError, apply_secret_files
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -80,6 +82,9 @@ class ResearchApiSettings:
 
     @classmethod
     def from_env(cls) -> ResearchApiSettings:
+        problems = apply_secret_files()
+        if problems:
+            raise SecretFileError("\n".join(problems))
         data_root_env = os.environ.get("RESEARCH_API_DATA_ROOT") or os.environ.get(
             "QUANT_DATA_ROOT"
         )
@@ -996,6 +1001,7 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         )
 
     app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(RequestLogMiddleware, service="research")
     return app
 
 
