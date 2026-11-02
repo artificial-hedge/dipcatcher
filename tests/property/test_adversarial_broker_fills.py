@@ -128,18 +128,24 @@ def test_duplicate_order_id_fails_closed() -> None:
     assert resting.limit_price == 99.0
 
 
-def test_order_id_free_after_fill_or_cancel() -> None:
-    """Ids are only reserved while working; completed ids may be reused."""
+def test_completed_order_id_cannot_be_reused() -> None:
+    """A filled or canceled id is not a fresh order. Reuse must not move cash."""
     broker = _broker()
-    broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
-    rec = broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
-    assert rec.order.status is OrderStatus.FILLED
+    first = broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
+    assert first.order.status is OrderStatus.FILLED
+    cash = broker.cash
+    shares = broker.shares["A"]
+    with pytest.raises(ValueError, match="already submitted"):
+        broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
+    assert broker.cash == cash
+    assert broker.shares["A"] == shares
 
     broker2 = _broker()
     broker2.submit(_order("y", limit=99.0), price=100.0, nav=1e6, adv_dollars=1e9)
     broker2.cancel_order("y")
-    broker2.submit(_order("y", limit=98.0), price=100.0, nav=1e6, adv_dollars=1e9)
-    assert broker2.open_orders["y"].limit_price == 98.0
+    with pytest.raises(ValueError, match="already submitted"):
+        broker2.submit(_order("y", limit=98.0), price=100.0, nav=1e6, adv_dollars=1e9)
+    assert "y" not in broker2.open_orders
 
 
 def test_limit_fills_never_leave_the_bar_range() -> None:

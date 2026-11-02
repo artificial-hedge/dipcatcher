@@ -154,6 +154,8 @@ class DropBridge:
                 raw = json.loads(path.read_text(encoding="utf-8"))
             except json.JSONDecodeError as exc:
                 raise BridgeError(f"{path.name}: invalid JSON") from exc
+            except OSError as exc:
+                raise BridgeError(f"{path.name}: unreadable event") from exc
             if not isinstance(raw, dict):
                 raise BridgeError(f"{path.name}: event must be a JSON object")
             events.append(parse_event(raw, synthetic=False, source=path.name))

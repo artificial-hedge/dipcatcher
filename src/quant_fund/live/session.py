@@ -32,8 +32,14 @@ from quant_fund.live.brokers import (
     alpaca_credentials,
     map_broker_status,
 )
-from quant_fund.live.config import LiveConfig, load_gateway_pretrade
-from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.config import LiveConfig, load_gateway_pretrade, resolve_pretrade_path
+from quant_fund.live.errors import (
+    ALPACA_LIVE_REFUSAL,
+    BrokerRejected,
+    BrokerTimeout,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 from quant_fund.live.gateway_arm import (
     arm_session,
     disarm_session,
@@ -177,6 +183,7 @@ class LiveSession:
         self._now = now_ns
         self.orders: list[dict[str, Any]] = []
         self.marks: dict[str, float] = {}
+        self.mark_ts: dict[str, int] = {}
         self.kill_state: dict[str, Any] = {"latched": False, "actor": "", "reason": ""}
         self.ledger = LiveLedger(
             baseline_cash=float(config.starting_cash),
@@ -295,6 +302,7 @@ class LiveSession:
             cleaned = _symbol(symbol)
             number = _positive(price, "mark")
             self.marks[cleaned] = number
+            self.mark_ts[cleaned] = self._now()
             self.broker.set_mark(cleaned, number)
             self._persist()
             return {
@@ -373,6 +381,9 @@ class LiveSession:
                 row["reason"] = str(exc)
                 self._persist()
                 return _public_order(row, venue=self.venue, replayed=False)
+            except (BrokerTimeout, TimeoutError):
+                self._note_cancel_timeout(row)
+                raise LiveGateError("cancel unconfirmed after broker timeout") from None
             self._apply_ack(row, ack, ts)
             self._persist()
             self._audit(
@@ -420,23 +431,16 @@ class LiveSession:
             self._recover_inflight()
             self._require_trading()
             _actor(actor)
+            ts = self._clock(at_ns)
             account = self.broker.account()
             results: list[dict[str, Any]] = []
+            max_age = int(self.pretrade.limits.max_mark_age_ns)
             for symbol, qty in sorted(account.positions.items()):
                 if abs(qty) <= 1e-9:
                     continue
-                mark = self.marks.get(symbol)
+                mark, reason = _flatten_quote(self.marks, self.mark_ts, symbol, ts, max_age)
                 if mark is None:
-                    results.append(
-                        {
-                            "ok": False,
-                            "status": "skipped",
-                            "symbol": symbol,
-                            "reason": "no_mark",
-                            "live_pnl_claim": False,
-                            "research_evidence": False,
-                        }
-                    )
+                    results.append(_skipped_flatten(symbol, reason))
                     continue
                 side = "sell" if qty > 0.0 else "buy"
                 results.append(
@@ -484,9 +488,12 @@ class LiveSession:
             raise LiveGateError("client_order_id must be 1..48 letters, digits, _ or -")
         existing = self._find(client)
         if existing is not None:
-            return _public_order(existing, venue=self.venue, replayed=True)
+            return self._replay_client(existing, cleaned, order_side, qty, limit)
+        if self.kill_state["latched"]:
+            return self._deny_killed(who, client, cleaned, order_side, qty, limit)
         self._capture_baseline()
         self.marks[cleaned] = reference
+        self.mark_ts[cleaned] = ts
         self.broker.set_mark(cleaned, reference)
         self._sync_account(ts, reset_session=not self.orders)
         placeholder = {
@@ -550,10 +557,8 @@ class LiveSession:
                 fills=(),
                 reason=str(exc),
             )
-        except LiveGateError:
-            row["status"] = "not_acknowledged"
-            row["reason"] = "broker credentials are not set"
-            self._persist()
+        except LiveGateError as exc:
+            self._note_unsent(row, exc)
             raise
         except Exception:
             recovered = self._safe_recover(order.client_order_id)
@@ -574,7 +579,55 @@ class LiveSession:
         except Exception:
             return None
 
+    def _replay_client(
+        self,
+        existing: dict[str, Any],
+        symbol: str,
+        side: str,
+        quantity: float,
+        limit_price: float,
+    ) -> dict[str, Any]:
+        _require_same_client(existing, symbol, side, quantity, limit_price)
+        return _public_order(existing, venue=self.venue, replayed=True)
+
+    def _deny_killed(
+        self,
+        actor: str,
+        client: str,
+        symbol: str,
+        side: str,
+        quantity: float,
+        limit_price: float,
+    ) -> dict[str, Any]:
+        denied = _denied(
+            reasons=("kill_switch",),
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            limit_price=limit_price,
+            client_order_id=client,
+            venue=self.venue,
+        )
+        self._audit("deny", {"actor": actor, "client_order_id": client, "reasons": ["kill_switch"]})
+        self._persist()
+        return denied
+
+    def _note_unsent(self, row: dict[str, Any], exc: LiveGateError) -> None:
+        row["status"] = "not_acknowledged"
+        if isinstance(exc, LiveBrokerRefused):
+            row["reason"] = "alpaca-live is refused"
+        else:
+            row["reason"] = "broker credentials are not set"
+        self._persist()
+
+    def _note_cancel_timeout(self, row: dict[str, Any]) -> None:
+        if row["status"] in _WORKING:
+            row["status"] = "pending_cancel"
+        row["reason"] = "cancel unconfirmed after broker timeout"
+        self._persist()
+
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
+        _refuse_ack_mismatch(row, ack)
         row["broker_order_id"] = ack.broker_order_id
         status = map_broker_status(ack.status)
         row["status"] = status
@@ -786,6 +839,8 @@ class LiveSession:
             raise LiveGateError("session is not armed; run live arm")
         if not _credentials_present(self.broker) and self.venue != "loopback":
             raise LiveGateError("broker credentials are not set")
+        if self.venue == "alpaca-live":
+            raise LiveBrokerRefused(ALPACA_LIVE_REFUSAL)
 
     def _clock(self, at_ns: int | None) -> int:
         if at_ns is None:
@@ -824,7 +879,9 @@ class LiveSession:
     def _load_fresh(self) -> None:
         self.orders = []
         self.marks = {}
+        self.mark_ts = {}
         self.kill_state = {"latched": False, "actor": "", "reason": ""}
+        _refuse_broker_venue(self.venue, self.broker)
         self._pretrade_blob = None
         self._baseline_from_broker = self.venue == "loopback"
         self.ledger = self._new_ledger(float(self.config.starting_cash), {})
@@ -840,7 +897,9 @@ class LiveSession:
         self.marks = {
             str(symbol): _positive(float(price), "stored mark") for symbol, price in marks.items()
         }
+        self.mark_ts = _stored_mark_times(stored.get("mark_ts"))
         self.kill_state = _kill_from_state(kill)
+        _refuse_broker_venue(self.venue, self.broker)
         self._pretrade_blob = stored.get("pretrade")
         baseline_positions = stored.get("baseline_positions") or {}
         if not isinstance(baseline_positions, dict):
@@ -883,6 +942,7 @@ class LiveSession:
             "baseline_positions": self.ledger.baseline_positions,
             "baseline_from_broker": self._baseline_from_broker,
             "marks": dict(self.marks),
+            "mark_ts": dict(self.mark_ts),
             "orders": list(self.orders),
             "fills": [fill.as_dict() for fill in self.ledger.fills()],
             "kill": dict(self.kill_state),
@@ -1018,6 +1078,8 @@ def open_session(
     transport: Any = None,
 ) -> LiveSession:
     """Open or create the session directory for ``config``."""
+    _require_pretrade_file(config, config_path)
+    _refuse_broker_venue(config.venue, broker)
     root = Path(state_dir) if state_dir is not None else Path(config.state_dir)
     root.mkdir(parents=True, exist_ok=True)
     key = load_hmac_key(root / "hmac.key")
@@ -1133,6 +1195,91 @@ def _order_row(raw: object) -> dict[str, Any]:
         "expects_fill": bool(raw.get("expects_fill")),
         "reason": str(raw.get("reason") or ""),
     }
+
+
+def _require_pretrade_file(config: LiveConfig, config_path: str | Path) -> None:
+    path = resolve_pretrade_path(config, config_path)
+    if not path.is_file():
+        raise LiveGateError("pretrade config is missing")
+
+
+def _refuse_broker_venue(venue: str, broker: Broker | None) -> None:
+    if isinstance(broker, AlpacaBroker) and broker.venue != venue:
+        raise LiveGateError("broker venue does not match the live config")
+
+
+def _require_same_client(
+    existing: dict[str, Any],
+    symbol: str,
+    side: str,
+    quantity: float,
+    limit_price: float,
+) -> None:
+    same = (
+        existing["symbol"] == symbol
+        and existing["side"] == side
+        and abs(float(existing["quantity"]) - quantity) <= 1e-9
+        and abs(float(existing["limit_price"]) - limit_price) <= 1e-9
+    )
+    if not same:
+        raise LiveGateError("client_order_id conflicts with a different order")
+
+
+def _refuse_ack_mismatch(row: dict[str, Any], ack: BrokerAck) -> None:
+    if float(ack.filled_quantity) > float(row["quantity"]) + 1e-9:
+        raise LiveGateError("broker fill exceeds the order quantity")
+    if _ack_identity_conflict(row, ack):
+        raise LiveGateError("broker ack does not match the order")
+
+
+def _ack_identity_conflict(row: dict[str, Any], ack: BrokerAck) -> bool:
+    if not ack.symbol and not ack.side and ack.quantity == 0.0:
+        return False
+    if ack.symbol and ack.symbol != row["symbol"]:
+        return True
+    if ack.side and ack.side != row["side"]:
+        return True
+    return ack.quantity != 0.0 and abs(ack.quantity - float(row["quantity"])) > 1e-9
+
+
+def _flatten_quote(
+    marks: dict[str, float],
+    mark_ts: dict[str, int],
+    symbol: str,
+    ts: int,
+    max_age: int,
+) -> tuple[float | None, str]:
+    mark = marks.get(symbol)
+    if mark is None or mark <= 0.0:
+        return None, "no_mark"
+    seen = mark_ts.get(symbol)
+    if seen is None or ts - int(seen) > max_age:
+        return None, "stale_data"
+    return float(mark), ""
+
+
+def _skipped_flatten(symbol: str, reason: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "status": "skipped",
+        "symbol": symbol,
+        "reason": reason,
+        "live_pnl_claim": False,
+        "research_evidence": False,
+    }
+
+
+def _stored_mark_times(raw: object) -> dict[str, int]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise LiveGateError("stored mark times are malformed")
+    times: dict[str, int] = {}
+    for symbol, stamp in raw.items():
+        if isinstance(stamp, bool) or not isinstance(stamp, int) or stamp < 0:
+            raise LiveGateError("stored mark time is malformed")
+        times[str(symbol)] = stamp
+    return times
 
 
 def _public_order(row: dict[str, Any], *, venue: str, replayed: bool) -> dict[str, Any]:
