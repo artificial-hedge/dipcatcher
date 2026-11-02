@@ -7,6 +7,7 @@ stdlib only.
 
 from __future__ import annotations
 
+import errno
 import os
 import sys
 
@@ -18,18 +19,29 @@ def _enabled(name: str, default: str) -> bool:
     return os.environ.get(name, default).strip().lower() in _TRUE
 
 
-def _writable(path: str) -> bool:
+def _probe_errno(path: str) -> int | None:
+    """Return the errno of a failed create, or ``None`` when the probe lands."""
     probe = os.path.join(path, f".dipcatcher-write-probe-{os.getpid()}")
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
     try:
         descriptor = os.open(probe, flags, 0o644)
-    except OSError:
-        return False
+    except OSError as exc:
+        return exc.errno if exc.errno is not None else errno.EIO
     os.close(descriptor)
     os.unlink(probe)
-    return True
+    return None
+
+
+def _write_problem(path: str, failure: int) -> str:
+    if failure == errno.ENOSPC:
+        return f"data directory {path} is full; the dipcatcher user is uid {_DIP_UID}"
+    euid = os.geteuid()
+    return (
+        f"data directory {path} is not writable by uid {euid}; "
+        f"the dipcatcher user is uid {_DIP_UID}"
+    )
 
 
 def check_data_dir(path: str, *, require_write: bool) -> str | None:
@@ -38,13 +50,12 @@ def check_data_dir(path: str, *, require_write: bool) -> str | None:
         return f"data directory {path} must not be a symlink; the dipcatcher user is uid {_DIP_UID}"
     if not os.path.isdir(path):
         return f"data directory {path} is not a directory; the dipcatcher user is uid {_DIP_UID}"
-    if require_write and not _writable(path):
-        euid = os.geteuid()
-        return (
-            f"data directory {path} is not writable by uid {euid}; "
-            f"the dipcatcher user is uid {_DIP_UID}"
-        )
-    return None
+    if not require_write:
+        return None
+    failure = _probe_errno(path)
+    if failure is None:
+        return None
+    return _write_problem(path, failure)
 
 
 def main(argv: list[str]) -> int:

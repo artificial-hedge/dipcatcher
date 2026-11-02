@@ -8,6 +8,7 @@ flags ``--host`` and ``--port`` override ``DIPCATCHER_BIND_HOST`` and
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,7 @@ ENV_CONTRACT = (
     "DIPCATCHER_METRICS_PORT",
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
+    "DIPCATCHER_RATE_LIMIT_RPS",
     "DIPCATCHER_REQUIRE_DATA_WRITE",
     "DIPCATCHER_SHUTDOWN_GRACE_S",
     "DIPCATCHER_SLO_PATH",
@@ -266,6 +268,19 @@ def _load_slo(path: Path, *, required: bool) -> tuple[str | None, str | None]:
     return str(path), None
 
 
+def _rate_limit_problems() -> list[str]:
+    raw = _env("DIPCATCHER_RATE_LIMIT_RPS")
+    if not raw:
+        return []
+    try:
+        value = float(raw)
+    except ValueError:
+        return ["DIPCATCHER_RATE_LIMIT_RPS is invalid"]
+    if not math.isfinite(value) or value < 0.0 or value > 1_000_000.0:
+        return ["DIPCATCHER_RATE_LIMIT_RPS is invalid"]
+    return []
+
+
 def _bind_problems(host: str, key_name: str, key_message: str) -> list[str]:
     problems: list[str] = []
     host_problem = _check_host(host)
@@ -391,6 +406,7 @@ def _assemble(
     problems.extend(metric_problems)
     otel_configured, otel_problems = _otel(observe)
     problems.extend(otel_problems)
+    problems.extend(_rate_limit_problems())
     slo_path, slo_problem = _discover_slo(_env("DIPCATCHER_SLO_PATH"), observe)
     if slo_problem:
         problems.append(slo_problem)

@@ -22,6 +22,7 @@ value.
 | `DIPCATCHER_METRICS_HOST` | `127.0.0.1` | Used only when `DIPCATCHER_METRICS_PORT` is set. |
 | `DIPCATCHER_METRICS_PORT` | unset | Requires `DIPCATCHER_OBSERVE=1`. `/metrics` requires the service API key as `X-API-Key` or `Authorization: Bearer`, unless the loopback scrape opt-out is set. |
 | `DIPCATCHER_OTEL_ENDPOINT` | unset | `http` or `https` URL with a host and no userinfo. Requires `DIPCATCHER_OBSERVE=1`. |
+| `DIPCATCHER_RATE_LIMIT_RPS` | unset (off) | Finite rate from 0 to 1000000 for both APIs. `0` disables the limit. `/health` is exempt. Overload returns HTTP 429. An invalid value refuses startup. |
 | `DIPCATCHER_SLO_PATH` | shipped `deploy/observability/slo.yml` when observe is on and this is unset | Requires `DIPCATCHER_OBSERVE=1`. A symlink or invalid file refuses startup. |
 | `DIPCATCHER_ALERT_INTERVAL_S` | `60` | Alert loop period. `1`–`86400`. |
 | `DIPCATCHER_METRICS_LOOPBACK_SCRAPE` | unset (off) | Allows an unauthenticated `/metrics` scrape only when `DIPCATCHER_METRICS_HOST` is loopback. Any other host refuses startup. |
@@ -74,7 +75,9 @@ to start when that directory is missing, is a symlink, or is not writable by
 uid 10001. The message names the path and the uid. A root-owned named volume
 fails that check. The smoke compose file uses the image directory. The
 research image sets `DIPCATCHER_REQUIRE_DATA_WRITE=0` so a `:ro` mount still
-starts, and it still refuses a symlink.
+starts, and it still refuses a symlink. A full data directory fails the lab
+entrypoint before bind. The message says the directory is full and names
+uid 10001.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt
@@ -294,6 +297,36 @@ kill file is blocking, p99 is above 2 seconds, the error ratio is at least
 0.01, or freshness is at least 86400 seconds. A non-zero error rate is a
 warning. The loopback metrics port stays unpublished.
 
+## Resilience
+
+Load either API with the stdlib runner. Each invocation stays at or under
+120 seconds and 200 concurrency:
+
+```bash
+python scripts/http_load.py \
+  --url http://127.0.0.1:8000/health --concurrency 50 --seconds 30
+python scripts/http_load.py \
+  --url http://127.0.0.1:8010/health --concurrency 50 --seconds 30
+```
+
+Set `DIPCATCHER_RATE_LIMIT_RPS` to a positive rate and repeat against
+`/ready` with `--env-file` and `--key-env`. The key is not printed. Clients
+over the limit receive 429 and `Retry-After`. That response is not a 5xx.
+
+A directory that becomes read-only after start leaves the last complete
+ledger file in place. The next lab start fails the write preflight. Paper
+ledger writes use a same-directory temporary file, fsync, and replace.
+SIGKILL during the write leaves the previous complete file. Torn names
+start with a dot and are not archived.
+
+```bash
+python scripts/paper_state_backup.py backup --source /app/data --dest /backup/paper
+python scripts/paper_state_backup.py restore --archive /backup/paper --dest /app/data
+```
+
+Restore checks every hash before it writes. A destination file with
+different bytes is left unchanged.
+
 ## Logs
 
 Service events and uvicorn logs are JSON lines on stderr. Docker keeps them
@@ -303,9 +336,11 @@ on the container's log stream:
 docker logs dipcatcher
 ```
 
-There is no log file inside the image. Values of known secret environment
-variables are replaced with `[redacted]` before a line is written. Do not
-add a new log field that copies a credential.
+The process does not open a log file. Request volume does not grow files
+under `/app`, `/tmp`, `/var/log`, or `/home/dipcatcher`. Docker records the
+stderr stream on the host, outside the container writable layer. Values of
+known secret environment variables are replaced with `[redacted]` before a
+line is written. Do not add a new log field that copies a credential.
 
 Startup emits `service_start`. SIGTERM emits `service_draining`, then
 `service_shutdown`. With `DIPCATCHER_OBSERVE=1`, SLO and kill-switch

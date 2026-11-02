@@ -45,6 +45,7 @@ from pydantic import BaseModel, ConfigDict
 
 from quant_fund import __firm__, __version__
 from quant_fund.api.lifecycle import acceptance_block, service_lifespan
+from quant_fund.api.rate_limit import RateLimitMiddleware
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -994,6 +995,7 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
             artifact=payload,
         )
 
+    app.add_middleware(RateLimitMiddleware)
     return app
 
 

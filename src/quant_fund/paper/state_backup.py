@@ -3,14 +3,21 @@
 The archive is ``manifest.json`` plus payload bytes. Restore checks every
 hash before it writes. A symlink, a tampered payload, or a destination file
 with different bytes fails closed and leaves the destination unchanged.
+Copies land through a same-directory temporary file, fsync, and replace.
+Dotfiles, including a torn write, are not archived.
 """
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
+import tempfile
 from pathlib import Path, PurePosixPath
+
+from quant_fund.utils import atomicio
+from quant_fund.utils.atomicio import atomic_write_text
 
 SCHEMA = "paper_state_backup.v1"
 _CHUNK = 1 << 20
@@ -42,8 +49,9 @@ def backup_paper_state(source: Path, dest: Path) -> None:
         _copy_exclusive(path, target)
         entries.append({"path": relative, "sha256": digest, "size": size})
     manifest = {"files": entries, "schema": SCHEMA}
-    (dest / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    atomic_write_text(
+        dest / "manifest.json",
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
     )
 
 
@@ -107,13 +115,15 @@ def _walk_files(root: Path) -> list[Path]:
         for name in dirnames:
             child = current / name
             _assert_not_symlink(child)
-            kept.append(name)
+            if not name.startswith("."):
+                kept.append(name)
         dirnames[:] = kept
         for name in filenames:
             child = current / name
             _assert_not_symlink(child)
-            if child.is_file():
-                found.append(child)
+            if name.startswith(".") or not child.is_file():
+                continue
+            found.append(child)
     return found
 
 
@@ -148,20 +158,41 @@ def _hash_file(path: Path) -> tuple[str, int]:
     return digest.hexdigest(), size
 
 
+def _write_all(fd: int, chunk: bytes) -> None:
+    view = memoryview(chunk)
+    while view:
+        written = os.write(fd, view)
+        if written <= 0:
+            raise OSError(errno.EIO, "short write")
+        view = view[written:]
+
+
+def _stream_to(fd: int, source: Path) -> None:
+    with source.open("rb") as handle:
+        while True:
+            chunk = handle.read(_CHUNK)
+            if not chunk:
+                return
+            _write_all(fd, chunk)
+
+
 def _copy_exclusive(source: Path, target: Path) -> None:
-    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    descriptor = os.open(target, flags, 0o644)
+    """Publish ``target`` only after the bytes are fsynced."""
+    if target.exists() or target.is_symlink():
+        raise PaperBackupError("dest_exists")
+    fd, temporary = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
+    temporary_path = Path(temporary)
     try:
-        with source.open("rb") as handle:
-            while True:
-                chunk = handle.read(_CHUNK)
-                if not chunk:
-                    break
-                os.write(descriptor, chunk)
+        _stream_to(fd, source)
+        os.fsync(fd)
+        os.close(fd)
+        fd = -1
+        os.replace(temporary_path, target)
+        atomicio._fsync_directory(target.parent)
     finally:
-        os.close(descriptor)
+        if fd >= 0:
+            os.close(fd)
+        temporary_path.unlink(missing_ok=True)
 
 
 def _manifest_entries(path: Path) -> list[object]:

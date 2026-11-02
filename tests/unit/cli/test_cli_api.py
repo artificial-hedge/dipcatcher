@@ -326,6 +326,7 @@ def test_cli_api_refuses_non_loopback_without_key(monkeypatch) -> None:
         "DIPCATCHER_METRICS_PORT",
         "DIPCATCHER_OBSERVE",
         "DIPCATCHER_OTEL_ENDPOINT",
+        "DIPCATCHER_RATE_LIMIT_RPS",
         "DIPCATCHER_REQUIRE_DATA_WRITE",
         "DIPCATCHER_SLO_PATH",
         "PORT",
