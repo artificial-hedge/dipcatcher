@@ -7,6 +7,7 @@ URLs, audit lines, or exception text.
 
 from __future__ import annotations
 
+import http.client
 import json
 import math
 import os
@@ -19,13 +20,20 @@ from typing import Any, Protocol, cast
 from urllib.parse import quote, urlencode
 
 from quant_fund.live.config import Venue
-from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import (
+    BrokerRejected,
+    BrokerUnconfirmed,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
     "alpaca-live": "https://api.alpaca.markets",
 }
 _PAGE = 100
+# These HTTP statuses can mean the order landed even though the body is an error.
+_AMBIGUOUS_HTTP = frozenset({"408", "409", "429", "500", "502", "503", "504"})
 # Alpaca's documented lifecycle. Unknown values stay ``unmapped`` so an expired
 # or suspended order is not stored as a working accept.
 _STATUS_MAP: dict[str, str] = {
@@ -347,6 +355,8 @@ class AlpacaBroker:
         self._transport = transport or urllib_transport
         self._timeout = float(timeout)
         self._marks: dict[str, float] = {}
+        # Client ids whose POST was attempted. A later submit reconciles; it does not POST.
+        self._sent: set[str] = set()
 
     @property
     def credentials_present(self) -> bool:
@@ -365,18 +375,24 @@ class AlpacaBroker:
             "limit_price": _decimal(order.limit_price),
             "client_order_id": order.client_order_id,
         }
+        if order.client_order_id in self._sent:
+            return self._reconcile_submitted(order, "a retry")
+        self._sent.add(order.client_order_id)
         try:
             payload = self._request("POST", "/v2/orders", body)
         except BrokerRejected as exc:
-            if "client_order_id" not in str(exc):
+            if _rejection_is_definite(exc):
+                self._sent.discard(order.client_order_id)
                 raise
-            recovered = self.recover(order.client_order_id)
-            if recovered is None:
-                raise
-            return recovered
-        if not isinstance(payload, dict):
-            raise BrokerRejected("broker order response was not an object")
-        return self._ack(payload)
+            return self._reconcile_submitted(order, "an ambiguous rejection", cause=exc)
+        except LiveGateError:
+            self._sent.discard(order.client_order_id)
+            raise
+        except (OSError, http.client.HTTPException) as exc:
+            return self._reconcile_submitted(order, "a transport failure", cause=exc)
+        if _order_payload_is_complete(payload, order.client_order_id):
+            return self._ack(payload)
+        return self._reconcile_submitted(order, "an incomplete acknowledgement")
 
     def cancel(self, client_order_id: str, broker_order_id: str) -> BrokerAck:
         target = broker_order_id or ""
@@ -411,9 +427,25 @@ class AlpacaBroker:
         payload, missing = self._request_optional(path)
         if missing:
             return None
-        if not isinstance(payload, dict):
-            raise BrokerRejected("broker order lookup was not an object")
+        if not _order_payload_is_complete(payload, client_order_id):
+            raise BrokerRejected("broker order lookup was incomplete")
         return self._ack(payload)
+
+    def _reconcile_submitted(
+        self,
+        order: LiveOrder,
+        why: str,
+        *,
+        cause: BaseException | None = None,
+    ) -> BrokerAck:
+        """Look the order up. A miss or a failed lookup halts; it does not POST."""
+        try:
+            found = self.recover(order.client_order_id)
+        except (BrokerRejected, OSError, http.client.HTTPException) as exc:
+            raise BrokerUnconfirmed(_unconfirmed_message(order.client_order_id, why)) from exc
+        if found is None:
+            raise BrokerUnconfirmed(_unconfirmed_message(order.client_order_id, why)) from cause
+        return found
 
     def account(self) -> BrokerAccount:
         payload = self._request("GET", "/v2/account", None)
@@ -551,6 +583,32 @@ class AlpacaBroker:
         headers = _alpaca_headers(key, secret, has_body=raw_body is not None)
         status, payload = self._transport(method, url, headers, raw_body, self._timeout)
         return _parse_broker_response(status, payload, (key, secret), allow_missing=allow_missing)
+
+
+def _order_payload_is_complete(payload: Any, client_order_id: str) -> bool:
+    """True when the payload names this order and carries a status word."""
+    if not isinstance(payload, dict):
+        return False
+    if str(payload.get("client_order_id") or "") != client_order_id:
+        return False
+    if not str(payload.get("id") or "").strip():
+        return False
+    return bool(str(payload.get("status") or "").strip())
+
+
+def _rejection_is_definite(exc: BrokerRejected) -> bool:
+    """A definite rejection means the broker refused the order and it is not live."""
+    text = str(exc)
+    if "client_order_id" in text or "non-JSON" in text:
+        return False
+    return all(f"HTTP {code}" not in text for code in _AMBIGUOUS_HTTP)
+
+
+def _unconfirmed_message(client_order_id: str, why: str) -> str:
+    return (
+        f"broker order {client_order_id} is unconfirmed after {why}; "
+        "state could not be confirmed and the order was not submitted again"
+    )
 
 
 def _decimal(value: float) -> str:
