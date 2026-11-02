@@ -345,6 +345,7 @@ def test_shell_timeout_and_nonzero_are_reported(
         raise subprocess.TimeoutExpired(cmd, float(timeout))
 
     monkeypatch.setattr(shell.subprocess, "run", boom)
+    monkeypatch.setenv("FX1_ALLOW_SHELL", "1")
     sh.do_shell("sleep 999")
     assert "timed out" in capsys.readouterr().err
 

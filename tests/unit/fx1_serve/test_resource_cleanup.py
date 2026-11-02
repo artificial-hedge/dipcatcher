@@ -62,7 +62,7 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
     def refuse(*args: Any, **kwargs: Any) -> Any:
         raise error
 
-    monkeypatch.setattr(client.urllib.request, "urlopen", refuse)
+    monkeypatch.setattr(client, "_pinned_harness_exchange", refuse)
     status, _headers, payload = client._urllib_transport(
         "GET", "https://harness.invalid/health", None, {}, 1.0
     )
@@ -73,7 +73,7 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
 
 def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
     """A transient 5xx closes its connection before the next attempt."""
-    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
+    monkeypatch.setenv("FX1_PRIVATE_ALLOW_CIDRS", "127.0.0.0/8,::1/128")
     monkeypatch.setattr(time, "sleep", lambda _delay: None)
 
     class RefuseHandler(BaseHTTPRequestHandler):
@@ -128,7 +128,7 @@ def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyP
 def test_webhook_refuses_cross_origin_redirect_without_leaking_signature(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
+    monkeypatch.setenv("FX1_PRIVATE_ALLOW_CIDRS", "127.0.0.0/8,::1/128")
     target_hits: list[tuple[str, dict[str, str], bytes]] = []
     source_hits: list[tuple[str, dict[str, str], bytes]] = []
 

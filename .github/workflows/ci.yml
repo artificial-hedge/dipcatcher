@@ -295,6 +295,8 @@ jobs:
         id: suite
         env:
           INPUT_SUITE: ${{ inputs.suite }}
+          MATRIX_SHARD: ${{ matrix.shard }}
+          MATRIX_PYTHON: ${{ matrix.python }}
         run: |
           set -euo pipefail
           suite="fast"
@@ -316,6 +318,7 @@ jobs:
       - name: Select balanced test-file shard
         env:
           NUM_SHARDS: "4"
+          MATRIX_SHARD: ${{ matrix.shard }}
         run: |
           set -euo pipefail
           inventory="$RUNNER_TEMP/ci-inventory.txt"
@@ -324,7 +327,7 @@ jobs:
             exit 1
           fi
           shard_file="$RUNNER_TEMP/ci-shard.txt"
-          want=$(( ${{ matrix.shard }} - 1 ))
+          want=$(( MATRIX_SHARD - 1 ))
           awk -F': ' -v k="$NUM_SHARDS" -v want="$want" '
             {
               min = 0
@@ -335,13 +338,14 @@ jobs:
           ' "$inventory" > "$shard_file"
           n=$(wc -l < "$shard_file" | tr -d ' ')
           if [ "$n" -eq 0 ]; then
-            echo "::error::shard ${{ matrix.shard }} selected no test files"
+            echo "::error::shard ${MATRIX_SHARD} selected no test files"
             exit 1
           fi
-          echo "shard ${{ matrix.shard }}: $n test files"
+          echo "shard ${MATRIX_SHARD}: $n test files"
       - name: Pytest
         env:
           MARKER: ${{ steps.suite.outputs.marker }}
+          MATRIX_PYTHON: ${{ matrix.python }}
         run: |
           set -euo pipefail
           shard_file="$RUNNER_TEMP/ci-shard.txt"
@@ -351,7 +355,7 @@ jobs:
             --dist loadfile
             -m "$MARKER"
           )
-          if [ "${{ matrix.python }}" = "3.12" ]; then
+          if [ "$MATRIX_PYTHON" = "3.12" ]; then
             # Partial shards stay under the project threshold; the coverage job combines them.
             args+=(--cov --cov-report=xml:coverage.xml --cov-fail-under=0)
           fi

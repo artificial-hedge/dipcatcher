@@ -26,6 +26,11 @@ import ssl
 import urllib.parse
 
 from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_attempts, require_timeout
+from quant_fund.utils.outbound import (
+    PRIVATE_ALLOW_CIDRS_ENV,
+    address_permitted,
+    parse_allow_cidrs,
+)
 from quant_fund.utils.secrets import redact_text
 
 __all__ = [
@@ -45,30 +50,12 @@ WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
-_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
 
 
-def _private_networks_allowed() -> bool:
-    """Return whether this process explicitly permits private callbacks."""
-    return os.environ.get(_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-    }
-
-
-def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Classify an address conservatively for an outbound callback."""
-    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
-        address = address.ipv4_mapped
-    return address.is_global and not (
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_multicast
-        or address.is_reserved
-        or address.is_unspecified
-    )
+def _address_permitted(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Public unicast, plus hosts inside ``FX1_PRIVATE_ALLOW_CIDRS``."""
+    networks = parse_allow_cidrs(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, ""))
+    return address_permitted(address, networks)
 
 
 def _validate_literal_host(host: str) -> None:
@@ -78,7 +65,7 @@ def _validate_literal_host(host: str) -> None:
         address = ipaddress.ip_address(candidate)
     except ValueError:
         return
-    if not _private_networks_allowed() and not _is_public_unicast(address):
+    if not _address_permitted(address):
         raise ValueError("callback_url must not target a private or special-use address")
 
 
@@ -96,7 +83,7 @@ def _resolved_addresses(host: str, port: int, timeout: float) -> tuple[str, ...]
         raw = str(sockaddr[0])
         candidate = raw.split("%", 1)[0]
         address = ipaddress.ip_address(candidate)
-        if not _private_networks_allowed() and not _is_public_unicast(address):
+        if not _address_permitted(address):
             raise ValueError(
                 f"callback_url resolved to a private or special-use address: {address}"
             )

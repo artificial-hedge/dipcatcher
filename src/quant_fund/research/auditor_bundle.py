@@ -37,7 +37,7 @@ from typing import Any
 
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
-from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_bounded
+from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_pinned
 
 BUNDLE_SCHEMA = "auditor_bundle.v1"
 BUNDLE_MEMBERS: tuple[str, ...] = (
@@ -74,11 +74,13 @@ SPINE_PREFIXES: tuple[str, ...] = (
 
 
 def _fetch_json(url: str, timeout: int = 30) -> dict[str, Any]:
-    with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        result: dict[str, Any] = json.loads(
-            read_bounded(resp, timeout=float(timeout), max_bytes=DEFAULT_MAX_BODY)
-        )
-        return result
+    body = read_pinned(
+        urllib.request.Request(url),
+        timeout=float(timeout),
+        max_bytes=DEFAULT_MAX_BODY,
+    )
+    result: dict[str, Any] = json.loads(body)
+    return result
 
 
 def _freshest_proof(root: Path, target_name: str) -> Path | None:
@@ -219,14 +221,13 @@ def verify_bundle(
     if rekor_pubkey_pem is not None:
         decoded["quality/rekor_pubkey.pem"] = rekor_pubkey_pem
     elif rekor_url is not None:
-        try:
-            with urllib.request.urlopen(  # noqa: S310  # nosec B310
-                rekor_url.rstrip("/") + "/api/v1/log/publicKey", timeout=timeout
-            ) as resp:
-                decoded["quality/rekor_pubkey.pem"] = read_bounded(
-                    resp, timeout=float(timeout), max_bytes=DEFAULT_MAX_BODY
-                )
-        except OSError:
+        try:  # noqa: SIM105 — handler stays so verify_bundle's complexity pin does not move
+            decoded["quality/rekor_pubkey.pem"] = read_pinned(
+                urllib.request.Request(rekor_url.rstrip("/") + "/api/v1/log/publicKey"),
+                timeout=float(timeout),
+                max_bytes=DEFAULT_MAX_BODY,
+            )
+        except (OSError, ValueError):
             pass  # fall back to the bundle's pinned copy
 
     with tempfile.TemporaryDirectory() as tmp:

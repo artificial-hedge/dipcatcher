@@ -243,6 +243,7 @@ class TestWebhooks(unittest.TestCase):
             "http://0.0.0.0/hook",
         )
         with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
             os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
             for url in rejected:
                 with self.subTest(url=url), self.assertRaises(ValueError):
@@ -250,11 +251,23 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(check_callback_url("https://8.8.8.8/hook"), "https://8.8.8.8/hook")
 
     def test_private_network_opt_in_is_explicit(self) -> None:
-        with patch.dict(os.environ, {"FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1"}):
+        with patch.dict(os.environ, {"FX1_PRIVATE_ALLOW_CIDRS": "127.0.0.0/8"}):
             self.assertEqual(
                 check_callback_url("http://127.0.0.1/hook"),
                 "http://127.0.0.1/hook",
             )
+            with self.assertRaises(ValueError):
+                check_callback_url("http://192.168.1.1/hook")
+        with patch.dict(os.environ, {"FX1_PRIVATE_ALLOW_CIDRS": "0.0.0.0/0,::/0"}):
+            with self.assertRaises(ValueError):
+                check_callback_url("http://169.254.169.254/latest/meta-data/")
+            with self.assertRaises(ValueError):
+                check_callback_url("http://192.0.2.1/hook")
+        with (
+            patch.dict(os.environ, {"FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1"}),
+            self.assertRaises(ValueError),
+        ):
+            check_callback_url("http://10.0.0.1/hook")
 
     def test_callback_errors_do_not_echo_credentials(self) -> None:
         url = "http://user:s3cret-synthetic@hooks.example/hook?token=SECRETKEY"

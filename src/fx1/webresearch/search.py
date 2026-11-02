@@ -26,6 +26,7 @@ from typing import Any, cast
 
 from fx1.webresearch.fetch import DEFAULT_USER_AGENT
 from quant_fund.utils.net_timeout import require_timeout
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 DDG_LITE_URL = "https://lite.duckduckgo.com/lite/"
 DDG_HTML_URL = "https://html.duckduckgo.com/html/"
@@ -153,6 +154,35 @@ def _parse_results(html: str, engine: str) -> list[SearchHit]:
 # offline tests dishonest about what a live run can do.
 
 
+def _require_search_url(url: str) -> None:
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != "https" or parsed.hostname not in _DDG_SEARCH_HOSTS:
+        raise ValueError("search endpoint must be an approved DuckDuckGo HTTPS host")
+
+
+def _pinned_search_read(request: urllib.request.Request, timeout_s: float, max_bytes: int) -> bytes:
+    """Pinned live fetch. One read of ``max_bytes + 1`` enforces the cap."""
+    try:
+        with open_pinned(request, timeout=timeout_s) as handle:
+            body = bytes(handle.read(max_bytes + 1))
+            if len(body) > max_bytes:
+                raise SearchResponseTooLargeError(f"search response exceeds {max_bytes}-byte limit")
+            status = int(handle.status)
+            if 300 <= status < 400:
+                raise OutboundRefused("redirects are not followed")
+            if status >= 400:
+                raise urllib.error.HTTPError(
+                    handle.geturl(),
+                    status,
+                    handle.reason or "error",
+                    handle.headers,
+                    None,
+                )
+            return body
+    except OutboundRefused as exc:
+        raise ValueError("search endpoint was refused") from exc
+
+
 class Searcher:
     """Search protocol: ``search(query, *, max_results, timeout_s)``."""
 
@@ -221,16 +251,12 @@ class DuckDuckGoLiteSearcher(Searcher):
         return body
 
     def _get(self, url: str, timeout_s: float) -> bytes:
-        parsed = urllib.parse.urlsplit(url)
-        if parsed.scheme != "https" or parsed.hostname not in _DDG_SEARCH_HOSTS:
-            raise ValueError("search endpoint must be an approved DuckDuckGo HTTPS host")
+        _require_search_url(url)
         request = urllib.request.Request(url, headers={"User-Agent": self._user_agent})
         if self._open_fn is not None:
             with self._open_fn(request, timeout_s) as response:
                 return self._read_response(response, timeout_s)
-        # Scheme and host are allowlisted immediately above.
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
-            return self._read_response(response, timeout_s)
+        return _pinned_search_read(request, timeout_s, self._max_response_bytes)
 
     def search(
         self,

@@ -84,7 +84,9 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         # Any unexpected network access fails without opening a socket.
         self.urlopen = self.enterContext(
             patch.object(
-                backends.urllib.request, "urlopen", side_effect=AssertionError("unexpected I/O")
+                backends,
+                "_pinned_models_probe",
+                side_effect=AssertionError("unexpected I/O"),
             )
         )
         self.addCleanup(self.backend.close)

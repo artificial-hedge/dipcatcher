@@ -39,10 +39,12 @@ does not follow redirects, use ambient `HTTP_PROXY`/`HTTPS_PROXY` settings,
 or retry a credentialed POST across multiple DNS answers.
 
 An operator running an owned local vLLM, SGLang, Ollama, or similar server
-can set `FX1_BYOK_ALLOW_PRIVATE_NETWORKS=1`. This narrowly permits IPv4
-loopback, RFC 1918, IPv6 loopback, and IPv6 ULA destinations. It does not
-permit link-local or cloud-metadata addresses, carrier-grade NAT, multicast,
-unspecified, reserved, documentation, or benchmark ranges. This is a
+can set `FX1_PRIVATE_ALLOW_CIDRS` to a comma-separated CIDR list, for example
+`10.0.0.0/8` or `127.0.0.0/8,::1/128`. Only addresses inside those networks
+are added to the public-only default. Webhook callbacks use the same
+variable. It does not permit link-local or cloud-metadata addresses,
+carrier-grade NAT, multicast, unspecified, reserved, documentation, or
+benchmark ranges, even when a listed CIDR contains them. This is a
 server-side deployment control; callers cannot enable it in a request.
 
 For a managed local fx-1 checkpoint, prefer the `local_fx1` lane instead of

@@ -28,4 +28,4 @@ def test_search_body_over_the_cap_is_a_transport_fault() -> None:
 
     result = DuckDuckGoLiteSearcher(open_fn=open_fn).search("inflation", timeout_s=1.0)
     assert result.hits == []
-    assert "ValueError" in result.error
+    assert result.error == "search response exceeds 524288-byte limit"

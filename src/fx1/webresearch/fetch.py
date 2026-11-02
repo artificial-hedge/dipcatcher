@@ -21,18 +21,20 @@ so the engine and its tests never need a live socket.
 
 from __future__ import annotations
 
-import ipaddress
+import email.message
 import math
 import threading
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from typing import Any, cast
 
 from quant_fund.utils.net_timeout import bounded_getaddrinfo
+from quant_fund.utils.outbound import OutboundRefused, open_pinned, public_addresses
 
 DEFAULT_USER_AGENT = "dipcatcher-research/0.1 (+https://github.com/artificial-hedge/dipcatcher)"
 DEFAULT_MAX_BYTES = 512 * 1024
@@ -79,43 +81,14 @@ class FetchResult:
 # ---------------------------------------------------------------------------
 
 
-def _ip_is_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    return (
-        not ip.is_private
-        and not ip.is_loopback
-        and not ip.is_link_local
-        and not ip.is_reserved
-        and not ip.is_multicast
-        and not ip.is_unspecified
-    )
-
-
-def host_is_public(host: str, *, resolve_fn: ResolveFn = _bounded_resolve) -> tuple[bool, str]:
+def host_is_public(
+    host: str, *, resolve_fn: ResolveFn = _bounded_resolve, port: int = 80
+) -> tuple[bool, str]:
     """(allowed, reason) for fetching ``host``. Literal IPs need no resolution."""
     try:
-        literal = ipaddress.ip_address(host)
-    except ValueError:
-        literal = None
-    if literal is not None:
-        if _ip_is_public(literal):
-            return True, ""
-        return False, f"address {host} is not a public internet address"
-    try:
-        infos = resolve_fn(host, 80)
-    except OSError as exc:
-        return False, f"cannot resolve host ({type(exc).__name__})"
-    public_found = False
-    for info in infos:
-        addr = info[4][0]
-        try:
-            ip = ipaddress.ip_address(addr)
-        except ValueError:
-            continue
-        if not _ip_is_public(ip):
-            return False, f"host {host} resolves to non-public address {addr}"
-        public_found = True
-    if not public_found:
-        return False, f"host {host} did not resolve to a public address"
+        public_addresses(host, port, resolve_fn=resolve_fn)
+    except OutboundRefused as exc:
+        return False, str(exc)
     return True, ""
 
 
@@ -132,7 +105,12 @@ def url_policy_error(url: str, *, resolve_fn: ResolveFn = _bounded_resolve) -> s
         return "url must not embed credentials"
     if not hostname:
         return "url names no host"
-    allowed, reason = host_is_public(hostname, resolve_fn=resolve_fn)
+    try:
+        explicit_port = parsed.port
+    except ValueError:
+        return "invalid URL"
+    port = explicit_port if explicit_port is not None else (443 if parsed.scheme == "https" else 80)
+    allowed, reason = host_is_public(hostname, resolve_fn=resolve_fn, port=port)
     if not allowed:
         return reason
     return None
@@ -143,28 +121,71 @@ def url_policy_error(url: str, *, resolve_fn: ResolveFn = _bounded_resolve) -> s
 # ---------------------------------------------------------------------------
 
 
-class _LimitedRedirectHandler(urllib.request.HTTPRedirectHandler):
-    """Cap redirects, fail loudly beyond the cap, and re-check fetch policy
-    on every hop — a public URL that redirects to a private address must not
-    become a lane into the operator's network."""
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
-    def __init__(self, max_redirects: int) -> None:
-        super().__init__()
-        self._max = max_redirects
-        self._hops = 0
 
-    def redirect_request(
-        self, req: urllib.request.Request, fp: Any, code: int, msg: str, headers: Any, newurl: str
-    ) -> urllib.request.Request | None:
-        self._hops += 1
-        if self._hops > self._max:
+def _redirect_url(handle: Any, current: str, resolve_fn: ResolveFn) -> str | None:
+    """Next hop, or None when ``handle`` is the final response."""
+    if int(handle.status) not in _REDIRECT_STATUSES:
+        return None
+    location = handle.headers.get("Location")
+    if not location:
+        raise FetchPolicyError("redirect refused by fetch policy: missing Location")
+    newurl = urllib.parse.urljoin(current, location)
+    policy = url_policy_error(newurl, resolve_fn=resolve_fn)
+    if policy is not None:
+        raise FetchPolicyError(f"redirect refused by fetch policy: {policy}")
+    return str(newurl)
+
+
+@contextmanager
+def _pinned_fetch(
+    request: urllib.request.Request,
+    timeout_s: float,
+    max_redirects: int,
+    resolve_fn: ResolveFn,
+) -> Iterator[Any]:
+    """Follow redirects by re-checking policy and re-pinning each hop."""
+    url = request.full_url
+    method = request.get_method()
+    data = request.data
+    headers = dict(request.header_items())
+    hops = 0
+    while True:
+        current = urllib.request.Request(url, data=data, headers=headers, method=method)
+        with open_pinned(current, timeout=timeout_s, resolve_fn=resolve_fn) as handle:
+            nxt = _redirect_url(handle, url, resolve_fn)
+            status = int(handle.status)
+            if nxt is None:
+                yield handle
+                return
+        hops += 1
+        if hops > max_redirects:
             raise urllib.error.HTTPError(
-                req.full_url, code, f"too many redirects (>{self._max})", headers, fp
+                url,
+                status,
+                f"too many redirects (>{max_redirects})",
+                email.message.Message(),
+                None,
             )
-        policy = url_policy_error(newurl)
-        if policy is not None:
-            raise FetchPolicyError(f"redirect refused by fetch policy: {policy}")
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+        if status == 303:
+            method = "GET"
+            data = None
+        url = nxt
+
+
+@contextmanager
+def _open_default(
+    request: urllib.request.Request,
+    timeout_s: float,
+    max_redirects: int,
+    resolve_fn: ResolveFn,
+) -> Iterator[Any]:
+    try:
+        with _pinned_fetch(request, timeout_s, max_redirects, resolve_fn) as handle:
+            yield handle
+    except OutboundRefused as exc:
+        raise FetchPolicyError(f"refused by fetch policy: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -400,8 +421,7 @@ def fetch_page(
     def open_response() -> Any:
         if open_fn is not None:
             return open_fn(request, timeout_s)
-        opener = urllib.request.build_opener(_LimitedRedirectHandler(max_redirects))
-        return opener.open(request, timeout=timeout_s)
+        return _open_default(request, timeout_s, max_redirects, resolve_fn)
 
     try:
         with open_response() as response:

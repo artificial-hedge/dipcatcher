@@ -124,3 +124,44 @@ def _tighten_socket_timeout(response: Any, remaining: float) -> None:
     sock = getattr(raw, "_sock", None)
     if sock is not None and hasattr(sock, "settimeout"):
         sock.settimeout(remaining)
+
+
+def read_pinned(
+    request: Any,
+    *,
+    timeout: float,
+    max_bytes: int = DEFAULT_MAX_BODY,
+    allow_loopback: bool = False,
+    allow_private: bool = False,
+    resolve_fn: Any = None,
+) -> bytes:
+    """DNS-pinned body read that stops at ``max_bytes`` and the deadline.
+
+    Redirects are refused. Status 400 and above raise ``urllib.error.HTTPError``.
+    """
+    import urllib.error
+
+    from quant_fund.utils.outbound import OutboundRefused, open_pinned
+
+    timeout_s = require_timeout(timeout, name="timeout")
+    with open_pinned(
+        request,
+        timeout=timeout_s,
+        allow_loopback=allow_loopback,
+        allow_private=allow_private,
+        resolve_fn=resolve_fn,
+    ) as handle:
+        response = getattr(handle, "_response", handle)
+        body = read_bounded(response, timeout=timeout_s, max_bytes=max_bytes)
+        status = int(handle.status)
+        if 300 <= status < 400:
+            raise OutboundRefused("redirects are not followed")
+        if status >= 400:
+            raise urllib.error.HTTPError(
+                handle.geturl(),
+                status,
+                handle.reason or "error",
+                handle.headers,
+                None,
+            )
+        return body
