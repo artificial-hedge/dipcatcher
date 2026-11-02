@@ -33,6 +33,48 @@ class TestLoadTapeStats:
         with pytest.raises(ValueError, match="'real' section"):
             load_tape_stats(tmp_path, "amzn")
 
+    @pytest.mark.parametrize(
+        ("target", "bad_value"),
+        [
+            ("size", float("nan")),
+            ("size", float("inf")),
+            ("rate", float("nan")),
+            ("occupancy", float("inf")),
+        ],
+    )
+    def test_nonfinite_receipt_values_fail_closed(self, tmp_path, target, bad_value):
+        from pathlib import Path
+
+        for name in ("round_lot_amzn", "event_matrix_amzn", "spread_dynamics_amzn"):
+            payload = json.loads((Path("receipts") / f"{name}.json").read_text())
+            if target == "size" and name == "round_lot_amzn":
+                payload["real"]["size_hist"]["0-25"] = bad_value
+            if target == "rate" and name == "event_matrix_amzn":
+                payload["real"]["events_per_s"]["exec"] = bad_value
+            if target == "occupancy" and name == "spread_dynamics_amzn":
+                payload["real"]["spread_occupancy"]["1-1"] = bad_value
+            (tmp_path / f"{name}.json").write_text(json.dumps(payload))
+        with pytest.raises(ValueError, match="finite"):
+            load_tape_stats(tmp_path, "amzn")
+
+    @pytest.mark.parametrize(
+        ("name", "field"),
+        [
+            ("event_matrix_amzn", "events_per_s"),
+            ("spread_dynamics_amzn", "spread_occupancy"),
+        ],
+    )
+    def test_empty_receipt_maps_fail_closed(self, tmp_path, name, field):
+        from pathlib import Path
+
+        for receipt in ("round_lot_amzn", "event_matrix_amzn", "spread_dynamics_amzn"):
+            payload = json.loads((Path("receipts") / f"{receipt}.json").read_text())
+            if receipt == name:
+                payload["real"][field] = {}
+            (tmp_path / f"{receipt}.json").write_text(json.dumps(payload))
+        with pytest.raises(ValueError, match="lacks or has empty"):
+            load_tape_stats(tmp_path, "amzn")
+
     def test_missing_rate_key_fails_closed(self):
         stats = load_tape_stats("receipts", "amzn")
         with pytest.raises(ValueError, match="lacks rate"):
