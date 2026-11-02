@@ -282,7 +282,7 @@ Retract a bad research receipt. This appends a tombstone. It does not edit
 the receipt.
 
 ```bash
-dipcatcher tombstone receipts/bad-receipt.json --reason "retracted after rollback"
+dipcatcher tombstone PATH_TO_RECEIPT --reason "retracted after rollback"
 ```
 
 With `DIPCATCHER_OBSERVE=1` and `DIPCATCHER_METRICS_PORT=9464`, the lab scrape

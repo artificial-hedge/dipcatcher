@@ -1910,6 +1910,7 @@ race
 ranker-probability
 ranker-probability run
 rankic
+ready-bootstrap
 real-benchmark
 real-benchmark prepare
 real-benchmark score
@@ -1933,6 +1934,7 @@ serial-watch
 session-book
 sign-pins
 sim-live
+smoke-up
 sota
 sota block-sensitivity
 sota effects
