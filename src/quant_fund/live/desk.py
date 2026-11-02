@@ -54,7 +54,24 @@ _VISIBLE = {
 
 
 class LiveDeskError(ValueError):
-    """The desk refused the call before a risk decision existed."""
+    """The desk refused the command. No new ticket was sent."""
+
+
+def _fresh_mark(
+    marks: dict[str, float],
+    mark_ts: dict[str, int],
+    symbol: str,
+    ts_ns: int,
+    max_age: int,
+) -> float | None:
+    """Last mark that is still inside the pre-trade age window."""
+    mark = marks.get(symbol)
+    if mark is None or mark <= 0.0:
+        return None
+    seen = mark_ts.get(symbol)
+    if seen is None or ts_ns - int(seen) > max_age:
+        return None
+    return float(mark)
 
 
 @dataclass
@@ -300,14 +317,7 @@ class LiveDesk:
         _client(client)
         prior = self._by_client.get(client)
         if prior is not None:
-            order = self.orders[prior]
-            return self._envelope(
-                accepted=order.status not in {"denied", "rejected"},
-                status=order.status,
-                transmitted=order.transmitted,
-                idempotent=True,
-                order=order.as_dict(),
-            )
+            return self._idempotent_order(prior, symbol, side, qty, px)
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
         self.marks[symbol] = px
@@ -441,8 +451,14 @@ class LiveDesk:
         for symbol, qty in list(self.positions.items()):
             if abs(qty) <= _EPS:
                 continue
-            mark = self.marks.get(symbol)
-            if mark is None or mark <= 0.0:
+            mark = _fresh_mark(
+                self.marks,
+                self.mark_ts,
+                symbol,
+                ts_ns,
+                int(self.config.limits.max_mark_age_ns),
+            )
+            if mark is None:
                 reports.append({"symbol": symbol, "accepted": False, "reasons": ["stale_data"]})
                 continue
             side = "SELL" if qty > 0.0 else "BUY"
@@ -660,6 +676,30 @@ class LiveDesk:
         self.orders[order.order_id] = order
         self.order_ids.append(order.order_id)
         self._by_client[order.client_order_id] = order.order_id
+
+    def _idempotent_order(
+        self,
+        order_id: str,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+    ) -> dict[str, object]:
+        order = self.orders[order_id]
+        if (
+            order.symbol != symbol
+            or order.side != side
+            or abs(order.qty - qty) > 1e-8
+            or abs(order.px - px) > 1e-8
+        ):
+            raise LiveDeskError("client_order_id conflicts with a different order")
+        return self._envelope(
+            accepted=order.status not in {"denied", "rejected"},
+            status=order.status,
+            transmitted=order.transmitted,
+            idempotent=True,
+            order=order.as_dict(),
+        )
 
     def _deny(
         self,

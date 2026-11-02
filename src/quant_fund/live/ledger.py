@@ -11,6 +11,38 @@ from dataclasses import dataclass
 from typing import Any
 
 
+def _require_fill(fill: LedgerFill) -> None:
+    if fill.side not in {"buy", "sell"}:
+        raise ValueError("fill side must be buy or sell")
+    _finite_positive(fill.quantity, "fill quantity")
+    _finite_positive(fill.price, "fill price")
+    if not fill.fill_id or not fill.client_order_id or not fill.symbol:
+        raise ValueError("fill ids and symbol are required")
+    if fill.fill_time_ns < 0:
+        raise ValueError("fill_time_ns must be non-negative")
+
+
+def _same_fill(prior: LedgerFill, fill: LedgerFill) -> bool:
+    return (
+        prior.client_order_id == fill.client_order_id
+        and prior.symbol == fill.symbol
+        and prior.side == fill.side
+        and abs(prior.quantity - fill.quantity) <= 1e-9
+        and abs(prior.price - fill.price) <= 1e-9
+        and prior.fill_time_ns == fill.fill_time_ns
+    )
+
+
+def _grows_provisional(prior: LedgerFill, fill: LedgerFill) -> bool:
+    if not fill.fill_id.startswith("order:"):
+        return False
+    if prior.client_order_id != fill.client_order_id or prior.symbol != fill.symbol:
+        return False
+    if prior.side != fill.side:
+        return False
+    return fill.quantity > prior.quantity + 1e-9
+
+
 def _finite_positive(value: float, label: str) -> float:
     number = float(value)
     if not math.isfinite(number) or number <= 0.0:
@@ -104,12 +136,10 @@ class LiveLedger:
         self._expects[key] = bool(expects_fill)
 
     def record_fill(self, fill: LedgerFill) -> str:
-        """Apply a fill once. A later venue fill replaces an ``order:`` provisional."""
-        if fill.side not in {"buy", "sell"}:
-            raise ValueError("fill side must be buy or sell")
+        """Apply a fill once. A larger ``order:`` print replaces the provisional."""
+        _require_fill(fill)
         if fill.fill_id in self._fills:
-            self._duplicate_fills += 1
-            return "duplicate_fill"
+            return self._replay_fill(fill)
         replaced = self._drop_provisional(fill)
         if fill.client_order_id not in self._expects:
             self._fills[fill.fill_id] = fill
@@ -197,6 +227,29 @@ class LiveLedger:
             "live_pnl_claim": False,
             "research_evidence": False,
         }
+
+    def _replay_fill(self, fill: LedgerFill) -> str:
+        prior = self._fills[fill.fill_id]
+        if _same_fill(prior, fill):
+            self._duplicate_fills += 1
+            return "duplicate_fill"
+        if _grows_provisional(prior, fill):
+            return self._replace_provisional(prior, fill)
+        raise ValueError("fill id conflicts with a different execution")
+
+    def _replace_provisional(self, prior: LedgerFill, fill: LedgerFill) -> str:
+        """Replace a cumulative print. Unapplied orphans never move cash."""
+        self._fills[fill.fill_id] = fill
+        applied = fill.fill_id in self._by_order.get(fill.client_order_id, [])
+        if not applied:
+            return "orphan_fill"
+        self._unwind(prior)
+        self._apply(fill)
+        self._last_ns[fill.client_order_id] = max(
+            fill.fill_time_ns,
+            self._last_ns.get(fill.client_order_id, fill.fill_time_ns),
+        )
+        return "replaced_provisional"
 
     def _drop_provisional(self, fill: LedgerFill) -> bool:
         if fill.fill_id.startswith("order:"):
