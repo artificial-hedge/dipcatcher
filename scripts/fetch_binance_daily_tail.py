@@ -17,6 +17,7 @@ from pathlib import Path
 
 import polars as pl
 from fetch_binance_vision_carry import CANDIDATES, S3, _dl_zip_csv, _parse_kline_csv, list_keys
+from vendor_http import read_vendor
 
 DATA = Path("data/binance_carry")
 TODAY = datetime.now(UTC).date()
@@ -65,8 +66,7 @@ def _fapi_funding(coin: str, start_ms: int, end_ms: int) -> list[dict]:
         for attempt in range(6):
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": "dipcatcher-research/1.0"})
-                with urllib.request.urlopen(req, timeout=20) as r:
-                    data = json.load(r)
+                data = json.loads(read_vendor(req, timeout=20))
                 break
             except (urllib.error.URLError, TimeoutError):
                 if attempt == 5:

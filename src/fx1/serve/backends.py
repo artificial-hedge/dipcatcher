@@ -33,15 +33,20 @@ from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
+from quant_fund.utils.outbound import (
+    PRIVATE_ALLOW_CIDRS_ENV,
+    address_permitted,
+    literal_destination_refusal,
+    parse_allow_cidrs,
+)
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
 BYOK_BASE_URL_ENV = "FX1_BYOK_BASE_URL"
 BYOK_API_KEY_ENV = "FX1_BYOK_API_KEY"
 BYOK_MODEL_ENV = "FX1_BYOK_MODEL"
-BYOK_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_BYOK_ALLOW_PRIVATE_NETWORKS"
-
 LOCAL_SERVE_URL_ENV = "FX1_LOCAL_SERVE_URL"
+LOCAL_SERVE_ALLOW_NON_LOOPBACK_ENV = "FX1_LOCAL_SERVE_ALLOW_NON_LOOPBACK"
 LOCAL_SERVE_CMD_ENV = "FX1_LOCAL_SERVE_CMD"
 LOCAL_MODEL_ENV = "FX1_LOCAL_MODEL"
 LOCAL_API_KEY_ENV = "FX1_LOCAL_API_KEY"
@@ -233,26 +238,9 @@ class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
         return None
 
 
-_BYOK_PRIVATE_V4 = tuple(
-    ipaddress.ip_network(cidr)
-    for cidr in ("10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
-)
-_BYOK_PRIVATE_V6 = tuple(ipaddress.ip_network(cidr) for cidr in ("::1/128", "fc00::/7"))
-# These legacy ranges can be classified as global by supported Python versions.
-# The 6a44 assignment at 192.88.99.2 is not globally reachable either; IPv6
-# site-local addresses are outside the deliberately narrow ULA opt-in.
-_BYOK_LEGACY_SPECIAL_USE = tuple(
-    ipaddress.ip_network(cidr) for cidr in ("192.88.99.0/24", "fec0::/10")
-)
-
-
 def _byok_private_networks_allowed() -> bool:
-    """Whether an operator explicitly enabled private BYOK providers."""
-    return os.environ.get(BYOK_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-    }
+    """Whether ``FX1_PRIVATE_ALLOW_CIDRS`` names any extra BYOK networks."""
+    return bool(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, "").strip())
 
 
 class _ByokRequest(urllib.request.Request):
@@ -279,28 +267,14 @@ def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Addre
 def _byok_address_allowed(
     address: ipaddress.IPv4Address | ipaddress.IPv6Address, *, allow_private: bool
 ) -> bool:
-    """Conservative BYOK destination policy.
+    """Public unicast, plus CIDRs from ``FX1_PRIVATE_ALLOW_CIDRS`` when opted in.
 
-    The opt-in admits ordinary loopback/RFC1918/ULA model servers, but never
-    link-local metadata addresses, multicast, unspecified, reserved,
-    documentation, benchmarking, carrier-grade NAT, or legacy relay/site-local
-    space.
+    The allowlist never admits link-local metadata, multicast, unspecified,
+    reserved, documentation, benchmarking, carrier-grade NAT, or legacy
+    relay/site-local space.
     """
-    if any(address in network for network in _BYOK_LEGACY_SPECIAL_USE):
-        return False
-    if address.is_global and not (
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_multicast
-        or address.is_reserved
-        or address.is_unspecified
-    ):
-        return True
-    if not allow_private:
-        return False
-    networks = _BYOK_PRIVATE_V4 if isinstance(address, ipaddress.IPv4Address) else _BYOK_PRIVATE_V6
-    return any(address in network for network in networks)
+    raw = os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, "") if allow_private else ""
+    return address_permitted(address, parse_allow_cidrs(raw))
 
 
 def _byok_resolved_addresses(host: str, port: int, *, allow_private: bool) -> tuple[str, ...]:
@@ -1511,6 +1485,92 @@ def _free_tcp_port() -> int:
         sock.close()
 
 
+_CHECKPOINT_TOKEN = "FX1_CHECKPOINT_DIR_TOKEN"
+_PYTHON_TOKEN = "FX1_PYTHON_TOKEN"
+
+
+def _reject_engine_tokens(*values: str) -> None:
+    for value in values:
+        if _CHECKPOINT_TOKEN in value or _PYTHON_TOKEN in value:
+            raise ValueError("serve command contains a reserved token")
+
+
+def _expand_engine_token(token: str, checkpoint_dir: str, python: str) -> str:
+    if token == _CHECKPOINT_TOKEN:
+        return checkpoint_dir
+    if token == _PYTHON_TOKEN:
+        return python
+    if _CHECKPOINT_TOKEN in token or _PYTHON_TOKEN in token:
+        raise ValueError("serve command placeholder must be its own argument")
+    return token
+
+
+def engine_argv(template: str, *, checkpoint_dir: str, python: str) -> list[str]:
+    """Split a serve template without word-splitting the checkpoint path.
+
+    Placeholders are replaced with sentinels, ``shlex.split`` runs, then the
+    sentinels become the raw path and interpreter. A path containing spaces
+    or shell metacharacters stays one argv element. ``shell`` is never used.
+    """
+    _reject_engine_tokens(template, checkpoint_dir, python)
+    rendered = string.Template(template).substitute(
+        checkpoint_dir=_CHECKPOINT_TOKEN, python=_PYTHON_TOKEN
+    )
+    return [_expand_engine_token(token, checkpoint_dir, python) for token in shlex.split(rendered)]
+
+
+def _local_serve_non_loopback_opted_in() -> bool:
+    return os.environ.get(LOCAL_SERVE_ALLOW_NON_LOOPBACK_ENV, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def _local_serve_loopback(host: str) -> bool:
+    if host.lower().rstrip(".") == "localhost":
+        return True
+    try:
+        address = ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        return False
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+        address = address.ipv4_mapped
+    return bool(address.is_loopback)
+
+
+def _local_serve_port(parsed: urllib.parse.ParseResult) -> None:
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} has an invalid port") from exc
+    if port == 0:
+        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} has an invalid port")
+
+
+def _refuse_non_loopback_literal(host: str) -> None:
+    if literal_destination_refusal(host, allow_loopback=True, allow_private=True):
+        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} destination is not allowed")
+
+
+def _require_local_serve_destination(parsed: urllib.parse.ParseResult) -> None:
+    """Scheme is already http(s). Refuse userinfo, a bad port, and non-loopback."""
+    if parsed.username is not None or parsed.password is not None:
+        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must not embed userinfo")
+    host = parsed.hostname
+    if not host:
+        raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must include a host")
+    _local_serve_port(parsed)
+    if _local_serve_loopback(host):
+        return
+    if not _local_serve_non_loopback_opted_in():
+        raise RuntimeError(
+            f"{LOCAL_SERVE_URL_ENV} must target loopback unless "
+            f"{LOCAL_SERVE_ALLOW_NON_LOOPBACK_ENV} is set"
+        )
+    _refuse_non_loopback_literal(host)
+
+
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1595,6 +1655,7 @@ class LocalFx1Backend(_UsageTracker):
             parsed = urllib.parse.urlparse(url)
             if parsed.scheme not in ("http", "https") or not parsed.netloc:
                 raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
+            _require_local_serve_destination(parsed)
         self._url = _chat_completions_url(url) if url else ""
         cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
         self._serve_cmd = cmd
@@ -1725,11 +1786,7 @@ class LocalFx1Backend(_UsageTracker):
 
     def _spawn_engine(self) -> subprocess.Popen[bytes]:
         """Start the declared command; the caller owns the returned child."""
-        argv = shlex.split(
-            string.Template(self._serve_cmd).substitute(
-                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
-            )
-        )
+        argv = engine_argv(self._serve_cmd, checkpoint_dir=str(self._root), python=sys.executable)
         env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
         try:
             return subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603

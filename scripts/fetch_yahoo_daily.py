@@ -19,6 +19,7 @@ import urllib.request
 from pathlib import Path
 
 import polars as pl
+from vendor_http import read_vendor
 
 UNIVERSE: dict[str, str] = {
     # equity beta / styles
@@ -101,8 +102,7 @@ def fetch_chart(sym: str, timeout: int = 20) -> dict:
         + "?interval=1d&period1=0&period2=4102444800&events=div%2Csplit"
     )
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read().decode())
+    return json.loads(read_vendor(req, timeout=timeout))
 
 
 def to_frame(payload: dict, sym: str) -> pl.DataFrame:

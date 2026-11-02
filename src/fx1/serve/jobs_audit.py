@@ -1574,7 +1574,7 @@ def jobs_audit() -> dict[str, Any]:
     with _audit_context():
         # The webhook probes post to a real loopback sink; production
         # callback delivery remains public-network-only unless opted in.
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
         out: dict[str, Any] = {}
         out.update(_submit_lifecycle_probes())
         out.update(_validation_probes())
