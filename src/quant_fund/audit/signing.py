@@ -15,6 +15,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from fx1.secret_guard import refuse_world_readable
 from quant_fund.audit.errors import AuditError, SignatureUnavailableError
 
 _PUB_LEN = 32
@@ -75,7 +76,12 @@ class Ed25519Signer:
 
     @classmethod
     def from_path(cls, path: Path) -> Ed25519Signer:
-        text = Path(path).read_text(encoding="utf-8").strip()
+        target = Path(path)
+        try:
+            refuse_world_readable(target)
+        except PermissionError as exc:
+            raise AuditError("signing key file is world-readable") from exc
+        text = target.read_text(encoding="utf-8").strip()
         try:
             raw = bytes.fromhex(text)
         except ValueError as exc:
