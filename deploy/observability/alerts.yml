@@ -1,0 +1,52 @@
+groups:
+  - name: dipcatcher-ops
+    rules:
+      - alert: DipcatcherNotReady
+        expr: dipcatcher_ready == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Lab readiness is closed.
+      - alert: DipcatcherDraining
+        expr: dipcatcher_draining == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: The lab SIGTERM drain latch is set.
+      - alert: DipcatcherKillSwitchBlocking
+        expr: dipcatcher_kill_switch_blocking == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: The operator kill file is blocking new orders.
+      - alert: DipcatcherStageLatencyP99
+        expr: histogram_quantile(0.99, sum by (le) (rate(dipcatcher_stage_latency_seconds_bucket[5m]))) > 2
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Stage latency p99 is above the 2 second SLO.
+      - alert: DipcatcherErrorRatio
+        expr: (sum(rate(dipcatcher_errors_total{stage!="otel_export"}[5m])) / sum(rate(dipcatcher_stage_latency_seconds_count[5m]))) >= 0.01
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The instrumented error ratio is outside the 0.01 SLO.
+      - alert: DipcatcherErrorRate
+        expr: sum(rate(dipcatcher_errors_total{stage!="otel_export"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Instrumented stages are recording errors.
+      - alert: DipcatcherDataStale
+        expr: dipcatcher_data_freshness_seconds >= 86400
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Data freshness is outside the 86400 second SLO.

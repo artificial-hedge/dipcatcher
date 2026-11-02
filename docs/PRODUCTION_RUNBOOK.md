@@ -164,8 +164,10 @@ drain immediately. After the file stays `ENABLED` for
 watcher clears only the latch it set and logs `operator_kill_drain_cleared`.
 An invalid debounce never clears that latch and logs
 `operator_kill_drain_debounce_invalid`. `POST /harness/drain` stays one-way.
-`python -m fx1.serve.api` does not watch the file; that module is hash-pinned.
-The lab process SIGTERM drain is also one-way.
+`python -m fx1.serve.api` watches the same file. The pinned module is
+unchanged; `fx1.serve` installs a loader hook only when `sys.argv[0]` is
+`-m`, and that hook routes `uvicorn.run` through the same watcher. A normal
+import does not install it. The lab process SIGTERM drain is also one-way.
 
 Clear the halt by writing `ENABLED`, or by removing the file.
 
@@ -181,6 +183,116 @@ or a single run directory that contains `broker_state.json`. Restore checks
 every hash before it writes. A symlink, a tampered file, or a destination
 file with different bytes is refused. The script does not archive the rest
 of the tree.
+
+## Incident response
+
+These commands are the operator path for a simulated-paper incident. They do
+not place a live order. Set `DIPCATCHER_KILL_SWITCH_PATH` to a regular file
+the process can read. The writer below refuses a symlink. Do not edit
+receipts, `gate_pins.sig`, or corpus epochs.
+
+Stop the lab process with SIGTERM. `docker stop` waits for the grace period.
+Exit code 143 on the container means the drain finished (the process
+re-raised SIGTERM). SIGKILL skips the drain.
+
+```bash
+docker stop dipcatcher
+docker inspect --format '{{.State.ExitCode}}' dipcatcher
+```
+
+Halt new paper orders and close `/ready`. This writes `HALT_NEW_ORDERS` and,
+when you use the live command, also trips the desk. It does not cancel a
+paper book unless `DIPCATCHER_HALT_CANCELS_OPEN_ORDERS` is `1`, `true`,
+`yes`, or `on`, and it does not flatten.
+
+```bash
+python -c "import os; from pathlib import Path; from quant_fund.utils.operator_kill import write_operator_kill; write_operator_kill(Path(os.environ['DIPCATCHER_KILL_SWITCH_PATH']), 'HALT_NEW_ORDERS')"
+dipcatcher live kill --reason incident-halt --kill-switch-file "$DIPCATCHER_KILL_SWITCH_PATH"
+```
+
+Cancel resting paper orders and leave positions:
+
+```bash
+python -c "import os; from pathlib import Path; from quant_fund.utils.operator_kill import write_operator_kill; write_operator_kill(Path(os.environ['DIPCATCHER_KILL_SWITCH_PATH']), 'CANCEL_OPEN_ORDERS')"
+```
+
+Flatten the simulated paper book. The next paper loop cancels resting
+orders, then closes positions at the last positive finite mark, in symbol
+order, with zero costs. A missing mark cancels orders and leaves every
+position. `dipcatcher live flatten` addresses the desk or gateway and is not
+this paper close.
+
+```bash
+python -c "import os; from pathlib import Path; from quant_fund.utils.operator_kill import write_operator_kill; write_operator_kill(Path(os.environ['DIPCATCHER_KILL_SWITCH_PATH']), 'FLATTEN')"
+```
+
+The fx-1 harness (`fx1 harness serve` and `python -m fx1.serve.api`) latches
+its drain on the blocking token immediately. After the file stays `ENABLED`
+for `DIPCATCHER_KILL_DRAIN_DEBOUNCE_S`, it clears only the latch it set.
+`POST /harness/drain` and the lab SIGTERM latch stay set.
+
+Clear the file after the book is where you want it:
+
+```bash
+python -c "import os; from pathlib import Path; from quant_fund.utils.operator_kill import write_operator_kill; write_operator_kill(Path(os.environ['DIPCATCHER_KILL_SWITCH_PATH']), 'ENABLED')"
+dipcatcher live reset --reason incident-clear --kill-switch-file "$DIPCATCHER_KILL_SWITCH_PATH"
+```
+
+`dipcatcher paper --halt` and `dipcatcher paper --clear-halt` write the same
+file when `DIPCATCHER_KILL_SWITCH_PATH` is set, and they also start a paper
+run. Use the `write_operator_kill` commands above when you only need the file.
+
+Back up the paper ledger and checkpoints before you restore or roll back.
+Stop the process first so it is not writing the same files.
+
+```bash
+python scripts/paper_state_backup.py backup --source /var/lib/dipcatcher/data --dest /var/lib/dipcatcher/backup
+python scripts/paper_state_backup.py restore --archive /var/lib/dipcatcher/backup --dest /var/lib/dipcatcher/data
+```
+
+Restore checks every archived hash before it writes. It refuses a symlink,
+a tampered payload, and a destination file whose bytes differ.
+
+Roll back by starting the previous image tag with the same data directory.
+The directory must be writable by uid 10001. Keep port 8000 on loopback.
+Do not publish `9464`.
+
+```bash
+docker tag dipcatcher:local dipcatcher:previous
+docker stop dipcatcher
+docker rm dipcatcher
+docker run -d --name dipcatcher \
+  --env-file /secure/dipcatcher.env \
+  -p 127.0.0.1:8000:8000 \
+  -v /var/lib/dipcatcher/data:/app/data \
+  --stop-signal SIGTERM \
+  dipcatcher:previous
+docker inspect --format '{{.State.Health.Status}}' dipcatcher
+```
+
+With compose, pin the tag you saved and do not rebuild the bad tree:
+
+```bash
+docker compose -f deploy/compose.prod.yml stop lab-api
+docker tag dipcatcher:previous dipcatcher:local
+docker compose -f deploy/compose.prod.yml up -d --no-build lab-api
+```
+
+Retract a bad research receipt. This appends a tombstone. It does not edit
+the receipt.
+
+```bash
+dipcatcher tombstone receipts/bad-receipt.json --reason "retracted after rollback"
+```
+
+With `DIPCATCHER_OBSERVE=1` and `DIPCATCHER_METRICS_PORT=9464`, the lab scrape
+exposes `dipcatcher_ready`, `dipcatcher_draining`, `dipcatcher_kill_switch_blocking`,
+and `dipcatcher_kill_switch_info`. Stage latency, error rate, and freshness
+use the same names as `deploy/observability/slo.yml`. The alert rules in
+`deploy/observability/alerts.yml` page when readiness is 0, drain is 1, the
+kill file is blocking, p99 is above 2 seconds, the error ratio is at least
+0.01, or freshness is at least 86400 seconds. A non-zero error rate is a
+warning. The loopback metrics port stays unpublished.
 
 ## Logs
 

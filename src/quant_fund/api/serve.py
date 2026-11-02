@@ -58,8 +58,10 @@ def _serve(settings: ServiceSettings, application: Any) -> None:
     )
     arm(settings)
     try:
+        from quant_fund.api.ops_metrics import install_ops_sampler
         from quant_fund.observe.install import install_passive_hooks
 
+        install_ops_sampler()
         install_passive_hooks()
         run_uvicorn(
             application,
@@ -69,9 +71,11 @@ def _serve(settings: ServiceSettings, application: Any) -> None:
             shutdown_grace_s=settings.shutdown_grace_s,
         )
     finally:
+        from quant_fund.observe.metrics import clear_ops_sampler
         from quant_fund.observe.serve import stop_metrics_server
 
         stop_metrics_server()
+        clear_ops_sampler()
         disarm()
 
 
