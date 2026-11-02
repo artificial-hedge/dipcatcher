@@ -14,17 +14,18 @@ from .support import _cfg
 
 
 @app.command()
-def api(host: str = "127.0.0.1", port: int = 8000) -> None:
-    import os
+def api(
+    host: str | None = typer.Option(None, help="Bind host. Overrides DIPCATCHER_BIND_HOST."),
+    port: int | None = typer.Option(None, help="Bind port. Overrides DIPCATCHER_BIND_PORT."),
+) -> None:
+    """Serve the lab API after the environment contract validates."""
+    from quant_fund.api.serve import serve_lab
+    from quant_fund.api.service_config import ServiceConfigError
 
-    import uvicorn
-
-    loopback_hosts = {"127.0.0.1", "::1", "localhost"}
-    if host not in loopback_hosts and not os.environ.get("QUANT_API_KEY"):
-        raise typer.BadParameter(
-            "non-loopback API binding requires QUANT_API_KEY; refusing unauthenticated exposure"
-        )
-    uvicorn.run("quant_fund.api.app:app", host=host, port=port, reload=False)
+    try:
+        serve_lab(host, port)
+    except ServiceConfigError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 def _reject_halt_flags(halt: bool, clear_halt: bool) -> None:

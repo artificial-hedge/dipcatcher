@@ -1,0 +1,30 @@
+# Lab API for research and simulated paper. No live broker and no order path.
+# Export QUANT_API_KEY before `docker compose -f deploy/compose.prod.yml up`.
+# The interpolation below refuses to start when that variable is missing.
+# Do not publish 9464: /metrics is unauthenticated.
+
+services:
+  lab-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: dipcatcher:local
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      PORT: "8000"
+      DIPCATCHER_BIND_HOST: 0.0.0.0
+      DIPCATCHER_BIND_PORT: "8000"
+      QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
+      DIPCATCHER_OBSERVE: "1"
+      DIPCATCHER_METRICS_HOST: 127.0.0.1
+      DIPCATCHER_METRICS_PORT: "9464"
+      DIPCATCHER_LOG_LEVEL: INFO
+      DIPCATCHER_SHUTDOWN_GRACE_S: "20"
+    volumes:
+      - lab-data:/app/data
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+
+volumes:
+  lab-data:

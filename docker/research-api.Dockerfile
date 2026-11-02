@@ -42,7 +42,9 @@ FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
+    PORT=8010 \
     RESEARCH_API_HOST=0.0.0.0 \
+    RESEARCH_API_PORT=8010 \
     RESEARCH_API_DATA_ROOT=/app/data \
     RESEARCH_API_RECEIPTS_DIR=/app/receipts \
     RESEARCH_API_VERIFIER_DIR=/app/verifier \
@@ -54,11 +56,15 @@ COPY --chown=dipcatcher:dipcatcher src ./src
 COPY --chown=dipcatcher:dipcatcher receipts ./receipts
 COPY --chown=dipcatcher:dipcatcher verifier ./verifier
 COPY --chown=dipcatcher:dipcatcher artifacts ./artifacts
-# data/ is dockerignored — mount it read-only at runtime (see header).
+# data/ is dockerignored — mount it at runtime (see header).
+COPY --chown=dipcatcher:dipcatcher docker/healthcheck.py /app/healthcheck.py
+COPY --chown=dipcatcher:dipcatcher deploy/observability/slo.yml /app/deploy/observability/slo.yml
 RUN mkdir -p /app/data && chown dipcatcher:dipcatcher /app/data
 USER dipcatcher
 EXPOSE 8010
-# Container networking requires a non-loopback bind and the guarded entry point.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD python -c "import os, urllib.request; urllib.request.urlopen(f\"http://{os.environ.get('HOST', '127.0.0.1')}:{os.environ.get('PORT', '8010')}/health\", timeout=3)"
+STOPSIGNAL SIGTERM
+# RESEARCH_API_HOST is 0.0.0.0, so the process refuses to start without
+# RESEARCH_API_KEY. The probe runs inside the container network namespace.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD ["/app/.venv/bin/python", "/app/healthcheck.py"]
 CMD ["python", "-m", "quant_fund.api.research_api"]

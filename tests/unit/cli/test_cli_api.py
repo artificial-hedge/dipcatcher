@@ -314,6 +314,18 @@ def test_cli_api_refuses_non_loopback_without_key(monkeypatch) -> None:
     from quant_fund.cli.main import app as cli
 
     monkeypatch.delenv("QUANT_API_KEY", raising=False)
+    for name in (
+        "DIPCATCHER_BIND_PORT",
+        "DIPCATCHER_CONFIG",
+        "DIPCATCHER_KILL_SWITCH_PATH",
+        "DIPCATCHER_LOG_LEVEL",
+        "DIPCATCHER_METRICS_PORT",
+        "DIPCATCHER_OBSERVE",
+        "DIPCATCHER_OTEL_ENDPOINT",
+        "DIPCATCHER_SLO_PATH",
+        "PORT",
+    ):
+        monkeypatch.delenv(name, raising=False)
     result = CliRunner().invoke(cli, ["api", "--host", "0.0.0.0"])
     assert result.exit_code != 0
     assert "requires QUANT_API_KEY" in result.output
