@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
 import os
 from datetime import datetime
@@ -16,6 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from quant_fund import __firm__, __version__
+from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 from quant_fund.config import load_config
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.analytics import validate_analytics_export
@@ -30,11 +30,28 @@ from quant_fund.pipeline.forecast import (
 )
 from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 
-app = FastAPI(title=f"{__firm__} Dipcatcher", version=__version__)
+app = FastAPI(title=f"{__firm__} Dipcatcher", version=__version__, lifespan=service_lifespan)
 
-# Repo root: src/quant_fund/api/app.py → parents[3]
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-_CONFIGS_DIR = (_REPO_ROOT / "configs").resolve()
+
+def discover_configs_dir(module_file: Path, container_dir: Path = Path("/app/configs")) -> Path:
+    """Checkout ``configs/`` when present, otherwise the image directory.
+
+    An editable install lives at ``<repo>/src/quant_fund/api/app.py``, so
+    ``parents[3] / configs`` is the checkout. A wheel install lives in
+    site-packages, where that relative path does not exist; the runtime
+    image copies the directory to ``/app/configs``.
+    """
+    packaged = module_file.resolve().parents[3] / "configs"
+    if packaged.is_dir():
+        return packaged
+    if container_dir.is_dir():
+        return container_dir
+    return packaged
+
+
+# Repo root: src/quant_fund/api/app.py → parents[3]. The image fallback is
+# /app/configs because the non-editable install is under site-packages.
+_CONFIGS_DIR = discover_configs_dir(Path(__file__))
 
 # Only liveness is unauthenticated. When a key is configured, all other
 # routes—including readiness, research receipts, and API documentation—must
@@ -123,10 +140,9 @@ async def _authenticate_request(
     if path in _PUBLIC_PATHS:
         return await call_next(request)
     if expected:
-        provided = request.headers.get("X-API-Key")
-        if not provided or not hmac.compare_digest(
-            provided.encode("utf-8"), expected.encode("utf-8")
-        ):
+        from quant_fund.utils.api_auth import credential_matches, presented_api_key
+
+        if not credential_matches(presented_api_key(request.headers), expected):
             return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
         return await call_next(request)
     if not _client_is_loopback(request):
@@ -146,7 +162,7 @@ async def _authenticate_request(
 async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Secure default:
 
-    - If ``QUANT_API_KEY`` is set: require matching ``X-API-Key`` on all non-public routes.
+    - If ``QUANT_API_KEY`` is set: require it as ``X-API-Key`` or ``Authorization: Bearer`` on non-public routes.
     - If unset: allow only loopback clients (refuse remote unauthenticated access).
     - Reject malformed or oversized request bodies before route work is performed.
     """
@@ -314,6 +330,16 @@ def health() -> dict[str, str]:
 @app.get("/ready")
 def readiness(config_path: str = "configs/research.yaml") -> JSONResponse:
     """Fail-closed readiness probe for the configured research runtime."""
+    blocked = acceptance_block()
+    if blocked is not None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "checks": {"accepting_work": False},
+                "report": {"accepting_work": blocked},
+            },
+        )
     resolved = resolve_allowed_config_path(config_path)
     try:
         report = doctor(str(resolved))
