@@ -33,8 +33,12 @@ def score_bars(
     The report is deterministic: identical frames and configs produce
     identical JSON.
     """
+    if df is None:
+        raise TypeError("score_bars requires a dataframe, got None")
     cfg = config or QualityConfig()
     frame = _as_polars(df)
+    if frame.is_empty():
+        raise ValueError("score_bars requires a non-empty dataframe")
     symbol, clock = resolve_columns(frame, cfg)
 
     thresholds = QualityThresholds(
@@ -89,7 +93,14 @@ def score_datasets(
     config: QualityConfig | None = None,
 ) -> dict[str, QualityReport]:
     """Score several named datasets; keys become ``QualityReport.dataset``."""
-    return {name: score_bars(frame, config, dataset=name) for name, frame in frames.items()}
+    if not isinstance(frames, dict) or not frames:
+        raise ValueError("score_datasets requires a non-empty mapping of names to dataframes")
+    reports: dict[str, QualityReport] = {}
+    for name, frame in frames.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("dataset name must be a non-empty string")
+        reports[name] = score_bars(frame, config, dataset=name)
+    return reports
 
 
 def _as_polars(df: Any) -> pl.DataFrame:
