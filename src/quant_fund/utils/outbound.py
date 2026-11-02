@@ -12,7 +12,10 @@ are opted in.
 ``FX1_PRIVATE_ALLOW_CIDRS`` is a comma-separated CIDR allowlist. It adds
 only those networks on top of public unicast. Metadata, link-local,
 multicast, reserved, documentation, benchmark, and the legacy ranges
-above stay blocked when a listed network contains them.
+above stay blocked when a listed network contains them. 6to4, Teredo,
+well-known NAT64, and IPv4-translated addresses stay blocked too.
+Decimal, octal, hex, and compatibility-folded IPv4 literals are
+classified before DNS, so a resolver cannot launder them.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ import http.client
 import ipaddress
 import socket
 import ssl
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -75,6 +79,10 @@ _NEVER_ALLOW = _LEGACY_SPECIAL + (
     ipaddress.ip_network("2001:db8::/32"),
     ipaddress.ip_network("2001:10::/28"),
 )
+_NAT64 = ipaddress.ip_network("64:ff9b::/96")
+_IPV4_TRANSLATED = ipaddress.ip_network("::ffff:0:0/96")
+_INET_CHARS = frozenset("0123456789abcdefABCDEFxX.")
+_DOT_FOLDS = str.maketrans({"。": ".", "．": ".", "｡": ".", "﹒": "."})
 
 
 class OutboundRefused(ValueError):
@@ -89,11 +97,64 @@ def _unwrap(
     return address
 
 
-def _parse_literal(host: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+def _compatible_ipv4(address: ipaddress.IPv6Address) -> ipaddress.IPv4Address | None:
+    """Deprecated IPv4-compatible form ``::a.b.c.d``. ``::`` and ``::1`` are not it."""
+    if address.ipv4_mapped is not None or int(address) <= 1:
+        return None
+    if int(address) >> 32 != 0:
+        return None
+    return ipaddress.IPv4Address(int(address) & 0xFFFFFFFF)
+
+
+def _transitional(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Tunnel and translation forms an allowlist must not reopen."""
+    if not isinstance(address, ipaddress.IPv6Address) or address.ipv4_mapped is not None:
+        return False
+    if address.sixtofour is not None or address.teredo is not None:
+        return True
+    if address in _NAT64 or address in _IPV4_TRANSLATED:
+        return True
+    return _compatible_ipv4(address) is not None
+
+
+def _host_key(host: str) -> str:
+    """Strip brackets, a zone id, and one trailing dot."""
+    text = host.strip()
+    if text.startswith("[") and "]" in text:
+        text = text[1 : text.index("]")]
+    text = text.split("%", 1)[0]
+    if text.endswith("."):
+        text = text[:-1]
+    return text
+
+
+def _ip_or_none(text: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     try:
-        return _unwrap(ipaddress.ip_address(host.split("%", 1)[0]))
+        return _unwrap(ipaddress.ip_address(text))
     except ValueError:
         return None
+
+
+def _inet_aton_literal(text: str) -> ipaddress.IPv4Address | None:
+    """OS integer and dotted-octal/hex forms. Other text is not an address."""
+    if not text or any(char not in _INET_CHARS for char in text):
+        return None
+    try:
+        packed = socket.inet_aton(text)
+    except OSError:
+        return None
+    return ipaddress.IPv4Address(packed)
+
+
+def _parse_literal(host: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    key = _host_key(host)
+    parsed = _ip_or_none(key) or _inet_aton_literal(key)
+    if parsed is not None:
+        return parsed
+    folded = unicodedata.normalize("NFKC", key).translate(_DOT_FOLDS)
+    if folded == key:
+        return None
+    return _ip_or_none(folded) or _inet_aton_literal(folded)
 
 
 def _legacy_or_cgnat(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
@@ -119,7 +180,7 @@ def _rfc1918_or_ula(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> b
 def is_public_ip(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """True for global unicast after unwrapping IPv4-mapped IPv6."""
     address = _unwrap(address)
-    if _legacy_or_cgnat(address):
+    if _transitional(address) or _legacy_or_cgnat(address):
         return False
     return bool(
         address.is_global
@@ -140,7 +201,7 @@ def address_allowed(
 ) -> bool:
     """Literal policy. Private opt-in is RFC1918 and IPv6 ULA only."""
     address = _unwrap(address)
-    if _legacy_or_cgnat(address):
+    if _transitional(address) or _legacy_or_cgnat(address):
         return False
     if address.is_loopback:
         return allow_loopback
@@ -153,6 +214,8 @@ def address_allowed(
 
 def _always_blocked(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """Ranges an allowlist must not reopen. Loopback is reserved on IPv6."""
+    if _transitional(address):
+        return True
     if address.is_link_local or address.is_multicast or address.is_unspecified:
         return True
     if address.is_reserved and not address.is_loopback:
@@ -462,7 +525,7 @@ def open_pinned(
     connection = pinned_connection(parsed.scheme, host, port, addresses[0], float(timeout))
     try:
         response = _send(connection, request, parsed)
-    except Exception:
+    except (OSError, http.client.HTTPException, ValueError, TypeError, RuntimeError):
         connection.close()
         raise
     handle = _PinnedHandle(
