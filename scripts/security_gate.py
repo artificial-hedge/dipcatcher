@@ -532,11 +532,17 @@ def stop_env_file(root: Path) -> None:
     (root / ".tmp_security" / "compose.env").unlink(missing_ok=True)
 
 
+_ZAP_RULES = Path(__file__).resolve().parents[1] / "deploy" / "security" / "zap-rules.tsv"
+
+
 def one_baseline(image: str, target: str, work: Path, report_name: str, port: int) -> list[str]:
     if work.exists():
         shutil.rmtree(work)
     work.mkdir(parents=True)
     work.chmod(0o777)
+    rules = work / "zap-rules.tsv"
+    shutil.copyfile(_ZAP_RULES, rules)
+    rules.chmod(0o644)
     proc = subprocess.run(
         [
             "docker",
@@ -558,6 +564,8 @@ def one_baseline(image: str, target: str, work: Path, report_name: str, port: in
             "-m",
             "1",
             "--autooff",
+            "-c",
+            "zap-rules.tsv",
         ],
         capture_output=True,
     )

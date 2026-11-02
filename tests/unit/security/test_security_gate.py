@@ -7,7 +7,9 @@ import json
 import sys
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 import yaml
 
 _ROOT = Path(__file__).resolve().parents[3]
@@ -205,3 +207,35 @@ def test_security_workflows_point_at_the_gate_and_keep_their_runners() -> None:
         assert "pull_request_target" not in text
         assert "make -f deploy/security.mk security-gate" in text
         assert "runs-on: instabox-large" in text
+
+
+def _load_gate() -> object:
+    path = _ROOT / "scripts" / "security_gate.py"
+    spec = importlib.util.spec_from_file_location("security_gate", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_baseline_copies_the_ready_rule(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    gate = _load_gate()
+    work = tmp_path / "lab"
+    seen: list[list[str]] = []
+
+    def fake_run(cmd: list[str], capture_output: bool = False) -> SimpleNamespace:
+        del capture_output
+        seen.append(cmd)
+        (work / "lab-baseline.json").write_text('{"site": []}', encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+    assert (
+        gate.one_baseline("zap:test", "http://127.0.0.1:8000", work, "lab-baseline.json", 18091)
+        == []
+    )
+    cmd = seen[0]
+    assert cmd[cmd.index("-c") + 1] == "zap-rules.tsv"
+    assert "--autooff" in cmd
+    source = (_ROOT / "deploy" / "security" / "zap-rules.tsv").read_text(encoding="utf-8")
+    assert (work / "zap-rules.tsv").read_text(encoding="utf-8") == source
