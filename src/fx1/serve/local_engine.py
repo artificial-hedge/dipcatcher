@@ -29,7 +29,6 @@ import hashlib
 import json
 import math
 import os
-import signal
 import sys
 import threading
 import time
@@ -43,6 +42,7 @@ import numpy as np
 import numpy.typing as npt
 
 from fx1.modelcard import ModelCard
+from fx1.process_signals import sigterm_as_keyboard_interrupt
 
 _F32 = npt.NDArray[np.float32]
 
@@ -295,7 +295,12 @@ class LocalWeightsEngine:
                 f"no weights manifest at {manifest_path}; an fx-1 checkpoint dir "
                 "carries weights.manifest.json pinning its weight file's sha256"
             )
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"weights manifest at {manifest_path} is unreadable; refusing to serve"
+            ) from exc
         if not isinstance(manifest, dict):
             raise RuntimeError(f"{manifest_path} is not a JSON object")
         for key in ("weights_file", "weights_sha256"):
@@ -535,29 +540,32 @@ def _watch_orphan(spawner_ppid: int) -> None:
         time.sleep(1.0)
 
 
-def _handle_sigterm(signum: int, frame: Any) -> None:
-    del signum, frame
-    raise KeyboardInterrupt
-
-
 def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: bool = True) -> int:
-    """Serve forever on a real socket; returns 0 on a clean shutdown."""
+    """Serve until SIGTERM or Ctrl-C, then close the listening socket.
+
+    Returns 0 after that close. The signal handler raises
+    ``KeyboardInterrupt`` on this thread; ``server.shutdown()`` from the
+    serving thread deadlocks. ``signal.signal`` is main-thread only, so a
+    worker leaves the process handler alone and still closes the socket.
+    """
+
+    def _run_until_interrupt() -> None:
+        try:
+            srv.serve_forever()  # NOSONAR — loopback fixture engine; harness-local, no TLS needed
+        except KeyboardInterrupt:
+            pass
+        finally:
+            srv.server_close()
+
     srv = _EngineHTTPServer((host, port), _Handler)
     srv.engine = engine
     if watch_orphan:
         threading.Thread(target=_watch_orphan, args=(os.getppid(),), daemon=True).start()
-    manage_sigterm = threading.current_thread() is threading.main_thread()
-    previous_sigterm = signal.getsignal(signal.SIGTERM)
-    if manage_sigterm:
-        signal.signal(signal.SIGTERM, _handle_sigterm)
-    try:
-        srv.serve_forever()  # NOSONAR — loopback fixture engine; harness-local, no TLS needed
-    except KeyboardInterrupt:
-        pass
-    finally:
-        if manage_sigterm:
-            signal.signal(signal.SIGTERM, previous_sigterm)
-        srv.server_close()
+    if threading.current_thread() is threading.main_thread():
+        with sigterm_as_keyboard_interrupt():
+            _run_until_interrupt()
+    else:
+        _run_until_interrupt()
     return 0
 
 
@@ -577,6 +585,8 @@ def main(argv: list[str] | None = None) -> int:
     root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
     if args.checkpoint_dir is None and not env_dir:
         parser.error("a checkpoint dir is required (--checkpoint-dir or FX1_CHECKPOINT_DIR)")
+    if not root.is_dir():
+        parser.error(f"checkpoint dir does not exist: {root}")
     engine = LocalWeightsEngine(root)
     print(
         f"fx1 local weights engine: serving {engine.served_model} "

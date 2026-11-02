@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import atexit
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -77,6 +78,9 @@ def start_metrics_server(
     thread.start()
     _SERVER = server
     _THREAD = thread
+    # A handled SIGTERM returns from the process entrypoint; atexit then
+    # closes this socket. An unhandled SIGTERM skips atexit.
+    atexit.register(stop_metrics_server)
     return int(server.server_address[1])
 
 
