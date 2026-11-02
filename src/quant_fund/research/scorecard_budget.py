@@ -9,6 +9,7 @@ Explicit keyword arguments from the caller win over the CI map.
 
 from __future__ import annotations
 
+import copy
 import os
 from collections.abc import Callable
 from typing import Any
@@ -54,6 +55,24 @@ CI_BENCH_BUDGETS: dict[str, dict[str, int]] = {
 
 def ci_scorecard() -> bool:
     return os.environ.get("DIP_SCORECARD_BUDGET", "full") == "ci"
+
+
+# Seeded live-optional benches do not read the research panel. A second
+# run_research in the same process (the fingerprint test on one xdist
+# worker) reuses the blob instead of rebuilding it.
+_CI_OPTIONAL_BLOBS: dict[str, dict[str, Any]] = {}
+
+
+def cached_optional_blobs(build: Callable[[], dict[str, Any]]) -> dict[str, Any]:
+    """Return ``build()``, cached while the CI scorecard budget is on."""
+    if ci_scorecard():
+        cached = _CI_OPTIONAL_BLOBS.get("ci")
+        if cached is not None:
+            return copy.deepcopy(cached)
+    blobs = build()
+    if ci_scorecard():
+        _CI_OPTIONAL_BLOBS["ci"] = copy.deepcopy(blobs)
+    return blobs
 
 
 def call_bench(fn: Callable[..., Any], /, *args: Any, **kwargs: Any) -> Any:
