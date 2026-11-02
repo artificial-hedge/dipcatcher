@@ -34,14 +34,27 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import threading
+import time
 from collections import OrderedDict
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+# A stuck holder must not park a request or a writer forever.
+_LOCK_WAIT_S = 30.0
+
+
+def _require_wait(wait_s: float) -> float:
+    if isinstance(wait_s, bool) or not isinstance(wait_s, (int, float)):
+        raise ValueError("lock wait must be a positive finite number of seconds")
+    if not math.isfinite(float(wait_s)) or float(wait_s) <= 0.0:
+        raise ValueError("lock wait must be a positive finite number of seconds")
+    return float(wait_s)
 
 
 def _line_bytes(seq: int, chain: str, payload: dict[str, Any]) -> bytes:
@@ -125,19 +138,30 @@ class JobJournal:
     instance only, not independent instances or other processes.
     """
 
-    def __init__(self, path: str | os.PathLike[str]) -> None:
+    def __init__(self, path: str | os.PathLike[str], *, wait_s: float = _LOCK_WAIT_S) -> None:
         self.path = Path(path)
         self._lock = threading.Lock()
+        self._wait_s = _require_wait(wait_s)
         self._seq = 0
         self._chain = "0" * 64
         self._append_blocked = False
+
+    @contextmanager
+    def _exclusive(self) -> Iterator[None]:
+        """Hold the journal lock, or fail closed when the wait expires."""
+        if not self._lock.acquire(timeout=self._wait_s):
+            raise TimeoutError(f"journal {self.path.name}: lock timed out after {self._wait_s:g}s")
+        try:
+            yield
+        finally:
+            self._lock.release()
 
     # ---- write path ----------------------------------------------------
 
     def append(self, payload: dict[str, Any]) -> None:
         """Append one record; fsync before returning so a confirmed
         transition is durable before the caller moves on."""
-        with self._lock:
+        with self._exclusive():
             if self._append_blocked:
                 raise RuntimeError(f"journal {self.path.name}: replay or compact before appending")
             line = _line_bytes(self._seq, self._chain, payload)
@@ -165,7 +189,7 @@ class JobJournal:
         raw file contents and split-line copies are no longer held in memory.
         A broken chain leaves appends blocked until recovery or compaction.
         """
-        with self._lock:
+        with self._exclusive():
             self._append_blocked = True
             out = ReplayResult(payloads=[])
             seq = 0
@@ -208,7 +232,7 @@ class JobJournal:
         are fsynced around the atomic rename. Multi-process coordination is
         not provided."""
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-        with self._lock:
+        with self._exclusive():
             tmp.parent.mkdir(parents=True, exist_ok=True)
             seq = 0
             chain = "0" * 64
@@ -248,10 +272,11 @@ class _ClaimLocks:
     reclaimed as claims finish.
     """
 
-    def __init__(self, bound: int) -> None:
+    def __init__(self, bound: int, *, wait_s: float = _LOCK_WAIT_S) -> None:
         self._guard = threading.Lock()
         self._locks: OrderedDict[str, _Claim] = OrderedDict()
         self._bound = max(1, bound)
+        self._wait_s = _require_wait(wait_s)
 
     def _prune_idle(self) -> None:
         """Evict idle entries while the registry lock is held."""
@@ -284,10 +309,15 @@ class _ClaimLocks:
             yield
             return
         claim = self._reserve(key)
+        acquired = False
         try:
-            with claim.lock:
-                yield
+            acquired = claim.lock.acquire(timeout=self._wait_s)
+            if not acquired:
+                raise TimeoutError(f"claim lock timed out for {key!r}")
+            yield
         finally:
+            if acquired:
+                claim.lock.release()
             self._release(claim)
 
     @asynccontextmanager
@@ -306,12 +336,18 @@ class _ClaimLocks:
         from anyio import sleep
 
         claim = self._reserve(key)
+        acquired = False
         try:
-            while not claim.lock.acquire(blocking=False):
+            deadline = time.monotonic() + self._wait_s
+            while not acquired:
+                if claim.lock.acquire(blocking=False):
+                    acquired = True
+                    break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"claim lock timed out for {key!r}")
                 await sleep(0.01)
-            try:
-                yield
-            finally:
-                claim.lock.release()
+            yield
         finally:
+            if acquired:
+                claim.lock.release()
             self._release(claim)

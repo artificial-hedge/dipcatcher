@@ -137,6 +137,7 @@ class LiveDesk:
     _drop: DropBridge | None = None
     _by_client: dict[str, str] = field(default_factory=dict)
     _lock_path: Path | None = None
+    _lock_fd: int | None = None
     _closed: bool = False
     _integrity_frozen: bool = False
     _settled_before: float = 0.0
@@ -198,10 +199,16 @@ class LiveDesk:
 
     def close(self) -> None:
         self._closed = True
+        fd = self._lock_fd
         path = self._lock_path
+        self._lock_fd = None
         self._lock_path = None
-        if path is not None and path.exists():
-            path.unlink()
+        if fd is None:
+            return
+        try:
+            _release_desk_lock(fd, path)
+        finally:
+            os.close(fd)
 
     def __enter__(self) -> LiveDesk:
         return self
@@ -1089,22 +1096,8 @@ class LiveDesk:
 
     def _acquire(self) -> None:
         path = self.root / ".lock"
-        for _ in range(2):
-            try:
-                fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            except FileExistsError:
-                if _lock_alive(path):
-                    raise LiveDeskError(f"desk is locked: {path}") from None
-                try:
-                    path.unlink()
-                except OSError as exc:
-                    raise LiveDeskError(f"desk is locked: {path}") from exc
-                continue
-            os.write(fd, str(os.getpid()).encode())
-            os.close(fd)
-            self._lock_path = path
-            return
-        raise LiveDeskError(f"desk is locked: {path}")
+        self._lock_fd = _claim_desk_lock(path)
+        self._lock_path = path
 
 
 def _positive(value: float | None, default: float | None) -> float:
@@ -1282,20 +1275,102 @@ def _dump_opened(engine: PretradeEngine) -> dict[str, int]:
     return opened
 
 
-def _lock_alive(path: Path) -> bool:
+def _windows_lock(fd: int, operation: str) -> None:
+    """Byte-range lock via the Windows C runtime."""
+    import importlib
+    from operator import attrgetter
+
+    runtime = importlib.import_module("msvcrt")
+    os.lseek(fd, 0, os.SEEK_SET)
+    attrgetter("locking")(runtime)(fd, attrgetter(operation)(runtime), 1)
+
+
+def _lock_fd_exclusive(fd: int, path: Path) -> None:
+    """Non-blocking exclusive lock. A busy lock fails closed."""
+    if os.name == "nt":
+        try:
+            _windows_lock(fd, "LK_NBLCK")
+        except OSError as exc:
+            raise LiveDeskError(f"desk is locked: {path}") from exc
+        return
+    import fcntl
+
     try:
-        raw = path.read_text(encoding="utf-8").strip()
-        pid = int(raw)
-    except (OSError, ValueError):
-        return True
-    if pid <= 0:
-        return False
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        raise LiveDeskError(f"desk is locked: {path}") from exc
+
+
+def _unlock_fd(fd: int) -> None:
+    if os.name == "nt":
+        try:
+            _windows_lock(fd, "LK_UNLCK")
+        except OSError:
+            return
+        return
+    import fcntl
+
+    fcntl.flock(fd, fcntl.LOCK_UN)
+
+
+def _ensure_lock_byte(fd: int) -> None:
+    if os.fstat(fd).st_size == 0:
+        os.write(fd, b"\0")
+    os.lseek(fd, 0, os.SEEK_SET)
+
+
+def _require_same_file(fd: int, path: Path) -> None:
+    """Refuse a lock whose directory entry was replaced after we opened it."""
     try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
+        current = path.stat()
+    except OSError as exc:
+        raise LiveDeskError(f"desk is locked: {path}") from exc
+    owned = os.fstat(fd)
+    if owned.st_ino != 0 and owned.st_ino != current.st_ino:
+        raise LiveDeskError(f"desk is locked: {path}")
+
+
+def _write_owner(fd: int) -> None:
+    os.lseek(fd, 0, os.SEEK_SET)
+    if os.name != "nt":
+        os.ftruncate(fd, 0)
+    os.write(fd, str(os.getpid()).encode("ascii"))
+    os.fsync(fd)
+
+
+def _finish_claim(fd: int, path: Path) -> int:
+    if os.name == "nt":
+        _ensure_lock_byte(fd)
+    _lock_fd_exclusive(fd, path)
+    _require_same_file(fd, path)
+    if hasattr(os, "fchmod"):
+        os.fchmod(fd, 0o600)
+    _write_owner(fd)
+    return fd
+
+
+def _claim_desk_lock(path: Path) -> int:
+    """Own ``path`` until the returned fd is released.
+
+    The kernel drops the lock when this process exits, so a crashed desk
+    can be reclaimed without unlinking a file another process just created.
+    """
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        return _finish_claim(fd, path)
+    except BaseException:
+        _unlock_fd(fd)
+        os.close(fd)
+        raise
+
+
+def _release_desk_lock(fd: int, path: Path | None) -> None:
+    try:
+        if path is not None and path.exists():
+            current = path.stat()
+            owned = os.fstat(fd)
+            if owned.st_ino == 0 or owned.st_ino == current.st_ino:
+                path.unlink()
     except OSError:
-        return False
-    return True
+        pass
+    _unlock_fd(fd)
