@@ -57,6 +57,7 @@ import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -2972,7 +2973,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     out["client_submit_callback_url"] = (
         jid_cb == "cb1"
         and cb_seen[0].get("callback_url") == "https://hooks.test/x"
-        and cb_seen[0].get("callback_secret") == "whsec-t"
+        and secrets_equal(cb_seen[0].get("callback_secret"), "whsec-t")
     )
 
     # --- job SSE stream: client parses event frames --------------------------

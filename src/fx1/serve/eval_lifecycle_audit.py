@@ -112,6 +112,7 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import TYPE_CHECKING, Any, cast
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -1057,7 +1058,7 @@ def _backend_probes() -> dict[str, Any]:
     out["byok_override_binds_resolver"] = (
         orec["status"] == "succeeded"
         and seen.get("name") == "byok"
-        and (seen.get("kwargs") or {}).get("api_key") == _BYOK_CREDS["api_key"]
+        and secrets_equal((seen.get("kwargs") or {}).get("api_key"), _BYOK_CREDS["api_key"])
         and (seen.get("kwargs") or {}).get("model") == _BYOK_CREDS["model"]
     )
     out["byok_override_never_on_record"] = "api_key" not in json.dumps(orec)
