@@ -19,7 +19,13 @@ from typing import Any, Protocol, cast
 from urllib.parse import quote, urlencode
 
 from quant_fund.live.config import Venue
-from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import (
+    ALPACA_LIVE_REFUSAL,
+    BrokerRejected,
+    BrokerTimeout,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
@@ -79,6 +85,9 @@ class BrokerAck:
     fill_price: float | None
     fills: tuple[BrokerFill, ...]
     reason: str
+    symbol: str = ""
+    side: str = ""
+    quantity: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -151,6 +160,12 @@ def urllib_transport(
     except urllib.error.HTTPError as exc:
         status = int(exc.code)
         payload = exc.read()
+    except urllib.error.URLError as exc:
+        if isinstance(exc.reason, TimeoutError):
+            raise BrokerTimeout("broker request timed out") from exc
+        raise
+    except TimeoutError as exc:
+        raise BrokerTimeout("broker request timed out") from exc
     return status, payload
 
 
@@ -248,6 +263,7 @@ class LoopbackBroker:
     def submit(self, order: LiveOrder) -> BrokerAck:
         prior = self._orders.get(order.client_order_id)
         if prior is not None:
+            _require_same_ack(order, prior)
             return prior
         if order.side not in {"buy", "sell"}:
             raise BrokerRejected("side must be buy or sell")
@@ -325,6 +341,9 @@ class LoopbackBroker:
             fill_price=price,
             fills=fills,
             reason=reason,
+            symbol=order.symbol,
+            side=order.side,
+            quantity=order.quantity,
         )
 
 
@@ -341,13 +360,14 @@ class AlpacaBroker:
     ) -> None:
         if venue not in _HOSTS:
             raise LiveGateError("Alpaca venue must be alpaca-paper or alpaca-live")
+        timeout_s = float(timeout)
+        if not math.isfinite(timeout_s) or timeout_s <= 0.0:
+            raise LiveGateError("timeout must be finite and positive")
         self.venue = venue
         self.base = _HOSTS[venue]
         self._credentials = credentials
         self._transport = transport or urllib_transport
-        self._timeout = float(timeout)
-        if not math.isfinite(self._timeout) or self._timeout <= 0.0:
-            raise LiveGateError("broker timeout must be finite and positive")
+        self._timeout = timeout_s
         self._marks: dict[str, float] = {}
 
     @property
@@ -375,6 +395,7 @@ class AlpacaBroker:
             recovered = self.recover(order.client_order_id)
             if recovered is None:
                 raise
+            _require_same_ack(order, recovered)
             return recovered
         if not isinstance(payload, dict):
             raise BrokerRejected("broker order response was not an object")
@@ -449,32 +470,7 @@ class AlpacaBroker:
         )
         if not isinstance(payload, list):
             raise BrokerRejected("broker fill list was not a list")
-        fills: list[BrokerFill] = []
-        for row in payload:
-            if not isinstance(row, dict):
-                continue
-            broker_order_id = str(row.get("order_id") or "")
-            side = str(row.get("side") or "")
-            if side not in {"buy", "sell"}:
-                continue
-            client = broker_to_client.get(broker_order_id, "")
-            if not client and not broker_order_id:
-                continue
-            when = row.get("transaction_time")
-            fill_id = str(row.get("id") or "")
-            if not isinstance(when, str) or not fill_id:
-                continue
-            fills.append(
-                BrokerFill(
-                    fill_id=fill_id,
-                    client_order_id=client,
-                    symbol=str(row.get("symbol") or ""),
-                    side=side,
-                    quantity=_money(row.get("qty"), "fill quantity"),
-                    price=_money(row.get("price"), "fill price"),
-                    fill_time_ns=_ns(when),
-                )
-            )
+        fills = [_fill_from_row(row, broker_to_client) for row in payload]
         fills.sort(key=lambda fill: (fill.fill_time_ns, fill.fill_id))
         return FillPage(fills=tuple(fills), truncated=len(payload) >= _PAGE)
 
@@ -488,6 +484,7 @@ class AlpacaBroker:
         broker_id = str(payload.get("id") or "")
         symbol = str(payload.get("symbol") or "")
         side = str(payload.get("side") or "")
+        quantity = _money(payload.get("qty") or 0, "order quantity")
         fills: tuple[BrokerFill, ...] = ()
         if status in {"filled", "partially_filled"} and filled > 0.0 and fill_price is not None:
             when = (
@@ -517,6 +514,9 @@ class AlpacaBroker:
             fill_price=fill_price,
             fills=fills,
             reason=reason,
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
         )
 
     def _request(self, method: str, path: str, body: dict[str, Any] | None) -> Any:
@@ -537,12 +537,7 @@ class AlpacaBroker:
         allow_missing: bool,
     ) -> tuple[Any, bool]:
         if self.venue == "alpaca-live":
-            raise LiveBrokerRefused(
-                "alpaca-live is refused: the honesty contract forbids live broker "
-                "connectivity (AGENTS.md; docs/INSTITUTIONAL_READINESS.md). "
-                "The venue and host api.alpaca.markets stay configured so this "
-                "refusal is explicit. Paper and loopback are unchanged."
-            )
+            raise LiveBrokerRefused(ALPACA_LIVE_REFUSAL)
         if self._credentials is None:
             raise LiveGateError("broker credentials are not set")
         key, secret = self._credentials
@@ -551,8 +546,54 @@ class AlpacaBroker:
             raise LiveGateError("refusing a broker URL outside the venue host")
         raw_body = _json_body(body)
         headers = _alpaca_headers(key, secret, has_body=raw_body is not None)
-        status, payload = self._transport(method, url, headers, raw_body, self._timeout)
+        try:
+            status, payload = self._transport(method, url, headers, raw_body, self._timeout)
+        except TimeoutError as exc:
+            raise BrokerTimeout("broker request timed out") from exc
         return _parse_broker_response(status, payload, (key, secret), allow_missing=allow_missing)
+
+
+def _require_same_ack(order: LiveOrder, ack: BrokerAck) -> None:
+    """Refuse a client id whose broker order is a different instruction."""
+    if not ack.symbol and not ack.side and ack.quantity == 0.0:
+        return
+    mismatched = (
+        (bool(ack.symbol) and ack.symbol != order.symbol)
+        or (bool(ack.side) and ack.side != order.side)
+        or (ack.quantity != 0.0 and abs(ack.quantity - order.quantity) > 1e-9)
+    )
+    if mismatched:
+        raise LiveGateError("client_order_id conflicts with a different order")
+
+
+def _fill_from_row(row: object, broker_to_client: dict[str, str]) -> BrokerFill:
+    """One FILL activity. A bad row is a broker error, not a skipped print."""
+    if not isinstance(row, dict):
+        raise BrokerRejected("broker fill row was malformed")
+    broker_order_id = str(row.get("order_id") or "")
+    side = str(row.get("side") or "")
+    if side not in {"buy", "sell"}:
+        raise BrokerRejected("broker fill side is not buy or sell")
+    client = broker_to_client.get(broker_order_id, "")
+    if not client and not broker_order_id:
+        raise BrokerRejected("broker fill is missing an order id")
+    when = row.get("transaction_time")
+    fill_id = str(row.get("id") or "")
+    if not isinstance(when, str) or not fill_id:
+        raise BrokerRejected("broker fill is missing an id or time")
+    quantity = _money(row.get("qty"), "fill quantity")
+    price = _money(row.get("price"), "fill price")
+    if quantity <= 0.0 or price <= 0.0:
+        raise BrokerRejected("broker fill quantity and price must be positive")
+    return BrokerFill(
+        fill_id=fill_id,
+        client_order_id=client,
+        symbol=str(row.get("symbol") or ""),
+        side=side,
+        quantity=quantity,
+        price=price,
+        fill_time_ns=_ns(when),
+    )
 
 
 def _decimal(value: float) -> str:

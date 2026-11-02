@@ -1,4 +1,4 @@
-"""Duplicate order-id submission is not idempotent. The spec rejects it."""
+"""A completed order id cannot be submitted again. The spec rejects a resubmit."""
 
 from datetime import UTC, datetime
 
@@ -10,16 +10,13 @@ from quant_fund.formal.order_lifecycle import check_trace
 from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
 
 
-def test_duplicate_order_id_submit_overfills_and_spec_rejects_it(tmp_path) -> None:
-    """A second ``submit`` of the same id applies a second fill.
+def test_duplicate_order_id_is_refused_and_spec_rejects_resubmit(tmp_path) -> None:
+    """A second ``submit`` of a filled id does not move cash or shares.
 
-    The simulated broker does not treat ``order_id`` as an idempotency key.
-    Cash and shares move again (10 shares become 20). The lifecycle spec
-    rejects the trace because submit is only enabled from ``absent``.
-
-    The broker submission path is intentionally unchanged: paper order ids
-    are fresh UUIDs, and gating duplicates would be a submission-policy
-    change. This test is the counterexample.
+    The simulated broker treats ``order_id`` as an idempotency key for the
+    life of the book, including after fill or cancel. A forged trace that
+    submits again from ``filled`` is still rejected by the lifecycle spec,
+    because submit is only enabled from ``absent``.
     """
     cfg = load_config("configs/paper.yaml")
     cfg.data.root = tmp_path
@@ -45,11 +42,11 @@ def test_duplicate_order_id_submit_overfills_and_spec_rejects_it(tmp_path) -> No
         status=OrderStatus.NEW,
     )
     first = broker.submit(order, price=100.0, nav=100_000.0, adv_dollars=1e12, sigma=0.0)
-    second = broker.submit(order, price=100.0, nav=broker.nav(), adv_dollars=1e12, sigma=0.0)
-    assert first.fill is not None and second.fill is not None
-    assert first.fill.fill_id != second.fill.fill_id
-    assert broker.shares["A"] == pytest.approx(20.0)
-    assert broker.cash == pytest.approx(98_000.0)
+    assert first.fill is not None
+    with pytest.raises(ValueError, match="already submitted"):
+        broker.submit(order, price=100.0, nav=broker.nav(), adv_dollars=1e12, sigma=0.0)
+    assert broker.shares["A"] == pytest.approx(10.0)
+    assert broker.cash == pytest.approx(99_000.0)
 
     trace = [
         {"op": "submit", "order_id": "same-id", "qty": 10.0},
@@ -64,7 +61,7 @@ def test_duplicate_order_id_submit_overfills_and_spec_rejects_it(tmp_path) -> No
         {
             "op": "fill",
             "order_id": "same-id",
-            "fill_id": second.fill.fill_id,
+            "fill_id": "forged-second",
             "qty": 10.0,
             "rest": False,
         },

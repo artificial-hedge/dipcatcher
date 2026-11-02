@@ -31,6 +31,7 @@ from quant_fund.execution.order_recon import (
     Fill,
     LiveEndpointRefused,
     Order,
+    OrderLedgerError,
     Side,
     refuse_live_endpoint,
 )
@@ -107,6 +108,7 @@ class SessionLimits:
     max_order_notional: float = 1_000_000.0
     max_position_notional: float = 5_000_000.0
     max_gross_notional: float = 5_000_000.0
+    max_loss_fraction: float = 1.0
 
     def __post_init__(self) -> None:
         for name in (
@@ -114,8 +116,10 @@ class SessionLimits:
             "max_order_notional",
             "max_position_notional",
             "max_gross_notional",
+            "max_loss_fraction",
         ):
             _finite_positive(getattr(self, name), name)
+        _reject_loss_above_one(self.max_loss_fraction)
 
 
 def module_network_imports(source: str) -> list[str]:
@@ -245,7 +249,7 @@ class PaperTradingSession:
         )
         try:
             verdict = self._broker.submit(order)
-        except KillSwitchActive as exc:
+        except (KillSwitchActive, OrderLedgerError) as exc:
             return _step("submit", "rejected", reason=str(exc), order_id=order_id)
         step = _step(
             "submit",
@@ -312,6 +316,10 @@ class PaperTradingSession:
         price = _marked_price(self._broker.marks, security_id)
         if price is None:
             return "missing_mark"
+        if _loss_breached(
+            self._broker.starting_cash, self._broker.nav, self.limits.max_loss_fraction
+        ):
+            return "max_loss"
         capped = _order_cap(quantity, price, self.limits)
         if capped is not None:
             return capped
@@ -437,6 +445,15 @@ def _token(value: Any, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise SessionCommandError(f"{label} must be a non-empty string")
     return value
+
+
+def _reject_loss_above_one(value: float) -> None:
+    if value > 1.0:
+        raise SessionCommandError("max_loss_fraction must be at most 1")
+
+
+def _loss_breached(starting_cash: float, nav: float, fraction: float) -> bool:
+    return nav <= starting_cash * (1.0 - fraction)
 
 
 def _finite_positive(value: Any, label: str) -> float:

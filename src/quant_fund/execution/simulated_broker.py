@@ -46,6 +46,32 @@ def _limit_fill_price(
     return False, limit
 
 
+def _refuse_loss(initial_cash: float, nav: float, fraction: float) -> None:
+    floor = float(initial_cash) * (1.0 - float(fraction))
+    if nav <= floor:
+        raise RiskGateRejected(f"daily loss floor {floor} breached at nav {nav}")
+
+
+def _leaves_resting(reason: str | None) -> bool:
+    return reason is not None and "stale" in reason
+
+
+def _amend_price(order: Order, marks: dict[str, float]) -> float:
+    raw = order.limit_price if order.limit_price is not None else marks.get(order.security_id)
+    if raw is None or not np.isfinite(float(raw)) or float(raw) <= 0.0:
+        raise RiskGateRejected("amendment has no finite positive price")
+    return float(raw)
+
+
+def _projected_exposure(
+    projected: dict[str, float], px_map: dict[str, float]
+) -> tuple[float, float]:
+    names = sorted(set(projected) | set(px_map))
+    gross = sum(abs(projected.get(name, 0.0) * px_map.get(name, 0.0)) for name in names)
+    net = sum(projected.get(name, 0.0) * px_map.get(name, 0.0) for name in names)
+    return gross, net
+
+
 def _validate_exec_bar(bar_open: float, bar_high: float, bar_low: float) -> None:
     """A bar can only fill prices inside its own range — fail closed otherwise."""
     for name, value in (("bar_open", bar_open), ("bar_high", bar_high), ("bar_low", bar_low)):
@@ -223,8 +249,7 @@ class SimulatedBroker:
         touches the limit (``bar_open/high/low`` required); otherwise they
         rest in ``open_orders`` and can be swept later via ``process_bar``.
         """
-        if order.order_id in self.open_orders:
-            raise ValueError(f"order {order.order_id!r} is already working")
+        self._refuse_duplicate_order(order)
         if not np.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
@@ -345,6 +370,7 @@ class SimulatedBroker:
         order = self.open_orders.get(order_id)
         if order is None:
             raise ValueError(f"order {order_id!r} is not working")
+        self._refuse_killed_amend()
         data = order.model_dump()
         if quantity is not None:
             data["quantity"] = quantity
@@ -353,6 +379,7 @@ class SimulatedBroker:
         if expire_time is not None:
             data["expire_time"] = expire_time
         amended = Order.model_validate(data)
+        self._refuse_amendment(amended)
         self.open_orders[order_id] = amended
         rec = OrderRecord(order=amended, reject_reason=None, slot=self.slot)
         self.history.append(rec)
@@ -369,6 +396,7 @@ class SimulatedBroker:
         adv_dollars: float = 1.0,
         sigma: float = 0.02,
         nav: float | None = None,
+        price_age_bars: int | None = None,
     ) -> list[OrderRecord]:
         """Sweep resting limit orders for ``security_id`` against a new bar.
 
@@ -414,15 +442,69 @@ class SimulatedBroker:
                 nav=nav,
                 adv_dollars=adv_dollars,
                 sigma=sigma,
+                price_age_bars=price_age_bars,
                 keep_residual=True,
                 fill_time=bar_time,
             )
-            if rec.order.status is OrderStatus.REJECTED:
+            if rec.order.status is OrderStatus.REJECTED and not _leaves_resting(rec.reject_reason):
                 # A triggered order that fails the gate cancels rather than
                 # retrying (and re-recording) on every subsequent bar.
+                # A stale quote leaves the order working for a fresh bar.
                 self.open_orders.pop(order.order_id, None)
             records.append(rec)
         return records
+
+    def _refuse_duplicate_order(self, order: Order) -> None:
+        if order.order_id in self.open_orders:
+            raise ValueError(f"order {order.order_id!r} is already working")
+        for record in self.history:
+            if record.order.order_id == order.order_id:
+                raise ValueError(f"order {order.order_id!r} is already submitted")
+
+    def _refuse_killed_amend(self) -> None:
+        try:
+            self.kill.assert_new_orders_allowed()
+        except KillSwitchActive:
+            self.halt_count += 1
+            raise
+
+    def _refuse_amendment(self, order: Order) -> None:
+        if not self.allow_capital:
+            return
+        price = _amend_price(order, self.last_marks)
+        px_map = dict(self.last_marks)
+        px_map[order.security_id] = price
+        nav_use = float(self.nav(px_map))
+        _refuse_loss(
+            float(self.initial_cash),
+            nav_use,
+            float(self.config.risk_gate.max_daily_loss_fraction),
+        )
+        self._check_amended_order(order, price, nav_use)
+
+    def _check_amended_order(self, order: Order, price: float, nav_use: float) -> None:
+        if not np.isfinite(nav_use) or nav_use <= 0.0:
+            raise RiskGateRejected("nav and price must be positive")
+        signed = float(order.quantity)
+        if order.side is OrderSide.SELL:
+            signed = -signed
+        current = self.shares.get(order.security_id, 0.0)
+        projected = dict(self.shares)
+        projected[order.security_id] = current + signed
+        px_map = dict(self.last_marks)
+        px_map[order.security_id] = price
+        gross, net = _projected_exposure(projected, px_map)
+        check_order(
+            order,
+            nav=nav_use,
+            price=price,
+            current_weight=(current * price) / max(nav_use, 1e-12),
+            gross_after=gross / max(nav_use, 1e-12),
+            net_after=net / max(nav_use, 1e-12),
+            participation=0.0,
+            predicted_vol=0.0,
+            config=self.config,
+        )
 
     def _attempt_fill(
         self,
@@ -480,6 +562,11 @@ class SimulatedBroker:
         participation = abs(exec_qty) * price / max(float(adv_dollars), 1e-12)
 
         try:
+            _refuse_loss(
+                float(self.initial_cash),
+                nav_use,
+                float(self.config.risk_gate.max_daily_loss_fraction),
+            )
             check_order(
                 risk_order,
                 nav=nav_use,

@@ -128,11 +128,14 @@ class OrderFillLedger:
         if not isinstance(accept_orders, bool):
             raise OrderLedgerError("accept_orders must be a bool")
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
-        self._cash_tolerance = float(cash_tolerance)
-        self._position_tolerance = float(position_tolerance)
+        cash, cash_tol, position_tol = _finite_ledger_limits(
+            starting_cash, cash_tolerance, position_tolerance
+        )
+        self._cash_tolerance = cash_tol
+        self._position_tolerance = position_tol
         self._orders: dict[str, _OrderState] = {}
         self._fills: dict[str, Fill] = {}
-        self._computed_cash = float(starting_cash)
+        self._computed_cash = cash
         self._computed_positions: dict[str, float] = {}
         self._declared_cash: float | None = None
         self._declared_positions: dict[str, float] | None = None
@@ -180,6 +183,7 @@ class OrderFillLedger:
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
         _validate_order(order)
         if order.order_id in self._orders:
+            _require_same_order(self._orders[order.order_id].order, order)
             self._counters["duplicate_orders"] += 1
             return "duplicate_order"
         self._orders[order.order_id] = _OrderState(order=order)
@@ -270,12 +274,7 @@ class OrderFillLedger:
     # -- declaration (broker-reported) state, for drift alarms --
 
     def declare_state(self, *, cash: float, positions: dict[str, float]) -> None:
-        declared_cash = float(cash)
-        declared_positions = {str(k): float(v) for k, v in positions.items()}
-        if not math.isfinite(declared_cash):
-            raise OrderLedgerError("declared cash must be finite")
-        if any(not math.isfinite(quantity) for quantity in declared_positions.values()):
-            raise OrderLedgerError("declared positions must be finite")
+        declared_cash, declared_positions = _finite_declaration(cash, positions)
         self._declared_cash = declared_cash
         self._declared_positions = declared_positions
 
@@ -369,15 +368,63 @@ class OrderFillLedger:
         }
 
 
+def _finite_ledger_limits(
+    starting_cash: float,
+    cash_tolerance: float,
+    position_tolerance: float,
+) -> tuple[float, float, float]:
+    cash = float(starting_cash)
+    cash_tol = float(cash_tolerance)
+    position_tol = float(position_tolerance)
+    if not math.isfinite(cash):
+        raise OrderLedgerError("starting cash must be finite")
+    if not math.isfinite(cash_tol) or cash_tol < 0.0:
+        raise OrderLedgerError("cash tolerance must be finite and non-negative")
+    if not math.isfinite(position_tol) or position_tol < 0.0:
+        raise OrderLedgerError("position tolerance must be finite and non-negative")
+    return cash, cash_tol, position_tol
+
+
 def _validate_order(order: Order) -> None:
-    if isinstance(order.quantity, bool) or not isinstance(order.quantity, (int, float)):
-        raise OrderLedgerError("order quantity must be a finite number")
-    if not math.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
-        raise OrderLedgerError("order quantity must be finite and strictly positive")
+    _require_order_quantity(order.quantity)
     if order.side not in {"BUY", "SELL"}:
         raise OrderLedgerError("order side must be BUY or SELL")
-    if not order.order_id or not order.security_id:
-        raise OrderLedgerError("order_id and security_id must be non-empty")
+    _require_token(order.order_id, "order_id")
+    _require_token(order.security_id, "security_id")
+
+
+def _require_order_quantity(quantity: float) -> None:
+    if isinstance(quantity, bool) or not isinstance(quantity, (int, float)):
+        raise OrderLedgerError("order quantity must be a finite number")
+    if not math.isfinite(float(quantity)) or float(quantity) <= 0.0:
+        raise OrderLedgerError("order quantity must be finite and positive")
+
+
+def _require_token(value: str, label: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise OrderLedgerError(f"{label} must be a non-empty string")
+
+
+def _require_same_order(prior: Order, order: Order) -> None:
+    if (
+        prior.security_id != order.security_id
+        or prior.side != order.side
+        or abs(float(prior.quantity) - float(order.quantity)) > _QTY_EPS
+    ):
+        raise OrderLedgerError("order_id conflicts with a different order")
+
+
+def _finite_declaration(cash: float, positions: dict[str, float]) -> tuple[float, dict[str, float]]:
+    number = float(cash)
+    if not math.isfinite(number):
+        raise OrderLedgerError("declared cash must be finite")
+    parsed: dict[str, float] = {}
+    for key, value in positions.items():
+        qty = float(value)
+        if not math.isfinite(qty):
+            raise OrderLedgerError("declared position must be finite")
+        parsed[str(key)] = qty
+    return number, parsed
 
 
 def _validate_fill(fill: Fill) -> None:
