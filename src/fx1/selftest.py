@@ -122,6 +122,59 @@ def _remote_checks(report: SelftestReport, client: Any, remote: str, api_key: st
         _run(checks, "auth_gate_rejects_missing_key", _no_key_fails, True)
 
 
+def _restart_recovers_job(
+    *,
+    state_dir: str | None,
+    server: Any,
+    port: int,
+    app: Any,
+    app_kwargs: dict[str, Any],
+    job_id: str,
+    key: str,
+    timeout_s: float,
+    checks: list[Any],
+    client: Any,
+) -> tuple[Any, Any]:
+    """Restart on the same state dir and confirm the terminal job is still there."""
+    if state_dir is None:
+        return None, client
+    from fx1.serve.client import HarnessClient
+    from fx1.serve.e2e_audit import _serve_uvicorn
+
+    server.should_exit = True
+    deadline = time.monotonic() + 15.0
+    while not _server_down(port) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    app2 = app.create_app(**app_kwargs)
+    server2, _t2, port2 = _serve_uvicorn(app2)
+    client = HarnessClient(f"http://127.0.0.1:{port2}", api_key=key, timeout_s=timeout_s)
+    rec = client.job_status(job_id)
+    checks.append(
+        _Check(
+            "restart_recovers_job",
+            rec.get("status") == "succeeded",
+            detail=str(rec.get("status")),
+        )
+    )
+    return server2, client
+
+
+def _run_remote_selftest(
+    report: SelftestReport,
+    remote: str,
+    api_key: str | None,
+    timeout_s: float,
+) -> None:
+    from fx1.serve.client import HarnessClient
+
+    try:
+        client = HarnessClient(remote, api_key=api_key, timeout_s=timeout_s)
+    except Exception as exc:  # noqa: BLE001 — setup is a reported check failure
+        report.note("client_setup", False, f"{type(exc).__name__}: {exc}")
+        return
+    _remote_checks(report, client, remote, api_key or "")
+
+
 def run_selftest(
     remote: str | None = None,
     api_key: str | None = None,
@@ -133,14 +186,7 @@ def run_selftest(
     report = SelftestReport(mode="remote" if remote else "local")
 
     if remote is not None:
-        from fx1.serve.client import HarnessClient
-
-        try:
-            client = HarnessClient(remote, api_key=api_key, timeout_s=timeout_s)
-        except Exception as exc:  # noqa: BLE001 — setup is a reported check failure
-            report.note("client_setup", False, f"{type(exc).__name__}: {exc}")
-            return report
-        _remote_checks(report, client, remote, api_key or "")
+        _run_remote_selftest(report, remote, api_key, timeout_s)
         return report
 
     from fx1.harness import Harness
@@ -307,22 +353,18 @@ def run_selftest(
 
         # Durability: restart the app on the same state dir; the job's
         # terminal record must still resolve.
-        if state_dir is not None:
-            server.should_exit = True
-            deadline = time.monotonic() + 15.0
-            while not _server_down(port) and time.monotonic() < deadline:
-                time.sleep(0.05)
-            app2 = api_mod.create_app(**app_kwargs)
-            server2, _t2, port2 = _serve_uvicorn(app2)
-            client = HarnessClient(f"http://127.0.0.1:{port2}", api_key=key, timeout_s=timeout_s)
-            rec = client.job_status(job_id)
-            checks.append(
-                _Check(
-                    "restart_recovers_job",
-                    rec.get("status") == "succeeded",
-                    detail=str(rec.get("status")),
-                )
-            )
+        server2, client = _restart_recovers_job(
+            state_dir=state_dir,
+            server=server,
+            port=port,
+            app=api_mod,
+            app_kwargs=app_kwargs,
+            job_id=job_id,
+            key=key,
+            timeout_s=timeout_s,
+            checks=checks,
+            client=client,
+        )
 
         _run(
             checks,

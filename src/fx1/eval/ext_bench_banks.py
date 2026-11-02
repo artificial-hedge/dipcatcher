@@ -1048,18 +1048,22 @@ _ID_FIELDS: dict[str, str] = {
 }
 
 
+def _benchmark_lines(path: Path) -> list[str]:
+    try:
+        return path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise ExternalBenchmarkSchemaError(
+            f"{path}: cannot read benchmark file ({type(exc).__name__})"
+        ) from exc
+
+
 def _load_jsonl(path: str | Path, benchmark: str) -> list[BaseModel]:
     model_cls = BENCHMARK_SCHEMAS[benchmark]
     id_field = _ID_FIELDS[benchmark]
     p = Path(path)
     if not p.is_file():
         raise ExternalBenchmarkSchemaError(f"benchmark file not found: {p}")
-    try:
-        lines = p.read_text(encoding="utf-8").splitlines()
-    except (OSError, UnicodeError) as exc:
-        raise ExternalBenchmarkSchemaError(
-            f"{p}: cannot read benchmark file ({type(exc).__name__})"
-        ) from exc
+    lines = _benchmark_lines(p)
     instances: list[BaseModel] = []
     for lineno, raw in enumerate(lines, start=1):
         line = raw.strip()

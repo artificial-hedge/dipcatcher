@@ -15,6 +15,15 @@ import click
 from typer.core import TyperGroup
 
 
+def _io_or_recursion_message(exc: BaseException) -> str | None:
+    """Messages for the broad failures checked after the specific OS errors."""
+    if isinstance(exc, OSError):
+        return f"I/O error: {_target(exc)}"
+    if isinstance(exc, RecursionError):
+        return "input is too deeply nested"
+    return None
+
+
 def user_error_message(exc: BaseException) -> str | None:
     """Return a single-line message, or None when ``exc`` is not a user error."""
     if isinstance(exc, FileNotFoundError):
@@ -27,10 +36,9 @@ def user_error_message(exc: BaseException) -> str | None:
         return f"expected a directory: {_target(exc)}"
     if isinstance(exc, UnicodeDecodeError):
         return "file is not valid UTF-8"
-    if isinstance(exc, OSError):
-        return f"I/O error: {_target(exc)}"
-    if isinstance(exc, RecursionError):
-        return "input is too deeply nested"
+    structural = _io_or_recursion_message(exc)
+    if structural is not None:
+        return structural
     if isinstance(exc, json.JSONDecodeError):
         return f"invalid JSON: {exc.msg} (line {exc.lineno})"
     yaml_message = _yaml_message(exc)

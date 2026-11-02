@@ -69,6 +69,13 @@ def _rows_keyed(frame: pl.DataFrame) -> dict[tuple[str, datetime], tuple[datetim
     }
 
 
+def _note_probe_failure(violations: dict[str, int], exc: BaseException) -> None:
+    """VaultUnavailableError is an empty read. Anything else invalidates the audit."""
+    if isinstance(exc, VaultUnavailableError):
+        return
+    violations["probe_error"] += 1
+
+
 def asof_storm_audit(
     root: Path | None = None,
     *,
@@ -173,10 +180,8 @@ def asof_storm_audit(
                 pre = _rows_keyed(f_pre)
                 if (s, e) in pre and pre[(s, e)][1] == keyed_end[(s, e)][1]:
                     violations["latest_supersedes"] += 1
-            except VaultUnavailableError:
-                pass
-            except Exception:  # noqa: BLE001 — unexpected read failures invalidate the audit
-                violations["probe_error"] += 1
+            except Exception as exc:  # noqa: BLE001 — unexpected read failures invalidate the audit
+                _note_probe_failure(violations, exc)
     # future-leak fuzz: pin one correction far ahead; probe just before it
     future_ka = horizon_end + timedelta(hours=48)
     vault.restate(

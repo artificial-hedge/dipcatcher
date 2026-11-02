@@ -22,7 +22,7 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from typing import Any
+from typing import Any, cast
 
 from fx1.webresearch.fetch import DEFAULT_USER_AGENT
 from quant_fund.utils.net_timeout import read_bounded
@@ -163,6 +163,24 @@ class Searcher:
         raise NotImplementedError
 
 
+def _search_input_error(query: str, max_results: object, timeout_s: object) -> str:
+    if not query.strip():
+        return "query must be non-blank"
+    if isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1:
+        return "invalid max_results: must be a positive integer"
+    try:
+        valid_timeout = (
+            not isinstance(timeout_s, bool)
+            and math.isfinite(cast(float, timeout_s))
+            and cast(float, timeout_s) > 0
+        )
+    except TypeError:
+        valid_timeout = False
+    if not valid_timeout:
+        return "invalid timeout_s: must be finite and > 0"
+    return ""
+
+
 class DuckDuckGoLiteSearcher(Searcher):
     """Keyless DDG via the lite endpoint, HTML fallback to the html endpoint."""
 
@@ -200,20 +218,9 @@ class DuckDuckGoLiteSearcher(Searcher):
         timeout_s: float = DEFAULT_TIMEOUT_S,
     ) -> SearchResult:
         result = SearchResult(query=query)
-        if not query.strip():
-            result.error = "query must be non-blank"
-            return result
-        if isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1:
-            result.error = "invalid max_results: must be a positive integer"
-            return result
-        try:
-            valid_timeout = (
-                not isinstance(timeout_s, bool) and math.isfinite(timeout_s) and timeout_s > 0
-            )
-        except TypeError:
-            valid_timeout = False
-        if not valid_timeout:
-            result.error = "invalid timeout_s: must be finite and > 0"
+        input_error = _search_input_error(query, max_results, timeout_s)
+        if input_error:
+            result.error = input_error
             return result
         started = self._now()
         if self._pause_s:

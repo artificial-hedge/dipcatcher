@@ -30,7 +30,7 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from typing import Any
+from typing import Any, cast
 
 from quant_fund.utils.net_timeout import bounded_getaddrinfo
 
@@ -345,6 +345,32 @@ def clear_robots_cache() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _fetch_input_error(timeout_s: object, max_bytes: object, max_redirects: object) -> str:
+    """Empty when the fetch knobs are usable."""
+    try:
+        valid_timeout = (
+            not isinstance(timeout_s, bool)
+            and math.isfinite(cast(float, timeout_s))
+            and cast(float, timeout_s) > 0
+        )
+    except TypeError:
+        valid_timeout = False
+    if not valid_timeout:
+        return "invalid timeout_s: must be finite and > 0"
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 1:
+        return "invalid max_bytes: must be a positive integer"
+    if isinstance(max_redirects, bool) or not isinstance(max_redirects, int) or max_redirects < 0:
+        return "invalid max_redirects: must be a nonnegative integer"
+    return ""
+
+
+def _wire_url(url: str) -> str:
+    """Percent-encode an IRI. Already-encoded triplets survive (``%`` is safe)."""
+    if url.isascii():
+        return url
+    return urllib.parse.quote(url, safe=":/?&=%+#@")
+
+
 def fetch_page(
     url: str,
     *,
@@ -359,30 +385,16 @@ def fetch_page(
     """Fetch one URL with policy, size, and redirect limits. Never raises for
     policy or transport reasons — problems land in ``FetchResult.error``."""
     result = FetchResult(url=url)
-    try:
-        valid_timeout = (
-            not isinstance(timeout_s, bool) and math.isfinite(timeout_s) and timeout_s > 0
-        )
-    except TypeError:
-        valid_timeout = False
-    if not valid_timeout:
-        result.error = "invalid timeout_s: must be finite and > 0"
-        return result
-    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 1:
-        result.error = "invalid max_bytes: must be a positive integer"
-        return result
-    if isinstance(max_redirects, bool) or not isinstance(max_redirects, int) or max_redirects < 0:
-        result.error = "invalid max_redirects: must be a nonnegative integer"
+    input_error = _fetch_input_error(timeout_s, max_bytes, max_redirects)
+    if input_error:
+        result.error = input_error
         return result
     if check_policy:
         policy = url_policy_error(url, resolve_fn=resolve_fn)
         if policy is not None:
             result.error = f"refused by fetch policy: {policy}"
             return result
-    if not url.isascii():
-        # IRIs must be percent-encoded before hitting the wire; already-encoded
-        # triplets survive because % is in the safe set.
-        url = urllib.parse.quote(url, safe=":/?&=%+#@")
+    url = _wire_url(url)
     request = urllib.request.Request(url, headers={"User-Agent": user_agent, "Accept": ACCEPT})
 
     def open_response() -> Any:

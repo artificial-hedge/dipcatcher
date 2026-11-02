@@ -135,9 +135,6 @@ def _compiler_flags() -> list[str]:
     )
 
 
-_COMPILE_TIMEOUT_S = 120.0
-
-
 def _compile(source: Path, dest: Path) -> None:
     cmd = [
         _compiler(),
