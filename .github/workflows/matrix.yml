@@ -107,6 +107,8 @@ jobs:
         run: uv sync --frozen --all-groups --all-extras
       - name: Select balanced test-file shard
         shell: bash
+        env:
+          MATRIX_SHARD: ${{ matrix.shard }}
         run: |
           set -euo pipefail
           collect_out="$RUNNER_TEMP/matrix-collect.txt"
@@ -138,7 +140,7 @@ jobs:
           # function of the sorted inventory, so all 4 shard jobs of a combo
           # agree on the partition.
           shard_file="$RUNNER_TEMP/matrix-shard.txt"
-          awk -F': ' -v k="$NUM_SHARDS" -v want="${{ matrix.shard }}" '
+          awk -F': ' -v k="$NUM_SHARDS" -v want="$MATRIX_SHARD" '
             {
               min = 0
               for (i = 1; i < k; i++) if (sum[i] < sum[min]) min = i
@@ -148,10 +150,10 @@ jobs:
           ' "$inventory" > "$shard_file"
           n=$(wc -l < "$shard_file" | tr -d ' ')
           if [ "$n" -eq 0 ]; then
-            echo "::error::shard ${{ matrix.shard }} selected no test files"
+            echo "::error::shard ${MATRIX_SHARD} selected no test files"
             exit 1
           fi
-          echo "shard ${{ matrix.shard }}: $n test files"
+          echo "shard ${MATRIX_SHARD}: $n test files"
       - name: Pytest shard
         shell: bash
         run: |
