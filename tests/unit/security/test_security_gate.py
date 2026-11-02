@@ -186,6 +186,11 @@ def test_lock_allowlist_and_scorecard_are_dated() -> None:
     scorecard = (_ROOT / "docs" / "ULTRA_PROD_READINESS.md").read_text(encoding="utf-8")
     assert "security_gate" in scorecard
     assert "check_security_gate_summary.py" in scorecard
+    assert "docs/SECURITY_GATE.md" in scorecard
+    gate_doc = (_ROOT / "docs" / "SECURITY_GATE.md").read_text(encoding="utf-8")
+    assert ".tmp_security/summary.json" in gate_doc
+    assert "100000" in gate_doc
+    assert "QUANT_API_RATE_PER_SEC=off" in gate_doc
 
 
 def test_cursor_ci_runs_the_gate_without_a_write_token() -> None:
