@@ -179,6 +179,32 @@ def test_doctor_user_errors_have_no_traceback(tmp_path: Path) -> None:
     assert "expected a file:" in (directory_result.stderr or "")
 
 
+@pytest.mark.parametrize(
+    ("document", "expected_text"),
+    [
+        ("[]\n", ("must be a mapping",)),
+        ("inherit: false\n", ("inherit", "string")),
+        ("runtime: {}\nruntime: {}\n", ("duplicate", "runtime")),
+    ],
+    ids=("falsey_root", "non_string_inherit", "duplicate_runtime"),
+)
+def test_doctor_config_errors_are_single_line(
+    tmp_path: Path, document: str, expected_text: tuple[str, ...]
+) -> None:
+    config = tmp_path / "invalid.yaml"
+    config.write_text(document, encoding="utf-8")
+
+    result = _RUNNER.invoke(dipcatcher_app, ["doctor", "--config", str(config)])
+
+    _assert_usage(result, "doctor invalid config")
+    assert result.stdout == ""
+    error_lines = (result.stderr or "").splitlines()
+    assert len(error_lines) == 1
+    assert error_lines[0].startswith("error: ")
+    for expected in expected_text:
+        assert expected in error_lines[0].lower()
+
+
 def test_user_error_messages_cover_the_claimed_cases() -> None:
     missing = FileNotFoundError(2, "No such file", "missing.yaml")
     assert user_error_message(missing) == "file not found: missing.yaml"
