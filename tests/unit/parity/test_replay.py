@@ -222,18 +222,13 @@ def test_tampered_restart_is_state_drift(
         return state
 
     restart_at = session.groups[0][0].event_time
-    shadow = run_shadow_session(
-        session,
-        strategy,
-        config,
-        options=ReplayOptions(restart_after=restart_at, state_mutator=_tamper),
-    )
-    backtest = run_backtest_session(session, strategy, config)
-    report = check_parity(backtest, shadow)
-    assert report["n_divergent"] > 0
-    assert _causes(backtest, shadow) == {"state_drift"}
-    assert any(row["detail"] == "after_restart" for row in report["ledger"])
-    assert all(row["event_time"] != restart_at for row in report["ledger"])
+    with pytest.raises(ValueError, match="restored broker shares do not match fill history for A"):
+        run_shadow_session(
+            session,
+            strategy,
+            config,
+            options=ReplayOptions(restart_after=restart_at, state_mutator=_tamper),
+        )
 
 
 def test_origin_branch_is_code_path(session: MarketSession, config: AppConfig) -> None:
