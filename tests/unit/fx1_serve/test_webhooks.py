@@ -255,6 +255,25 @@ class TestWebhooks(unittest.TestCase):
                 "http://127.0.0.1/hook",
             )
 
+    def test_callback_errors_do_not_echo_credentials(self) -> None:
+        url = "http://user:s3cret-synthetic@hooks.example/hook?token=SECRETKEY"
+        with self.assertRaises(ValueError) as ctx:
+            check_callback_url(url)
+        text = str(ctx.exception)
+        self.assertNotIn("s3cret-synthetic", text)
+        self.assertNotIn("SECRETKEY", text)
+        self.assertIn("userinfo", text)
+
+        delivered, error, attempts = deliver_signed(
+            "https://example.com:bad/hook?token=SECRETKEY",
+            None,
+            self.body,
+        )
+        self.assertFalse(delivered)
+        self.assertIn("invalid port", error or "")
+        self.assertNotIn("SECRETKEY", error or "")
+        self.assertEqual(attempts, 0)
+
     def test_invalid_port_is_rejected_without_delivery_attempt(self) -> None:
         delivered, error, attempts = deliver_signed(
             "https://example.com:bad/hook",

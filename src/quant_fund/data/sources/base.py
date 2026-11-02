@@ -11,6 +11,7 @@ from urllib.parse import urlencode, urlsplit
 import polars as pl
 
 from quant_fund.data.concurrent_io import IoError, call_with_retry, pooled_request
+from quant_fund.utils.secrets import redact_text
 
 
 class SourceError(RuntimeError):
@@ -37,7 +38,7 @@ class HttpClient:
 
     def _request(self, url: str, *, headers: dict[str, str] | None = None) -> bytes:
         if urlsplit(url).scheme.lower() not in {"http", "https"}:
-            raise SourceError(f"unsupported URL scheme: {url}")
+            raise SourceError(f"unsupported URL scheme: {redact_text(url)}")
         request_headers = {"User-Agent": self.user_agent, "Accept": "*/*"}
         request_headers.update(headers or {})
 
@@ -51,13 +52,13 @@ class HttpClient:
                     max_bytes=self.max_bytes,
                 )
             except IoError as exc:
-                raise SourceError(str(exc)) from exc
+                raise SourceError(redact_text(str(exc))) from exc
             if status < 400:
                 return body
             # 429 and 5xx are transient. Other 4xx will not succeed on retry.
             if status == 429 or status >= 500:
                 raise OSError(status, f"HTTP {status}")
-            raise SourceError(f"GET failed after retries: {url}")
+            raise SourceError(f"GET failed after retries: {redact_text(url)}")
 
         try:
             return call_with_retry(
@@ -71,7 +72,7 @@ class HttpClient:
                 retry_on=(OSError, http.client.HTTPException),
             )
         except (OSError, http.client.HTTPException) as exc:
-            raise SourceError(f"GET failed after retries: {url}") from exc
+            raise SourceError(f"GET failed after retries: {redact_text(url)}") from exc
 
     def get_json(self, url: str, *, headers: dict[str, str] | None = None) -> Any:
         try:
@@ -79,7 +80,7 @@ class HttpClient:
                 self._request(url, headers={"Accept": "application/json", **(headers or {})})
             )
         except json.JSONDecodeError as exc:
-            raise SourceError(f"invalid JSON response: {url}") from exc
+            raise SourceError(f"invalid JSON response: {redact_text(url)}") from exc
 
     def get_text(self, url: str, *, headers: dict[str, str] | None = None) -> str:
         return self._request(url, headers=headers).decode("utf-8-sig", errors="replace")

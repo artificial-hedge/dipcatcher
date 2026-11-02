@@ -193,13 +193,14 @@ def stamp_timestamp(
     import urllib.request
 
     from quant_fund.utils.atomicio import atomic_write_bytes, atomic_write_text
+    from quant_fund.utils.secrets import redact_text
 
     root_path = Path(root)
     target_rel = Path(target)
     digest = hash_bytes((root_path / target_rel).read_bytes())
     # Scheme allowlist before the request — urlopen would honor file:/ too.
     if urllib.parse.urlparse(tsr_url).scheme not in {"https", "http"}:
-        raise ValueError(f"tsr_url scheme must be http(s): {tsr_url!r}")
+        raise ValueError(f"tsr_url scheme must be http(s): {redact_text(tsr_url)!r}")
     req = urllib.request.Request(
         tsr_url,
         data=build_tsq(digest),
