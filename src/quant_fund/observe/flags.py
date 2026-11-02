@@ -21,7 +21,12 @@ STAGES = (
 
 def observe_enabled() -> bool:
     """Return whether instrumentation should record spans, metrics, and logs."""
-    return os.environ.get("DIPCATCHER_OBSERVE", "").strip().lower() in _TRUE
+    raw = os.environ.get("DIPCATCHER_OBSERVE", "").strip().lower()
+    if raw in _TRUE:
+        return True
+    if not raw or raw in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError("DIPCATCHER_OBSERVE must be a boolean (1/0, true/false, yes/no, on/off)")
 
 
 def otel_endpoint() -> str | None:

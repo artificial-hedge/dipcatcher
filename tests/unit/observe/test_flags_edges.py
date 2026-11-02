@@ -13,10 +13,16 @@ class TestObserveEnabled:
         monkeypatch.setenv("DIPCATCHER_OBSERVE", value)
         assert flags.observe_enabled() is True
 
-    @pytest.mark.parametrize("value", ["0", "false", "no", "off", "", "enabled"])
+    @pytest.mark.parametrize("value", ["0", "false", "no", "off", ""])
     def test_falsy(self, monkeypatch, value: str) -> None:
         monkeypatch.setenv("DIPCATCHER_OBSERVE", value)
         assert flags.observe_enabled() is False
+
+    @pytest.mark.parametrize("value", ["enabled", "bogus", "2"])
+    def test_invalid_raises(self, monkeypatch, value: str) -> None:
+        monkeypatch.setenv("DIPCATCHER_OBSERVE", value)
+        with pytest.raises(ValueError, match="DIPCATCHER_OBSERVE must be a boolean"):
+            flags.observe_enabled()
 
     def test_unset(self, monkeypatch) -> None:
         monkeypatch.delenv("DIPCATCHER_OBSERVE", raising=False)
