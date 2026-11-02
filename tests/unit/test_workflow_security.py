@@ -89,7 +89,10 @@ def test_required_status_checks_cover_every_job() -> None:
         jobs = config["jobs"]
         gate = jobs["required-gate"]
         assert gate["name"] == context
-        assert gate["if"] == "${{ always() }}"
+        assert gate["if"] == (
+            "${{ always() && (github.event_name != 'pull_request' "
+            "&& github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}"
+        )
         optional_jobs = {"required-gate", "refresh-test-durations"}
         assert set(gate["needs"]) == set(jobs) - optional_jobs
         step = gate["steps"][0]

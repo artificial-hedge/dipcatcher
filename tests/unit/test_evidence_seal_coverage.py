@@ -50,6 +50,10 @@ UNSEALED_WRITERS: dict[str, str] = {
         "paper-broker runtime checkpoint (paper_broker_state.v1); honesty stamps are inline "
         "and seam_report is the integrity check, not a research receipt"
     ),
+    "paper/state_backup.py": (
+        "archive manifest of payload sha256 and size; restore checks those hashes "
+        "before it writes, and the file is not a research receipt"
+    ),
     "paper/sim_live.py": "sealed on PR #258",
     "research/auditor_bundle.py": "bundle writer self-digests — files_sha256 map + auditor_self_sha256 cover every emitted artifact",
     "research/evidence_base.py": "stdout JSON for the CI evidence-base probe — not a durable receipt",
