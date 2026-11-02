@@ -109,16 +109,37 @@ class TestPMMH:
 
 class TestBench:
     def test_keys_finite(self):
-        out = bench_pmcmc_sv(20260131)
+        out = bench_pmcmc_sv(
+            20260131,
+            n_obs=240,
+            pf_particles=40,
+            pf_particles_hi=80,
+            n_iter=40,
+            n_particles=40,
+        )
         for k, v in out.items():
             assert k.startswith("synthetic_")
             assert isinstance(v, float)
             assert np.isfinite(v), k
 
     def test_deterministic(self):
-        assert bench_pmcmc_sv(20260131) == bench_pmcmc_sv(20260131)
+        kwargs = dict(
+            n_obs=240,
+            pf_particles=40,
+            pf_particles_hi=80,
+            n_iter=40,
+            n_particles=40,
+        )
+        assert bench_pmcmc_sv(20260131, **kwargs) == bench_pmcmc_sv(20260131, **kwargs)
 
     def test_quality(self):
-        out = bench_pmcmc_sv(20260131)
+        out = bench_pmcmc_sv(
+            20260131,
+            n_obs=240,
+            pf_particles=40,
+            pf_particles_hi=80,
+            n_iter=40,
+            n_particles=40,
+        )
         assert out["synthetic_acceptance_rate"] > 0.02
         assert out["synthetic_determinism"] == 1.0

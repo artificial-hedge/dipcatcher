@@ -100,7 +100,7 @@ def _function_allowlist_names(rule_id: str, path_str: str) -> frozenset[str]:
 
 def _function_spans(tree: ast.AST) -> list[tuple[int, int, str]]:
     spans: list[tuple[int, int, str]] = []
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             end = node.end_lineno if node.end_lineno is not None else node.lineno
             spans.append((node.lineno, end, node.name))
@@ -314,12 +314,49 @@ def _call_name(node: ast.Call) -> str:
     return ""
 
 
-def _build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
+# One walk per file, shared by every rule. Cleared at the end of scan_file so
+# a later file cannot reuse a recycled id(tree). Callers only read the lists.
+_TreeIndex = tuple[list[ast.AST], dict[int, ast.AST]]
+_TREE_INDEX: contextvars.ContextVar[dict[int, _TreeIndex] | None] = contextvars.ContextVar(
+    "leakage_tree_index", default=None
+)
+
+
+def _tree_index(tree: ast.AST) -> _TreeIndex:
+    memo = _TREE_INDEX.get()
+    key = id(tree)
+    if memo is not None and key in memo:
+        return memo[key]
+    nodes: list[ast.AST] = []
     parents: dict[int, ast.AST] = {}
-    for node in ast.walk(tree):
+    root = tree
+    for node in ast.walk(root):
+        nodes.append(node)
         for child in ast.iter_child_nodes(node):
             parents[id(child)] = node
-    return parents
+    index = (nodes, parents)
+    if memo is not None:
+        memo[key] = index
+    return index
+
+
+def _iter_tree(tree: ast.AST) -> list[ast.AST]:
+    """Nodes in ``ast.walk`` order. Cached for the scan of this file."""
+    if _TREE_INDEX.get() is None:
+        root = tree
+        return list(ast.walk(root))
+    return _tree_index(tree)[0]
+
+
+def _build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
+    if _TREE_INDEX.get() is None:
+        parents: dict[int, ast.AST] = {}
+        root = tree
+        for node in ast.walk(root):
+            for child in ast.iter_child_nodes(node):
+                parents[id(child)] = node
+        return parents
+    return _tree_index(tree)[1]
 
 
 def _enclosing_scopes(
@@ -340,7 +377,7 @@ def _enclosing_scopes(
 def _docstring_constant_ids(tree: ast.AST) -> set[int]:
     """ids of string Constants used as module/class/function docstrings."""
     ids: set[int] = set()
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         body = getattr(node, "body", None)
         if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and (
             isinstance(body, list) and body
@@ -404,7 +441,7 @@ def _merged_assigns(tree: ast.AST, scope: ast.AST) -> dict[str, list[tuple[int, 
 def _check_lh001(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not isinstance(node, ast.Call):
             continue
         parts = _shift_call_parts(node)
@@ -431,7 +468,7 @@ def _check_lh001(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh002(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not isinstance(node, ast.Call):
             continue
         name = _call_name(node)
@@ -498,7 +535,7 @@ def _scipy_stats_bound_names(tree: ast.AST) -> set[str]:
     """Local names bound by ``from scipy.stats import ...`` — a `norm` from
     there is a distribution MLE (like `stats.norm.fit`), not a scaler."""
     bound: set[str] = set()
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if isinstance(node, ast.ImportFrom) and node.module == "scipy.stats":
             bound.update(alias.asname or alias.name for alias in node.names)
     return bound
@@ -508,7 +545,7 @@ def _check_lh003(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
     scipy_stats_names = _scipy_stats_bound_names(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
@@ -570,7 +607,7 @@ def _check_lh003(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh004(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not (isinstance(node, ast.Call) and _call_name(node) == "join_asof"):
             continue
         _, funcs = _enclosing_scopes(node, parents)
@@ -628,7 +665,7 @@ def _check_lh005(tree: ast.AST, path_str: str) -> list[_Finding]:
     ):
         return []
     out: list[_Finding] = []
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         target: ast.AST | None = None
         value: ast.AST | None = None
         line = col = 0
@@ -688,7 +725,7 @@ def _contemp_target_names(target: ast.AST) -> list[str]:
 def _check_lh006(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         # (a) ``delta_mid = mid.shift(-1) - mid`` assignment form (also
         # annotated targets, subscript keys, and tuple destructuring).
         if isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
@@ -850,7 +887,7 @@ def _resolve_expr(
 def _check_lh007(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not (isinstance(node, ast.Call) and _call_name(node) in _PSR_CALL_NAMES):
             continue
         _, funcs = _enclosing_scopes(node, parents)
@@ -905,7 +942,7 @@ def _check_lh008(tree: ast.AST, path_str: str) -> list[_Finding]:
     docstrings = _docstring_constant_ids(tree)
     parents = _build_parent_map(tree)
     module_assigns = _scope_assignments(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         value: str | None = None
         if (
             isinstance(node, ast.Constant)
@@ -948,7 +985,7 @@ def _blocked_io_aliases(tree: ast.AST) -> set[str]:
     """Local names bound to parquet readers via ``from X import read_parquet
     [as rp]`` — the aliased call `rp(path)` is the same bypass one hop down."""
     bound: set[str] = set()
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if isinstance(node, ast.ImportFrom):
             for alias in node.names:
                 if alias.name in _BLOCKED_IO_NAMES:
@@ -986,7 +1023,7 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     module_assigns = _scope_assignments(tree)
     io_aliases = _blocked_io_aliases(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not isinstance(node, ast.Call):
             continue
         name = _call_name(node)
@@ -1034,7 +1071,7 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh010(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not isinstance(node, ast.Call):
             continue
         name = _call_name(node)
@@ -1121,7 +1158,7 @@ def _lh011_dynamic_findings(
     """
     out: list[_Finding] = []
     module_assigns = _scope_assignments(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not (isinstance(node, ast.Call) and _call_name(node) in ("import_module", "__import__")):
             continue
         if not node.args:
@@ -1156,7 +1193,7 @@ def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
     lazy_whitelist = LH011_LAZY_WHITELIST[package]
     parents = _build_parent_map(tree)
     out: list[_Finding] = []
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
         modules = _lh011_imported_modules(node, path_str)
@@ -1366,7 +1403,7 @@ def _check_lh013(tree: ast.AST, path_str: str, source: str) -> list[_Finding]:
     docstrings = _docstring_constant_ids(tree)
     parents = _build_parent_map(tree)
     module_assigns = _scope_assignments(tree)
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         _lh013_constant_findings(node, path_str, docstrings, out, patterns)
         _lh013_fstring_findings(node, path_str, out, patterns)
         _lh013_format_findings(node, path_str, module_assigns, out, patterns)
@@ -1381,7 +1418,9 @@ def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list
     """
     out: list[_Finding] = []
     functions = [
-        node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        node
+        for node in _iter_tree(tree)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
     leaky: dict[str, set[str]] = {}
     for func in functions:
@@ -1393,7 +1432,7 @@ def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list
             leaky.setdefault(func.name, set()).update(hits)
     if not leaky:
         return out
-    for node in ast.walk(tree):
+    for node in _iter_tree(tree):
         if not isinstance(node, ast.Call):
             continue
         # `helper()` and `self.helper()`/`obj.helper()` alike — a leaky
@@ -1447,9 +1486,11 @@ _ALL_RULES = frozenset(_CHECKERS) | {"LH012", "LH013", "LH014"}
 def scan_file(path: Path, *, rules: set[str] | None = None) -> list[_Finding]:
     """Scan one .py file; never raises on parse errors (LH012 instead)."""
     cache_token = _SCOPE_CACHE.set({})
+    index_token = _TREE_INDEX.set({})
     try:
         return _scan_file_cached(path, rules=rules)
     finally:
+        _TREE_INDEX.reset(index_token)
         _SCOPE_CACHE.reset(cache_token)
 
 
