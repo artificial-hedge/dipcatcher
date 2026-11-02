@@ -190,6 +190,23 @@ def test_cli_bind_accepts_the_admin_key_file(
     assert result.exit_code == 0
 
 
+def test_oversized_key_file_matches_nothing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear(monkeypatch)
+    key_path = tmp_path / "admin"
+    key_path.write_bytes(b"k" * 4097)
+    monkeypatch.setenv("QUANT_API_KEY_FILE", str(key_path))
+    client = TestClient(app)
+    assert client.get("/models", headers={"X-API-Key": "k" * 4097}).status_code == 401
+
+
+def test_ipv4_mapped_loopback_is_a_remote_peer(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear(monkeypatch)
+    remote = TestClient(app, client=("::ffff:127.0.0.1", 9))
+    assert remote.get("/models").status_code == 403
+
+
 def test_forwarded_for_does_not_become_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
     _clear(monkeypatch)
     remote = TestClient(app, client=("203.0.113.53", 9))

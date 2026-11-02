@@ -62,3 +62,6 @@ def dump_resolved(config: AppConfig, dest: Path) -> None:
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(dest, json.dumps(config.dump(), indent=2, sort_keys=True))
+    from quant_fund.api.admin_audit import note_mutation
+
+    note_mutation("config", "written")

@@ -48,6 +48,20 @@ For each of `QUANT_API_KEY`, `QUANT_API_READ_KEY`, `RESEARCH_API_KEY`, and `RESE
 
 `tests/unit/security/test_key_rotation.py` covers the file replacement, the grace boundary, the read-key scope, and the lab bind guard.
 
+## Admin audit log
+
+`QUANT_API_AUDIT_LOG` and `RESEARCH_API_AUDIT_LOG` are append-only files.
+Each admin-key unsafe request appends one JSON object with `time`, `route`,
+`key_id`, `request_id`, `outcome`, and `kind`. `key_id` is the SHA-256 hex
+of the presented key. The line does not contain the key. `POST /backtest`
+is kind `ledger`. `POST /portfolio/optimize` is kind `compute`. Any other
+admin-key unsafe route is `unclassified`, which is how a new route stays
+visible. `dump_resolved`, `PaperLedger.flush`, and `LiveDesk.kill` append
+`config`, `ledger`, and `kill-file` when an admin actor is bound. The CLI
+does not bind that actor. A log path that cannot be opened turns the
+mutation into 503 before the route runs. `tests/unit/security/test_admin_audit.py`
+covers the line, the redaction, and those three kinds.
+
 ## Owner steps this gate does not perform
 
 - Bump the crown `uv.lock` virtualenv pin past 21.14.12 for GHSA-cx6f-vjhg-g3cc.
