@@ -16,6 +16,9 @@ above stay blocked when a listed network contains them. 6to4, Teredo,
 well-known NAT64, and IPv4-translated addresses stay blocked too.
 Decimal, octal, hex, and compatibility-folded IPv4 literals are
 classified before DNS, so a resolver cannot launder them.
+``vetted_addresses`` is the shared selector: a literal never reaches
+DNS, a transitional embedding is refused, and the caller dials one of
+the returned numeric addresses.
 """
 
 from __future__ import annotations
@@ -41,11 +44,13 @@ __all__ = [
     "address_permitted",
     "directory_child",
     "is_public_ip",
+    "literal_connect_address",
     "literal_destination_refusal",
     "open_pinned",
     "parse_allow_cidrs",
     "pinned_connection",
     "public_addresses",
+    "vetted_addresses",
     "read_http",
     "read_http_redirects",
     "repo_file",
@@ -300,55 +305,121 @@ def _answer_address(info: object) -> ipaddress.IPv4Address | ipaddress.IPv6Addre
         return None
 
 
-def _name_ok(address: ipaddress.IPv4Address | ipaddress.IPv6Address, *, localhost: bool) -> bool:
-    if localhost:
-        return bool(address.is_loopback)
-    return is_public_ip(address)
-
-
-def _filter_answers(infos: Any, *, localhost: bool) -> list[str]:
-    found: list[str] = []
-    for info in infos:
-        address = _answer_address(info)
-        if address is None:
-            continue
-        if not _name_ok(address, localhost=localhost):
-            raise OutboundRefused("destination host resolved to a non-public address")
-        normalized = str(address)
-        if normalized not in found:
-            found.append(normalized)
-    return found
-
-
-def _literal_addresses(
-    literal: ipaddress.IPv4Address | ipaddress.IPv6Address,
-    *,
-    allow_loopback: bool,
-    allow_private: bool,
-) -> tuple[str, ...]:
-    if not address_allowed(literal, allow_loopback=allow_loopback, allow_private=allow_private):
-        raise OutboundRefused("destination address is not allowed")
-    return (str(literal),)
-
-
-def _resolved_public(
-    host: str,
-    port: int,
-    *,
-    allow_loopback: bool,
-    resolve_fn: ResolveFn,
-) -> tuple[str, ...]:
-    infos = _resolve(host, port, resolve_fn)
-    localhost = allow_loopback and _localhost_name(host)
-    addresses = _filter_answers(infos, localhost=localhost)
-    if not addresses:
-        raise OutboundRefused("destination host did not resolve to an IP address")
-    return tuple(addresses)
+_Network = ipaddress.IPv4Network | ipaddress.IPv6Network
 
 
 def _resolver(resolve_fn: ResolveFn | None) -> ResolveFn:
     """Pick the resolver at call time so tests can patch ``socket.getaddrinfo``."""
     return socket.getaddrinfo if resolve_fn is None else resolve_fn
+
+
+def literal_connect_address(
+    host: str,
+    networks: Iterable[_Network] | None = None,
+    *,
+    allow_loopback: bool = False,
+    allow_private: bool = False,
+) -> str | None:
+    """Numeric dial target when ``host`` is a literal. A name returns None.
+
+    Obfuscated IPv4 is parsed here, and a transitional embedding is refused
+    instead of being unwrapped to its inner address. The caller dials the
+    returned address and does not call DNS.
+    """
+    parsed = _parse_literal(host)
+    if parsed is None:
+        return None
+    if networks is not None:
+        allowed = address_permitted(parsed, networks)
+    else:
+        allowed = address_allowed(
+            parsed, allow_loopback=allow_loopback, allow_private=allow_private
+        )
+    if not allowed:
+        raise OutboundRefused("destination address is not allowed")
+    return str(parsed)
+
+
+def _localhost_opt_in(
+    host: str, networks: tuple[_Network, ...] | None, *, allow_loopback: bool
+) -> bool:
+    if networks is not None or not allow_loopback:
+        return False
+    return _localhost_name(host)
+
+
+def _answer_permitted(
+    address: ipaddress.IPv4Address | ipaddress.IPv6Address,
+    networks: tuple[_Network, ...] | None,
+    *,
+    localhost: bool,
+) -> bool:
+    if networks is not None:
+        return address_permitted(address, networks)
+    if localhost:
+        return bool(address.is_loopback)
+    return is_public_ip(address)
+
+
+def _resolved_permitted(
+    host: str,
+    port: int,
+    networks: tuple[_Network, ...] | None,
+    *,
+    allow_loopback: bool,
+    resolve_fn: ResolveFn,
+) -> tuple[str, ...]:
+    infos = _resolve(host, port, resolve_fn)
+    localhost = _localhost_opt_in(host, networks, allow_loopback=allow_loopback)
+    found: list[str] = []
+    for info in infos:
+        address = _answer_address(info)
+        if address is None:
+            continue
+        if not _answer_permitted(address, networks, localhost=localhost):
+            raise OutboundRefused("destination host resolved to a non-public address")
+        normalized = str(address)
+        if normalized not in found:
+            found.append(normalized)
+    if not found:
+        raise OutboundRefused("destination host did not resolve to an IP address")
+    return tuple(found)
+
+
+def vetted_addresses(
+    host: str,
+    port: int,
+    networks: Iterable[_Network] | None = None,
+    *,
+    allow_loopback: bool = False,
+    allow_private: bool = False,
+    resolve_fn: ResolveFn | None = None,
+) -> tuple[str, ...]:
+    """Numeric addresses to dial.
+
+    A literal, including an obfuscated IPv4 form, is classified without DNS.
+    ``networks`` selects the allowlist policy (public unicast, plus those
+    CIDRs). ``None`` selects the boolean policy: loopback and RFC1918/ULA
+    only when the matching flag is set, and only a literal or the exact name
+    ``localhost`` may use loopback. Any other name must resolve entirely to
+    public unicast. Connect to one of the returned addresses.
+    """
+    listed = None if networks is None else tuple(networks)
+    pinned = literal_connect_address(
+        host,
+        listed,
+        allow_loopback=allow_loopback,
+        allow_private=allow_private,
+    )
+    if pinned is not None:
+        return (pinned,)
+    return _resolved_permitted(
+        host,
+        port,
+        listed,
+        allow_loopback=allow_loopback,
+        resolve_fn=_resolver(resolve_fn),
+    )
 
 
 def public_addresses(
@@ -360,13 +431,13 @@ def public_addresses(
     resolve_fn: ResolveFn | None = None,
 ) -> tuple[str, ...]:
     """Numeric addresses for ``host``. Any disallowed answer refuses the set."""
-    literal = _parse_literal(host)
-    if literal is not None:
-        return _literal_addresses(
-            literal, allow_loopback=allow_loopback, allow_private=allow_private
-        )
-    return _resolved_public(
-        host, port, allow_loopback=allow_loopback, resolve_fn=_resolver(resolve_fn)
+    return vetted_addresses(
+        host,
+        port,
+        None,
+        allow_loopback=allow_loopback,
+        allow_private=allow_private,
+        resolve_fn=resolve_fn,
     )
 
 

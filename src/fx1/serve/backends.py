@@ -30,7 +30,7 @@ import urllib.request
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol, cast, runtime_checkable
+from typing import Any, NoReturn, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
 from quant_fund.utils.outbound import (
@@ -40,6 +40,7 @@ from quant_fund.utils.outbound import (
     literal_destination_refusal,
     open_pinned,
     parse_allow_cidrs,
+    vetted_addresses,
 )
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
@@ -218,28 +219,6 @@ def _env_float(name: str, override: float | None, default: float) -> float:
     return val
 
 
-class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
-    """Fail closed instead of replaying a credentialed request elsewhere.
-
-    ``urllib`` follows redirects by default and preserves caller-supplied
-    headers such as ``Authorization`` even when the destination changes
-    origin.  Every OpenAI-compatible request carries a provider credential,
-    so no redirect response is safe to follow implicitly.
-    """
-
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: Any,
-        code: int,
-        msg: str,
-        headers: Any,
-        newurl: str,
-    ) -> None:
-        del req, fp, code, msg, headers, newurl
-        return None
-
-
 def _byok_private_networks_allowed() -> bool:
     """Whether ``FX1_PRIVATE_ALLOW_CIDRS`` names any extra BYOK networks."""
     return bool(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, "").strip())
@@ -279,23 +258,32 @@ def _byok_address_allowed(
     return address_permitted(address, parse_allow_cidrs(raw))
 
 
-def _byok_resolved_addresses(host: str, port: int, *, allow_private: bool) -> tuple[str, ...]:
-    """Resolve once, reject a mixed-policy answer set, and return numeric IPs."""
-    addresses: list[str] = []
-    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
-        host, port, type=socket.SOCK_STREAM
-    ):
-        if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
-            continue
-        address = _normalized_address(str(sockaddr[0]))
-        if not _byok_address_allowed(address, allow_private=allow_private):
-            raise ValueError("BYOK endpoint resolved to a prohibited network address")
-        normalized = str(address)
-        if normalized not in addresses:
-            addresses.append(normalized)
-    if not addresses:
-        raise OSError(f"BYOK endpoint host {host!r} did not resolve")
-    return tuple(addresses)
+def _raise_byok_resolution(host: str, exc: OutboundRefused) -> NoReturn:
+    if str(exc) == "allowlist CIDR is invalid":
+        raise exc
+    if isinstance(exc.__cause__, OSError) or str(exc) in {
+        "cannot resolve host",
+        "destination host did not resolve to an IP address",
+    }:
+        raise OSError(f"BYOK endpoint host {host!r} did not resolve") from exc
+    raise ValueError("BYOK endpoint resolved to a prohibited network address") from exc
+
+
+def _byok_resolved_addresses(
+    host: str,
+    port: int,
+    *,
+    allow_private: bool,
+    local_literals: bool = False,
+) -> tuple[str, ...]:
+    """Classify a literal before DNS, then return numeric addresses to dial."""
+    try:
+        if local_literals:
+            return vetted_addresses(host, port, None, allow_loopback=True, allow_private=True)
+        raw = os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, "") if allow_private else ""
+        return vetted_addresses(host, port, parse_allow_cidrs(raw))
+    except OutboundRefused as exc:
+        _raise_byok_resolution(host, exc)
 
 
 class _ByokPinnedHTTPConnection(http.client.HTTPConnection):
@@ -338,16 +326,27 @@ class _ByokPinnedHTTPSConnection(http.client.HTTPSConnection):
 
 
 def _open_byok_pinned(
-    request: urllib.request.Request, *, timeout_s: float, allow_private: bool
+    request: urllib.request.Request,
+    *,
+    timeout_s: float,
+    allow_private: bool,
+    local_literals: bool = False,
 ) -> tuple[http.client.HTTPResponse, http.client.HTTPConnection]:
-    """Open a direct, DNS-pinned BYOK request; never use proxies or redirects."""
+    """Open one direct request pinned to a vetted numeric address.
+
+    Redirects and proxies are not used. ``local_literals`` is the unflagged
+    engine policy: loopback and RFC1918/ULA literals stay dialable, and any
+    other name must resolve entirely to public unicast.
+    """
     parsed = urllib.parse.urlparse(request.full_url)
     host = parsed.hostname
     if host is None:  # construction validation should make this unreachable
         raise urllib.error.URLError(ValueError("BYOK endpoint has no host"))
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
     try:
-        addresses = _byok_resolved_addresses(host, port, allow_private=allow_private)
+        addresses = _byok_resolved_addresses(
+            host, port, allow_private=allow_private, local_literals=local_literals
+        )
     except (OSError, ValueError) as exc:
         raise urllib.error.URLError(exc) from exc
     target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
@@ -377,47 +376,34 @@ def _open_byok_pinned(
 def _openai_urlopen(request: urllib.request.Request, *, timeout_s: float) -> Iterator[Any]:
     """Open one credentialed request with redirects disabled and close it.
 
-    Constructing the opener per call keeps mutable handler state scoped to
-    that call when backend instances are shared by concurrent requests.
-    ``HTTPError`` is itself a response object; ``OpenerDirector.open`` raises
-    it before a caller can enter its response context, so close that error
-    response here as well.  Otherwise repeated provider refusals retain their
-    sockets until cyclic GC happens to collect the traceback.
+    Every call dials the vetted numeric address from the first resolution.
+    A non-2xx response is closed before it is re-raised, so a refused
+    provider does not retain its socket until cyclic GC.
     """
     public_only = bool(getattr(request, "_fx1_byok_public_only", False))
     allow_private = bool(getattr(request, "_fx1_byok_allow_private", False))
-    if public_only or allow_private:
-        response, connection = _open_byok_pinned(
-            request, timeout_s=timeout_s, allow_private=allow_private
+    response, connection = _open_byok_pinned(
+        request,
+        timeout_s=timeout_s,
+        allow_private=allow_private,
+        local_literals=not (public_only or allow_private),
+    )
+    if not 200 <= response.status < 300:
+        error = urllib.error.HTTPError(
+            request.full_url,
+            response.status,
+            response.reason,
+            response.headers,
+            response,
         )
-        if not 200 <= response.status < 300:
-            error = urllib.error.HTTPError(
-                request.full_url,
-                response.status,
-                response.reason,
-                response.headers,
-                response,
-            )
-            response.close()
-            connection.close()
-            raise error
-        try:
-            yield response
-        finally:
-            response.close()
-            connection.close()
-        return
-    opener = urllib.request.build_opener(_RefuseRedirects())
-    try:
-        response = opener.open(request, timeout=timeout_s)  # noqa: S310  # nosec B310
-    except urllib.error.HTTPError as exc:
-        with contextlib.suppress(Exception):
-            exc.close()
-        raise
+        response.close()
+        connection.close()
+        raise error
     try:
         yield response
     finally:
         response.close()
+        connection.close()
 
 
 def _extract_usage(payload: Any) -> dict[str, int] | None:
