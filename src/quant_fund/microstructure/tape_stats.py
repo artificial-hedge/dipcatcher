@@ -41,8 +41,8 @@ def _size_pmf(hist: dict[str, int]) -> tuple[tuple[int, float], ...]:
             raise ValueError(f"unparseable size bucket {bucket!r}")
         lo_s, hi_s = m.groups()
         lo, hi = int(lo_s), (int(hi_s) if hi_s != "inf" else 2 * int(lo_s))
-        if not isinstance(count, (int, float)) or count < 0:
-            raise ValueError(f"size bucket {bucket!r} has bad count {count!r}")
+        if not isinstance(count, (int, float)) or not math.isfinite(float(count)) or count < 0:
+            raise ValueError(f"size bucket {bucket!r} count must be non-negative and finite")
         mid = max(1, int(round(0.5 * (lo + hi))))
         if count > 0:
             out.append((mid, float(count)))
@@ -104,17 +104,17 @@ def load_tape_stats(receipts_root: str | Path, ticker: str = "amzn") -> TapeStat
     if not isinstance(hist, dict):
         raise ValueError("round_lot receipt lacks real.size_hist")
     eps = real_em.get("events_per_s")
-    if not isinstance(eps, dict):
-        raise ValueError("event_matrix receipt lacks real.events_per_s")
+    if not isinstance(eps, dict) or not eps:
+        raise ValueError("event_matrix receipt lacks or has empty real.events_per_s")
     occ = real_sd.get("spread_occupancy")
-    if not isinstance(occ, dict):
-        raise ValueError("spread_dynamics receipt lacks real.spread_occupancy")
+    if not isinstance(occ, dict) or not occ:
+        raise ValueError("spread_dynamics receipt lacks or has empty real.spread_occupancy")
     mean_spread = float(_nonneg(real_sd.get("mean_spread_ticks"), "mean_spread_ticks"))
     return TapeStats(
         ticker=tag,
         size_pmf=_size_pmf(hist),
-        events_per_s={str(k): float(v) for k, v in eps.items()},
-        spread_occupancy={str(k): float(v) for k, v in occ.items()},
+        events_per_s={str(k): _nonneg(v, f"events_per_s[{k!r}]") for k, v in eps.items()},
+        spread_occupancy={str(k): _nonneg(v, f"spread_occupancy[{k!r}]") for k, v in occ.items()},
         mean_spread_ticks=mean_spread,
     )
 
