@@ -165,10 +165,10 @@ def _asof(day: int) -> datetime:
     return _AUDIT_START + timedelta(days=day)
 
 
-def _config(root: Path | None = None, **overrides: Any) -> AppConfig:
+def _config(root: Path, **overrides: Any) -> AppConfig:
     """Fresh default config on an isolated data root; dotted override keys use ``__``."""
     cfg = AppConfig()
-    cfg.data.root = Path(root) if root is not None else Path(tempfile.mkdtemp(prefix="audit_lake_"))
+    cfg.data.root = root
     cfg.data.source = "synthetic"
     for dotted, value in overrides.items():
         section, _, field_name = dotted.partition("__")
@@ -595,13 +595,14 @@ def _probe_interval_caps_turnover_infeasible_fails() -> bool:
             )
         ],
     )
-    cfg = _config()
-    return _raises(
-        OptimizationInfeasible,
-        lambda: _apply_forecast_interval_caps(
-            np.zeros(1), state, ["S00"], cfg, w_prev=np.array([0.9])
-        ),
-    )
+    with tempfile.TemporaryDirectory(prefix="audit_lake_") as tmp:
+        cfg = _config(Path(tmp))
+        return _raises(
+            OptimizationInfeasible,
+            lambda: _apply_forecast_interval_caps(
+                np.zeros(1), state, ["S00"], cfg, w_prev=np.array([0.9])
+            ),
+        )
 
 
 def _probe_causal_weight_panel_empty_dates() -> bool:
