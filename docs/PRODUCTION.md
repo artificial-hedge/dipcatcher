@@ -7,8 +7,10 @@ five minimum-evidence conditions that would have to hold before any live claim
 are listed in [`INSTITUTIONAL_READINESS.md`](INSTITUTIONAL_READINESS.md); none
 hold today.
 
-Use this page as the short checklist. The detailed procedures live in
-[`OPERATIONS_RUNBOOK.md`](OPERATIONS_RUNBOOK.md) (deploy, rollback, incident
+Use this page as the short checklist. Process start, stop, rollback, the
+kill-switch file, and log location live in
+[`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md). The longer procedures live
+in [`OPERATIONS_RUNBOOK.md`](OPERATIONS_RUNBOOK.md) (deploy, rollback, incident
 response, key rotation, checkpoint spine) and
 [`FX1_DEPLOY.md`](FX1_DEPLOY.md) (fx-1 harness service launch, durability,
 managed keys).
@@ -59,21 +61,30 @@ uv run dipcatcher api --host 127.0.0.1 --port 8000
 
 ### Container
 
-The image is built from the repository `Dockerfile` (builder + runtime stages,
-non-root user, healthcheck, loopback `CMD`):
+The image is built from the repository `Dockerfile` (pinned base, non-root
+user, `STOPSIGNAL SIGTERM`, liveness healthcheck). Start, stop, and rollback
+commands are in [`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md).
 
 ```bash
 docker build -t dipcatcher:local .
-docker run --rm -p 127.0.0.1:8000:8000 dipcatcher:local
+docker run --rm -p 127.0.0.1:8000:8000 \
+  -e QUANT_API_KEY \
+  -e DIPCATCHER_BIND_HOST=0.0.0.0 \
+  dipcatcher:local
 ```
 
-- [ ] The image contains `src/` and `configs/` only. It ships **no**
-      `receipts/` and no generated `data/`, so `/ready` fails closed until
-      those trees are mounted read-only.
-- [ ] To listen on `0.0.0.0`, set `QUANT_API_KEY` and override the container
-      command host explicitly; the default command stays on loopback.
+- [ ] The image contains the installed runtime, `src/`, `configs/`, the
+      liveness script, and the SLO file. It ships **no** `receipts/` and no
+      generated `data/`. `/app/data` is writable so readiness can create the
+      lake directories. `/ready` stays fail-closed until a data manifest and
+      a research receipt exist.
+- [ ] A published host port reaches the process only when it binds
+      `0.0.0.0`. That bind requires `QUANT_API_KEY`. The default bind is
+      loopback. The healthcheck runs inside the container and calls
+      `127.0.0.1`.
 - [ ] The container healthcheck is allowed to complete before the image is
-      promoted (CI does the same).
+      promoted (CI does the same). Liveness is `GET /health`. Readiness is
+      `GET /ready`.
 
 ### fx-1 harness service
 
@@ -132,11 +143,14 @@ at `base.yaml`. Secrets are supplied through the environment only. Copy
 | `FX1_API_KEY` | unset | Required before the fx-1 harness service will bind non-loopback. |
 | `FX1_API_HOST` / `FX1_API_PORT` | `127.0.0.1` / `8011` | Harness bind address. |
 | `MOONSHOT_API_KEY` | unset | Hosted Kimi K3 eval only (`make fx1-eval`). |
-| `DIPCATCHER_OBSERVE` | unset | Opt-in audit ledger / observability. |
-| `DIPCATCHER_OTEL_ENDPOINT` | `http://127.0.0.1:4318/v1/traces` | OTLP traces endpoint. |
-| `DIPCATCHER_METRICS_HOST` / `DIPCATCHER_METRICS_PORT` | `127.0.0.1` / `9464` | Metrics endpoint. |
+| `DIPCATCHER_OBSERVE` | unset | Opt-in audit ledger, metrics, and the alert loop. |
 | `DIPCATCHER_SIGSTORE_ID_TOKEN` | unset | Keyless signing of ledger tree heads; no token, no bundle. |
 | `DIPCATCHER_SIGSTORE_INSTANCE` | `production` | Sigstore instance selector. |
+
+The process contract for bind, port, logging, shutdown, metrics, the SLO
+file, and the kill-switch file is
+[`PRODUCTION_RUNBOOK.md`](PRODUCTION_RUNBOOK.md). The same names are listed
+in `.env.example`. Do not keep a second copy of those defaults here.
 
 - [ ] Every secret above is injected by the host's secret store, not baked
       into the image or committed.
