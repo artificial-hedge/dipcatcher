@@ -482,6 +482,7 @@ class LiveSession:
         client = client_order_id or _new_client_id()
         if not _CLIENT.fullmatch(client):
             raise LiveGateError("client_order_id must be 1..48 letters, digits, _ or -")
+        self._refuse_unconfirmed(client)
         existing = self._find(client)
         if existing is not None:
             return _public_order(existing, venue=self.venue, replayed=True)
@@ -536,6 +537,17 @@ class LiveSession:
             "submit", {"actor": who, "client_order_id": client, "status": placeholder["status"]}
         )
         return _public_order(placeholder, venue=self.venue, replayed=False)
+
+    def _refuse_unconfirmed(self, client: str) -> None:
+        """A lost submit keeps its id. A new id must not reach the broker."""
+        for row in self.orders:
+            if row["status"] != "inflight":
+                continue
+            if str(row["client_order_id"]) == client:
+                return
+            raise LiveGateError(
+                f"unconfirmed client_order_id {row['client_order_id']} is still open; no order sent"
+            )
 
     def _send(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
         try:

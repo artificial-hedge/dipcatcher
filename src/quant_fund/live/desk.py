@@ -300,14 +300,8 @@ class LiveDesk:
         _client(client)
         prior = self._by_client.get(client)
         if prior is not None:
-            order = self.orders[prior]
-            return self._envelope(
-                accepted=order.status not in {"denied", "rejected"},
-                status=order.status,
-                transmitted=order.transmitted,
-                idempotent=True,
-                order=order.as_dict(),
-            )
+            return self._replay(prior)
+        self._refuse_unconfirmed()
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
         self.marks[symbol] = px
@@ -359,8 +353,13 @@ class LiveDesk:
         self._reserve(symbol, side, qty, px)
         self._step({"op": "submit", "order_id": order.order_id, "qty": qty})
         self._sync_order(order)
-        order.transmitted = True
+        order.status = "unconfirmed"
+        order.transmitted = False
+        self._journal("intent", order.as_dict())
+        self._save()
         self._send(_ticket(order))
+        order.transmitted = True
+        self._sync_order(order)
         self._journal("transmit", order.as_dict())
         self._save()
         if self.arming.venue == "loopback":
@@ -655,6 +654,27 @@ class LiveDesk:
         order.lifecycle = state.status
         order.filled_qty = float(state.filled)
         order.status = _VISIBLE.get(state.status, state.status)
+
+    def _replay(self, order_id: str) -> dict[str, object]:
+        order = self.orders[order_id]
+        if order.status == "unconfirmed":
+            raise LiveDeskError(
+                f"client_order_id {order.client_order_id} is unconfirmed; no order sent"
+            )
+        return self._envelope(
+            accepted=order.status not in {"denied", "rejected"},
+            status=order.status,
+            transmitted=order.transmitted,
+            idempotent=True,
+            order=order.as_dict(),
+        )
+
+    def _refuse_unconfirmed(self) -> None:
+        for order in self.orders.values():
+            if order.status == "unconfirmed":
+                raise LiveDeskError(
+                    f"client_order_id {order.client_order_id} is unconfirmed; no order sent"
+                )
 
     def _store(self, order: DeskOrder) -> None:
         self.orders[order.order_id] = order
