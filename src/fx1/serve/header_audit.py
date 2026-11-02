@@ -1855,7 +1855,7 @@ def header_audit() -> dict[str, Any]:
     out: dict[str, Any] = {}
     with _audit_context():
         # Timeout/garbage probes use owned loopback BYOK fixtures.
-        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
         out.update(_timeout_parse_probes())
         out.update(_precedence_probes())
         out.update(_timeout_enforcement_probes())

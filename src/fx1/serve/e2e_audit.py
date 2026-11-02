@@ -47,8 +47,7 @@ _E2E_ENV = (
     "FX1_BYOK_BASE_URL",
     "FX1_BYOK_API_KEY",
     "FX1_BYOK_MODEL",
-    "FX1_BYOK_ALLOW_PRIVATE_NETWORKS",
-    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    "FX1_PRIVATE_ALLOW_CIDRS",
     "MOONSHOT_API_KEY",
 )
 _API_KEY = "e2e-probe-key"  # a probe string, not a credential
@@ -180,10 +179,9 @@ def e2e_audit() -> dict[str, bool]:
             {
                 "FX1_API_KEY": _API_KEY,
                 "FX1_BYOK_BASE_URL": f"http://127.0.0.1:{stub_port}/v1",
-                "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
-                # The job-webhook probe delivers to a loopback sink; production
-                # callbacks stay public-network-only unless opted in.
-                "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
+                # Loopback BYOK stub and webhook sink. Production stays
+                # public-network-only unless FX1_PRIVATE_ALLOW_CIDRS lists them.
+                "FX1_PRIVATE_ALLOW_CIDRS": "127.0.0.0/8,::1/128",
                 "FX1_BYOK_API_KEY": "stub-engine-key",
                 "FX1_BYOK_MODEL": "stub-v0",
             }

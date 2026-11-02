@@ -19,10 +19,13 @@ from fx1.webresearch.fetch import fetch_page
 from quant_fund.research.ots_anchor import stamp_ots, verify_ots
 from quant_fund.research.timestamp_anchor import stamp_timestamp, verify_timestamps
 from quant_fund.utils.outbound import (
+    PRIVATE_ALLOW_CIDRS_ENV,
     OutboundRefused,
     address_allowed,
+    address_permitted,
     directory_child,
     is_public_ip,
+    parse_allow_cidrs,
     public_addresses,
     read_http_redirects,
     repo_relative,
@@ -88,16 +91,22 @@ def test_private_opt_in_still_blocks_link_local_and_documentation() -> None:
 def test_webhook_literals_block_relay_and_metadata_even_when_opted_in(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.delenv(PRIVATE_ALLOW_CIDRS_ENV, raising=False)
     monkeypatch.delenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", raising=False)
     for url in ("http://192.88.99.1/hook", "http://[fec0::1]/hook", "http://169.254.169.254/"):
         with pytest.raises(ValueError):
             check_callback_url(url)
-    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
+    monkeypatch.setenv(PRIVATE_ALLOW_CIDRS_ENV, "10.0.0.0/8")
     assert check_callback_url("http://10.1.2.3/hook") == "http://10.1.2.3/hook"
+    with pytest.raises(ValueError):
+        check_callback_url("http://192.168.1.1/hook")
+    monkeypatch.setenv(PRIVATE_ALLOW_CIDRS_ENV, "0.0.0.0/0,169.254.0.0/16")
     with pytest.raises(ValueError):
         check_callback_url("http://169.254.169.254/latest/meta-data/")
     with pytest.raises(ValueError):
         check_callback_url("http://192.88.99.1/hook")
+    with pytest.raises(ValueError):
+        check_callback_url("http://192.0.2.1/hook")
 
 
 def test_fetch_page_connects_only_to_the_pinned_address(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -243,19 +252,71 @@ def test_shell_passthrough_is_fail_closed(monkeypatch: pytest.MonkeyPatch) -> No
     assert calls[0][1]["shell"] is True
 
 
-def test_harness_client_refuses_metadata_literals(monkeypatch: pytest.MonkeyPatch) -> None:
-    def boom(*args: object, **kwargs: object) -> None:
-        raise AssertionError("urlopen")
+def test_allowlist_parses_host_cidrs_and_hides_invalid_tokens() -> None:
+    import ipaddress
 
-    monkeypatch.setattr("fx1.serve.client.urllib.request.urlopen", boom)
-    with pytest.raises(HarnessTransportError):
-        _urllib_transport("GET", "http://169.254.169.254/latest/", None, {}, 1.0)
-    with pytest.raises(HarnessTransportError):
-        _urllib_transport("GET", "http://192.88.99.1/", None, {}, 1.0)
-    with pytest.raises(AssertionError):
+    networks = parse_allow_cidrs(" 10.0.0.0/8, ,10.1.2.3, ::1/128 ")
+    assert networks[0] == ipaddress.ip_network("10.0.0.0/8")
+    assert networks[1] == ipaddress.ip_network("10.1.2.3/32")
+    assert address_permitted(ipaddress.ip_address("10.1.2.3"), networks)
+    assert not address_permitted(ipaddress.ip_address("192.168.0.1"), networks)
+    assert address_permitted(ipaddress.ip_address("8.8.8.8"), ())
+    wide = parse_allow_cidrs("0.0.0.0/0,::/0")
+    for raw in ("169.254.169.254", "224.0.0.1", "192.0.2.1", "100.64.0.1", "::", "fe80::1"):
+        assert not address_permitted(ipaddress.ip_address(raw), wide)
+    assert address_permitted(ipaddress.ip_address("::1"), parse_allow_cidrs("::1/128"))
+    with pytest.raises(OutboundRefused, match="allowlist CIDR is invalid") as raised:
+        parse_allow_cidrs("not-a-cidr")
+    assert raised.value.__cause__ is None
+
+
+def test_harness_client_pins_resolved_addresses(monkeypatch: pytest.MonkeyPatch) -> None:
+    real_getaddrinfo = socket.getaddrinfo
+    dialed: list[tuple[str, int]] = []
+
+    def resolve(host: str, port: int, *args: object, **kwargs: object) -> list[tuple[object, ...]]:
+        if host == "public.example":
+            return [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port)),
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.35", port)),
+            ]
+        if host == "metadata.example":
+            return _answer("169.254.169.254", port)
+        if host == "mixed.example":
+            return [
+                *_answer("93.184.216.34", port),
+                *_answer("10.0.0.7", port),
+            ]
+        return real_getaddrinfo(host, port, *args, **kwargs)
+
+    def blocked(address: tuple[str, int], *args: object, **kwargs: object) -> None:
+        dialed.append(address)
+        raise OSError("blocked")
+
+    monkeypatch.setattr("quant_fund.utils.outbound.socket.getaddrinfo", resolve)
+    monkeypatch.setattr("quant_fund.utils.outbound.socket.create_connection", blocked)
+
+    for url in ("http://169.254.169.254/latest/", "http://192.88.99.1/"):
+        dialed.clear()
+        with pytest.raises(HarnessTransportError, match="destination address is not allowed"):
+            _urllib_transport("GET", url, None, {}, 1.0)
+        assert dialed == []
+
+    with pytest.raises(HarnessTransportError, match="harness transport fault"):
         _urllib_transport("GET", "http://192.168.1.1/", None, {}, 1.0)
-    with pytest.raises(AssertionError):
-        _urllib_transport("GET", "https://harness.invalid/health", None, {}, 1.0)
+    assert dialed == [("192.168.1.1", 80)]
+
+    dialed.clear()
+    with pytest.raises(HarnessTransportError, match="harness transport fault"):
+        _urllib_transport("GET", "https://public.example/health", None, {}, 1.0)
+    assert dialed == [("93.184.216.34", 443)]
+
+    dialed.clear()
+    with pytest.raises(HarnessTransportError, match="non-public"):
+        _urllib_transport("GET", "http://metadata.example/latest/", None, {}, 1.0)
+    with pytest.raises(HarnessTransportError, match="non-public"):
+        _urllib_transport("GET", "http://mixed.example/", None, {}, 1.0)
+    assert dialed == []
 
 
 class _Hop:

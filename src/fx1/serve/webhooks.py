@@ -24,7 +24,11 @@ import socket
 import ssl
 import urllib.parse
 
-from quant_fund.utils.outbound import address_allowed
+from quant_fund.utils.outbound import (
+    PRIVATE_ALLOW_CIDRS_ENV,
+    address_permitted,
+    parse_allow_cidrs,
+)
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -43,22 +47,12 @@ WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
-_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
-
-
-def _private_networks_allowed() -> bool:
-    """Return whether this process explicitly permits private callbacks."""
-    return os.environ.get(_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-    }
 
 
 def _address_permitted(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Public unicast, or RFC1918/loopback when the operator opted in."""
-    allow = _private_networks_allowed()
-    return address_allowed(address, allow_loopback=allow, allow_private=allow)
+    """Public unicast, plus hosts inside ``FX1_PRIVATE_ALLOW_CIDRS``."""
+    networks = parse_allow_cidrs(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, ""))
+    return address_permitted(address, networks)
 
 
 def _validate_literal_host(host: str) -> None:

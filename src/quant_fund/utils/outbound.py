@@ -8,6 +8,11 @@ name is never allowed to resolve into loopback, RFC1918, or link-local
 space. Link-local, multicast, reserved, unspecified, carrier-grade NAT,
 192.88.99.0/24, and fec0::/10 stay blocked even when private literals
 are opted in.
+
+``FX1_PRIVATE_ALLOW_CIDRS`` is a comma-separated CIDR allowlist. It adds
+only those networks on top of public unicast. Metadata, link-local,
+multicast, reserved, documentation, benchmark, and the legacy ranges
+above stay blocked when a listed network contains them.
 """
 
 from __future__ import annotations
@@ -19,19 +24,22 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 __all__ = [
+    "PRIVATE_ALLOW_CIDRS_ENV",
     "OutboundRefused",
     "address_allowed",
+    "address_permitted",
     "directory_child",
     "is_public_ip",
     "literal_destination_refusal",
     "open_pinned",
+    "parse_allow_cidrs",
     "pinned_connection",
     "public_addresses",
     "read_http",
@@ -39,6 +47,8 @@ __all__ = [
     "repo_file",
     "repo_relative",
 ]
+
+PRIVATE_ALLOW_CIDRS_ENV = "FX1_PRIVATE_ALLOW_CIDRS"
 
 ResolveFn = Callable[..., Any]
 
@@ -53,6 +63,18 @@ _RFC1918 = (
     ipaddress.ip_network("192.168.0.0/16"),
 )
 _ULA = (ipaddress.ip_network("fc00::/7"),)
+# Documentation, benchmarking, and other special-purpose ranges that Python
+# does not mark ``is_reserved``. An allowlist entry must not admit them.
+_NEVER_ALLOW = _LEGACY_SPECIAL + (
+    _CGNAT,
+    ipaddress.ip_network("192.0.0.0/24"),
+    ipaddress.ip_network("192.0.2.0/24"),
+    ipaddress.ip_network("198.18.0.0/15"),
+    ipaddress.ip_network("198.51.100.0/24"),
+    ipaddress.ip_network("203.0.113.0/24"),
+    ipaddress.ip_network("2001:db8::/32"),
+    ipaddress.ip_network("2001:10::/28"),
+)
 
 
 class OutboundRefused(ValueError):
@@ -127,6 +149,54 @@ def address_allowed(
     if _rfc1918_or_ula(address):
         return allow_private
     return is_public_ip(address)
+
+
+def _always_blocked(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Ranges an allowlist must not reopen. Loopback is reserved on IPv6."""
+    if address.is_link_local or address.is_multicast or address.is_unspecified:
+        return True
+    if address.is_reserved and not address.is_loopback:
+        return True
+    return any(address in network for network in _NEVER_ALLOW)
+
+
+def address_permitted(
+    address: ipaddress.IPv4Address | ipaddress.IPv6Address,
+    networks: Iterable[ipaddress.IPv4Network | ipaddress.IPv6Network],
+) -> bool:
+    """Public unicast, plus addresses that fall inside ``networks``.
+
+    Metadata, link-local, multicast, unspecified, reserved, documentation,
+    benchmark, carrier-grade NAT, 192.88.99.0/24, and fec0::/10 stay blocked
+    even when a network contains them. Loopback and RFC1918/ULA are allowed
+    only when a listed network contains them.
+    """
+    address = _unwrap(address)
+    if _always_blocked(address):
+        return False
+    if is_public_ip(address):
+        return True
+    return any(address in network for network in networks)
+
+
+def parse_allow_cidrs(
+    raw: str,
+) -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+    """Parse a comma-separated CIDR allowlist. Blank items are skipped.
+
+    A bare address is a single-host network. Invalid text fails closed
+    without echoing the token.
+    """
+    networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+    for item in raw.split(","):
+        text = item.strip()
+        if not text:
+            continue
+        try:
+            networks.append(ipaddress.ip_network(text, strict=False))
+        except ValueError:
+            raise OutboundRefused("allowlist CIDR is invalid") from None
+    return tuple(networks)
 
 
 def literal_destination_refusal(

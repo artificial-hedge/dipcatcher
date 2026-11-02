@@ -55,7 +55,7 @@ from fx1.sdk import (
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
-from quant_fund.utils.outbound import literal_destination_refusal
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -112,18 +112,19 @@ class HarnessCompatError(RuntimeError):
         self.code = code
 
 
-def _refuse_disallowed_literal(url: str) -> None:
-    """Block metadata and other non-routable literals before ``urlopen``.
+def _pinned_harness_exchange(
+    req: urllib.request.Request, timeout_s: float
+) -> tuple[int, dict[str, str], bytes]:
+    """Resolve once and dial that numeric address. Redirects stay as statuses.
 
-    Hostnames are left to the caller's transport so tests can stub DNS.
-    Operator LAN literals (loopback and RFC1918) stay allowed.
+    Loopback and RFC1918 literals stay allowed. Other hostnames must resolve
+    entirely to public addresses; ``localhost`` may resolve to loopback.
     """
-    host = urllib.parse.urlparse(url).hostname
-    if not host:
-        return
-    reason = literal_destination_refusal(host, allow_loopback=True, allow_private=True)
-    if reason:
-        raise HarnessTransportError(f"harness destination refused: {reason}")
+    try:
+        with open_pinned(req, timeout=timeout_s, allow_loopback=True, allow_private=True) as handle:
+            return int(handle.status), dict(handle.headers), handle.read()
+    except OutboundRefused as exc:
+        raise HarnessTransportError(f"harness destination refused: {exc}") from exc
 
 
 def _urllib_transport(
@@ -142,11 +143,9 @@ def _urllib_transport(
     elif payload is not None:
         data = json.dumps(payload).encode()
         req_headers["Content-Type"] = "application/json"
-    _refuse_disallowed_literal(url)
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
-            return resp.status, dict(resp.headers), resp.read()
+        return _pinned_harness_exchange(req, timeout_s)
     except urllib.error.HTTPError as exc:
         # HTTPError owns the rejected response/socket.  The normal ``with``
         # path cannot close it because urlopen raises before it is entered.
