@@ -55,6 +55,7 @@ from fx1.sdk import (
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
+from quant_fund.utils.secrets import redact_text
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -141,13 +142,17 @@ def _urllib_transport(
             with contextlib.suppress(Exception):
                 exc.close()
     except urllib.error.URLError as exc:
-        raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
+        raise HarnessTransportError(
+            redact_text(f"harness unreachable at {url}: {exc.reason}")
+        ) from exc
     except (http.client.HTTPException, OSError) as exc:
         # socket faults before a status line exists — e.g. a mid-upload
         # reset when the server rejects early on headers alone (413
         # body-cap) — are transport errors under the same contract as
         # URLError; don't leak raw errno classes to callers.
-        raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
+        raise HarnessTransportError(
+            redact_text(f"harness transport fault at {url}: {exc}")
+        ) from exc
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
@@ -295,7 +300,9 @@ class HarnessClient:
     ) -> None:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"base_url must be http(s)://host[:port], got {base_url!r}")
+            raise ValueError(
+                "base_url must be http(s)://host[:port], got " + repr(redact_text(base_url))
+            )
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
         if max_retries < 0:

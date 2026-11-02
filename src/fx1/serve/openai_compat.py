@@ -48,6 +48,7 @@ from pydantic import (
 from fx1.serve.backends import byok_base_url_problem
 from fx1.serve.receipt_store import SHA256_HEX
 from fx1.serve.webhooks import check_callback_url
+from quant_fund.utils.secrets import redact_text
 
 if TYPE_CHECKING:
     from fx1.serve.journal import JobJournal
@@ -2893,7 +2894,8 @@ def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]
     url = line.get("url")
     if url != endpoint:
         raise OpenAICompatError(
-            f"{where}: url {url!r} does not match the batch endpoint {endpoint!r}"
+            f"{where}: url {redact_text(str(url))!r} does not match the batch endpoint "
+            f"{redact_text(endpoint)!r}"
         )
     body = line.get("body")
     if not isinstance(body, dict):

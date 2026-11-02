@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from quant_fund.observe.flags import observe_enabled
+from quant_fund.utils.secrets import redact_log_value, redact_text
 
 _correlation: ContextVar[str | None] = ContextVar("dipcatcher_correlation_id", default=None)
 _sink: list[dict[str, Any]] | None = None
@@ -34,39 +35,22 @@ def set_log_sink(sink: list[dict[str, Any]] | None) -> None:
 def log_event(event: str, **fields: Any) -> None:
     """Emit one JSON object. Returns immediately when observability is off.
 
-    Field names ending in ``_key``, ``_token``, or ``_secret``, and names
-    containing ``password``, are replaced with ``[redacted]``.
+    Secret field names are replaced with ``[redacted]``. Other string
+    values are scrubbed for URL userinfo, DSNs, secret query parameters,
+    bearer tokens, and known key prefixes.
     """
     if not observe_enabled():
         return
     record: dict[str, Any] = {
         "ts": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "level": str(fields.pop("level", "info")),
-        "event": event,
+        "event": redact_text(event),
         "correlation_id": get_correlation_id(),
         "service": "dipcatcher",
     }
     for key, value in fields.items():
-        record[str(key)] = "[redacted]" if _secret_field(str(key)) else value
+        record[str(key)] = redact_log_value(str(key), value)
     if _sink is not None:
         _sink.append(record)
         return
     sys.stderr.write(json.dumps(record, sort_keys=True, default=str) + "\n")
-
-
-def _secret_field(key: str) -> bool:
-    lowered = key.lower().replace("-", "_")
-    if "password" in lowered or lowered in {
-        "key",
-        "token",
-        "secret",
-        "authorization",
-        "apikey",
-        "api_key",
-        "private_key",
-        "privatekey",
-        "session_key",
-        "access_token",
-    }:
-        return True
-    return lowered.endswith(("_key", "_token", "_secret"))
