@@ -258,3 +258,37 @@ apps in this branch do not unwrap IPv4-mapped addresses. On those two apps,
 - The harness gaps above remain until the pending proposal is applied and
   `src/fx1/serve/api.py` is re-signed. This branch does not change that file,
   its signature, crown-jewel verifiers, or workflow `runs-on` labels.
+
+## Outbound clients
+
+`quant_fund.utils.outbound.vetted_addresses` is the shared selector.
+`literal_connect_address` is the same classification without DNS, for a
+check that must not resolve yet. A decimal, octal, hex, short, trailing-dot,
+or compatibility-folded IPv4 literal is parsed before `getaddrinfo`. 6to4,
+Teredo, NAT64 `64:ff9b::/96`, IPv4-translated, and deprecated IPv4-compatible
+embeddings are refused whole. The caller dials one returned numeric address.
+
+| Caller | How it dials |
+|---|---|
+| `open_pinned`, `read_http`, `read_http_redirects`, `public_addresses` | `vetted_addresses` with the boolean loopback/private flags |
+| BYOK (`backends._byok_resolved_addresses`) | `vetted_addresses` and `FX1_PRIVATE_ALLOW_CIDRS` before DNS. Connect uses `addresses[0]` |
+| Unflagged OpenAI and local-engine completion (`_openai_urlopen`) | Same pin. Loopback and RFC1918/ULA literals, and the name `localhost`, stay dialable. Any other name must be public. `http_proxy` and `https_proxy` are not consulted |
+| Webhooks | `literal_connect_address` at `check_callback_url`. `vetted_addresses` again at delivery. `_post_once` dials that address |
+| `quant_fund.data.concurrent_io` | `public_addresses` on every pooled hop. A checkout without an address resolves the same way, then `pinned_connection` |
+| `quant_fund.live.brokers.urllib_transport` | `open_pinned`. Redirects are not followed. Alpaca live still refuses before the socket |
+| `quant_fund.observe.tracing._export` | `vetted_addresses` with loopback literals allowed, then `pinned_connection`. A refused collector is an `otel_export` error and does not raise |
+| `src/fx1/serve/client.py` | `open_pinned` (`allow_loopback`, `allow_private`) |
+| `src/fx1/webresearch` | `open_pinned` / `read_http` |
+| Research witnesses and `scripts/vendor_http.py` | `read_http` / `read_http_redirects` |
+| `src/fx1/serve/e2e_audit.py`, `scripts/fx1_goldenpath.py` | `open_pinned` with loopback allowed. The URLs are `127.0.0.1` plus a port this process bound |
+
+### Exemptions
+
+- `scripts/verify_auditor_bundle.py` calls `urllib.request.urlopen` on the fixed URL `https://rekor.sigstore.dev/api/v1/log/publicKey`. The script is a second verifier and imports nothing from `quant_fund`. The host is not caller input. A DNS rebind of that name is the residual.
+- `third_party/kronos/examples/get_akshare_date_2024-2025_x.py` and `get_date_new.py` call `requests.get` on fixed AkShare hosts. They are vendored examples. Product code does not import them.
+- `src/fx1/serve/jobs_audit.py`, `src/fx1/serve/idem_audit.py`, and `tests/unit/fx1_serve/test_harness_idempotency_races.py` construct `httpx.AsyncClient` with `ASGITransport`. The client stays in process. There is no DNS and no socket.
+- `tests/fx1/test_goldenpath.py` and `tests/examples/test_fx1_quickstart_startup.py` call `urlopen` on `http://127.0.0.1` servers those tests bind.
+- `src/quant_fund/data/adapters/hf_ohlcv_1m.py` `stream_https` takes an injected opener and is covered by tests. The production download is `http_download` → `pooled_stream` → `public_addresses`. `stream_https` is pinned at McCabe 12, so this change does not rewrite it.
+- `src/fx1/serve/api.py` imports `urllib.request` and does not open a connection. The file is hash-pinned and is not modified here.
+- `quant_fund.paper.trading_session` forbids importing `urllib`, `requests`, `httpx`, and `aiohttp`. It has no outbound client.
+- No `aiohttp` call site exists in this repo.
