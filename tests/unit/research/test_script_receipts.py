@@ -259,147 +259,15 @@ _KIND_DISPATCHED_SCHEMAS = frozenset(
 )
 #: Documentary receipt schemas — these receipts carry an audit/observation
 #: record rather than a deep mathematical derivation. They verify on seal
-#: well-formedness (caller of ``verify_receipt_payload``) and on the absence
-#: of a forged ``schema`` tag, but they do not re-derive a headline claim
-#: from the receipt's own embedded detail because no headline claim exists.
-#: An entry here is a deliberate act: either the schema describes a process
-#: audit (who ran what, with what fixture) and the receipt is the audit log,
-#: or it describes a benchmark fixture that the bench harness treats as
-#: authoritative ground truth (the bench re-derives the deep check inside
-#: its own lane; the receipt is the catalog index for that fixture). Adding
-#: a schema here must be paired with a comment naming the producer.
+#: well-formedness and do not re-derive a headline claim. Envelope and
+#: measurement schemas that now have a contract in ``SCRIPT_RECEIPT_CONTRACTS``
+#: are not listed here.
 _DOCUMENTARY_SCHEMAS = frozenset(
     {
-        # ---- audit receipts (one per subsystem; the subsystem's lane is the
-        #      deep-check, the receipt is the audit log) ----
-        "alert_budget.v1",  # alert-budget sweep (runtime budget governance)
-        "anthropic_sdk_audit.v1",  # fx1 anthropic SDK audit lane
-        "api_audit.v1",  # fx1 serve/api audit lane
-        "api_fuzz.v1",  # fx1 serve/api fuzz lane
-        "asof_audit.v1",  # asof policy audit lane
-        "attestation_audit.v1",  # attestation gate audit lane
-        "auth_audit.v1",  # fx1 auth_audit lane
-        "backend_parity.v1",  # backend parity lane
-        "bank_audit.v1",  # bank regime audit lane
-        "boundary_audit.v1",  # boundary audit lane
-        "byok_audit.v1",  # BYOK policy audit lane
-        "cache_audit.v1",  # fx1 cache audit lane
-        "cap_audit.v1",  # fx1 cap_audit lane
-        "capability_audit.v1",  # capability qualification audit lane
-        "causality_scan.v1",  # causality scan bench
-        "cli_audit.v1",  # fx1 CLI audit lane
-        "client_audit.v1",  # fx1 client audit lane
-        "contamination_audit.v1",  # contamination scan audit lane
-        "contract_probe.v1",  # contract probe audit lane
-        "corpus_audit.v1",  # corpus audit lane
-        "dip_audit.v1",  # dip-bench audit lane
-        "dip_run_audit.v1",  # dip-run audit lane
-        "disclosure_audit.v1",  # disclosure audit lane
-        "dispatch_audit.v1",  # dispatch audit lane
-        "doctor_audit.v1",  # doctor audit lane
-        "drain_audit.v1",  # fx1 drain audit lane
-        "ds_audit.v1",  # dataset audit lane
-        "duration_check.v1",  # duration check bench
-        "e2e_audit.v1",  # fx1 e2e audit lane
-        "em_audit.v1",  # em-bench audit lane
-        "engine_fuzz.v1",  # fx1 engine fuzz lane
-        "error_shape.v1",  # error-shape bench
-        "eval_core_audit.v1",  # eval-core audit lane
-        "eval_lifecycle_audit.v1",  # fx1 eval-lifecycle audit lane
-        "ext_bench_audit.v1",  # ext-bench audit lane
-        "fault_audit.v1",  # fx1 fault audit lane
-        "forecast_core_audit.v1",  # forecast-core audit lane
-        "forecast_data_audit.v1",  # forecast-data audit lane
-        "forecast_infra_audit.v1",  # forecast-infra audit lane
-        "fx1_contract_audit.v1",  # fx1 contract audit lane
-        "fx1_tail_audit.v1",  # fx1 tail-audit lane
-        "grad_fidelity.v1",  # grad-fidelity bench
-        "harness_audit.v1",  # harness audit lane
-        "hmm_stability.v1",  # hmm-stability bench
-        "hmm_verify.v1",  # hmm-verify bench
-        "honesty_audit.v1",  # honesty audit lane
-        "hypotheses_audit.v1",  # hypotheses audit lane
-        "inherit_audit.v1",  # inherit audit lane
-        "jobs_audit.v1",  # fx1 jobs audit lane
-        "journal_audit.v1",  # journal audit lane
-        "kill_audit.v1",  # kill audit lane
-        "label_horizon_map.v1",  # label-horizon map bench
-        "label_stability.v1",  # label-stability bench
-        "lane_receipt.v1",  # lane receipt envelope
-        "ledger_audit.v1",  # ledger audit lane
-        "lineage_dag.v1",  # lineage DAG bench
-        "map_parity.v1",  # map parity bench
-        "masking_audit.v1",  # masking audit lane
-        "meta_model.v1",  # meta-model synth fixture
-        "middleware_audit.v1",  # middleware audit lane
-        "modelcard_audit.v1",  # modelcard audit lane
-        "mrm_audit.v1",  # MRM audit lane
-        "native_conformance.v1",  # native conformance bench
-        "oai_sdk_audit.v1",  # fx1 openai SDK audit lane
-        "ops_audit.v1",  # fx1 ops audit lane
-        "options_audit.v1",  # options audit lane
-        "parity_audit.v1",  # fx1 parity audit lane
-        "parity_leak_audit.v1",  # parity-leak audit lane
-        "perf_audit.v1",  # fx1 perf audit lane
-        "pipeline_audit.v1",  # pipeline audit lane
-        "pipeline_flat_audit.v1",  # pipeline flat audit lane
-        "prereg_seal.v1",  # prereg seal envelope
-        "promotion_gate.v1",  # promotion gate contract
-        "quality_audit.v1",  # quality audit lane
-        "queue_class.v1",  # queue-class bench
-        "queue_fate.v1",  # queue-fate bench
-        "queue_jump.v1",  # queue-jump bench
-        "queue_occupancy.v1",  # queue-occupancy bench
-        "quota2_audit.v1",  # fx1 quota2 audit lane
-        "receipts_audit.v1",  # receipts audit lane
-        "replay_audit.v1",  # fx1 replay audit lane
-        "report_audit.v1",  # report audit lane
-        "retrieval_audit.v1",  # fx1 retrieval audit lane
-        "reward_audit.v1",  # reward audit lane
-        "rt_audit.v1",  # rt audit lane
-        "rubric_audit.v1",  # rubric audit lane
-        "run_audit.v1",  # run audit lane
-        "sbom_audit.v1",  # sbom audit lane
-        "schema_drift.v1",  # schema drift bench
-        "schema_fingerprint.v1",  # schema fingerprint bench
-        "sdk_audit.v1",  # fx1 SDK audit lane
-        "seed_audit.v1",  # seed audit lane
-        "serve_audit.v1",  # fx1 serve audit lane
-        "side_imbalance.v1",  # side-imbalance bench
-        "sigkernel_mmd.v1",  # sigkernel-MMD bench
-        "sim_sensitivity.v1",  # sim-sensitivity bench
-        "sources_audit.v1",  # sources audit lane
-        "spec_audit.v1",  # fx1 spec audit lane
-        "stack_invariance.v1",  # stack-invariance bench
-        "stack_watch.v1",  # stack-watch synth fixture
-        "sweep_bound.v1",  # sweep-bound bench
-        "tail_quota.v1",  # tail-quota bench
-        "tape_surgery.v1",  # tape-surgery bench
-        "timepart_audit.v1",  # timepart audit lane
-        "trade_decomp.v1",  # trade-decomp bench
-        "train_infra_audit.v1",  # train-infra audit lane
-        "train_receipt_audit.v1",  # train-receipt audit lane
-        "trust_step.v1",  # trust-step bench
-        "ts_reasoning_audit.v1",  # ts-reasoning audit lane
-        "usage_audit.v1",  # fx1 usage audit lane
-        "validator_fuzz.v1",  # validator-fuzz bench
-        "vine_audit.v1",  # vine audit lane
-        "vine_dominance.v1",  # vine-dominance bench
-        "vine_panel.v1",  # vine-panel bench
-        "vs_audit.v1",  # fx1 vs audit lane
-        "warmup_spec.v1",  # warmup spec bench
         "forward_record_preregistration.v1",  # preregistration receipt (catalog index)
-        "webhook_audit.v1",  # fx1 webhook audit lane
-        # ---- micro-bench / sim / shape receipts (one-off bench indices) ----
-        "cancel_gradient.v1",  # cancel-gradient bench
-        "cancel_lead.v1",  # cancel-lead bench
-        "diversity.v1",  # diversity bench
-        "imbalance_predict.v1",  # imbalance-predict bench
-        "initiative_fade.v1",  # initiative-fade bench
-        "intraday_exec.v1",  # intraday-exec bench
-        "lob_invariants.v1",  # lob-invariants bench
-        "decay_watch.v1",  # decay-watch synth fixture
-        "attribution.v1",  # attribution bench
+        "lane_receipt.v1",  # lane receipt envelope
+        "prereg_seal.v1",  # prereg seal envelope
+        "sigkernel_mmd.v1",  # sigkernel-MMD bench
     }
 )
 
@@ -488,3 +356,81 @@ def test_documentary_schemas_dont_overlap_other_covers() -> None:
         assert schema not in _KIND_DISPATCHED_SCHEMAS, (
             f"{schema} is in both _KIND_DISPATCHED_SCHEMAS and _DOCUMENTARY_SCHEMAS — pick one."
         )
+
+
+def test_lobster_forged_match_rate_caught() -> None:
+    payload = _load("lobster_replay_amzn_2012-06-21.json")
+    forged = copy.deepcopy(payload)
+    forged["reconstruction"]["match_rate"] = 0.5
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "match_rate_not_n_match_over_n_compared" in errors
+    assert "engine_valid_on_emitted_mismatch" in errors
+
+
+def test_queue_priority_forged_comparison_caught() -> None:
+    payload = _load("queue_priority.json")
+    forged = copy.deepcopy(payload)
+    forged["comparison"]["p_fill_overall_iid"] = 0.99
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "comparison_mismatch:p_fill_overall_iid" in errors
+
+
+def test_calibration_drill_forged_eval_length_caught() -> None:
+    payload = _load("calibration_audit_drill.json")
+    forged = copy.deepcopy(payload)
+    forged["params"]["n_eval"] = forged["params"]["n_eval"] + 1
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "n_eval_not_echoed" in errors
+
+
+def test_envelope_probe_committed_receipts_rederive() -> None:
+    """Every newly registered envelope schema passes on its committed body."""
+    from quant_fund.research.script_receipts import (
+        envelope_probe_contract_errors,
+        vine_dominance_receipt_contract_errors,
+        vine_panel_receipt_contract_errors,
+    )
+
+    covered = {
+        envelope_probe_contract_errors,
+        vine_dominance_receipt_contract_errors,
+        vine_panel_receipt_contract_errors,
+    }
+    seen = 0
+    for path in sorted(RECEIPTS.glob("*.json")):
+        if path.name.endswith(".seal.json"):
+            continue
+        payload = json.loads(path.read_text())
+        schema = payload.get("schema")
+        key = schema if isinstance(schema, str) else payload.get("kind")
+        if SCRIPT_RECEIPT_CONTRACTS.get(key) not in covered:
+            continue
+        seen += 1
+        assert script_receipt_contract_errors(schema, payload) == [], path.name
+    assert seen >= 130
+
+
+def test_envelope_probe_forged_ok_caught() -> None:
+    payload = _load("api_audit.json")
+    forged = copy.deepcopy(payload)
+    forged["claim"]["ok"] = False
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "ok_mismatch" in errors
+
+
+def test_envelope_probe_forged_violation_tally_caught() -> None:
+    payload = _load("cache_audit.json")
+    forged = copy.deepcopy(payload)
+    forged["claim"]["n_violations"] = 1
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "n_violations_mismatch" in errors
+    assert "interpretation_echo_mismatch:n_violations" in errors
+    assert "verdict_ok_with_violations" in errors
+
+
+def test_vine_panel_forged_probe_count_caught() -> None:
+    payload = _load("vine_panel.json")
+    forged = copy.deepcopy(payload)
+    forged["claim"]["n_probes"] = forged["claim"]["n_probes"] + 1
+    errors = script_receipt_contract_errors(forged["schema"], forged)
+    assert "n_probes_mismatch" in errors
