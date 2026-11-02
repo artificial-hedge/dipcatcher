@@ -7179,6 +7179,10 @@
       "src": "quant_fund.live.brokers"
     },
     {
+      "dst": "quant_fund.live.errors",
+      "src": "quant_fund.live.config"
+    },
+    {
       "dst": "quant_fund.pretrade.config",
       "src": "quant_fund.live.config"
     },
@@ -76360,7 +76364,7 @@
     },
     {
       "dst": "quant_fund.live",
-      "imports": 19,
+      "imports": 20,
       "src": "quant_fund.live"
     },
     {
