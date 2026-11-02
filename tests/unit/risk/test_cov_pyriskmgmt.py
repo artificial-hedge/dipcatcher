@@ -58,11 +58,10 @@ def test_portfolio_returns_rejects_bad_shapes() -> None:
         portfolio_returns(np.zeros((10, 2)), np.ones(3))
 
 
-def test_portfolio_returns_sanitizes_nonfinite_values() -> None:
+def test_portfolio_returns_rejects_nonfinite_values() -> None:
     returns = np.array([[0.01, np.nan], [np.inf, 0.02], [-0.01, 0.0]])
-    out = portfolio_returns(returns, np.array([1.0, np.nan]))
-    assert out.shape == (3,)
-    assert np.isfinite(out).all()
+    with pytest.raises(ValueError, match="asset returns and weights must be finite"):
+        portfolio_returns(returns, np.array([1.0, np.nan]))
 
 
 @pytest.mark.parametrize("method", ["historical", "gaussian", "ewma", " HISTORICAL "])

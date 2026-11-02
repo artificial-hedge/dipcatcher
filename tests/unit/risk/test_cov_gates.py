@@ -100,13 +100,13 @@ def test_dd_halt_passes_a_monotone_winner() -> None:
     assert np.allclose(dd_halt(r, limit=0.05), r)
 
 
-def test_dd_remaining_leverage_halts_and_ignores_nonfinite_returns() -> None:
+def test_dd_remaining_leverage_halts_on_breach_and_nonfinite_returns() -> None:
     lev = dd_remaining_leverage(np.full(10, -0.01), limit=0.05, cushion=0.005)
     assert lev[-1] == 0.0
 
-    # A non-finite print cannot move equity, so the budget is preserved.
+    # A non-finite print halts the rest of the path. It does not stay fully levered.
     lev_nan = dd_remaining_leverage(np.array([np.nan, 0.0, 0.0]), limit=0.05)
-    assert np.allclose(lev_nan, 1.0)
+    assert np.all(lev_nan == 0.0)
 
 
 def test_es_leverage_fails_closed_when_tail_is_unmeasurable() -> None:

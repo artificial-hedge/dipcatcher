@@ -6,7 +6,7 @@ from quant_fund.execution.order_recon import Order, OrderFillLedger, OrderLedger
 
 
 def test_order_intake_rejects_invalid_quantity_and_identity() -> None:
-    ledger = OrderFillLedger()
+    ledger = OrderFillLedger(accept_orders=True)
     invalid_orders = (
         Order("order-1", "SYNTH", "BUY", -1.0),
         Order("order-2", "SYNTH", "BUY", float("nan")),

@@ -58,7 +58,7 @@ def test_pooled_request_closes_socket_on_unexpected_error() -> None:
     conn = _DeadConn()
     pool.checkout = lambda *_args, **_kwargs: conn  # type: ignore[method-assign]
     with pytest.raises(RuntimeError, match="exchange failed"):
-        pooled_request("GET", "http://pool.test/x", timeout=1, max_bytes=32, pool=pool)
+        pooled_request("GET", "http://127.0.0.1/x", timeout=1, max_bytes=32, pool=pool)
     assert conn.closed is True
 
 

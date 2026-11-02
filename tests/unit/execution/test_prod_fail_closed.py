@@ -21,7 +21,7 @@ T0 = datetime(2026, 1, 2, tzinfo=UTC)
 
 
 def _ledger() -> OrderFillLedger:
-    return OrderFillLedger(endpoint_kind="paper", starting_cash=1_000.0)
+    return OrderFillLedger(endpoint_kind="paper", starting_cash=1_000.0, accept_orders=True)
 
 
 def _order(oid: str = "o1", qty: float = 10.0, sec: str = "SEC_A") -> Order:

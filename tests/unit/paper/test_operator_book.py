@@ -231,7 +231,7 @@ def test_unsupported_book_is_not_guessed(tmp_path, monkeypatch: pytest.MonkeyPat
 
 
 def test_ledger_flatten_is_deterministic(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    ledger = OrderFillLedger(starting_cash=1000.0)
+    ledger = OrderFillLedger(starting_cash=1000.0, accept_orders=True)
     ledger.submit(Order(order_id="work", security_id="A", side="BUY", quantity=1.0))
     ledger._computed_cash = 1000.0
     ledger._computed_positions["A"] = 2.0
