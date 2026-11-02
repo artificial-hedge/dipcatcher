@@ -162,6 +162,131 @@ class BrokerSnapshot:
     slot: str
 
 
+_RESTART_QTY_EPS = 1e-9
+
+
+def _require_restart_mapping(state: dict[str, Any], key: str) -> dict[str, Any]:
+    """Refuse a restart blob that omits a position or mark map."""
+    if key not in state or state[key] is None:
+        raise ValueError(f"restored broker state missing required {key!r} key")
+    raw = state[key]
+    if not isinstance(raw, dict):
+        raise ValueError(f"restored broker {key} must be a dict")
+    return raw
+
+
+def _require_open_order_rows(state: dict[str, Any]) -> list[Any]:
+    """Refuse a restart that would treat a missing working-order list as empty."""
+    if "open_orders" not in state or state["open_orders"] is None:
+        raise ValueError("restored broker state missing required 'open_orders' key")
+    raw = state["open_orders"]
+    if not isinstance(raw, list):
+        raise ValueError("restored open_orders must be a list")
+    return raw
+
+
+def _working_order_sets(history: list[OrderRecord]) -> tuple[set[str], set[str]]:
+    """Return ``(resting, partial)`` ids still working after ``history``.
+
+    A one-shot partial (never rested) drops its remainder on purpose. A limit
+    that rested, then filled only in part, still owes that residual.
+    """
+    resting: set[str] = set()
+    partials: set[str] = set()
+    for record in history:
+        order_id = record.order.order_id
+        status = record.order.status
+        fill = record.fill
+        if fill is None:
+            if status in (OrderStatus.CANCELLED, OrderStatus.REJECTED):
+                resting.discard(order_id)
+                partials.discard(order_id)
+            else:
+                resting.add(order_id)
+                if status is OrderStatus.PARTIAL:
+                    partials.add(order_id)
+            continue
+        if fill.is_partial and order_id in resting:
+            partials.add(order_id)
+            resting.add(order_id)
+            continue
+        resting.discard(order_id)
+        partials.discard(order_id)
+    return resting, partials
+
+
+def _refuse_dropped_working_orders(history: list[OrderRecord] | None, open_ids: set[str]) -> None:
+    """Halt when a persisted book drops a residual or invents a working order."""
+    if history is None:
+        return
+    resting, partials = _working_order_sets(history)
+    missing_partials = sorted(partials - open_ids)
+    if missing_partials:
+        joined = ", ".join(missing_partials)
+        raise ValueError(f"restored broker dropped partial-fill residual for {joined}")
+    missing = sorted(resting - open_ids)
+    if missing:
+        raise ValueError("restored broker dropped open order for " + ", ".join(missing))
+    stale = sorted(open_ids - resting)
+    if stale:
+        raise ValueError("restored broker stale open order for " + ", ".join(stale))
+
+
+def _positions_from_fills(history: list[OrderRecord]) -> dict[str, float]:
+    """Replay each fill id once, matching ``from_state`` receipt de-duplication."""
+    positions: dict[str, float] = {}
+    seen: set[str] = set()
+    for record in history:
+        fill = record.fill
+        if fill is None:
+            continue
+        fill_id = str(fill.fill_id)
+        if fill_id in seen:
+            continue
+        seen.add(fill_id)
+        signed = fill.quantity if record.order.side is OrderSide.BUY else -fill.quantity
+        sid = str(fill.security_id)
+        positions[sid] = positions.get(sid, 0.0) + signed
+    return positions
+
+
+def _refuse_share_fill_mismatch(
+    history: list[OrderRecord] | None, shares: dict[str, float]
+) -> None:
+    """Halt when declared shares disagree with the persisted fill tape.
+
+    A book with no fills may still declare a position (a legacy injection, or
+    a capital-free shadow slot whose shares are targets). There is no tape to
+    contradict that declaration.
+    """
+    if history is None:
+        return
+    expected = _positions_from_fills(history)
+    if not expected:
+        return
+    for sid in sorted(set(expected) | set(shares)):
+        got = float(shares.get(sid, 0.0))
+        want = float(expected.get(sid, 0.0))
+        if abs(got - want) > _RESTART_QTY_EPS:
+            raise ValueError(f"restored broker shares do not match fill history for {sid}")
+
+
+def _refuse_unmarked_holdings(shares: dict[str, float], marks: dict[str, float]) -> None:
+    for sid, qty in shares.items():
+        if abs(float(qty)) <= _RESTART_QTY_EPS:
+            continue
+        if str(sid) not in marks:
+            raise ValueError(f"restored broker missing market mark for held security: {sid}")
+
+
+def _audit_restart_book(broker: SimulatedBroker, raw_history: Any) -> None:
+    """Cross-check a restored book. Legacy files omit ``history`` entirely."""
+    persisted = broker.history if isinstance(raw_history, list) else None
+    _refuse_dropped_working_orders(persisted, set(broker.open_orders))
+    _refuse_share_fill_mismatch(persisted, broker.shares)
+    _refuse_unmarked_holdings(broker.shares, broker.last_marks)
+
+
 @dataclass
 class SimulatedBroker:
     """Paper broker with cash/positions. Shadow slot holds weights only (no capital)."""
@@ -815,6 +940,9 @@ class SimulatedBroker:
 
         Older state files did not persist records; their counters are retained
         as a baseline while newly generated records are appended normally.
+        ``shares``, ``open_orders``, and ``last_marks`` are required. A missing
+        book is not treated as flat, and a partial residual that is absent from
+        ``open_orders`` halts the restore.
         """
         initial_cash = float(state.get("initial_cash", state.get("cash", 0.0)))
         if not np.isfinite(initial_cash) or initial_cash < 0.0:
@@ -840,7 +968,8 @@ class SimulatedBroker:
         broker.cash = float(state["cash"])
         if not np.isfinite(broker.cash):
             raise ValueError("restored broker cash must be finite")
-        broker.shares = {str(k): float(v) for k, v in dict(state.get("shares") or {}).items()}
+        raw_shares = _require_restart_mapping(state, "shares")
+        broker.shares = {str(k): float(v) for k, v in raw_shares.items()}
         if any(not np.isfinite(value) for value in broker.shares.values()):
             raise ValueError("restored broker shares must be finite")
         counts = {
@@ -891,15 +1020,14 @@ class SimulatedBroker:
             if int(state.get("n_fills", len(broker.fills))) != len(broker.fills):
                 raise ValueError("broker history/fill count mismatch")
 
-        raw_open = state.get("open_orders") or []
-        if not isinstance(raw_open, list):
-            raise ValueError("restored open_orders must be a list")
+        raw_open = _require_open_order_rows(state)
         try:
             restored_orders = [Order.model_validate(item) for item in raw_open]
         except (TypeError, ValueError) as exc:
             raise ValueError("restored open_orders are invalid") from exc
         broker.open_orders = {o.order_id: o for o in restored_orders}
 
-        marks = state.get("last_marks") or {}
+        marks = _require_restart_mapping(state, "last_marks")
         broker.mark({str(k): float(v) for k, v in marks.items()})
+        _audit_restart_book(broker, raw_history)
         return broker

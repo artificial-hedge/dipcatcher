@@ -187,11 +187,12 @@ class LiveLedger:
             if expects and not self._by_order.get(order_id)
         )
         if self._declared_cash is None or self._declared_positions is None:
+            # No broker statement was supplied. That is not a flat, clean book.
             drift: dict[str, Any] = {
                 "declared": False,
                 "cash_drift": None,
                 "position_drift": {},
-                "alarm": False,
+                "alarm": True,
             }
         else:
             cash_drift = abs(self._cash - self._declared_cash)
