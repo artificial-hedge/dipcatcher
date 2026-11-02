@@ -4175,7 +4175,7 @@
     "tests/unit/microstructure/test_session_receipt_keys.py::test_session_l2_synth_receipt_contains_every_session_key": 0.2,
     "tests/unit/microstructure/test_session_receipt_keys.py::test_session_receipt_keys_frozenset_nonempty": 0.0006433640003251639,
     "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_cli_echo_frozenset_matches_receipt_keys": 0.45999999999999996,
-    "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_northset_cli_echoes_every_session_receipt_key": 13.13,
+    "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_northset_cli_echoes_every_session_receipt_key": 0.88,
     "tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_research_cli_echoes_every_session_receipt_key": 29.560000000000002,
     "tests/unit/microstructure/test_session_reconstructs_daily_rate_soft_verify.py::test_session_reconstructs_daily_bad": 0.0006413490000340971,
     "tests/unit/microstructure/test_session_reconstructs_daily_rate_soft_verify.py::test_session_reconstructs_daily_ok": 0.0005863139999746636,
