@@ -8,6 +8,7 @@ src/fx1/data/sources/ds_audit.py 1
 src/fx1/serve/api_audit.py 2
 src/fx1/serve/backends.py 1
 src/fx1/serve/journal_audit.py 12
+src/fx1/serve/module_entry.py 1
 src/quant_fund/api/app.py 1
 src/quant_fund/backtest/event_sim/fills.py 1
 src/quant_fund/backtest/fast_replay.py 2
@@ -71,6 +72,7 @@ src/quant_fund/parity/checker.py 2
 src/quant_fund/parity/session.py 2
 src/quant_fund/parity/shortfall.py 1
 src/quant_fund/parity_leak_audit.py 2
+src/quant_fund/pipeline/e2e_smoke.py 1
 src/quant_fund/pipeline/flat_audit.py 1
 src/quant_fund/pipeline/forecast/garch.py 2
 src/quant_fund/pipeline/forecast/realized.py 1
