@@ -110,6 +110,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from fx1.secret_guard import secrets_equal
 from fx1.serve.conv_audit import _RESOURCES, _audit_context, _temporary_directory
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -905,7 +906,7 @@ def _byok_probes() -> dict[str, bool]:
         r.status_code == 200
         and spy.calls[-1][0] == "byok"
         and kw.get("base_url") == _BYOK_BASE_URL
-        and kw.get("api_key") == "sk-hdr"
+        and secrets_equal(kw.get("api_key"), "sk-hdr")
         and kw.get("model") == "upstream-m"
     )
     # model falls back to body.model when the header omits it (any
@@ -955,7 +956,9 @@ def _byok_probes() -> dict[str, bool]:
     )
     kw = last()
     results["byok_body_overrides_header"] = (
-        r.status_code == 200 and kw.get("api_key") == "sk-body" and kw.get("model") == "body-model"
+        r.status_code == 200
+        and secrets_equal(kw.get("api_key"), "sk-body")
+        and kw.get("model") == "body-model"
     )
     # invalid base_url — post-fix the refusal is enveloped 422 (was a bare
     # 500 pre-fix: the ValidationError escaped the OpenAICompatError map)
@@ -1076,7 +1079,9 @@ def _byok_probes() -> dict[str, bool]:
         },
     )
     results["byok_embeddings_channel"] = (
-        r.status_code == 200 and spy.calls[-1][0] == "byok" and last().get("api_key") == "k"
+        r.status_code == 200
+        and spy.calls[-1][0] == "byok"
+        and secrets_equal(last().get("api_key"), "k")
     )
     return results
 
@@ -1855,7 +1860,7 @@ def header_audit() -> dict[str, Any]:
     out: dict[str, Any] = {}
     with _audit_context():
         # Timeout/garbage probes use owned loopback BYOK fixtures.
-        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
         out.update(_timeout_parse_probes())
         out.update(_precedence_probes())
         out.update(_timeout_enforcement_probes())

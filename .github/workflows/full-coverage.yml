@@ -57,10 +57,12 @@ jobs:
         if: matrix.lane == 'native'
         run: make native
       - name: Execute all selected offline tests, including slow tests
+        env:
+          MATRIX_LANE: ${{ matrix.lane }}
         run: >-
           uv run --frozen python scripts/full_coverage.py run
-          --lane '${{ matrix.lane }}'
-          --output '${{ runner.temp }}/full-coverage-${{ matrix.lane }}'
+          --lane "$MATRIX_LANE"
+          --output "$RUNNER_TEMP/full-coverage-$MATRIX_LANE"
       - name: Preserve results even after a test failure
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

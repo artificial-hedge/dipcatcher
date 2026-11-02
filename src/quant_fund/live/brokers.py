@@ -20,6 +20,7 @@ from urllib.parse import quote, urlencode
 
 from quant_fund.live.config import Venue
 from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
@@ -141,30 +142,13 @@ def urllib_transport(
     body: bytes | None,
     timeout: float,
 ) -> tuple[int, bytes]:
-    """HTTP/1.1 request that refuses redirects so the credential header cannot leave the host."""
+    """HTTP/1.1 request pinned to a vetted address. Redirects are not followed."""
     request = urllib.request.Request(url, data=body, headers=headers, method=method)
-    opener = urllib.request.build_opener(_RefuseRedirect)
     try:
-        with opener.open(request, timeout=timeout) as response:
-            status = int(response.status)
-            payload = response.read()
-    except urllib.error.HTTPError as exc:
-        status = int(exc.code)
-        payload = exc.read()
-    return status, payload
-
-
-class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: Any,
-        code: int,
-        msg: str,
-        headers: Any,
-        newurl: str,
-    ) -> urllib.request.Request | None:
-        return None
+        with open_pinned(request, timeout=timeout) as handle:
+            return int(handle.status), handle.read()
+    except OutboundRefused as exc:
+        raise urllib.error.URLError(exc) from exc
 
 
 def _redact(text: str, secrets: tuple[str, ...]) -> str:
@@ -347,6 +331,10 @@ class AlpacaBroker:
         self._transport = transport or urllib_transport
         self._timeout = float(timeout)
         self._marks: dict[str, float] = {}
+
+    def __repr__(self) -> str:
+        state = "set" if self._credentials else "unset"
+        return f"AlpacaBroker(venue={self.venue!r}, credential={state})"
 
     @property
     def credentials_present(self) -> bool:

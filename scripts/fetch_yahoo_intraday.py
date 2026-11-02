@@ -21,6 +21,7 @@ import urllib.request
 from pathlib import Path
 
 import polars as pl
+from vendor_http import read_vendor
 
 # Liquid names only — intraday signals need tight spreads. ETFs + megacap
 # stocks that trade through the full session.
@@ -124,8 +125,7 @@ def fetch_chart(sym: str, rng: str, timeout: int = 20) -> dict:
         + f"?interval=1h&range={rng}&includePrePost=false"
     )
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read().decode())
+    return json.loads(read_vendor(req, timeout=timeout))
 
 
 def to_frame(payload: dict, sym: str) -> pl.DataFrame:
