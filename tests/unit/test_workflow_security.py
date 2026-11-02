@@ -207,13 +207,14 @@ CI_JOB_MAKE_TARGETS: dict[str, tuple[str, ...]] = {
 MAKE_CI_DEPS = ("lint", "typecheck", "security", "coverage")
 MAKE_INVOCATION_RE = re.compile(r"\bmake\s+([a-z0-9-]+)")
 MAKE_TARGET_RE = re.compile(r"^([a-zA-Z0-9_-]+):", re.MULTILINE)
+UV_RUN = "uv run --locked --no-build --no-binary-package fx-1"
 LINT_JOB_COMMANDS = (
-    "uv run ruff check src tests",
-    "uv run ruff format --check src tests",
-    "uv run python scripts/check_mypy_strict_allowlist.py",
-    "uv run python scripts/check_mccabe_ratchet.py",
-    "uv run mypy src/quant_fund",
-    "uv run mypy --strict --follow-imports=silent",
+    f"{UV_RUN} ruff check src tests",
+    f"{UV_RUN} ruff format --check src tests",
+    f"{UV_RUN} python scripts/check_mypy_strict_allowlist.py",
+    f"{UV_RUN} python scripts/check_mccabe_ratchet.py",
+    f"{UV_RUN} mypy src/quant_fund",
+    f"{UV_RUN} mypy --strict --follow-imports=silent",
     "bandit",
 )
 
