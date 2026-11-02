@@ -342,6 +342,10 @@ class HarnessClient:
         self._cb_failures = 0
         self._cb_open_until = 0.0
 
+    def __repr__(self) -> str:
+        state = "set" if self._headers.get("X-API-Key") else "unset"
+        return f"HarnessClient(credential={state})"
+
     # ---- transport ----------------------------------------------------
 
     def _request(
