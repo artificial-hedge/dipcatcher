@@ -18,7 +18,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from quant_fund.calendars.sessions import Session
+from quant_fund.calendars.sessions import Session, require_label_range
 
 ET = ZoneInfo("America/New_York")
 FX_CLOSE_LOCAL = time(17, 0)
@@ -41,6 +41,7 @@ class FxCalendar:
         return Session(date=d, open_utc=close_utc - timedelta(days=1), close_utc=close_utc)
 
     def sessions(self, start: date, end: date) -> list[Session]:
+        require_label_range(start, end)
         out: list[Session] = []
         cur = start
         while cur <= end:

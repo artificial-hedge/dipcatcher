@@ -20,9 +20,9 @@ class FitCache:
     """LRU map from content hashes to fit snapshots."""
 
     def __init__(self, max_entries: int = 64) -> None:
-        if max_entries < 1:
-            raise ValueError("max_entries must be positive")
-        self._max = int(max_entries)
+        if isinstance(max_entries, bool) or not isinstance(max_entries, int) or max_entries < 1:
+            raise ValueError(f"max_entries must be a positive integer, got {max_entries!r}")
+        self._max = max_entries
         self._lock = threading.Lock()
         self._store: OrderedDict[str, Any] = OrderedDict()
 

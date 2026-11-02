@@ -24,10 +24,12 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Sequence
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Annotated, Any, Final, Literal
 
+import polars as pl
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -92,9 +94,11 @@ class DatasetIdentity(BaseModel):
         from datetime import datetime
 
         try:
-            datetime.fromisoformat(value.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError as exc:
             raise ValueError(f"not an ISO-8601 timestamp: {value!r}") from exc
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ValueError(f"timestamp must be timezone-aware: {value!r}")
         return value
 
 
@@ -167,6 +171,73 @@ def _source_manifest_hash(data_root: Path) -> str:
     return digest
 
 
+def _require_positive_int(name: str, value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise DatasetIdentityError(f"{name} must be a positive integer, got {value!r}")
+    return value
+
+
+def _require_data_source(data_source: object) -> str:
+    if not isinstance(data_source, str) or not data_source.strip():
+        raise DatasetIdentityError(
+            f"dataset identity requires a non-empty data_source, got {data_source!r}"
+        )
+    return data_source
+
+
+def _require_aware_event_time(frame: Any) -> None:
+    """Refuse a panel clock that is missing, naive, or not a datetime."""
+    dtype = frame.schema["event_time"]
+    if not isinstance(dtype, pl.Datetime) or dtype.time_zone is None:
+        raise DatasetIdentityError(
+            "event_time must be a timezone-aware datetime; naive timestamps are refused"
+        )
+    if int(frame.get_column("event_time").null_count()) > 0:
+        raise DatasetIdentityError("event_time contains nulls")
+
+
+def _artifact_positive_int(name: str, value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ArtifactManifestError(f"{name} must be a positive integer, got {value!r}")
+    return value
+
+
+def _artifact_positive_ints(name: str, values: Sequence[object]) -> list[int]:
+    if isinstance(values, (str, bytes)):
+        raise ArtifactManifestError(f"{name} must be a sequence of positive integers")
+    out: list[int] = []
+    for value in values:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ArtifactManifestError(f"{name} must be positive integers, got {value!r}")
+        out.append(value)
+    if not out:
+        raise ArtifactManifestError(f"{name} must be a non-empty sequence of positive integers")
+    return out
+
+
+def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    record: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in record:
+            raise ValueError(f"duplicate key {key!r}")
+        record[key] = value
+    return record
+
+
+def _load_manifest_object(path: Path) -> dict[str, Any]:
+    """Read a manifest object. IO, encoding, JSON, and duplicate keys fail closed."""
+    try:
+        record = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=_object_without_duplicate_keys,
+        )
+    except (OSError, ValueError) as exc:
+        raise ArtifactManifestError(f"artifact manifest is unreadable: {path}: {exc}") from exc
+    if not isinstance(record, dict):
+        raise ArtifactManifestError(f"artifact manifest is not a JSON object: {path}")
+    return record
+
+
 def build_dataset_identity(
     frame: Any,
     *,
@@ -178,7 +249,8 @@ def build_dataset_identity(
     """Derive fail-closed dataset identity from a materialized panel.
 
     Raises :class:`DatasetIdentityError` when the panel is empty, the label is
-    absent, timestamps are missing, or the materialized sources do not exist.
+    absent, timestamps are missing or naive, or the materialized sources do
+    not exist.
     """
     if frame is None or int(frame.height) < 1:
         raise DatasetIdentityError("dataset identity requires a non-empty materialized panel")
@@ -187,10 +259,9 @@ def build_dataset_identity(
         raise DatasetIdentityError("dataset identity requires an event_time column")
     if label != UNSUPERVISED_LABEL and label not in columns:
         raise DatasetIdentityError(f"label {label!r} is not present in the materialized panel")
-    if not str(data_source).strip():
-        raise DatasetIdentityError("dataset identity requires a non-empty data_source")
-    if int(label_horizon_bars) < 1:
-        raise DatasetIdentityError("dataset identity requires label_horizon_bars >= 1")
+    source = _require_data_source(data_source)
+    horizon = _require_positive_int("label_horizon_bars", label_horizon_bars)
+    _require_aware_event_time(frame)
     times = frame.select("event_time").drop_nulls().sort("event_time")
     if int(times.height) < 1:
         raise DatasetIdentityError("dataset identity requires non-null event_time values")
@@ -202,8 +273,8 @@ def build_dataset_identity(
         time_start=str(times["event_time"][0]),
         time_end=str(times["event_time"][-1]),
         label=label,
-        label_horizon_bars=int(label_horizon_bars),
-        data_source=str(data_source),
+        label_horizon_bars=horizon,
+        data_source=source,
     )
 
 
@@ -223,8 +294,11 @@ def build_artifact_identity(
         raise ArtifactManifestError("artifact identity requires a non-empty feature list")
     if len(set(feature_list)) != len(feature_list):
         raise ArtifactManifestError("artifact identity feature list contains duplicates")
-    if not horizon_names or len(horizon_names) != len(horizon_bars):
+    bars = _artifact_positive_ints("horizon_bars", horizon_bars)
+    names = [str(name) for name in horizon_names]
+    if not names or len(names) != len(bars):
         raise ArtifactManifestError("artifact identity horizon grid is inconsistent")
+    horizon = _artifact_positive_int("label_horizon_bars", label_horizon_bars)
     return ArtifactIdentity(
         dataset=dataset,
         features=FeatureIdentity(
@@ -236,10 +310,10 @@ def build_artifact_identity(
                 )
             ),
         ),
-        label=LabelIdentity(name=str(label), horizon_bars=int(label_horizon_bars)),
+        label=LabelIdentity(name=str(label), horizon_bars=horizon),
         horizon=HorizonIdentity(
-            bars=[int(bar) for bar in horizon_bars],
-            names=[str(name) for name in horizon_names],
+            bars=bars,
+            names=names,
         ),
         config_sha256=hash_bytes(canonical_json_bytes(config.model_dump(mode="json"))),
         git_revision=git_revision(),
@@ -254,12 +328,7 @@ def bind_artifact_identity(artifact: Path, identity: ArtifactIdentity) -> dict[s
         raise ArtifactManifestError(f"artifact payload does not exist: {artifact}")
     if not target.is_file():
         raise ArtifactManifestError(f"artifact manifest does not exist: {target}")
-    try:
-        record = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ArtifactManifestError(f"artifact manifest is unreadable: {target}") from exc
-    if not isinstance(record, dict):
-        raise ArtifactManifestError(f"artifact manifest is not a JSON object: {target}")
+    record = _load_manifest_object(target)
     if record.get("schema") != MODEL_ARTIFACT_SCHEMA:
         raise ArtifactManifestError(f"artifact manifest schema mismatch: {target}")
     record[IDENTITY_BLOCK_KEY] = identity.model_dump(mode="json")
@@ -309,12 +378,7 @@ def verify_artifact_manifest(artifact: Path) -> ArtifactIdentity:
         raise ArtifactManifestError(f"artifact payload does not exist: {artifact}")
     if not target.is_file():
         raise ArtifactManifestError(f"artifact manifest does not exist: {target}")
-    try:
-        record = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ArtifactManifestError(f"artifact manifest is unreadable: {target}") from exc
-    if not isinstance(record, dict):
-        raise ArtifactManifestError(f"artifact manifest is not a JSON object: {target}")
+    record = _load_manifest_object(target)
     if record.get("schema") != MODEL_ARTIFACT_SCHEMA:
         raise ArtifactManifestError(f"artifact manifest schema mismatch: {target}")
     if record.get("sha256") != hash_file(artifact):
