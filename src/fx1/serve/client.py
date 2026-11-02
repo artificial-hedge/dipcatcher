@@ -54,10 +54,10 @@ from fx1.sdk import (
 )
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
+from fx1.serve.harness_pin import _pinned_harness_exchange
 from fx1.serve.transport_text import bad_base_url, fault, unreachable
 from fx1.serve.transport_text import timeout_s as checked_timeout
 from fx1.serve.usage_report import UsageReport
-from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -112,21 +112,6 @@ class HarnessCompatError(RuntimeError):
     def __init__(self, message: str = "", *, code: str | None = None) -> None:
         super().__init__(message)
         self.code = code
-
-
-def _pinned_harness_exchange(
-    req: urllib.request.Request, timeout_s: float
-) -> tuple[int, dict[str, str], bytes]:
-    """Resolve once and dial that numeric address. Redirects stay as statuses.
-
-    Loopback and RFC1918 literals stay allowed. Other hostnames must resolve
-    entirely to public addresses; ``localhost`` may resolve to loopback.
-    """
-    try:
-        with open_pinned(req, timeout=timeout_s, allow_loopback=True, allow_private=True) as handle:
-            return int(handle.status), dict(handle.headers), handle.read()
-    except OutboundRefused as exc:
-        raise HarnessTransportError(f"harness destination refused: {exc}") from exc
 
 
 def _urllib_transport(
