@@ -19,8 +19,12 @@ concurrency:
   # 400-run zero-success history when every push cancelled the previous gate).
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   test:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     # Makefile TEST_ENV block, mirrored (keep both sides identical) — OpenMP
@@ -136,7 +140,7 @@ jobs:
   required-gate:
     name: fx1-required
     needs: [test]
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 5
     steps:

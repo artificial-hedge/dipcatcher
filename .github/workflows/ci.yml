@@ -36,8 +36,12 @@ concurrency:
 permissions:
   contents: read
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   lint:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
@@ -67,6 +71,7 @@ jobs:
         run: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
 
   audit:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
@@ -101,6 +106,7 @@ jobs:
           if-no-files-found: error
 
   package:
+    if: "github.event_name != 'pull_request' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     permissions:
@@ -135,6 +141,7 @@ jobs:
             dist/*.tar.gz
 
   container:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     steps:
@@ -167,6 +174,7 @@ jobs:
   test-inventory:
     # One collect-only per suite marker; shard jobs pytest only their file list so
     # xdist workers avoid importing the full ~5.5k-module tree (WP-3J-4).
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     env:
@@ -240,6 +248,7 @@ jobs:
 
   test:
     needs: [test-inventory]
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     # 75m cancelled test (3.12, 3) on f75dc11c3 at 99% with no failures.
     timeout-minutes: 120
@@ -384,7 +393,7 @@ jobs:
 
   coverage:
     needs: [test]
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
@@ -444,6 +453,7 @@ jobs:
           if-no-files-found: error
 
   perf:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -477,7 +487,7 @@ jobs:
 
   smoke:
     needs: [test, lint]
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 30
     steps:
@@ -595,6 +605,7 @@ jobs:
             data/metadata/research/runs/
 
   mc-engine-smoke:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -635,6 +646,7 @@ jobs:
           PY
 
   rust-accel:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     strategy:
@@ -679,6 +691,7 @@ jobs:
         run: uv run --locked --no-build --no-binary-package fx-1 pytest -q -m native tests/property tests/unit tests/native
 
   market-sim:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -698,6 +711,7 @@ jobs:
         run: uv run --locked --no-build --no-binary-package fx-1 pytest -q tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"
 
   parity-smoke:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -721,6 +735,7 @@ jobs:
           if-no-files-found: error
 
   examples:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -740,6 +755,7 @@ jobs:
         run: make examples
 
   audit-observability:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 25
     steps:
@@ -764,6 +780,7 @@ jobs:
         run: docker compose -f deploy/observability/docker-compose.yml config
 
   diffbacktest:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 25
     steps:
@@ -781,6 +798,7 @@ jobs:
         run: JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" uv run --locked --no-build --no-binary-package fx-1 pytest -q tests/unit/diffbacktest
 
   robustness-smoke:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -800,6 +818,7 @@ jobs:
         run: uv run --locked --no-build --no-binary-package fx-1 python -m quant_fund.robustness
 
   formal:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 10
     steps:
@@ -825,6 +844,7 @@ jobs:
         run: uv run --locked --no-build --no-binary-package fx-1 pytest tests/formal -q --tb=short
 
   evidence-audit:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     permissions:
       contents: read
@@ -1018,6 +1038,7 @@ jobs:
           if-no-files-found: error
 
   pretrade-risk:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -1043,6 +1064,7 @@ jobs:
           if-no-files-found: error
 
   stress-smoke:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -1139,7 +1161,7 @@ jobs:
         pretrade-risk,
         stress-smoke,
       ]
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 5
     steps:

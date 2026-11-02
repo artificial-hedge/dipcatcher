@@ -55,8 +55,12 @@ env:
   TOKENIZERS_PARALLELISM: "false"
   HYPOTHESIS_PROFILE: ci
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   inventory:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     name: ${{ matrix.os }} / py${{ matrix.python }} / inventory
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -132,6 +136,7 @@ jobs:
   test:
     name: ${{ matrix.os }} / py${{ matrix.python }} / shard${{ matrix.shard }}
     needs: inventory
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: ${{ matrix.os }}
     # 45m cancelled pytest mid-shard on 39a052e47. 75m cancelled
     # ubuntu py3.13 shard2 on 1aa40981d: six of about nine 150-file

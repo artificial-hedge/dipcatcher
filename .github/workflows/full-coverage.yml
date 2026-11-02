@@ -32,8 +32,12 @@ env:
   TOKENIZERS_PARALLELISM: 'false'
   HYPOTHESIS_PROFILE: ci
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   python:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 120
     strategy:
@@ -74,7 +78,7 @@ jobs:
 
   aggregate:
     needs: python
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -112,6 +116,7 @@ jobs:
           if-no-files-found: error
 
   quality:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 90
     steps:
@@ -148,6 +153,7 @@ jobs:
         run: make docs
 
   javascript:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     strategy:
@@ -186,6 +192,7 @@ jobs:
         run: npm run test:e2e
 
   rust:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     steps:
@@ -202,6 +209,7 @@ jobs:
         run: make audit-rust
 
   kronos:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -215,6 +223,7 @@ jobs:
       - run: make audit-kronos
 
   epoch-candidate:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     # Generate with the repository's own writer in a complete checkout, never
     # hand-forge or overwrite an old receipt. Upload for review and integration;
     # this read-only job cannot change the branch or mark evidence checks green.
@@ -245,7 +254,7 @@ jobs:
 
   result:
     needs: [python, aggregate, quality, javascript, rust, kronos, epoch-candidate]
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 5
     steps:
