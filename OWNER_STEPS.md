@@ -95,10 +95,12 @@ else
   git push origin v0.4.0
 fi
 
-# Rows the scorecard leaves at needs-owner. These commands do not flip them.
-# pr_test_suite: make test
+# Rows this script does not clear.
+# pr_test_suite reads an external cursor-ci commit status, or a signed
+# cursor_ci_result.v1 file, for the exact HEAD sha. It does not run the
+# suite and it does not write that attestation. See docs/CURSOR_CI.md.
 # windows_fleet, on the Windows host after the Defender exclusion:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\fleet_spawn.ps1 -Manifest jobs.json
-# live_condition_1 through live_condition_5 have no in-repo command that
-# marks them satisfied. live_readiness_report stays blocked until the
-# external evidence exists.
+# live_condition_1 through live_condition_5 stay needs-owner until the
+# evidence in docs/GO_LIVE_CHECKLIST.md exists. live_readiness_report
+# stays blocked until that evidence is observed outside this checkout.
