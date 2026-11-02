@@ -35,8 +35,10 @@ from typing import Any, Protocol, cast, runtime_checkable
 from fx1.modelcard import ModelCard
 from quant_fund.utils.outbound import (
     PRIVATE_ALLOW_CIDRS_ENV,
+    OutboundRefused,
     address_permitted,
     literal_destination_refusal,
+    open_pinned,
     parse_allow_cidrs,
 )
 
@@ -1571,6 +1573,35 @@ def _require_local_serve_destination(parsed: urllib.parse.ParseResult) -> None:
     _refuse_non_loopback_literal(host)
 
 
+@contextlib.contextmanager
+def _pinned_models_probe(url: str, timeout: float = 2.0) -> Iterator[Any]:
+    """GET a local-engine URL on one DNS-pinned connection.
+
+    Loopback and RFC1918 literals stay allowed. Other hostnames must resolve
+    entirely to public addresses, so an opted-in name cannot be rebound onto
+    a private or metadata address between lookup and connect.
+    """
+    request = urllib.request.Request(url, method="GET")
+    try:
+        with open_pinned(
+            request,
+            timeout=float(timeout),
+            allow_loopback=True,
+            allow_private=True,
+        ) as handle:
+            if int(handle.status) >= 400:
+                raise urllib.error.HTTPError(
+                    url,
+                    int(handle.status),
+                    handle.reason or "error",
+                    handle.headers,
+                    None,
+                )
+            yield handle
+    except OutboundRefused as exc:
+        raise urllib.error.URLError(exc) from exc
+
+
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1709,7 +1740,7 @@ class LocalFx1Backend(_UsageTracker):
         parsed = urllib.parse.urlparse(self._url)
         probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
         try:
-            with urllib.request.urlopen(probe, timeout=1):  # noqa: S310 — declared local engine  # nosec B310
+            with _pinned_models_probe(probe, timeout=1):
                 return True
         except urllib.error.HTTPError:
             return True  # any HTTP response means a server is listening
@@ -1733,7 +1764,7 @@ class LocalFx1Backend(_UsageTracker):
         parsed = urllib.parse.urlparse(self._url)
         probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
         try:
-            with urllib.request.urlopen(probe, timeout=2) as resp:  # noqa: S310 — declared local engine  # nosec B310
+            with _pinned_models_probe(probe, timeout=2) as resp:
                 payload = json.loads(resp.read())
         except (urllib.error.URLError, OSError, ValueError):
             return  # not up / not parseable — liveness is _engine_up's job
