@@ -52,6 +52,7 @@ from quant_fund.research.benches_w17 import (
     bench_adaptive_eps,
     bench_conformal_oce,
     bench_diffusion_forecaster,
+    bench_extra_conformal,
     bench_greek_neutral,
 )
 from quant_fund.research.catalog import (
@@ -248,6 +249,21 @@ def test_greek_neutral_is_deterministic(greek_neutral: dict[str, float]) -> None
     # The full-batch Adam trainer is single-threaded and fully seeded (torch +
     # numpy), so a fresh sweep reproduces the fixture bit-for-bit.
     assert bench_greek_neutral() == greek_neutral
+
+
+def test_extra_conformal_scorecard_blob_executes() -> None:
+    """The family wrapper must read the core's ``synthetic_*`` keys.
+
+    A KeyError used to collapse the bench to ``{}``, which the research
+    scorecard records as not executed.
+    """
+    blob = bench_extra_conformal()
+    assert isinstance(blob, dict) and blob
+    assert family_blob_has_finite_observation(blob)
+    assert family_blob_forbidden_metrics_absent(blob)
+    assert all(np.isfinite(v) for v in blob.values())
+    assert blob["xc_coverage"] > blob["xc_unweighted_coverage"]
+    assert blob["xc_harm_coverage_gap"] > 0.0
 
 
 @requires_torch
