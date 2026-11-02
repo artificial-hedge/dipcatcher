@@ -210,13 +210,19 @@ def _positive_seconds(name: str, value: object) -> float:
     and leave the request without a usable deadline.
     """
     if isinstance(value, bool):
-        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+        raise ValueError(
+            f"{name} must be finite and positive ({value!r} is not a positive finite number)"
+        )
     try:
         val = float(value)  # type: ignore[arg-type]
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be a positive finite number, got {value!r}") from exc
+        raise ValueError(
+            f"{name} must be finite and positive ({value!r} is not a positive finite number)"
+        ) from exc
     if not math.isfinite(val) or val <= 0:
-        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+        raise ValueError(
+            f"{name} must be finite and positive ({value!r} is not a positive finite number)"
+        )
     return val
 
 

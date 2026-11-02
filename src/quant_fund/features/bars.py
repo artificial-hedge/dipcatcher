@@ -84,10 +84,10 @@ def tick_bars(prices: Array, sizes: Array, ticks_per_bar: int = 10) -> dict[str,
 def _require_positive_finite(name: str, value: object) -> float:
     """Refuse bools, non-numbers, NaN, inf, and non-positive thresholds."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+        raise ValueError(f"{name} must be positive and finite, got {value!r}")
     number = float(value)
     if not math.isfinite(number) or number <= 0.0:
-        raise ValueError(f"{name} must be a positive finite number, got {value!r}")
+        raise ValueError(f"{name} must be positive and finite, got {value!r}")
     return number
 
 
@@ -138,12 +138,12 @@ def _expect_ewma(expected_ticks: int, alpha_ewma: float) -> float:
         or not isinstance(expected_ticks, int)
         or expected_ticks < 2
     ):
-        raise ValueError(f"expected_ticks must be an integer >= 2, got {expected_ticks!r}")
+        raise ValueError(f"expected_ticks >= 2, got {expected_ticks!r}")
     if isinstance(alpha_ewma, bool) or not isinstance(alpha_ewma, (int, float)):
-        raise ValueError(f"alpha_ewma must be a finite number in (0, 1], got {alpha_ewma!r}")
+        raise ValueError(f"alpha_ewma in (0,1], got {alpha_ewma!r}")
     alpha = float(alpha_ewma)
     if not math.isfinite(alpha) or not (0.0 < alpha <= 1.0):
-        raise ValueError(f"alpha_ewma must be a finite number in (0, 1], got {alpha_ewma!r}")
+        raise ValueError(f"alpha_ewma in (0,1], got {alpha_ewma!r}")
     return float(expected_ticks)
 
 

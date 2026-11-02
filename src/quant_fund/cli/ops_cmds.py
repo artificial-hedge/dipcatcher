@@ -344,7 +344,7 @@ def monitor(
         raise typer.Exit(1)
 
 
-_GIT_SHA_TIMEOUT_S = 10
+_GIT_SHA_TIMEOUT_S = 15
 
 
 def _probe_git_sha() -> str | None:

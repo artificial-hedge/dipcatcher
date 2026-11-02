@@ -208,13 +208,13 @@ MAKE_CI_DEPS = ("lint", "typecheck", "security", "coverage")
 MAKE_INVOCATION_RE = re.compile(r"\bmake\s+([a-z0-9-]+)")
 MAKE_TARGET_RE = re.compile(r"^([a-zA-Z0-9_-]+):", re.MULTILINE)
 LINT_JOB_COMMANDS = (
-    "uv run ruff check src tests",
-    "uv run ruff format --check src tests",
-    "uv run python scripts/check_mypy_strict_allowlist.py",
-    "uv run python scripts/check_mccabe_ratchet.py",
-    "uv run mypy src/quant_fund",
-    "uv run mypy --strict --follow-imports=silent",
-    "bandit",
+    "uv run --locked --no-build --no-binary-package fx-1 ruff check src tests",
+    "uv run --locked --no-build --no-binary-package fx-1 ruff format --check src tests",
+    "uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mypy_strict_allowlist.py",
+    "uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mccabe_ratchet.py",
+    "uv run --locked --no-build --no-binary-package fx-1 mypy src/quant_fund",
+    "uv run --locked --no-build --no-binary-package fx-1 mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py",
+    "uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium",
 )
 
 

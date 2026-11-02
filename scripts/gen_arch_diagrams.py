@@ -902,6 +902,19 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.train.run_audit", "quant_fund.utils.hashing"),
         ("fx1.train.run_audit", "quant_fund.utils.reproducibility"),
         ("fx1.train.tiny_lm", "quant_fund.utils.atomicio"),
+        # Fail-closed helpers (net timeouts, secret redaction, atomic cards).
+        ("fx1.flash.refresh", "quant_fund.utils.secrets"),
+        ("fx1.forecast.evaluate", "quant_fund.schemas.errors"),
+        ("fx1.modelcard", "quant_fund.utils.atomicio"),
+        ("fx1.serve.backends", "quant_fund.utils.net_timeout"),
+        ("fx1.serve.backends", "quant_fund.utils.secrets"),
+        ("fx1.serve.openai_compat", "quant_fund.utils.secrets"),
+        ("fx1.serve.transport_text", "quant_fund.utils.net_timeout"),
+        ("fx1.serve.transport_text", "quant_fund.utils.secrets"),
+        ("fx1.serve.webhooks", "quant_fund.utils.net_timeout"),
+        ("fx1.serve.webhooks", "quant_fund.utils.secrets"),
+        ("fx1.webresearch.fetch", "quant_fund.utils.net_timeout"),
+        ("fx1.webresearch.search", "quant_fund.utils.net_timeout"),
     }
 )
 

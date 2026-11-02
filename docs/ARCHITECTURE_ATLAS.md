@@ -149,6 +149,7 @@ flowchart LR
     fx1_hypotheses["fx1.hypotheses"]
     fx1_hypotheses_audit["fx1.hypotheses_audit"]
     fx1_interactive["fx1.interactive"]
+    fx1_job_artifacts["fx1.job_artifacts"]
     fx1_modelcard["fx1.modelcard"]
     fx1_modelcard_audit["fx1.modelcard_audit"]
     fx1_mrm["fx1.mrm"]
@@ -197,6 +198,7 @@ flowchart LR
   fx1_cli_audit -->|3| fx1_serve
   fx1_cli_audit -->|2| quant_fund_utils
   fx1_cli_errors -->|1| fx1
+  fx1_cli_errors -->|1| fx1_operations
   fx1_cli_sources -->|7| fx1_data
   fx1_data -->|3| fx1_honesty
   fx1_data -->|13| quant_fund_utils
@@ -218,11 +220,12 @@ flowchart LR
   fx1_extensions -->|2| fx1_harness
   fx1_flash -->|1| fx1_interactive
   fx1_flash -->|1| fx1_webresearch
+  fx1_flash -->|1| quant_fund_utils
   fx1_forecast -->|1| fx1_honesty
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|4| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
-  fx1_forecast -->|6| quant_fund_schemas
+  fx1_forecast -->|7| quant_fund_schemas
   fx1_forecast -->|9| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
   fx1_harness_audit -->|1| fx1_harness
@@ -241,6 +244,7 @@ flowchart LR
   fx1_interactive -->|3| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
   fx1_interactive -->|1| quant_fund_validation
+  fx1_modelcard -->|1| quant_fund_utils
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -262,6 +266,7 @@ flowchart LR
   fx1_sdk -->|1| fx1
   fx1_sdk -->|1| fx1_harness
   fx1_sdk -->|1| fx1_honesty
+  fx1_sdk -->|1| fx1_job_artifacts
   fx1_sdk -->|1| fx1_reward
   fx1_sdk -->|16| fx1_serve
   fx1_sdk -->|1| quant_fund_schemas
@@ -284,7 +289,7 @@ flowchart LR
   fx1_serve -->|14| fx1_sdk
   fx1_serve -->|4| fx1_train
   fx1_serve -->|5| quant_fund_schemas
-  fx1_serve -->|76| quant_fund_utils
+  fx1_serve -->|83| quant_fund_utils
   fx1_tail_audit -->|2| fx1_data
   fx1_tail_audit -->|1| fx1_eval
   fx1_tail_audit -->|1| fx1_honesty
@@ -295,6 +300,7 @@ flowchart LR
   fx1_train -->|1| fx1_honesty
   fx1_train -->|1| fx1_modelcard
   fx1_train -->|12| quant_fund_utils
+  fx1_webresearch -->|2| quant_fund_utils
   quant_fund -->|1| fx1
   quant_fund -->|1| quant_fund_public
   quant_fund_api -->|2| quant_fund
@@ -336,7 +342,7 @@ flowchart LR
   quant_fund_cli -->|7| quant_fund_microstructure
   quant_fund_cli -->|1| quant_fund_monitoring
   quant_fund_cli -->|3| quant_fund_northset
-  quant_fund_cli -->|1| quant_fund_observe
+  quant_fund_cli -->|2| quant_fund_observe
   quant_fund_cli -->|7| quant_fund_paper
   quant_fund_cli -->|12| quant_fund_pipeline
   quant_fund_cli -->|1| quant_fund_pit
@@ -359,7 +365,7 @@ flowchart LR
   quant_fund_data -->|2| quant_fund_microstructure
   quant_fund_data -->|1| quant_fund_proofcore
   quant_fund_data -->|16| quant_fund_schemas
-  quant_fund_data -->|16| quant_fund_utils
+  quant_fund_data -->|22| quant_fund_utils
   quant_fund_diffbacktest -->|1| quant_fund_metrics
   quant_fund_diffbacktest -->|6| quant_fund_utils
   quant_fund_execution -->|2| quant_fund_config
@@ -391,7 +397,7 @@ flowchart LR
   quant_fund_hedge_lab -->|1| quant_fund_reality
   quant_fund_hedge_lab -->|6| quant_fund_research
   quant_fund_hedge_lab -->|5| quant_fund_risk
-  quant_fund_hedge_lab -->|6| quant_fund_utils
+  quant_fund_hedge_lab -->|7| quant_fund_utils
   quant_fund_hedge_lab -->|1| quant_fund_validation
   quant_fund_hmm -->|9| quant_fund_utils
   quant_fund_labels -->|1| quant_fund_config
@@ -452,6 +458,7 @@ flowchart LR
   quant_fund_northset -->|5| quant_fund_microstructure
   quant_fund_northset -->|1| quant_fund_research
   quant_fund_northset -->|1| quant_fund_utils
+  quant_fund_observe -->|1| quant_fund_utils
   quant_fund_paper -->|1| quant_fund_backtest
   quant_fund_paper -->|3| quant_fund_config
   quant_fund_paper -->|1| quant_fund_data
@@ -547,7 +554,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|2| quant_fund_schemas
-  quant_fund_research -->|149| quant_fund_utils
+  quant_fund_research -->|157| quant_fund_utils
   quant_fund_research -->|11| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
@@ -784,6 +791,7 @@ sequenceDiagram
 | `fx1.hypotheses` | 1 |
 | `fx1.hypotheses_audit` | 1 |
 | `fx1.interactive` | 10 |
+| `fx1.job_artifacts` | 1 |
 | `fx1.modelcard` | 1 |
 | `fx1.modelcard_audit` | 1 |
 | `fx1.mrm` | 1 |
@@ -798,7 +806,7 @@ sequenceDiagram
 | `fx1.sdk` | 1 |
 | `fx1.sdk_audit` | 1 |
 | `fx1.selftest` | 1 |
-| `fx1.serve` | 59 |
+| `fx1.serve` | 60 |
 | `fx1.tail_audit` | 1 |
 | `fx1.train` | 14 |
 | `fx1.webresearch` | 4 |
@@ -849,18 +857,18 @@ sequenceDiagram
 | `quant_fund.realized` | 2 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 1861 |
+| `quant_fund.research` | 1862 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 9 |
 | `quant_fund.simtest` | 10 |
 | `quant_fund.stress` | 14 |
-| `quant_fund.utils` | 10 |
+| `quant_fund.utils` | 12 |
 | `quant_fund.validation` | 14 |
 
-- Modules scanned: **13403**
-- Packages: **97**
-- Cross-package import edges: **407**
+- Modules scanned: **13408**
+- Packages: **98**
+- Cross-package import edges: **413**
 
 <!-- END GENERATED: coverage -->
 

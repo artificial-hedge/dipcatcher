@@ -62,6 +62,14 @@ def redact_text(text: str) -> str:
     return _KEY_PREFIX.sub(REDACTED, scrubbed)
 
 
+def endpoint_mismatch(where: str, url: object, endpoint: str) -> str:
+    """Batch URL error with credentials removed from both sides."""
+    return (
+        f"{where}: url {redact_text(str(url))!r} does not match the batch endpoint "
+        f"{redact_text(endpoint)!r}"
+    )
+
+
 def redact_log_value(key: str, value: Any) -> Any:
     """Redact one log field. Secret names are replaced wholesale."""
     if is_secret_field(key):

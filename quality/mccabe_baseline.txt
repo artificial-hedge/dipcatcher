@@ -46,7 +46,7 @@ src/fx1/operations/resolve_security_identity.py:execute 15
 src/fx1/operations/select_universe_membership.py:execute 13
 src/fx1/rt_audit.py:rt_audit 12
 src/fx1/sdk.py:Fx1Harness.complete 12
-src/fx1/sdk.py:Fx1Harness.create_finetune_job 14
+src/fx1/sdk.py:Fx1Harness.create_finetune_job 13
 src/fx1/sdk.py:Fx1Harness.key_update 10
 src/fx1/sdk.py:Fx1Harness.openai_batch 18
 src/fx1/sdk.py:Fx1Harness.openai_response 11

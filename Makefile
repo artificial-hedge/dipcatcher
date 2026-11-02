@@ -44,18 +44,18 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 	uv run pytest -n auto --dist loadfile -m "not network and not slow" --cov --cov-report=term-missing --cov-report=xml
 
 lint: ## Ruff check + format check (matches ci.yml lint job scope)
-	uv run ruff check src tests
-	uv run ruff format --check src tests
-	uv run python scripts/check_mypy_strict_allowlist.py
-	uv run python scripts/check_mccabe_ratchet.py
+	uv run --locked --no-build --no-binary-package fx-1 ruff check src tests
+	uv run --locked --no-build --no-binary-package fx-1 ruff format --check src tests
+	uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mypy_strict_allowlist.py
+	uv run --locked --no-build --no-binary-package fx-1 python scripts/check_mccabe_ratchet.py
 
 fmt: ## Auto-fix lint + format repo-wide
 	uv run ruff check --fix .
 	uv run ruff format .
 
 typecheck: ## mypy on the harness (public modules are strict; see pyproject)
-	uv run mypy src/quant_fund
-	uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
+	uv run --locked --no-build --no-binary-package fx-1 mypy src/quant_fund
+	uv run --locked --no-build --no-binary-package fx-1 mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
 
 arch-guard: ## Import-boundary guard (same commands as arch_guards.yml; stdlib-only)
 	uv run --no-project python scripts/check_import_boundaries.py

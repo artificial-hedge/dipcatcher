@@ -9,9 +9,11 @@ from __future__ import annotations
 import json
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 import click
+import typer
 from typer.core import TyperGroup
 
 
@@ -104,6 +106,38 @@ class Fx1TyperGroup(GuardedTyperGroup):
 
 class FxiTyperGroup(GuardedTyperGroup):
     program = "fxi"
+
+
+def describe_operation_text(operation_id: str) -> str:
+    """JSON schema for one operation, or a parameter error when it is unknown."""
+    from fx1.operations.registry import get_operation
+
+    try:
+        described = get_operation(operation_id).describe()
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc.args[0]), param_hint="operation_id") from exc
+    return json.dumps(described, indent=2)
+
+
+def execute_operation_text(
+    operation_id: str, payload: dict[str, Any], workspace_root: Path | None
+) -> str:
+    """Run one operation and return indented JSON, mapping failures to parameter errors."""
+    from fx1.operations.registry import execute_operation
+
+    try:
+        result = execute_operation(operation_id, payload, workspace_root=workspace_root)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc.args[0]), param_hint="operation_id") from exc
+    except (ValueError, OSError, RecursionError) as exc:
+        raise typer.BadParameter(f"cannot execute operation: {exc}") from exc
+    return json.dumps(result, indent=2)
+
+
+def reject_remote_state_dir(remote: str | None, state_dir: str | None) -> None:
+    """Local durability proof cannot target a remote deployment."""
+    if remote is not None and state_dir is not None:
+        raise typer.BadParameter("not valid with --remote", param_hint="--state-dir")
 
 
 def _target(exc: OSError) -> object:

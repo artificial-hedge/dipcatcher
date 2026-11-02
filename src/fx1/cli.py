@@ -327,13 +327,9 @@ def harness_describe_operation(
     ),
 ) -> None:
     """Print the exact input/output schema of one registered operation."""
-    from fx1.operations.registry import get_operation
+    from fx1.cli_errors import describe_operation_text
 
-    try:
-        operation = get_operation(operation_id)
-    except KeyError as exc:
-        raise typer.BadParameter(str(exc.args[0]), param_hint="operation_id") from exc
-    typer.echo(json.dumps(operation.describe(), indent=2))
+    typer.echo(describe_operation_text(operation_id))
 
 
 _OPERATION_ARGUMENT_MAX_BYTES = 2_000_000
@@ -381,15 +377,9 @@ def harness_execute_operation(
         raise typer.BadParameter(
             f"cannot resolve workspace root: {exc}", param_hint="--workspace-root"
         ) from exc
-    from fx1.operations.registry import execute_operation
+    from fx1.cli_errors import execute_operation_text
 
-    try:
-        result = execute_operation(operation_id, payload, workspace_root=resolved_root)
-    except KeyError as exc:
-        raise typer.BadParameter(str(exc.args[0]), param_hint="operation_id") from exc
-    except (ValueError, OSError, RecursionError) as exc:
-        raise typer.BadParameter(f"cannot execute operation: {exc}") from exc
-    typer.echo(json.dumps(result, indent=2))
+    typer.echo(execute_operation_text(operation_id, payload, resolved_root))
 
 
 @corpus_app.command("build")
@@ -1201,14 +1191,13 @@ def harness_selftest(
 ) -> None:
     """Golden-path smoke: zero-config proof the harness actually works.
 
-    Local mode spins a stub OpenAI engine and the production app on
-    loopback, then walks auth, commands, a BYOK completion, SSE stream,
-    idempotent replay, the async job lifecycle, sealed-receipt verify,
-    drain, and in-process parity. Remote mode runs read-only checks only.
-    Exits 0 when every check passes, 2 otherwise — usable as a deploy gate."""
-    if remote is not None and state_dir is not None:
-        raise typer.BadParameter("not valid with --remote", param_hint="--state-dir")
+    Local mode walks auth, commands, BYOK, SSE, replay, jobs, receipts, and
+    parity on loopback. Remote mode is read-only. Exit 0 on pass, else 2.
+    """
+    from fx1.cli_errors import reject_remote_state_dir
     from fx1.selftest import run_selftest
+
+    reject_remote_state_dir(remote, state_dir)
 
     report = run_selftest(
         remote=remote,
