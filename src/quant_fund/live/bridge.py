@@ -152,6 +152,8 @@ class DropBridge:
         for path in sorted(self.inbound.glob("*.json")):
             try:
                 raw = json.loads(path.read_text(encoding="utf-8"))
+            except OSError as exc:
+                raise BridgeError(f"{path.name}: unreadable event") from exc
             except json.JSONDecodeError as exc:
                 raise BridgeError(f"{path.name}: invalid JSON") from exc
             if not isinstance(raw, dict):

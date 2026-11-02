@@ -170,6 +170,7 @@ class OrderFillLedger:
         """Record an order idempotently; refuse new orders after a kill trip."""
         if self._kill_state != "ENABLED":
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
+        _validate_order(order)
         if order.order_id in self._orders:
             self._counters["duplicate_orders"] += 1
             return "duplicate_order"
@@ -261,8 +262,14 @@ class OrderFillLedger:
     # -- declaration (broker-reported) state, for drift alarms --
 
     def declare_state(self, *, cash: float, positions: dict[str, float]) -> None:
-        self._declared_cash = float(cash)
-        self._declared_positions = {str(k): float(v) for k, v in positions.items()}
+        declared_cash = float(cash)
+        declared_positions = {str(k): float(v) for k, v in positions.items()}
+        if not math.isfinite(declared_cash):
+            raise OrderLedgerError("declared cash must be finite")
+        if any(not math.isfinite(quantity) for quantity in declared_positions.values()):
+            raise OrderLedgerError("declared positions must be finite")
+        self._declared_cash = declared_cash
+        self._declared_positions = declared_positions
 
     # -- reconciliation --
 
@@ -352,6 +359,17 @@ class OrderFillLedger:
             "research_only": True,
             "live_pnl_claim": False,
         }
+
+
+def _validate_order(order: Order) -> None:
+    if isinstance(order.quantity, bool) or not isinstance(order.quantity, (int, float)):
+        raise OrderLedgerError("order quantity must be a finite number")
+    if not math.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
+        raise OrderLedgerError("order quantity must be finite and strictly positive")
+    if order.side not in {"BUY", "SELL"}:
+        raise OrderLedgerError("order side must be BUY or SELL")
+    if not order.order_id or not order.security_id:
+        raise OrderLedgerError("order_id and security_id must be non-empty")
 
 
 def _validate_fill(fill: Fill) -> None:
