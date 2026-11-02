@@ -442,7 +442,8 @@ def _request(
     except urllib.error.HTTPError as exc:
         exc.read()
         return exc.code, {key.lower(): value for key, value in exc.headers.items()}
-    except urllib.error.URLError:
+    except (urllib.error.URLError, OSError):
+        # Connection reset while uvicorn is still binding is a down service.
         return 0, {}
 
 
@@ -660,8 +661,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         summary["head"] = git_head(root)
         code = execute(root, summary)
-    except (Exception, SystemExit):
-        summary["error"] = "security-gate failed"
+    except (Exception, SystemExit) as exc:
+        summary["error"] = type(exc).__name__
         summary["ok"] = False
         code = 1
     out = root / ".tmp_security" / "summary.json"

@@ -36,6 +36,19 @@ def test_image_digest_must_match_the_inspect_id() -> None:
     assert _LIB.digest_recorded("", digest) is False
 
 
+def test_unreachable_service_is_status_zero() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "security_gate_cli", _ROOT / "scripts" / "security_gate.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["security_gate_cli"] = module
+    spec.loader.exec_module(module)
+    status, headers = module._request("http://127.0.0.1:1/health", None, {}, 2)
+    assert status == 0
+    assert headers == {}
+
+
 def test_download_commit_rejects_a_bad_sha(tmp_path: Path) -> None:
     partial = tmp_path / "blob.partial"
     partial.write_bytes(b"not-the-bytes")
