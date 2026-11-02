@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data e2e-smoke lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
 
 .DEFAULT_GOAL := help
 
@@ -102,6 +102,9 @@ doctor: ## Harness environment check
 
 demo-data: ## Generate labeled-SYNTHETIC offline demo dataset into data/demo/
 	uv run python scripts/gen_demo_data.py
+
+e2e-smoke: ## Deterministic SYNTHETIC ingest-to-report smoke (<5 min)
+	$(TEST_ENV) uv run pytest -q -m e2e_smoke
 
 native: ## Build optional quant_core (Rust + maturin). NumPy stays the fallback.
 	uv pip install "maturin>=1.7,<2"
