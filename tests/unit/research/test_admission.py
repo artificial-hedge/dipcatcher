@@ -59,6 +59,76 @@ def test_admit_clean_candidate(corpus: Path) -> None:
     assert result["candidate_sha256"]
 
 
+def test_admission_cleans_shadow_dirs_on_success(
+    corpus: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import quant_fund.research.admission as mod
+
+    candidate = _write(tmp_path, "c.json", _claim_body(2.0))
+    created: list[Path] = []
+    original = mod.tempfile.mkdtemp
+
+    def tracked(*args, **kwargs):
+        path = Path(original(*args, **kwargs))
+        created.append(path)
+        return str(path)
+
+    monkeypatch.setattr(mod.tempfile, "mkdtemp", tracked)
+    admission_check(candidate, corpus)
+    assert len(created) == 2
+    assert all(not path.exists() for path in created)
+
+
+def test_admission_cleans_shadow_dirs_on_error(
+    corpus: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import quant_fund.research.admission as mod
+
+    candidate = _write(tmp_path, "c.json", _claim_body(2.0))
+    created: list[Path] = []
+    original = mod.tempfile.mkdtemp
+
+    def tracked(*args, **kwargs):
+        path = Path(original(*args, **kwargs))
+        created.append(path)
+        return str(path)
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("lattice failed")
+
+    monkeypatch.setattr(mod.tempfile, "mkdtemp", tracked)
+    monkeypatch.setattr("quant_fund.research.receipt_lattice.receipt_lattice", fail)
+    with pytest.raises(RuntimeError, match="lattice failed"):
+        admission_check(candidate, corpus)
+    assert len(created) == 2
+    assert all(not path.exists() for path in created)
+
+
+def test_admit_batch_cleans_shadow_dir_on_error(
+    corpus: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import quant_fund.research.admission as mod
+
+    candidate = _write(tmp_path, "c.json", _claim_body(2.0))
+    created: list[Path] = []
+    original = mod.tempfile.mkdtemp
+
+    def tracked(*args, **kwargs):
+        path = Path(original(*args, **kwargs))
+        created.append(path)
+        return str(path)
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("admission failed")
+
+    monkeypatch.setattr(mod.tempfile, "mkdtemp", tracked)
+    monkeypatch.setattr(mod, "admission_check", fail)
+    with pytest.raises(RuntimeError, match="admission failed"):
+        admit_batch([candidate], corpus)
+    assert len(created) == 1
+    assert not created[0].exists()
+
+
 def test_reject_forged_seal(corpus: Path, tmp_path: Path) -> None:
     candidate = _write(tmp_path, "forged.json", _claim_body(1.0))
     doc = json.loads(candidate.read_text())
