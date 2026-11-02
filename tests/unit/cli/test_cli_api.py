@@ -314,6 +314,19 @@ def test_cli_api_refuses_non_loopback_without_key(monkeypatch) -> None:
     from quant_fund.cli.main import app as cli
 
     monkeypatch.delenv("QUANT_API_KEY", raising=False)
+    for name in (
+        "DIPCATCHER_BIND_PORT",
+        "DIPCATCHER_CONFIG",
+        "DIPCATCHER_KILL_SWITCH_PATH",
+        "DIPCATCHER_LOG_LEVEL",
+        "DIPCATCHER_METRICS_LOOPBACK_SCRAPE",
+        "DIPCATCHER_METRICS_PORT",
+        "DIPCATCHER_OBSERVE",
+        "DIPCATCHER_OTEL_ENDPOINT",
+        "DIPCATCHER_SLO_PATH",
+        "PORT",
+    ):
+        monkeypatch.delenv(name, raising=False)
     result = CliRunner().invoke(cli, ["api", "--host", "0.0.0.0"])
     assert result.exit_code != 0
     assert "requires QUANT_API_KEY" in result.output
@@ -382,9 +395,8 @@ def test_api_request_models_reject_unknown_fields() -> None:
 
 def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
     import hmac
-    import importlib
 
-    api = importlib.import_module("quant_fund.api.app")
+    from quant_fund.utils import api_auth
 
     calls: list[tuple[bytes, bytes]] = []
     original = hmac.compare_digest
@@ -393,7 +405,7 @@ def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
         calls.append((left, right))
         return original(left, right)
 
-    monkeypatch.setattr(api.hmac, "compare_digest", recording_compare)
+    monkeypatch.setattr(api_auth.hmac, "compare_digest", recording_compare)
     monkeypatch.setenv("QUANT_API_KEY", "secret-test-key")
     response = TestClient(app).get("/doctor", headers={"X-API-Key": "wrong-key"})
     assert response.status_code == 401

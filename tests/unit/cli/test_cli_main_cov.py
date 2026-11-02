@@ -1039,22 +1039,58 @@ def test_report_writes_latest_markdown(tmp_path: Path, monkeypatch: pytest.Monke
     assert calls and calls[0][1].get("synthetic") is True
 
 
+def _clear_service_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in (
+        "DIPCATCHER_ALERT_INTERVAL_S",
+        "DIPCATCHER_BIND_HOST",
+        "DIPCATCHER_BIND_PORT",
+        "DIPCATCHER_CONFIG",
+        "DIPCATCHER_KILL_SWITCH_PATH",
+        "DIPCATCHER_LOG_LEVEL",
+        "DIPCATCHER_METRICS_HOST",
+        "DIPCATCHER_METRICS_LOOPBACK_SCRAPE",
+        "DIPCATCHER_METRICS_PORT",
+        "DIPCATCHER_OBSERVE",
+        "DIPCATCHER_OTEL_ENDPOINT",
+        "DIPCATCHER_SHUTDOWN_GRACE_S",
+        "DIPCATCHER_SLO_PATH",
+        "PORT",
+        "RESEARCH_API_HOST",
+        "RESEARCH_API_PORT",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
 def test_api_loopback_invokes_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake(app_path: str, host: str, port: int, reload: bool) -> None:
-        calls.update(app=app_path, host=host, port=port)
+    def fake(
+        application: object,
+        *,
+        host: str,
+        port: int,
+        log_level: str,
+        shutdown_grace_s: int,
+    ) -> None:
+        calls.update(app=application, host=host, port=port, grace=shutdown_grace_s, level=log_level)
 
-    monkeypatch.setattr("uvicorn.run", fake)
+    _clear_service_env(monkeypatch)
+    monkeypatch.delenv("QUANT_API_KEY", raising=False)
+    monkeypatch.setattr("quant_fund.api.serve.run_uvicorn", fake)
+    monkeypatch.setattr("quant_fund.observe.install.install_passive_hooks", lambda: 0)
     result = runner.invoke(app, ["api"])
     assert result.exit_code == 0, result.output
+    assert calls["app"] == "quant_fund.api.app:app"
     assert calls["host"] == "127.0.0.1"
     assert calls["port"] == 8000
+    assert calls["grace"] == 20
 
 
 def test_api_non_loopback_with_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_service_env(monkeypatch)
     monkeypatch.setenv("QUANT_API_KEY", "k")
-    monkeypatch.setattr("uvicorn.run", lambda *a, **k: None)
+    monkeypatch.setattr("quant_fund.api.serve.run_uvicorn", lambda *a, **k: None)
+    monkeypatch.setattr("quant_fund.observe.install.install_passive_hooks", lambda: 0)
     result = runner.invoke(app, ["api", "--host", "0.0.0.0", "--port", "9000"])
     assert result.exit_code == 0, result.output
 

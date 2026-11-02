@@ -168,6 +168,11 @@ class OrderFillLedger:
 
     def submit(self, order: Order) -> str:
         """Record an order idempotently; refuse new orders after a kill trip."""
+        from quant_fund.utils.operator_kill import orders_blocked_by_env
+
+        blocked = orders_blocked_by_env()
+        if blocked is not None:
+            raise KillSwitchActive(blocked)
         if self._kill_state != "ENABLED":
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
         if order.order_id in self._orders:
