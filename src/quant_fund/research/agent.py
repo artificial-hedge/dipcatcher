@@ -4199,9 +4199,6 @@ def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
 
 def _live_optional_family_blobs() -> dict[str, Any]:
     """Seeded live-optional benches. Default ``run_research`` still runs them."""
-    from quant_fund.research.catalog_threads import pin_catalog_threads
-
-    pin_catalog_threads()
     return {
         "anytime_valid": bench_anytime_valid(),
         "energy_score": bench_energy_score(),
@@ -5621,9 +5618,6 @@ def _merge_live_optional(families: dict[str, Any], *, include: bool) -> None:
 
 
 def run_research(config: AppConfig, *, include_live_optional: bool = True) -> ResearchNotebook:
-    from quant_fund.research.catalog_threads import pin_catalog_threads
-
-    pin_catalog_threads()
     set_global_seed(config.train.random_seed)
     build_gold(config, refresh=config.data.source == "synthetic")
     df = panel(config)

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13404,
+  "module_count": 13403,
   "module_edges": [
     {
       "dst": "fx1.interactive.concierge",
@@ -17380,10 +17380,6 @@
     },
     {
       "dst": "quant_fund.research.catalog.registry",
-      "src": "quant_fund.research.agent"
-    },
-    {
-      "dst": "quant_fund.research.catalog_threads",
       "src": "quant_fund.research.agent"
     },
     {
@@ -74824,7 +74820,6 @@
     "quant_fund.research.catalog.retired_families",
     "quant_fund.research.catalog.session",
     "quant_fund.research.catalog.sweep",
-    "quant_fund.research.catalog_threads",
     "quant_fund.research.changepoint_localize",
     "quant_fund.research.checkpoint_chain",
     "quant_fund.research.coherence",
@@ -77165,7 +77160,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 617,
+      "imports": 616,
       "src": "quant_fund.research"
     },
     {
