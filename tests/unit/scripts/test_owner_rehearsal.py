@@ -117,10 +117,10 @@ def test_owner_steps_sign_after_the_new_public_key_and_witness_the_one_checkpoin
         "crown-jewels --write",
         "--restore-stamped-receipts",
         "make stamp-epochs",
-        "make sign-pins",
+        "dipcatcher quorum-sign",
         "make anchor-pins",
         "make checkpoint\n",
-        "make anchor-checkpoint",
+        "anchor-timestamp --file quality/checkpoint.json",
         "make witness-checkpoint",
         "git tag -a v0.4.0",
         "owner rehearsal: local tag",
@@ -130,14 +130,22 @@ def test_owner_steps_sign_after_the_new_public_key_and_witness_the_one_checkpoin
     assert "git push origin v0.4.0" in text
 
 
-def test_sign_pins_uses_the_quorum_and_anchor_does_not_resign() -> None:
+def test_makefile_stays_stock_and_the_proposal_carries_the_targets() -> None:
     text = (REPO / "Makefile").read_text(encoding="utf-8")
     sign = text.split("sign-pins:", 1)[1].split("\n\n", 1)[0]
     anchor = text.split("anchor-checkpoint:", 1)[1].split("\n\n", 1)[0]
-    assert "quorum-sign" in sign
-    assert "anchor-timestamp --file quality/checkpoint.json" in anchor
-    assert "checkpoint --anchor" not in anchor
-    assert "owner-rehearsal:" in text
+    assert "owner-rehearsal:" not in text
+    assert "quorum-sign" not in sign
+    assert "uv run dipcatcher sign-pins" in sign
+    assert "dipcatcher checkpoint --anchor" in anchor
+    proposal = (REPO / "docs/owner_makefile_proposal.md").read_text(encoding="utf-8")
+    assert "GATE_QUORUM_KEYS" in proposal
+    assert "dipcatcher quorum-sign" in proposal
+    assert "anchor-timestamp --file quality/checkpoint.json" in proposal
+    steps = (REPO / "OWNER_STEPS.md").read_text(encoding="utf-8")
+    assert "uv run python scripts/owner_rehearsal.py" in steps
+    assert "\nmake sign-pins\n" not in steps
+    assert "\nmake anchor-checkpoint\n" not in steps
 
 
 def test_only_the_retrieval_audit_drifts_and_git_has_the_stamp() -> None:

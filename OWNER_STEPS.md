@@ -2,6 +2,14 @@
 # Owner ceremony for the prod-readiness rows a key holder can clear.
 # Commands only. Supply key material through the environment or files.
 # Do not paste private keys into this file, the shell history, or the commit.
+#
+# Makefile does not include deploy/*.mk, and Makefile is a crown jewel, so
+# this tree has no owner-rehearsal target. Prove the ceremony with:
+#   uv run python scripts/owner_rehearsal.py
+# Step 7 below signs the pins directly. The stock sign and checkpoint-anchor
+# targets do not match this ceremony. The edits that would make them match
+# are in docs/owner_makefile_proposal.md. Apply that diff before switching
+# this script back to those targets.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -73,18 +81,22 @@ uv run --no-sync dipcatcher crown-jewels --write
 uv run --no-sync python scripts/owner_rehearsal.py --restore-stamped-receipts
 make stamp-epochs
 
-# pin_signatures. A committed quorum registry rejects a lone-key v1 signature.
-# make sign-pins dispatches to quorum-sign. The pair above must be a member
-# of the registry just installed.
-make sign-pins
+# 7. pin_signatures. A committed quorum registry rejects a lone-key v1
+# signature, and make sign-pins on this tree runs that v1 command.
+# Call quorum-sign directly until docs/owner_makefile_proposal.md is applied.
+# The pair above must be a member of the registry just installed.
+GATE_QUORUM_KEYS="${GATE_QUORUM_KEYS:-$GATE_SIGNING_KEY}" \
+  uv run --no-sync dipcatcher quorum-sign
 
 # timestamp_anchors for the two pin files. Later steps do not rewrite them.
 make anchor-pins
 
-# One checkpoint. anchor-checkpoint only time-stamps that file. A second
-# checkpoint would name an unwitnessed predecessor and the spine would fail.
+# One checkpoint. make anchor-checkpoint on this tree runs
+# `dipcatcher checkpoint --anchor`, which writes a second checkpoint.
+# That predecessor is unwitnessed and the spine fails. Time-stamp the
+# checkpoint just written until docs/owner_makefile_proposal.md is applied.
 make checkpoint
-make anchor-checkpoint
+uv run --no-sync dipcatcher anchor-timestamp --file quality/checkpoint.json
 
 # The previous head is already in the witness set. This head has to join it.
 make witness-checkpoint

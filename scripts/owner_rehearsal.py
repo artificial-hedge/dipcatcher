@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Rehearse OWNER_STEPS.md in a throwaway copy of this checkout.
 
+Run it with ``uv run python scripts/owner_rehearsal.py``. Makefile does not
+include ``deploy/*.mk`` and is left unchanged, so there is no make target.
+
 The copy lives under /tmp. The script refuses a destination that is the
 real checkout or nested inside it, and it checks the source tree afterwards.
 It does not push. Keys, signatures, epochs, and weights from the rehearsal
