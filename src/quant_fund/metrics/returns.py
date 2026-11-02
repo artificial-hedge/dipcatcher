@@ -76,10 +76,13 @@ def downside_deviation(returns: Array, mar: float = 0.0, periods_per_year: float
     _validate_periods(periods_per_year)
     if not np.isfinite(mar):
         raise ValueError("mar must be finite")
-    r = np.asarray(returns, dtype=float)
-    d = np.minimum(r - mar, 0.0)
+    r = np.asarray(returns, dtype=float).reshape(-1)
+    if not np.all(np.isfinite(r)):
+        raise ValueError("returns must be finite")
     if r.size < 2:
         return float("nan")
+    # ``minimum`` maps +inf to 0, so a non-finite guard has to run first.
+    d = np.minimum(r - mar, 0.0)
     return float(np.sqrt(np.mean(d**2)) * np.sqrt(periods_per_year))
 
 
@@ -112,7 +115,7 @@ def sharpe_ratio(
         result["sharpe"] = float("nan")
         return result
     vol = float(np.std(excess, ddof=1))
-    if vol == 0.0:
+    if not vol > 0.0:
         result["sharpe"] = float("nan")
         return result
     sr_periodic = float(np.mean(excess) / vol)
@@ -163,7 +166,7 @@ def sortino_ratio(returns: Array, mar: float = 0.0, periods_per_year: float = 25
     if r.size < 2 or not np.all(np.isfinite(r)):
         return float("nan")
     dd = downside_deviation(r, mar=mar, periods_per_year=1.0)
-    if dd == 0 or not np.isfinite(dd):
+    if not np.isfinite(dd) or not dd > 0.0:
         return float("nan")
     return float((np.mean(r) - mar) / dd * np.sqrt(periods_per_year))
 
@@ -177,7 +180,7 @@ def calmar_ratio(returns: Array, periods_per_year: float = 252.0) -> float:
     if r.size == 0 or not np.all(np.isfinite(r)):
         return float("nan")
     mdd = max_drawdown(r)
-    if mdd == 0 or not np.isfinite(mdd):
+    if not np.isfinite(mdd) or not mdd < 0.0:
         return float("nan")
     growth = cagr(r, periods_per_year)
     if not np.isfinite(growth):

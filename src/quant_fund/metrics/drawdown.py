@@ -33,9 +33,8 @@ Array = NDArray[np.float64]
 
 def _as_returns(r: Array, min_obs: int = 20) -> Array:
     v = np.asarray(r, dtype=float).reshape(-1)
-    v = v[np.isfinite(v)]
-    if v.size < min_obs:
-        raise ValueError(f"returns must have >= {min_obs} finite observations")
+    if v.size < min_obs or not np.all(np.isfinite(v)):
+        raise ValueError(f"returns must be finite with >= {min_obs} observations")
     return v
 
 
@@ -44,8 +43,13 @@ def _require_alpha(alpha: float) -> float:
 
 
 def _dd_series(returns: Array) -> Array:
-    wealth = np.cumprod(1.0 + returns)
+    gross = 1.0 + returns
+    if np.any(gross <= 0.0):
+        raise ValueError("gross return must stay positive; drawdown is undefined at ruin")
+    wealth = np.cumprod(gross)
     peak = np.maximum.accumulate(wealth)
+    if np.any(peak <= 0.0) or not np.all(np.isfinite(wealth)):
+        raise ValueError("wealth path is non-finite; drawdown is undefined")
     return wealth / peak - 1.0  # <= 0
 
 
@@ -129,8 +133,9 @@ def burke_ratio(returns: Array, periods_per_year: float = 252.0) -> float:
     mdds: list[float] = []
     cur = 0.0
     for d in dd:
-        cur = min(cur, d)
-        if d == 0.0 and cur < 0.0:
+        cur = min(cur, float(d))
+        # Exact ``== 0`` misses a recovered peak that lands on -0 or a 1 ulp residual.
+        if float(d) >= -1e-15 and cur < 0.0:
             mdds.append(cur)
             cur = 0.0
     if cur < 0.0:
