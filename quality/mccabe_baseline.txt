@@ -225,7 +225,7 @@ src/quant_fund/execution/implementation_shortfall.py:shortfall_frame 10
 src/quant_fund/execution/langevin_impact.py:simulate_paths 19
 src/quant_fund/execution/langevin_impact.py:sqrt_band 11
 src/quant_fund/execution/simulated_broker.py:SimulatedBroker._attempt_fill 10
-src/quant_fund/execution/simulated_broker.py:SimulatedBroker.from_state 20
+src/quant_fund/execution/simulated_broker.py:SimulatedBroker.from_state 19
 src/quant_fund/execution/simulated_broker.py:SimulatedBroker.submit 10
 src/quant_fund/execution/varswap_stopping.py:entry_exit_window 22
 src/quant_fund/execution/varswap_stopping.py:solve_entry 13

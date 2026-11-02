@@ -200,7 +200,10 @@ def test_from_state_rejects_nonfinite_cash_and_marks(tmp_path):
     with pytest.raises(ValueError, match="cash"):
         SimulatedBroker.from_state(cfg, {"cash": float("nan")})
     with pytest.raises(ValueError, match="market marks"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "last_marks": {"A": -1.0}})
+        SimulatedBroker.from_state(
+            cfg,
+            {"cash": 1.0, "shares": {}, "open_orders": [], "last_marks": {"A": -1.0}},
+        )
 
 
 def test_from_state_rejects_invalid_cash_and_counters(tmp_path):
@@ -208,7 +211,7 @@ def test_from_state_rejects_invalid_cash_and_counters(tmp_path):
     with pytest.raises(ValueError, match="initial cash"):
         SimulatedBroker.from_state(cfg, {"initial_cash": -1.0})
     with pytest.raises(ValueError, match="counters"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "reject_count": -1})
+        SimulatedBroker.from_state(cfg, {"cash": 1.0, "shares": {}, "reject_count": -1})
 
 
 @pytest.mark.parametrize("kill_state", [None, "NOT_A_KILL_STATE"])
@@ -242,6 +245,8 @@ def test_from_state_preserves_legacy_receipt_counter_baselines(tmp_path):
             "initial_cash": 100_000.0,
             "cash": 99_000.0,
             "shares": {"A": 10.0},
+            "open_orders": [],
+            "last_marks": {"A": 100.0},
             "n_orders": 7,
             "n_fills": 3,
         },
