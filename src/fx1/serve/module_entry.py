@@ -12,24 +12,25 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from importlib.abc import Loader
 from importlib.machinery import ModuleSpec
-from typing import Any
+from types import ModuleType
+from typing import Any, cast
 
 
-class _WatchingLoader:
+class _WatchingLoader(Loader):
     """Delegate to the real loader, and arm the watcher from ``get_code``."""
 
     def __init__(self, inner: Any) -> None:
         self._inner = inner
 
-    def create_module(self, spec: ModuleSpec) -> object | None:
+    def create_module(self, spec: ModuleSpec) -> ModuleType | None:
         create = getattr(self._inner, "create_module", None)
         if create is None:
             return None
-        created: object | None = create(spec)
-        return created
+        return cast(ModuleType | None, create(spec))
 
-    def exec_module(self, module: object) -> None:
+    def exec_module(self, module: ModuleType) -> None:
         self._inner.exec_module(module)
 
     def get_code(self, fullname: str) -> object:
