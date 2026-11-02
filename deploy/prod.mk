@@ -1,10 +1,13 @@
 # Production wrappers. The root Makefile is a crown jewel, so these targets
 # live here. From the repo root:
 #
+#   make -f deploy/prod.mk prod-preflight
 #   make -f deploy/prod.mk prod-up
 #   make -f deploy/prod.mk prod-down
 #   make -f deploy/prod.mk prod-restart
 #   make -f deploy/prod.mk prod-smoke
+#   make -f deploy/prod.mk prod-backup
+#   make -f deploy/prod.mk prod-restore
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. This file does not print
 # them. SUDO prefixes docker and chown. Set SUDO= on the command line when
@@ -25,6 +28,7 @@ LAB_A ?= $(PROJECT)-lab-a-1
 LAB_B ?= $(PROJECT)-lab-b-1
 RESEARCH_A ?= $(PROJECT)-research-a-1
 RESEARCH_B ?= $(PROJECT)-research-b-1
+BACKUP_DIR ?= /tmp/dipcatcher-ops7-backup
 PRESERVE := QUANT_API_KEY,RESEARCH_API_KEY,DIPCATCHER_LAB_DATA,DIPCATCHER_RESEARCH_DATA,DIPCATCHER_TLS_DIR,LAB_TLS_PORT,RESEARCH_TLS_PORT,PROMETHEUS_PUBLISH_PORT,GRAFANA_PUBLISH_PORT
 
 export DIPCATCHER_LAB_DATA := $(LAB_DATA)
@@ -47,9 +51,12 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-smoke prod-certs prod-data prod-build
+.PHONY: prod-up prod-down prod-restart prod-smoke prod-preflight prod-backup prod-restore prod-certs prod-data prod-build
 
-prod-up: prod-certs prod-data prod-build
+prod-preflight:
+	@cd $(ROOT) && uv run --quiet python scripts/prod_preflight.py
+
+prod-up: prod-certs prod-data prod-preflight prod-build
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
 	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
 	cd $(ROOT) && $(COMPOSE) up -d --no-build --remove-orphans
@@ -89,6 +96,14 @@ prod-restart:
 
 prod-smoke:
 	@cd $(ROOT) && uv run --quiet python scripts/prod_smoke.py
+
+prod-backup:
+	cd $(ROOT) && uv run --quiet python scripts/paper_state_backup.py backup \
+		--source $(LAB_DATA) --dest $(BACKUP_DIR)
+
+prod-restore:
+	cd $(ROOT) && $(SUDO) $(ROOT)/.venv/bin/python scripts/paper_state_backup.py restore \
+		--archive $(BACKUP_DIR) --dest $(LAB_DATA)
 
 prod-certs:
 	mkdir -p $(TLS_DIR)

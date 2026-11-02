@@ -1,8 +1,10 @@
 """Backup and restore the paper ledger and checkpoint files.
 
-The archive is ``manifest.json`` plus payload bytes. Restore checks every
-hash before it writes. A symlink, a tampered payload, or a destination file
-with different bytes fails closed and leaves the destination unchanged.
+The archive is ``manifest.json`` plus payload bytes. It includes the paper
+ledger, checkpoints, and a regular ``kill_switch`` file at the source root
+when that file exists. Restore checks every hash before it writes. A
+symlink, a tampered payload, or a destination file with different bytes
+fails closed and leaves the destination unchanged.
 Copies land through a same-directory temporary file, fsync, and replace.
 Dotfiles, including a torn write, are not archived.
 """
@@ -85,8 +87,22 @@ def _collect(source: Path) -> list[Path]:
     found: list[Path] = []
     for root in roots:
         found.extend(_walk_files(root))
+    _include_kill(source, found)
     found.sort()
     return found
+
+
+def _include_kill(source: Path, found: list[Path]) -> None:
+    """Archive the operator kill file. A missing file stays ENABLED."""
+    kill = source / "kill_switch"
+    if kill.is_symlink():
+        raise PaperBackupError("symlink")
+    if not kill.exists():
+        return
+    if not kill.is_file():
+        raise PaperBackupError("kill_switch")
+    if kill not in found:
+        found.append(kill)
 
 
 def _select_roots(source: Path) -> list[Path]:

@@ -179,7 +179,7 @@ def test_production_research_reports_rate_and_writable_together(
     data.mkdir()
     monkeypatch.setenv("DIPCATCHER_DATA_ROOT", str(data))
     monkeypatch.setenv("DIPCATCHER_PROFILE", "production")
-    monkeypatch.delenv("DIPCATCHER_RATE_LIMIT_RPS", raising=False)
+    monkeypatch.setenv("DIPCATCHER_RATE_LIMIT_RPS", "0")
     monkeypatch.setenv("DIPCATCHER_REQUIRE_DATA_WRITE", "0")
 
     def _exec(cmd: str, args: list[str]) -> None:

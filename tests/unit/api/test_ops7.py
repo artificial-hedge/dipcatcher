@@ -181,7 +181,15 @@ def test_proxy_contract_matches_the_app_cap() -> None:
     assert loaded["services"]["research-a"]["environment"]["DIPCATCHER_WRITE_OWNER"] == "0"
     assert loaded["services"]["research-b"]["environment"]["DIPCATCHER_WRITE_OWNER"] == "0"
     assert compose.count("/app/data:ro") == 1
-    for name in ("prod-up", "prod-down", "prod-restart", "prod-smoke"):
+    for name in (
+        "prod-up",
+        "prod-down",
+        "prod-restart",
+        "prod-smoke",
+        "prod-preflight",
+        "prod-backup",
+        "prod-restore",
+    ):
         assert f"{name}:" in makefile
         assert f"{name}:" not in root_make
 

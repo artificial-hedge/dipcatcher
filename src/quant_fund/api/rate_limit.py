@@ -1,9 +1,12 @@
 """Process-wide token bucket for the lab and research APIs.
 
-Unset or ``0`` disables the limit. A positive ``DIPCATCHER_RATE_LIMIT_RPS``
-answers overload with HTTP 429. ``/health`` stays unlimited so a probe is not
-counted against the caller. Invalid values are refused at startup; if one
-still reaches a request, the answer is 429 rather than 500.
+Outside production, unset or ``0`` disables the limit. Under
+``DIPCATCHER_PROFILE=production`` or ``prod``, an unset value uses
+:data:`PRODUCTION_DEFAULT_RPS` so the limit cannot stay off. A positive
+``DIPCATCHER_RATE_LIMIT_RPS`` answers overload with HTTP 429. ``/health``
+stays unlimited so a probe is not counted against the caller. Invalid
+values are refused at startup; if one still reaches a request, the answer
+is 429 rather than 500.
 """
 
 from __future__ import annotations
@@ -15,16 +18,30 @@ import time
 from typing import Any
 
 _ENV = "DIPCATCHER_RATE_LIMIT_RPS"
+_PROFILE = "DIPCATCHER_PROFILE"
+_PRODUCTION = frozenset({"production", "prod"})
+PRODUCTION_DEFAULT_RPS = 50.0
 _PUBLIC = frozenset({"/health"})
 _MAX_RPS = 1_000_000.0
 _BODY = b'{"detail":"rate limit exceeded"}\n'
 
 
+def _production_profile() -> bool:
+    return os.environ.get(_PROFILE, "").strip().lower() in _PRODUCTION
+
+
+def _unset_rps() -> float:
+    """Production unset stays limited. Every other unset value stays off."""
+    if _production_profile():
+        return PRODUCTION_DEFAULT_RPS
+    return 0.0
+
+
 def configured_rps() -> float:
-    """Return the limit. ``0`` is off. ``-1`` means the value is unusable."""
+    """Return the limit. ``0`` is off outside production. ``-1`` is unusable."""
     raw = os.environ.get(_ENV, "").strip()
     if not raw:
-        return 0.0
+        return _unset_rps()
     try:
         value = float(raw)
     except ValueError:

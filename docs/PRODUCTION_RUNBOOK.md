@@ -24,8 +24,8 @@ value.
 | `DIPCATCHER_METRICS_HOST` | `127.0.0.1` | Used only when `DIPCATCHER_METRICS_PORT` is set. |
 | `DIPCATCHER_METRICS_PORT` | unset | Requires `DIPCATCHER_OBSERVE=1`. `/metrics` requires the service API key as `X-API-Key` or `Authorization: Bearer`, unless the loopback scrape opt-out is set. `dipcatcher smoke-up` installs that server at import, so the lab CLI defaults `DIPCATCHER_METRICS_KEY_ENV` to `QUANT_API_KEY` when it is unset. The research process sets the name to `RESEARCH_API_KEY` before it binds. |
 | `DIPCATCHER_OTEL_ENDPOINT` | unset | `http` or `https` URL with a host and no userinfo. Requires `DIPCATCHER_OBSERVE=1`. |
-| `DIPCATCHER_RATE_LIMIT_RPS` | unset (off) | Finite rate from 0 to 1000000 for both APIs. `0` or unset disables the limit outside production. `/health` is exempt. Overload returns HTTP 429. An invalid value refuses startup. A production profile refuses to boot unless this is set and above 0. |
-| `DIPCATCHER_PROFILE` | unset | `production` or `prod` requires `DIPCATCHER_RATE_LIMIT_RPS` set and above 0. A lab command also forces the data-dir write probe even when `DIPCATCHER_REQUIRE_DATA_WRITE=0`. The research API command instead refuses to start when the data directory is writable. Any other value keeps the non-production defaults. Set it in `deploy/prod.env`, not in the example env file. |
+| `DIPCATCHER_RATE_LIMIT_RPS` | unset (off outside production; 50 under production) | Finite rate from 0 to 1000000 for both APIs. `0` or unset disables the limit outside production. Under `production` or `prod`, unset uses 50 so the limit stays on. `/health` is exempt. Overload returns HTTP 429. `0` or an invalid value still refuses a production boot. |
+| `DIPCATCHER_PROFILE` | unset | `production` or `prod` applies the rate default above, forces the lab data-dir write probe even when `DIPCATCHER_REQUIRE_DATA_WRITE=0`, and requires the research data directory to be read-only. Any other value keeps the non-production defaults. Set it in `deploy/prod.env`, not in the root example env file. `deploy/prod.env.example` lists the production values. |
 | `DIPCATCHER_WRITE_OWNER` | unset | Not in the example env file and not in the service env contract. Outside `production` and `prod`, unset allows writes and takes no lock. Under that profile an unset value refuses to boot and refuses paper-ledger and kill-file writes with `write_owner_required`. The message says `DIPCATCHER_WRITE_OWNER` must be set. `1`, `true`, `yes`, or `on` is the owner and holds `{DIPCATCHER_DATA_ROOT}/.dipcatcher-write.lock` for the process lifetime. `0`, `false`, `no`, or `off` is a reader and refuses those writes. Any other value refuses to boot. Compose sets this per replica. |
 | `DIPCATCHER_SLO_PATH` | shipped `deploy/observability/slo.yml` when observe is on and this is unset | Requires `DIPCATCHER_OBSERVE=1`. A symlink or invalid file refuses startup. |
 | `DIPCATCHER_ALERT_INTERVAL_S` | `60` | Alert loop period. `1`–`86400`. |
@@ -56,11 +56,18 @@ shell history if you can avoid it; the compose file reads it from the
 environment.
 
 ```bash
+make -f deploy/prod.mk prod-preflight
 make -f deploy/prod.mk prod-up
 make -f deploy/prod.mk prod-down
 make -f deploy/prod.mk prod-restart
 make -f deploy/prod.mk prod-smoke
+make -f deploy/prod.mk prod-backup
+make -f deploy/prod.mk prod-restore
 ```
+
+`prod-preflight` prints one JSON object and exits 0 or 1. `prod-up` runs it
+after the certificate and data directories exist and before the image
+build. A failed preflight does not build and does not start the stack.
 
 `prod-smoke` runs `prod-up`, checks TLS `/health`, the 64 KiB body cap, and
 the write lock, then runs `prod-down`. Stdout is one JSON object. The exit
@@ -144,9 +151,11 @@ full and names uid 10001. For the research API command the same profile
 requires the data directory to be read-only. Compose mounts it `:ro`. A
 writable research directory exits before exec. The message says it must be
 read-only. A full research directory still fails with the full-disk
-message. A production boot with a missing, zero, or invalid rate exits
-before exec. The message names `DIPCATCHER_RATE_LIMIT_RPS` and does not
-print the value.
+message. A production boot with an unset rate fills
+`DIPCATCHER_RATE_LIMIT_RPS=50` before exec, which is the same default the
+process uses when it is started without the entrypoint. Zero or an invalid
+rate still exits before exec. The message names `DIPCATCHER_RATE_LIMIT_RPS`
+and does not print the value.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt

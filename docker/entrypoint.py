@@ -4,8 +4,9 @@ A symlink is always refused. The write probe runs when
 ``DIPCATCHER_REQUIRE_DATA_WRITE`` is on, and also when
 ``DIPCATCHER_PROFILE`` is ``production`` or ``prod``, unless the command is
 the research API. Production research must see a data directory it cannot
-write. That profile also refuses to boot unless ``DIPCATCHER_RATE_LIMIT_RPS``
-is set and above 0. The research image leaves the write flag off;
+write. That profile leaves an unset ``DIPCATCHER_RATE_LIMIT_RPS`` at the
+process default of 50 so the limit cannot stay off. Zero and any invalid
+rate still refuse to boot. The research image leaves the write flag off;
 ``deploy/prod.env`` turns the profile on. This file uses the stdlib only.
 """
 
@@ -20,6 +21,7 @@ _DIP_UID = 10001
 _TRUE = frozenset({"1", "true", "yes", "on"})
 _PRODUCTION = frozenset({"production", "prod"})
 _RATE_MESSAGE = "DIPCATCHER_RATE_LIMIT_RPS must be set above 0 in production"
+_PRODUCTION_DEFAULT_RPS = "50"
 _RESEARCH_ARGV = "quant_fund.api.research_api"
 _READ_ONLY_ERRNO = frozenset({errno.EROFS, errno.EACCES, errno.EPERM})
 _RESEARCH_RO = "must be read-only when DIPCATCHER_PROFILE is production"
@@ -33,13 +35,19 @@ def _production() -> bool:
     return os.environ.get("DIPCATCHER_PROFILE", "").strip().lower() in _PRODUCTION
 
 
+def _apply_production_rate_default() -> None:
+    """Fill an unset production rate so the child process cannot run unlimited."""
+    if _production() and not os.environ.get("DIPCATCHER_RATE_LIMIT_RPS", "").strip():
+        os.environ["DIPCATCHER_RATE_LIMIT_RPS"] = _PRODUCTION_DEFAULT_RPS
+
+
 def _production_rate_problem() -> str | None:
     """Return the production rate message, or ``None`` when the boot may continue."""
     if not _production():
         return None
     raw = os.environ.get("DIPCATCHER_RATE_LIMIT_RPS", "").strip()
     if not raw:
-        return _RATE_MESSAGE
+        return None
     try:
         value = float(raw)
     except ValueError:
@@ -126,6 +134,7 @@ def check_data_dir(path: str, *, require_write: bool) -> str | None:
 
 def main(argv: list[str]) -> int:
     problems: list[str] = []
+    _apply_production_rate_default()
     rate = _production_rate_problem()
     if rate is not None:
         problems.append(rate)

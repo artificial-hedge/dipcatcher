@@ -69,14 +69,14 @@ def test_production_rate_must_be_set_above_zero(monkeypatch: pytest.MonkeyPatch)
     refused = "DIPCATCHER_RATE_LIMIT_RPS must be set above 0 in production"
     for profile in ("production", "prod", "Production"):
         monkeypatch.setenv("DIPCATCHER_PROFILE", profile)
-        for raw in ("", "0", "0.0", "-1", "nope", "inf", "nan", "1000001"):
+        for raw in ("0", "0.0", "-1", "nope", "inf", "nan", "1000001"):
             if raw:
                 monkeypatch.setenv("DIPCATCHER_RATE_LIMIT_RPS", raw)
             else:
                 monkeypatch.delenv("DIPCATCHER_RATE_LIMIT_RPS", raising=False)
             with pytest.raises(ServiceConfigError, match=refused) as raised:
                 ServiceSettings.for_research()
-            if raw not in {"", "0", "0.0"}:
+            if raw not in {"0", "0.0"}:
                 assert raw not in str(raised.value)
             assert "nope" not in str(raised.value)
     monkeypatch.setenv("DIPCATCHER_RATE_LIMIT_RPS", "50")
@@ -90,7 +90,7 @@ def test_production_rate_must_be_set_above_zero(monkeypatch: pytest.MonkeyPatch)
     assert ServiceSettings.for_research().service == "research"
 
 
-def test_production_entrypoint_refuses_a_missing_rate(
+def test_production_entrypoint_refuses_a_zero_rate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     entry = _entrypoint()
@@ -99,7 +99,7 @@ def test_production_entrypoint_refuses_a_missing_rate(
     data.chmod(0o555)
     monkeypatch.setenv("DIPCATCHER_DATA_ROOT", str(data))
     monkeypatch.setenv("DIPCATCHER_PROFILE", "production")
-    monkeypatch.delenv("DIPCATCHER_RATE_LIMIT_RPS", raising=False)
+    monkeypatch.setenv("DIPCATCHER_RATE_LIMIT_RPS", "0")
     monkeypatch.setenv("DIPCATCHER_REQUIRE_DATA_WRITE", "0")
     called: list[str] = []
 

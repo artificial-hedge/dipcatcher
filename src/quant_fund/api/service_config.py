@@ -294,14 +294,12 @@ def _parsed_rate(raw: str) -> float | None:
 
 def _rate_limit_problems() -> list[str]:
     raw = _env("DIPCATCHER_RATE_LIMIT_RPS")
-    if _production_profile():
-        value = _parsed_rate(raw) if raw else None
-        if value is None or value <= 0.0:
-            return [_PRODUCTION_RATE]
-        return []
     if not raw:
         return []
-    if _parsed_rate(raw) is None:
+    value = _parsed_rate(raw)
+    if _production_profile() and (value is None or value <= 0.0):
+        return [_PRODUCTION_RATE]
+    if not _production_profile() and value is None:
         return [_INVALID_RATE]
     return []
 

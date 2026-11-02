@@ -34,7 +34,32 @@ and docker logs go to stderr with the key values redacted. If either key
 is missing, the object is
 `{"error": "QUANT_API_KEY and RESEARCH_API_KEY are required", "ok": false}`
 and `make` is not invoked. After a `prod-up` attempt the script always
-attempts `prod-down`.
+attempts `prod-down`. `prod-up` runs `prod-preflight` first. A failed
+preflight does not build images and does not start the stack.
+
+## Preflight
+
+```bash
+make -f deploy/prod.mk prod-certs
+make -f deploy/prod.mk prod-data
+make -f deploy/prod.mk prod-preflight
+```
+
+Stdout is one JSON object with `ok` and `checks`. The exit status is 0
+only when every check passed. The checks are the shell keys (present, one
+token, values not printed), `dev.crt` and `dev.key` (key mode 600, cert
+valid for at least a day), the four loopback publish ports free and
+distinct, at least 64 MiB free on the lab, research, and certificate
+directories, the compose write-owner layout (`lab-a` is `1`, the other
+three replicas are `0`, research data is `:ro`), and the host clock
+(year 2024–2035 and inside the certificate window). `9464` must not be
+one of the publish ports.
+
+`deploy/prod.env` keeps `DIPCATCHER_RATE_LIMIT_RPS=50`. If that variable
+is unset while `DIPCATCHER_PROFILE` is `production` or `prod`, the process
+uses 50 rather than leaving the limit off. `deploy/prod.env.example`
+lists every production variable, the default, and why. The root
+`.env.example` does not.
 
 ## Restart
 
@@ -179,3 +204,37 @@ docker start dipcatcher-ops7-proxy-1
 
 Container names follow `PROJECT` (default `dipcatcher-ops7`) plus
 `-<service>-1`.
+
+## Backup and restore
+
+The lab data directory holds the paper ledger and the kill file. Research
+data is mounted read-only and is not the writer. Stop `lab-a` before a
+backup so the owner is not replacing a file. The archive stores hashes.
+It includes `metadata/paper/`, `checkpoints/`, and `kill_switch` when that
+file exists. A missing kill file is `ENABLED` and is not an error. Dotfiles
+and a symlink are refused.
+
+```bash
+docker stop dipcatcher-ops7-lab-a-1
+make -f deploy/prod.mk prod-backup
+```
+
+The archive lands in `BACKUP_DIR` (default `/tmp/dipcatcher-ops7-backup`).
+Restore checks every hash before it writes. A destination file whose bytes
+differ is left unchanged and the command exits 1. Byte-identical files are
+left in place. Restore writes as root when `SUDO` is `sudo`, because the
+data directory is owned by uid 10001.
+
+Drill, on a copy, before pointing restore at the live directory:
+
+```bash
+make -f deploy/prod.mk LAB_DATA=/tmp/dipcatcher-drill/lab BACKUP_DIR=/tmp/dipcatcher-drill/archive prod-backup
+rm -rf /tmp/dipcatcher-drill/lab
+mkdir -p /tmp/dipcatcher-drill/lab
+make -f deploy/prod.mk LAB_DATA=/tmp/dipcatcher-drill/lab BACKUP_DIR=/tmp/dipcatcher-drill/archive prod-restore
+```
+
+Compare the restored `kill_switch` and `metadata/paper/` bytes with the
+archive payload. Do not edit receipts. Start `lab-a` again after the live
+directory is the one you intend to run. This is a simulated-paper restore.
+It does not place a live order.
