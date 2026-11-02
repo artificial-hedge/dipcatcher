@@ -199,7 +199,6 @@ src/quant_fund/data/adapters/hf_ohlcv_1m.py:stream_https 12
 src/quant_fund/data/adapters/parquet.py:ParquetMarketProvider.get_corporate_actions 16
 src/quant_fund/data/concurrent_io.py:amap_ordered 11
 src/quant_fund/data/concurrent_io.py:map_ordered 14
-src/quant_fund/data/concurrent_io.py:pooled_request 12
 src/quant_fund/data/concurrent_io.py:pooled_stream 15
 src/quant_fund/data/lakehouse/lineage.py:_verify_dataset 20
 src/quant_fund/data/quality/checks.py:check_missing_bars 12

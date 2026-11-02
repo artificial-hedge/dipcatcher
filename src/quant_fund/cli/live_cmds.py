@@ -57,10 +57,15 @@ def _key(root: Path) -> bytes:
     root.mkdir(parents=True, exist_ok=True)
     key = secrets.token_bytes(32)
     fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    stored = False
     try:
         os.write(fd, key)
+        os.fsync(fd)
+        stored = True
     finally:
         os.close(fd)
+        if not stored:
+            path.unlink(missing_ok=True)
     return key
 
 
