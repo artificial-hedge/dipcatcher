@@ -192,6 +192,9 @@ def test_proxy_contract_matches_the_app_cap() -> None:
         "prod-dr-drill",
         "prod-rollback",
         "prod-secrets",
+        "prod-canary",
+        "prod-log-retain",
+        "prod-backup-ship",
     ):
         assert f"{name}:" in makefile
         assert f"{name}:" not in root_make

@@ -17,6 +17,12 @@
 
 name: dipcatcher-ops7
 
+x-json-log: &json-log
+  driver: json-file
+  options:
+    max-size: ${DIPCATCHER_LOG_MAX_SIZE:-10m}
+    max-file: ${DIPCATCHER_LOG_MAX_FILE:-5}
+
 x-api-health: &api-health
   test: ["CMD", "/app/.venv/bin/python", "/app/healthcheck.py"]
   interval: 5s
@@ -34,8 +40,10 @@ x-lab: &lab
   healthcheck: *api-health
   stop_signal: SIGTERM
   stop_grace_period: 30s
+  logging: *json-log
   volumes:
     - ${DIPCATCHER_LAB_DATA:?set DIPCATCHER_LAB_DATA to a directory owned by uid 10001}:/app/data
+    - ${DIPCATCHER_LOG_DIR:-/tmp/dipcatcher-ops7-logs}:/logs
   secrets:
     - quant_api_key
     - alert_webhook_secret
@@ -66,8 +74,10 @@ x-research: &research
   healthcheck: *api-health
   stop_signal: SIGTERM
   stop_grace_period: 30s
+  logging: *json-log
   volumes:
     - ${DIPCATCHER_RESEARCH_DATA:?set DIPCATCHER_RESEARCH_DATA to a directory owned by uid 10001}:/app/data:ro
+    - ${DIPCATCHER_LOG_DIR:-/tmp/dipcatcher-ops7-logs}:/logs
   secrets:
     - research_api_key
     - alert_webhook_secret
@@ -95,12 +105,14 @@ services:
     environment:
       <<: *lab-env
       DIPCATCHER_WRITE_OWNER: "1"
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/lab-a.jsonl
 
   lab-b:
     <<: *lab
     command: ["dipcatcher", "api"]
     environment:
       <<: *lab-env
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/lab-b.jsonl
     depends_on:
       lab-a:
         condition: service_healthy
@@ -110,12 +122,23 @@ services:
     command: ["python", "-m", "quant_fund.api.research_api"]
     environment:
       <<: *research-env
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/research-a.jsonl
 
   research-b:
     <<: *research
     command: ["python", "-m", "quant_fund.api.research_api"]
     environment:
       <<: *research-env
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/research-b.jsonl
+
+  lab-canary:
+    <<: *lab
+    profiles: ["canary"]
+    command: ["dipcatcher", "api"]
+    environment:
+      <<: *lab-env
+      DIPCATCHER_WRITE_OWNER: "0"
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/lab-canary.jsonl
 
   proxy:
     image: caddy:2.8.4
@@ -132,6 +155,7 @@ services:
       - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./proxy/secret-entrypoint.sh:/opt/dipcatcher/secret-entrypoint.sh:ro
       - ${DIPCATCHER_TLS_DIR:?set DIPCATCHER_TLS_DIR to the certificate directory}:/certs:ro
+    logging: *json-log
     ports:
       - "127.0.0.1:${LAB_TLS_PORT:-8443}:8443"
       - "127.0.0.1:${RESEARCH_TLS_PORT:-8444}:8444"
@@ -161,6 +185,7 @@ services:
       - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ./observability/slo_rules.yml:/etc/prometheus/slo_rules.yml:ro
       - ./observability/prometheus-entrypoint.sh:/etc/prometheus/prometheus-entrypoint.sh:ro
+    logging: *json-log
     ports:
       - "127.0.0.1:${PROMETHEUS_PUBLISH_PORT:-9090}:9090"
     depends_on:
@@ -181,10 +206,21 @@ services:
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    logging: *json-log
     ports:
       - "127.0.0.1:${GRAFANA_PUBLISH_PORT:-3000}:3000"
     depends_on:
       - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    command:
+      - --path.rootfs=/host
+      - --collector.disable-defaults
+      - --collector.filesystem
+    volumes:
+      - /:/host:ro
+    logging: *json-log
 
 secrets:
   quant_api_key:

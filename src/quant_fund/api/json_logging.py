@@ -79,8 +79,10 @@ def emit_service_event(event: str, **fields: Any) -> None:
     request_id = current_request_id()
     if request_id and "request_id" not in record:
         record["request_id"] = request_id
-    sys.stderr.write(json.dumps(record, sort_keys=True, default=str) + "\n")
+    encoded = json.dumps(record, sort_keys=True, default=str)
+    sys.stderr.write(encoded + "\n")
     sys.stderr.flush()
+    append_audit_line(encoded)
 
 
 class JsonLineFormatter(logging.Formatter):
@@ -101,6 +103,85 @@ class JsonLineFormatter(logging.Formatter):
         if request_id:
             payload["request_id"] = request_id
         return json.dumps(payload, sort_keys=True, default=str)
+
+
+_AUDIT_PATH = "DIPCATCHER_AUDIT_LOG_PATH"
+_AUDIT_MAX_BYTES = "DIPCATCHER_AUDIT_LOG_MAX_BYTES"
+_AUDIT_MAX_FILES = "DIPCATCHER_AUDIT_LOG_MAX_FILES"
+_DEFAULT_AUDIT_BYTES = 10 * 1024 * 1024
+_DEFAULT_AUDIT_FILES = 5
+
+
+def _positive_int(name: str, default: int) -> int | None:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    if not raw.isdecimal():
+        return None
+    value = int(raw)
+    if value < 1:
+        return None
+    return value
+
+
+def _audit_limits() -> tuple[int, int] | None:
+    max_bytes = _positive_int(_AUDIT_MAX_BYTES, _DEFAULT_AUDIT_BYTES)
+    max_files = _positive_int(_AUDIT_MAX_FILES, _DEFAULT_AUDIT_FILES)
+    if max_bytes is None or max_files is None:
+        return None
+    return max_bytes, max_files
+
+
+def _shift_numbered(path: str, max_files: int) -> None:
+    oldest = f"{path}.{max_files}"
+    if os.path.islink(path) or os.path.islink(oldest):
+        raise OSError("symlink")
+    if os.path.lexists(oldest):
+        os.unlink(oldest)
+    index = max_files - 1
+    while index >= 1:
+        src = f"{path}.{index}"
+        dest = f"{path}.{index + 1}"
+        if os.path.islink(src) or os.path.islink(dest):
+            raise OSError("symlink")
+        if os.path.lexists(src):
+            os.replace(src, dest)
+        index -= 1
+    os.replace(path, f"{path}.1")
+
+
+def _open_audit(path: str, payload: bytes, limits: tuple[int, int]) -> int:
+    max_bytes, max_files = limits
+    if os.path.isfile(path) and os.path.getsize(path) + len(payload) > max_bytes:
+        _shift_numbered(path, max_files)
+    return os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+
+
+def append_audit_line(line: str) -> None:
+    """Append one already-redacted line when an absolute audit path is set.
+
+    The service logger stays on stderr. This file is the audit stream. A
+    symlink is ignored. When the next line would pass the size cap, the
+    current file is renamed to ``path.1`` and older copies shift up.
+    ``scripts/log_retain.py`` applies the age cap.
+    """
+    raw = os.environ.get(_AUDIT_PATH, "").strip()
+    if not raw or not os.path.isabs(raw) or os.path.islink(raw):
+        return
+    limits = _audit_limits()
+    if limits is None:
+        return
+    payload = (line + "\n").encode("utf-8")
+    try:
+        descriptor = _open_audit(raw, payload, limits)
+    except OSError:
+        return
+    try:
+        os.write(descriptor, payload)
+    except OSError:
+        return
+    finally:
+        os.close(descriptor)
 
 
 def json_log_config(level: str) -> dict[str, Any]:

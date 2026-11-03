@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly dipcatcher paper-state backup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=dipcatcher-prod-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -169,6 +169,9 @@ def test_prod_env_example_lists_the_production_surface() -> None:
         "prod-dr-drill",
         "prod-rollback",
         "prod-secrets",
+        "prod-canary",
+        "prod-log-retain",
+        "prod-backup-ship",
     ):
         assert f"{name}:" in prod
         assert f"{name}:" not in makefile

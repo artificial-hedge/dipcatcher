@@ -65,6 +65,9 @@ make -f deploy/prod.mk prod-smoke
 make -f deploy/prod.mk prod-backup
 make -f deploy/prod.mk prod-restore
 make -f deploy/prod.mk prod-dr-drill
+make -f deploy/prod.mk prod-log-retain
+make -f deploy/prod.mk prod-backup-ship
+make -f deploy/prod.mk prod-canary
 ```
 
 `prod-preflight` prints one JSON object and exits 0 or 1. `prod-up` runs it
@@ -85,6 +88,20 @@ ledger digest. It prints `rto_seconds`. Host hardening warnings and the
 owner restamp command are on the operator sheet,
 `docs/OPS_RUNBOOK_PROD.md`. The kill-audit count gap is
 `docs/KILL_AUDIT_RECONCILIATION.md`.
+
+`prod-log-retain` applies the size, age, and file caps to the `app`,
+`proxy`, and `audit` directories under `LOG_DIR`, and it prunes rotated
+Docker json-file logs for the compose project. It does not rename the
+live `*-json.log`, and it does not rotate `entries.jsonl` or
+`checkpoints.jsonl`. `prod-backup-ship` writes a new stamp under
+`BACKUP_ROOT`, rehashes the manifest, and copies it only after that
+check. `DIPCATCHER_BACKUP_COPY` is `none`, `rsync`, or `s3`. The timer
+does not stop the writer. `prod-canary` starts one lab reader that is
+not in the proxy pool, probes it, then recreates the API replicas and
+the proxy or leaves them running and removes the canary. Run
+`prod-build` before `prod-canary`. The canary does not take the write
+lock. A fresh host is `docs/DEPLOY_REAL_HOST.md`. These knobs are not
+part of `ENV_CONTRACT`.
 
 `prod-rollback` retags `dipcatcher:previous` onto `dipcatcher:local` and
 `dipcatcher-research-api:previous` onto `dipcatcher-research-api:latest`,

@@ -181,11 +181,13 @@ def test_prod_env_is_the_production_default_and_holds_no_secrets() -> None:
     assert set(compose["services"]) == {
         "lab-a",
         "lab-b",
+        "lab-canary",
         "research-a",
         "research-b",
         "proxy",
         "prometheus",
         "grafana",
+        "node-exporter",
     }
     rendered = (_ROOT / "deploy" / "compose.prod.yml").read_text(encoding="utf-8")
     assert "GF_SECURITY_ADMIN_PASSWORD" not in rendered
