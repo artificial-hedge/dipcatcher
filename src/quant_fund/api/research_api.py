@@ -21,10 +21,11 @@ Evidence roots (all read-only, resolved at app construction):
 ``<data_root>`` defaults to ``$RESEARCH_API_DATA_ROOT``, then
 ``$QUANT_DATA_ROOT``, then ``<repo>/data``.
 
-Secure default: ``/health`` and ``/ready`` are the only unauthenticated
-routes. ``/health`` is liveness. ``/ready`` is readiness: it is 200 only when
-the evidence roots are directories and the process is accepting work, and
-503 otherwise. ``RESEARCH_API_KEY`` is the admin key and
+Secure default: ``/health`` is the only unauthenticated route. ``/ready``
+is readiness: 200 only when the evidence roots are directories and the
+process is accepting work, and 503 otherwise. Loopback may probe it
+without a key. A non-loopback client is refused first (403 when no key
+is set, 401 when a key is set and not presented). ``RESEARCH_API_KEY`` is the admin key and
 ``RESEARCH_API_READ_KEY`` is the read key. When either is set, every other
 route requires ``X-API-Key`` or ``Authorization: Bearer``. The admin key
 authorizes every method. The read key authorizes GET, HEAD, and OPTIONS.
@@ -58,10 +59,12 @@ from quant_fund.api.http_controls import (
     apply_security_headers,
     attach_body_limit,
     buffer_capped_body,
+    client_host,
     credential_refusal,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
+    is_loopback_host,
     key_rate_response,
     nonempty_env,
     reject_declared_body,
@@ -72,7 +75,7 @@ from quant_fund.api.rate_limit import RateLimitMiddleware
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-_PUBLIC_PATHS = frozenset({"/health", "/ready"})
+_PUBLIC_PATHS = frozenset({"/health"})
 _RUN_ID_RE = re.compile(r"^[0-9a-f]{64}$")
 _RECEIPT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 _ARTIFACT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_./-]{0,255}$")
@@ -446,6 +449,11 @@ def research_ready(cfg: ResearchApiSettings) -> JSONResponse:
     )
 
 
+def _loopback_ready(request: Request, path: str) -> bool:
+    """Local probes may read readiness. Remote clients must authenticate."""
+    return path == "/ready" and is_loopback_host(client_host(request))
+
+
 def research_api_key(cfg: ResearchApiSettings) -> str | None:
     """Explicit settings keep their key. Env-backed apps read it per request."""
     if cfg.key_from_env:
@@ -483,7 +491,7 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
     if deep is not None:
         return deep
     path = request.url.path
-    if path in _PUBLIC_PATHS:
+    if path in _PUBLIC_PATHS or _loopback_ready(request, path):
         return await call_next(request)
     limited = ip_rate_response(request, "RESEARCH_API")
     if limited is not None:
@@ -1074,10 +1082,11 @@ app = create_app()
 
 
 if __name__ == "__main__":
+    from quant_fund.api.http_controls import serve_banner_kwargs
     from quant_fund.api.serve import serve_research
     from quant_fund.api.service_config import ServiceConfigError
 
     try:
-        serve_research(app)
+        serve_research(app, **serve_banner_kwargs())
     except ServiceConfigError as exc:
         raise SystemExit(str(exc)) from exc

@@ -1078,8 +1078,16 @@ def test_api_loopback_invokes_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
         port: int,
         log_level: str,
         shutdown_grace_s: int,
+        **banner: bool,
     ) -> None:
-        calls.update(app=application, host=host, port=port, grace=shutdown_grace_s, level=log_level)
+        calls.update(
+            app=application,
+            host=host,
+            port=port,
+            grace=shutdown_grace_s,
+            level=log_level,
+            banner=banner,
+        )
 
     _clear_service_env(monkeypatch)
     monkeypatch.delenv("QUANT_API_KEY", raising=False)

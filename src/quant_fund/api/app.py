@@ -45,7 +45,7 @@ from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 
 app = FastAPI(
     title=f"{__firm__} Dipcatcher",
-    version=__version__,
+    version="0",
     lifespan=service_lifespan,
     docs_url=None,
     redoc_url=None,

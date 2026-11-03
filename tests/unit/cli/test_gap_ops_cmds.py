@@ -61,6 +61,7 @@ def recorded_uvicorn(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         port: int,
         log_level: str,
         shutdown_grace_s: int,
+        **banner: bool,
     ) -> None:
         calls["app"] = application
         calls["host"] = host
@@ -68,6 +69,7 @@ def recorded_uvicorn(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         calls["log_level"] = log_level
         calls["shutdown_grace_s"] = shutdown_grace_s
         calls["reload"] = False
+        calls["banner"] = banner
 
     monkeypatch.setattr(serve, "run_uvicorn", _fake_run)
     return calls
@@ -82,6 +84,7 @@ def test_a_loopback_binding_needs_no_api_key(
     assert recorded_uvicorn["host"] == "127.0.0.1"
     assert recorded_uvicorn["port"] == 8000
     assert recorded_uvicorn["reload"] is False
+    assert recorded_uvicorn["banner"] == {"server_header": False, "date_header": False}
 
 
 @pytest.mark.parametrize("host", ["127.0.0.1", "::1", "localhost"])

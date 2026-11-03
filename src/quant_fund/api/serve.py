@@ -67,7 +67,12 @@ def run_uvicorn(
     port: int,
     log_level: str,
     shutdown_grace_s: int,
+    **banner: bool,
 ) -> None:
+    from quant_fund.api.http_controls import serve_banner_kwargs
+
+    hidden = serve_banner_kwargs()
+    hidden.update(banner)
     config = uvicorn.Config(
         application,
         host=host,
@@ -76,13 +81,18 @@ def run_uvicorn(
         log_config=json_log_config(log_level),
         log_level=log_level.lower(),
         timeout_graceful_shutdown=shutdown_grace_s,
-        server_header=False,
         proxy_headers=True,
+        server_header=hidden["server_header"],
+        date_header=hidden["date_header"],
     )
     _DrainServer(config).run()
 
 
-def _serve(settings: ServiceSettings, application: Any) -> None:
+def _serve(
+    settings: ServiceSettings,
+    application: Any,
+    banner: dict[str, bool] | None = None,
+) -> None:
     emit_service_event("service_start", **settings.public_dict())
     os.environ["DIPCATCHER_METRICS_KEY_ENV"] = (
         "QUANT_API_KEY" if settings.service == "lab" else "RESEARCH_API_KEY"
@@ -102,6 +112,7 @@ def _serve(settings: ServiceSettings, application: Any) -> None:
             port=settings.port,
             log_level=settings.log_level,
             shutdown_grace_s=settings.shutdown_grace_s,
+            **(banner or {}),
         )
     finally:
         from quant_fund.observe.metrics import clear_ops_sampler
@@ -112,16 +123,20 @@ def _serve(settings: ServiceSettings, application: Any) -> None:
         disarm()
 
 
-def serve_lab(host: str | None = None, port: int | None = None) -> None:
-    _serve(ServiceSettings.for_lab(host, port), "quant_fund.api.app:app")
+def serve_lab(
+    host: str | None = None,
+    port: int | None = None,
+    **banner: bool,
+) -> None:
+    _serve(ServiceSettings.for_lab(host, port), "quant_fund.api.app:app", banner)
 
 
-def serve_research(application: Any | None = None) -> None:
+def serve_research(application: Any | None = None, **banner: bool) -> None:
     if application is None:
         from quant_fund.api.research_api import app as research_app
 
         application = research_app
-    _serve(ServiceSettings.for_research(), application)
+    _serve(ServiceSettings.for_research(), application, banner)
 
 
 def main(argv: list[str] | None = None) -> None:

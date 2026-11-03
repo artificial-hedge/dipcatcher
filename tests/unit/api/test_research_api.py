@@ -427,7 +427,7 @@ def test_path_traversal_rejected(client: TestClient) -> None:
 def test_remote_client_refused_without_key(settings: ResearchApiSettings) -> None:
     remote = TestClient(create_app(settings), client=("203.0.113.7", 9))
     assert remote.get("/health").status_code == 200
-    assert remote.get("/ready").status_code == 200
+    assert remote.get("/ready").status_code == 403
     assert remote.get("/receipts").status_code == 403
     assert remote.get("/runs").status_code == 403
 
@@ -442,7 +442,7 @@ def test_api_key_gate(settings: ResearchApiSettings) -> None:
     )
     remote = TestClient(create_app(keyed), client=("203.0.113.7", 9))
     assert remote.get("/health").status_code == 200
-    assert remote.get("/ready").status_code == 200
+    assert remote.get("/ready").status_code == 401
     assert remote.get("/receipts").status_code == 401
     assert remote.get("/receipts", headers={"X-API-Key": "wrong"}).status_code == 401
     ok = remote.get("/receipts", headers={"X-API-Key": "s3cret"})

@@ -19,11 +19,12 @@ def api(
     port: int | None = typer.Option(None, help="Bind port. Overrides DIPCATCHER_BIND_PORT."),
 ) -> None:
     """Serve the lab API after the environment contract validates."""
+    from quant_fund.api.http_controls import serve_banner_kwargs
     from quant_fund.api.serve import serve_lab
     from quant_fund.api.service_config import ServiceConfigError
 
     try:
-        serve_lab(host, port)
+        serve_lab(host, port, **serve_banner_kwargs())
     except ServiceConfigError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
