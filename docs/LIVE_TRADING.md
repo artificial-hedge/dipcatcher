@@ -4,12 +4,16 @@
 [LIVE_DESK.md](LIVE_DESK.md): shadow, an in-process loopback, or a drop
 folder. That path does not open a broker socket.
 
-This page is the other book. A config with `starting_cash` and
-`pretrade_config` selects the gateway (`--config configs/live.yaml`, or
-`--actor` / `--state-dir`). It stays disarmed until you arm it. A fill is
-broker accounting. It is not a research receipt, not a proper score, and not a
-claim that a strategy made money. `live_pnl_claim` stays false on every
-gateway record.
+This page is the other book. Gateway-specific YAML fields select the gateway
+(`--config configs/live.yaml`), as do gateway-only flags such as `--state-dir`.
+It stays disarmed until you arm it. A fill is broker accounting. It is not a
+research receipt, not a proper score, and not a claim that a strategy made
+money. `live_pnl_claim` stays false on every gateway record.
+
+An explicit config is checked before either runtime opens. Mixed desk/gateway
+schemas, mixed schema-specific flags, missing files, and malformed YAML are
+rejected before state is created. `--actor` is shared by both runtimes, so it
+requires `--config`, `--root`, or `--state-dir` to make the selection explicit.
 
 The paper and simulated brokers are unchanged: configuring a live endpoint on
 that path still raises `LiveEndpointRefused`. Institutional conditions 1–5 in
@@ -78,13 +82,13 @@ that arrives outside its own session.
 ## Commands
 
 ```bash
-dipcatcher live status
-dipcatcher live submit --symbol AAPL --side buy --qty 1 --limit 190 --mark 190 --actor YOUR_NAME
-dipcatcher live cancel --client-order-id ORDER_ID --actor YOUR_NAME
-dipcatcher live reconcile
-dipcatcher live flatten --actor YOUR_NAME
-dipcatcher live kill --actor YOUR_NAME --reason "halt"
-dipcatcher live reset --actor YOUR_NAME --reason "cleared"
+dipcatcher live status --config configs/live.yaml
+dipcatcher live submit --config configs/live.yaml --symbol AAPL --side buy --qty 1 --limit 190 --mark 190 --actor YOUR_NAME
+dipcatcher live cancel --config configs/live.yaml --client-order-id ORDER_ID --actor YOUR_NAME
+dipcatcher live reconcile --config configs/live.yaml
+dipcatcher live flatten --config configs/live.yaml --actor YOUR_NAME
+dipcatcher live kill --config configs/live.yaml --actor YOUR_NAME --reason "halt"
+dipcatcher live reset --config configs/live.yaml --actor YOUR_NAME --reason "cleared"
 ```
 
 `--mark` is the reference price for the collar. It is not taken from a market

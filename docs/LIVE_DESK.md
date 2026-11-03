@@ -98,7 +98,7 @@ a new process does not reset them.
 
 ```sh
 dipcatcher live kill --reason "feed gap"
-dipcatcher live reset --actor ops --reason "feed restored"
+dipcatcher live reset --root ~/.dipcatcher/live --actor ops --reason "feed restored"
 ```
 
 Reset re-enables drop transmission when the venue is still `drop` and
