@@ -282,8 +282,13 @@ def normalize_vendor_frame(frame: pl.DataFrame, *, clock: Clock | None = None) -
     return out.select(columns).sort(["security_id", "event_time"])
 
 
-def minute_gap_report(bars: pl.DataFrame) -> pl.DataFrame:
-    """Flag missing regular-session minutes. Does not insert bars.
+def minute_gap_report(
+    bars: pl.DataFrame,
+    *,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> pl.DataFrame:
+    """Flag missing regular-session minutes and weekdays without inserting bars.
 
     Each observed America/New_York session date is compared with the 390
     minute starts from 09:30 through 15:59. Counts are distinct minute starts,
@@ -291,8 +296,8 @@ def minute_gap_report(bars: pl.DataFrame) -> pl.DataFrame:
     negative. A row labeled ``rth`` outside that window is not a regular-session
     minute. Early closes and holidays inside a name's span show up as gaps:
     the weekday calendar has no holiday set, and this report does not invent
-    one. ``n_missing_weekdays`` counts weekdays between a name's first and last
-    observed session date that have no print at all.
+    one. ``n_missing_weekdays`` uses the requested date bounds when supplied,
+    falling back to each name's first and last observed session dates.
     """
     if bars.is_empty():
         return empty_quality()
@@ -359,7 +364,7 @@ def minute_gap_report(bars: pl.DataFrame) -> pl.DataFrame:
         .cast(pl.Int64)
         .alias("max_rth_gap_minutes"),
     )
-    weekday_gaps = _missing_weekdays(joined)
+    weekday_gaps = _missing_weekdays(joined, start_date=start_date, end_date=end_date)
     gap_frame = pl.DataFrame(
         {
             "security_id": list(weekday_gaps),
@@ -465,7 +470,11 @@ def read_ohlcv_1m(
             f"{[path.name for path in paths]}: {absent}"
         )
     minutes = normalize_vendor_frame(vendor, clock=clock)
-    quality = minute_gap_report(minutes)
+    quality = minute_gap_report(
+        minutes,
+        start_date=start_utc.astimezone(ET).date() if start_utc is not None else None,
+        end_date=end_utc.astimezone(ET).date() if end_utc is not None else None,
+    )
     _enforce_quality(quality, strict_gaps=strict_gaps, strict_off=strict_off)
     if session is not None or interval_key != "1m":
         bars = resample_ohlcv(minutes, interval_key, session=session)
@@ -969,17 +978,26 @@ def _reject_bad_vendor_rows(frame: pl.DataFrame) -> None:
     raise OhlcvQualityError(f"bad bars were not repaired: {sample}{tail}")
 
 
-def _missing_weekdays(report: pl.DataFrame) -> dict[str, int]:
+def _missing_weekdays(
+    report: pl.DataFrame,
+    *,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> dict[str, int]:
     gaps: dict[str, int] = {}
     if report.is_empty():
         return gaps
+    if start_date is not None and end_date is not None and end_date < start_date:
+        raise OhlcvQualityError("start_date is after end_date")
     for security_id, group in report.group_by("security_id"):
         key = security_id[0] if isinstance(security_id, tuple) else security_id
         days = [day for day in group["session_date"].to_list() if isinstance(day, date)]
         if not days:
             gaps[str(key)] = 0
             continue
-        calendar = set(session_days(min(days), max(days)))
+        first = start_date if start_date is not None else min(days)
+        last = end_date if end_date is not None else max(days)
+        calendar = set(session_days(first, last))
         observed = {day for day in days if day.weekday() < 5}
         gaps[str(key)] = len(calendar - observed)
     return gaps
@@ -994,6 +1012,13 @@ def _enforce_quality(quality: pl.DataFrame, *, strict_gaps: bool, strict_off: bo
             sample = quality.filter(pl.col("n_rth_missing") > 0).head(3).to_dicts()
             raise OhlcvQualityError(
                 f"strict_gaps: {missing} missing regular-session minutes (not filled): {sample}"
+            )
+        per_name = quality.select("security_id", "n_missing_weekdays").unique()
+        missing_weekdays = int(per_name["n_missing_weekdays"].sum())
+        if missing_weekdays > 0:
+            sample = quality.filter(pl.col("n_missing_weekdays") > 0).head(3).to_dicts()
+            raise OhlcvQualityError(
+                f"strict_gaps: {missing_weekdays} missing weekdays (not filled): {sample}"
             )
     if strict_off:
         off = int(quality["n_off"].sum())
