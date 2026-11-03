@@ -108,6 +108,8 @@ class LiveLedger:
         if fill.side not in {"buy", "sell"}:
             raise ValueError("fill side must be buy or sell")
         if fill.fill_id in self._fills:
+            if self._fills[fill.fill_id] != fill:
+                raise ValueError("conflicting fill id")
             self._duplicate_fills += 1
             return "duplicate_fill"
         replaced = self._drop_provisional(fill)
