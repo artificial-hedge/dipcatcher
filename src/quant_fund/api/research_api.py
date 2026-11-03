@@ -41,7 +41,7 @@ from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from quant_fund import __firm__, __version__
 
@@ -103,6 +103,33 @@ class ResearchApiSettings:
     @property
     def metadata_dir(self) -> Path:
         return self.data_root / "metadata"
+
+
+class ResearchApiBindSettings(BaseModel):
+    """Validated host and port for ``python -m`` startup."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    host: str = "127.0.0.1"
+    port: int = Field(default=8010, ge=0, le=65535)
+
+    @field_validator("host", mode="before")
+    @classmethod
+    def host_must_not_be_blank(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise ValueError("must be a non-empty host")
+        return value
+
+    @classmethod
+    def from_env(cls) -> ResearchApiBindSettings:
+        return cls.model_validate(
+            {
+                "host": os.environ.get("RESEARCH_API_HOST", "127.0.0.1"),
+                "port": os.environ.get("RESEARCH_API_PORT", "8010"),
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -965,15 +992,26 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
 app = create_app()
 
 
-if __name__ == "__main__":
+def main() -> None:
     # `python -m quant_fund.api.research_api` — same loopback guard as
     # `dipcatcher api`: refuse non-loopback binds without RESEARCH_API_KEY.
     import uvicorn
 
-    host = os.environ.get("RESEARCH_API_HOST", "127.0.0.1")
-    port = int(os.environ.get("RESEARCH_API_PORT", "8010"))
-    if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("RESEARCH_API_KEY"):
+    try:
+        settings = ResearchApiBindSettings.from_env()
+    except ValidationError as exc:
+        details = "; ".join(
+            f"RESEARCH_API_{'.'.join(str(item) for item in error['loc']).upper()}: {error['msg']}"
+            for error in exc.errors()
+        )
+        raise SystemExit(f"invalid research API environment: {details}") from None
+    api_key = os.environ.get("RESEARCH_API_KEY")
+    if settings.host not in {"127.0.0.1", "::1", "localhost"} and not (api_key and api_key.strip()):
         raise SystemExit(
             "non-loopback binding requires RESEARCH_API_KEY; refusing unauthenticated exposure"
         )
-    uvicorn.run(app, host=host, port=port, reload=False)
+    uvicorn.run(app, host=settings.host, port=settings.port, reload=False)
+
+
+if __name__ == "__main__":
+    main()
