@@ -676,7 +676,7 @@ def test_broker_rejection_telemetry_has_no_fill_or_pretrade_denial(
     assert _counter(_ORDER_RESULTS, venue="loopback", status="rejected") == 1
     assert _metric_samples(_FILL_RECORDS) == []
     assert _metric_samples(_PRETRADE_DENIALS) == []
-    assert _metric_samples(_ORDER_RECOVERY) == []
+    assert _metric_samples(_ORDER_RECOVERY) == [({"venue": "loopback", "outcome": "not_found"}, 1)]
 
     assert len(_events(_telemetry_sink, "live_order_submit")) == 1
     results = _events(_telemetry_sink, "live_order_result")
@@ -684,7 +684,10 @@ def test_broker_rejection_telemetry_has_no_fill_or_pretrade_denial(
     assert results[0]["status"] == "rejected"
     assert _events(_telemetry_sink, "live_order_fill_recorded") == []
     assert _events(_telemetry_sink, "live_pretrade_denied") == []
-    assert _events(_telemetry_sink, "live_order_recovery") == []
+    recovery = _events(_telemetry_sink, "live_order_recovery")
+    assert len(recovery) == 1
+    assert recovery[0]["outcome"] == "not_found"
+    assert recovery[0]["trigger"] == "submit_rejected"
     _assert_safe_logs(_telemetry_sink)
 
 

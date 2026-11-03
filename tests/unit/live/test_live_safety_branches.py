@@ -202,7 +202,9 @@ def test_broker_rejection_is_an_ack_and_a_lost_response_can_be_recovered(tmp_pat
     assert result["status"] == "rejected"
     assert result["reason"] == "no buying power at the venue"
     assert result["live_pnl_claim"] is False
-    assert rejected.recover_calls == 0
+    # A definite venue rejection is still confirmed with one lookup. Not-found
+    # is what lets the ack stay rejected.
+    assert rejected.recover_calls == 1
     replay = _buy(session)
     assert replay["replayed"] is True
     assert rejected.submit_calls == 1
