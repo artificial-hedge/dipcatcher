@@ -142,7 +142,6 @@ src/quant_fund/api/app.py:api_auth_middleware 11
 src/quant_fund/api/app.py:drift 13
 src/quant_fund/api/app.py:get_backtest 15
 src/quant_fund/api/app.py:risk_portfolio 20
-src/quant_fund/api/error_shape.py:error_shape_audit 10
 src/quant_fund/api/param_fuzz.py:fuzz_app 12
 src/quant_fund/api/surface_pin.py:_route_entry 10
 src/quant_fund/audit/canonical.py:json_safe 10
