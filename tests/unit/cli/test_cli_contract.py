@@ -179,6 +179,21 @@ def test_doctor_user_errors_have_no_traceback(tmp_path: Path) -> None:
     assert "expected a file:" in (directory_result.stderr or "")
 
 
+def test_doctor_rejects_empty_quantile_grid(tmp_path: Path) -> None:
+    config = tmp_path / "empty-quantiles.yaml"
+    config.write_text("quantiles:\n  levels: []\n", encoding="utf-8")
+
+    result = _RUNNER.invoke(dipcatcher_app, ["doctor", "--config", str(config)])
+
+    _assert_usage(result, "doctor empty quantiles")
+    assert result.stdout == ""
+    error_lines = (result.stderr or "").splitlines()
+    assert len(error_lines) == 1
+    assert "invalid config:" in error_lines[0]
+    assert "quantiles.levels" in error_lines[0]
+    assert "quantiles must be non-empty" in error_lines[0]
+
+
 def test_user_error_messages_cover_the_claimed_cases() -> None:
     missing = FileNotFoundError(2, "No such file", "missing.yaml")
     assert user_error_message(missing) == "file not found: missing.yaml"

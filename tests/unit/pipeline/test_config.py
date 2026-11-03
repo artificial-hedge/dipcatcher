@@ -226,10 +226,24 @@ def test_calendar_config_rejects_invalid_weekend() -> None:
 def test_quantile_config_rejects_nonfinite_and_duplicate_levels() -> None:
     from quant_fund.config.models import QuantileConfig
 
+    with pytest.raises(ValueError, match="quantiles must be non-empty"):
+        QuantileConfig.model_validate({"levels": []})
     with pytest.raises(ValueError, match="quantiles must be in"):
         QuantileConfig.model_validate({"levels": [0.1, float("nan")]})
     with pytest.raises(ValueError, match="strictly increasing"):
         QuantileConfig.model_validate({"levels": [0.1, 0.1]})
+
+
+def test_load_config_rejects_empty_quantile_grid(tmp_path: Path) -> None:
+    config = tmp_path / "empty-quantiles.yaml"
+    config.write_text("quantiles:\n  levels: []\n", encoding="utf-8")
+
+    with pytest.raises(ValidationError) as caught:
+        load_config(config)
+
+    message = str(caught.value)
+    assert "quantiles.levels" in message
+    assert "quantiles must be non-empty" in message
 
 
 def test_optimizer_config_rejects_invalid_objectives() -> None:
