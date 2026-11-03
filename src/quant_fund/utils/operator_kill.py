@@ -19,6 +19,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from quant_fund.utils.write_owner import WriteOwnerError, require_write_owner
+
 ENABLED = "ENABLED"
 HALT_NEW_ORDERS = "HALT_NEW_ORDERS"
 CANCEL_OPEN_ORDERS = "CANCEL_OPEN_ORDERS"
@@ -83,10 +85,18 @@ def orders_blocked_by_env() -> str | None:
     return orders_blocked(Path(raw))
 
 
+def _require_kill_writer() -> None:
+    try:
+        require_write_owner()
+    except WriteOwnerError as exc:
+        raise OperatorKillError(str(exc)) from exc
+
+
 def write_operator_kill(path: Path, state: str) -> None:
     """Atomically replace ``path`` with ``state``. Refuses to follow a symlink."""
     if state not in STATES:
         raise OperatorKillError("invalid kill switch state")
+    _require_kill_writer()
     if path.is_symlink():
         raise OperatorKillError("kill_switch_symlink")
     if path.is_dir():

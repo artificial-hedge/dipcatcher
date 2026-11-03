@@ -38,6 +38,12 @@ def test_compose_has_the_three_services() -> None:
     collector = yaml.safe_load((_ROOT / "otel-collector.yaml").read_text(encoding="utf-8"))
     assert collector["exporters"]["debug"]["verbosity"] == "basic"
     prometheus = yaml.safe_load((_ROOT / "prometheus.yml").read_text(encoding="utf-8"))
-    assert prometheus["scrape_configs"][0]["static_configs"][0]["targets"] == [
-        "host.docker.internal:9464"
+    jobs = {item["job_name"]: item for item in prometheus["scrape_configs"]}
+    assert jobs["lab-api"]["static_configs"][0]["targets"] == ["lab-a:9464", "lab-b:9464"]
+    assert jobs["research-api"]["static_configs"][0]["targets"] == [
+        "research-a:9464",
+        "research-b:9464",
     ]
+    assert jobs["lab-api"]["authorization"]["credentials_file"] == "/tmp/lab.token"
+    assert jobs["research-api"]["authorization"]["credentials_file"] == "/tmp/research.token"
+    assert "host.docker.internal" not in (_ROOT / "prometheus.yml").read_text(encoding="utf-8")

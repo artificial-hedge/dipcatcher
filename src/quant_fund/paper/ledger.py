@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
-import tempfile
 from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
@@ -17,6 +15,7 @@ from quant_fund.metrics.analytics import analytics_export_digest, validate_analy
 from quant_fund.utils import atomicio
 from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 from quant_fund.utils.hashing import hash_bytes, receipt_tree
+from quant_fund.utils.write_owner import require_write_owner
 
 
 def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -88,21 +87,13 @@ def _fsync_directory(path: Path) -> None:
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    temporary_path = Path(temporary)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
-            handle.write(text)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary_path, path)
-        _fsync_directory(path.parent)
-    finally:
-        temporary_path.unlink(missing_ok=True)
+    """One fsync and replace. A crash keeps the previous complete file."""
+    require_write_owner()
     atomic_write_text(path, text)
 
 
 def _atomic_write_parquet(frame: pl.DataFrame, path: Path) -> None:
+    require_write_owner()
     atomic_write_parquet(frame, path)
 
 
@@ -172,6 +163,7 @@ class PaperLedger:
         *,
         load_existing: bool = False,
     ) -> None:
+        require_write_owner()
         self.run_id = _safe_run_id(run_id)
         self.root = paper_root(data_root, subdir) / self.run_id
         self.root.mkdir(parents=True, exist_ok=True)

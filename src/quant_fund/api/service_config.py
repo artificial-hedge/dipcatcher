@@ -8,6 +8,7 @@ flags ``--host`` and ``--port`` override ``DIPCATCHER_BIND_HOST`` and
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,7 @@ ENV_CONTRACT = (
     "DIPCATCHER_METRICS_PORT",
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
+    "DIPCATCHER_RATE_LIMIT_RPS",
     "DIPCATCHER_REQUIRE_DATA_WRITE",
     "DIPCATCHER_SHUTDOWN_GRACE_S",
     "DIPCATCHER_SLO_PATH",
@@ -266,6 +268,42 @@ def _load_slo(path: Path, *, required: bool) -> tuple[str | None, str | None]:
     return str(path), None
 
 
+_PRODUCTION_PROFILES = frozenset({"production", "prod"})
+_PRODUCTION_RATE = "DIPCATCHER_RATE_LIMIT_RPS must be set above 0 in production"
+_INVALID_RATE = "DIPCATCHER_RATE_LIMIT_RPS is invalid"
+
+
+def _production_profile() -> bool:
+    """True when the deploy profile asks for production boot checks.
+
+    ``DIPCATCHER_PROFILE`` stays out of ``ENV_CONTRACT`` so the example env
+    file can keep the non-production default. ``deploy/prod.env`` sets it.
+    """
+    return _env("DIPCATCHER_PROFILE").lower() in _PRODUCTION_PROFILES
+
+
+def _parsed_rate(raw: str) -> float | None:
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    if not math.isfinite(value) or value < 0.0 or value > 1_000_000.0:
+        return None
+    return value
+
+
+def _rate_limit_problems() -> list[str]:
+    raw = _env("DIPCATCHER_RATE_LIMIT_RPS")
+    if not raw:
+        return []
+    value = _parsed_rate(raw)
+    if _production_profile() and (value is None or value <= 0.0):
+        return [_PRODUCTION_RATE]
+    if not _production_profile() and value is None:
+        return [_INVALID_RATE]
+    return []
+
+
 def _bind_problems(host: str, key_name: str, key_message: str) -> list[str]:
     problems: list[str] = []
     host_problem = _check_host(host)
@@ -391,6 +429,7 @@ def _assemble(
     problems.extend(metric_problems)
     otel_configured, otel_problems = _otel(observe)
     problems.extend(otel_problems)
+    problems.extend(_rate_limit_problems())
     slo_path, slo_problem = _discover_slo(_env("DIPCATCHER_SLO_PATH"), observe)
     if slo_problem:
         problems.append(slo_problem)

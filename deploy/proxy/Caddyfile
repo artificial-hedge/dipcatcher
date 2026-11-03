@@ -1,0 +1,65 @@
+# TLS termination in front of two lab replicas and two research replicas.
+# auto_https is off. Mount the certificate at /certs/dev.crt and the key at
+# /certs/dev.key. deploy/prod.mk generates a dev pair outside the repo.
+# {$QUANT_API_KEY} and {$RESEARCH_API_KEY} come from the environment and must
+# be a single token: no spaces, quotes, braces, or '#'.
+# Active checks use /ready. Only HTTP 200 stays in the pool, so a drained
+# replica (503) is removed while the other replica still serves.
+{
+	admin 127.0.0.1:2019
+	auto_https off
+}
+
+:8443 {
+	tls /certs/dev.crt /certs/dev.key
+	request_body {
+		max_size 64KiB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	reverse_proxy lab-a:8000 lab-b:8000 {
+		lb_policy round_robin
+		lb_retries 2
+		lb_try_duration 2s
+		lb_try_interval 100ms
+		health_uri /ready
+		health_interval 1s
+		health_timeout 2s
+		health_status 200
+		health_headers {
+			X-API-Key {$QUANT_API_KEY}
+		}
+		fail_duration 2s
+		max_fails 1
+		unhealthy_status 503
+	}
+}
+
+:8444 {
+	tls /certs/dev.crt /certs/dev.key
+	request_body {
+		max_size 64KiB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	reverse_proxy research-a:8010 research-b:8010 {
+		lb_policy round_robin
+		lb_retries 2
+		lb_try_duration 2s
+		lb_try_interval 100ms
+		health_uri /ready
+		health_interval 1s
+		health_timeout 2s
+		health_status 200
+		health_headers {
+			X-API-Key {$RESEARCH_API_KEY}
+		}
+		fail_duration 2s
+		max_fails 1
+		unhealthy_status 503
+	}
+}

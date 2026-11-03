@@ -1,28 +1,165 @@
-# Lab API for research and simulated paper. No live broker and no order path.
-# Export QUANT_API_KEY before `docker compose -f deploy/compose.prod.yml up`.
-# The interpolation below refuses to start when that variable is missing.
-# Metrics stay on the container loopback. The scrape opt-out is loopback-only.
-# smoke-up plants a SYNTHETIC manifest and receipt, then serves the lab API.
+# Two replicas of each API behind the Caddy proxy in deploy/proxy/Caddyfile.
+# Research and simulated paper only. No live broker and no order path.
+# Export QUANT_API_KEY and RESEARCH_API_KEY, then run
+# `make -f deploy/prod.mk prod-up`. The interpolation below refuses to start
+# when a required variable is missing. deploy/prod.env sets the production
+# profile, a positive rate limit, and the data-dir write probe. It contains
+# no secrets. DIPCATCHER_WRITE_OWNER is set per replica below, not in that
+# file: lab-a holds the write lock. lab-b and both research replicas refuse
+# ledger and kill-file writes. The research data mount is read-only.
+# Replica API ports and 9464 are not published. Clients use the loopback TLS
+# listeners. Prometheus writes bearer tokens at start and scrapes both
+# replicas of each API. Host port overrides: LAB_TLS_PORT (8443),
+# RESEARCH_TLS_PORT (8444), PROMETHEUS_PUBLISH_PORT (9090), GRAFANA_PUBLISH_PORT
+# (3000). Data directories and the certificate directory are host paths.
+
+name: dipcatcher-ops7
+
+x-api-health: &api-health
+  test: ["CMD", "/app/.venv/bin/python", "/app/healthcheck.py"]
+  interval: 5s
+  timeout: 3s
+  retries: 20
+  start_period: 25s
+
+x-lab: &lab
+  build:
+    context: ..
+    dockerfile: Dockerfile
+  image: dipcatcher:local
+  env_file:
+    - ./prod.env
+  healthcheck: *api-health
+  stop_signal: SIGTERM
+  stop_grace_period: 30s
+  volumes:
+    - ${DIPCATCHER_LAB_DATA:?set DIPCATCHER_LAB_DATA to a directory owned by uid 10001}:/app/data
+
+x-lab-env: &lab-env
+  PORT: "8000"
+  DIPCATCHER_BIND_HOST: 0.0.0.0
+  DIPCATCHER_BIND_PORT: "8000"
+  QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
+  DIPCATCHER_OBSERVE: "1"
+  DIPCATCHER_METRICS_HOST: 0.0.0.0
+  DIPCATCHER_METRICS_PORT: "9464"
+  DIPCATCHER_METRICS_KEY_ENV: QUANT_API_KEY
+  DIPCATCHER_LOG_LEVEL: INFO
+  DIPCATCHER_SHUTDOWN_GRACE_S: "20"
+  DIPCATCHER_DATA_ROOT: /app/data
+  DIPCATCHER_KILL_SWITCH_PATH: /app/data/kill_switch
+  DIPCATCHER_WRITE_OWNER: "0"
+
+x-research: &research
+  build:
+    context: ..
+    dockerfile: docker/research-api.Dockerfile
+  image: dipcatcher-research-api
+  env_file:
+    - ./prod.env
+  healthcheck: *api-health
+  stop_signal: SIGTERM
+  stop_grace_period: 30s
+  volumes:
+    - ${DIPCATCHER_RESEARCH_DATA:?set DIPCATCHER_RESEARCH_DATA to a directory owned by uid 10001}:/app/data:ro
+
+x-research-env: &research-env
+  RESEARCH_API_HOST: 0.0.0.0
+  RESEARCH_API_PORT: "8010"
+  RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
+  RESEARCH_API_DATA_ROOT: /app/data
+  DIPCATCHER_OBSERVE: "1"
+  DIPCATCHER_METRICS_HOST: 0.0.0.0
+  DIPCATCHER_METRICS_PORT: "9464"
+  DIPCATCHER_METRICS_KEY_ENV: RESEARCH_API_KEY
+  DIPCATCHER_LOG_LEVEL: INFO
+  DIPCATCHER_SHUTDOWN_GRACE_S: "20"
+  DIPCATCHER_DATA_ROOT: /app/data
+  DIPCATCHER_KILL_SWITCH_PATH: /app/data/kill_switch
+  DIPCATCHER_WRITE_OWNER: "0"
 
 services:
-  lab-api:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    image: dipcatcher:local
+  lab-a:
+    <<: *lab
     command: ["dipcatcher", "smoke-up"]
-    ports:
-      - "127.0.0.1:8000:8000"
     environment:
-      PORT: "8000"
-      DIPCATCHER_BIND_HOST: 0.0.0.0
-      DIPCATCHER_BIND_PORT: "8000"
+      <<: *lab-env
+      DIPCATCHER_WRITE_OWNER: "1"
+
+  lab-b:
+    <<: *lab
+    command: ["dipcatcher", "api"]
+    environment:
+      <<: *lab-env
+    depends_on:
+      lab-a:
+        condition: service_healthy
+
+  research-a:
+    <<: *research
+    command: ["python", "-m", "quant_fund.api.research_api"]
+    environment:
+      <<: *research-env
+
+  research-b:
+    <<: *research
+    command: ["python", "-m", "quant_fund.api.research_api"]
+    environment:
+      <<: *research-env
+
+  proxy:
+    image: caddy:2.8.4
+    environment:
       QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
-      DIPCATCHER_OBSERVE: "1"
-      DIPCATCHER_METRICS_HOST: 127.0.0.1
-      DIPCATCHER_METRICS_PORT: "9464"
-      DIPCATCHER_METRICS_LOOPBACK_SCRAPE: "1"
-      DIPCATCHER_LOG_LEVEL: INFO
-      DIPCATCHER_SHUTDOWN_GRACE_S: "20"
-    stop_signal: SIGTERM
-    stop_grace_period: 30s
+      RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DIPCATCHER_TLS_DIR:?set DIPCATCHER_TLS_DIR to the certificate directory}:/certs:ro
+    ports:
+      - "127.0.0.1:${LAB_TLS_PORT:-8443}:8443"
+      - "127.0.0.1:${RESEARCH_TLS_PORT:-8444}:8444"
+    depends_on:
+      lab-a:
+        condition: service_healthy
+      lab-b:
+        condition: service_healthy
+      research-a:
+        condition: service_healthy
+      research-b:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    entrypoint: ["/bin/sh", "/etc/prometheus/prometheus-entrypoint.sh"]
+    command: []
+    environment:
+      QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
+      RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./observability/prometheus-entrypoint.sh:/etc/prometheus/prometheus-entrypoint.sh:ro
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PUBLISH_PORT:-9090}:9090"
+    depends_on:
+      lab-a:
+        condition: service_healthy
+      lab-b:
+        condition: service_healthy
+      research-a:
+        condition: service_healthy
+      research-b:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PUBLISH_PORT:-3000}:3000"
+    depends_on:
+      - prometheus

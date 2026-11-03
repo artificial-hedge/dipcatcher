@@ -43,6 +43,9 @@ _SERVICE_ENV = (
     "DIPCATCHER_METRICS_PORT",
     "DIPCATCHER_OBSERVE",
     "DIPCATCHER_OTEL_ENDPOINT",
+    "DIPCATCHER_PROFILE",
+    "DIPCATCHER_WRITE_OWNER",
+    "DIPCATCHER_RATE_LIMIT_RPS",
     "DIPCATCHER_REQUIRE_DATA_WRITE",
     "DIPCATCHER_SLO_PATH",
     "PORT",
@@ -471,4 +474,7 @@ def test_uv_installer_is_hash_pinned() -> None:
         assert "docker/uv-requirements.txt" in image
     compose = (_ROOT / "deploy" / "compose.prod.yml").read_text(encoding="utf-8")
     assert 'command: ["dipcatcher", "smoke-up"]' in compose
-    assert "DIPCATCHER_METRICS_LOOPBACK_SCRAPE" in compose
+    assert "env_file:" in compose
+    assert "./prod.env" in compose
+    assert "DIPCATCHER_METRICS_LOOPBACK_SCRAPE:" not in compose
+    assert "research-a:" in compose
