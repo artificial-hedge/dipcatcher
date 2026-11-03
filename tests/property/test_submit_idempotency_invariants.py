@@ -1,8 +1,10 @@
-"""Retries and duplicate client order ids apply an order once.
+"""Retries apply an order once.
 
-The paper ledger and the simulated broker key on ``order_id``. Loopback and
-the desk key on ``client_order_id``. A retry returns the first acknowledgement,
-including when it names a different quantity or side. Fills are SYNTHETIC and
+An identical retry returns the first acknowledgement. The order-fill ledger,
+loopback broker, and desk raise when the same id names a different side or
+size, and they do not replace the first order. The simulated broker treats
+``order_id`` as an idempotency key and returns the first record even when the
+retry names a different side or size. Fills are SYNTHETIC and
 ``live_pnl_claim`` stays false.
 """
 
@@ -16,10 +18,11 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from quant_fund.execution.order_recon import Fill, Order, OrderFillLedger
+from quant_fund.execution.order_recon import Fill, Order, OrderFillLedger, OrderLedgerError
 from quant_fund.execution.simulated_broker import SimulatedBroker
 from quant_fund.live.brokers import LiveOrder, LoopbackBroker
-from quant_fund.live.desk import LiveDesk
+from quant_fund.live.desk import LiveDesk, LiveDeskError
+from quant_fund.live.errors import LiveGateError
 from quant_fund.paper.broker_adapter import PaperBrokerAdapter
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig
 from quant_fund.schemas.orders import Order as BrokerOrder
@@ -79,16 +82,20 @@ def test_duplicate_order_id_keeps_the_first_order(
     qty: int, extra: int, price: int, retries: int, side: str
 ) -> None:
     other = "SELL" if side == "BUY" else "BUY"
-    ledger = OrderFillLedger(endpoint_kind="simulated", starting_cash=_CASH)
-    assert ledger.submit(_order("o1", side, qty)) == "accepted"
+    ledger = OrderFillLedger(endpoint_kind="simulated", starting_cash=_CASH, accept_orders=True)
+    first = _order("o1", side, qty)
+    assert ledger.submit(first) == "accepted"
     for _ in range(retries):
-        assert ledger.submit(_order("o1", other, qty + extra)) == "duplicate_order"
+        assert ledger.submit(_order("o1", side, qty)) == "duplicate_order"
+    with pytest.raises(OrderLedgerError, match="order_id conflicts with a different order"):
+        ledger.submit(_order("o1", other, qty + extra))
     assert ledger.record_fill(_fill("f1", qty, price, seconds=1)) == "accepted"
     assert ledger.record_fill(_fill("f1", qty, price, seconds=1)) == "duplicate_fill"
     assert ledger.record_fill(_fill("f2", extra, price, seconds=2)) == "overfill"
     report = ledger.reconcile()
     assert report["n_orders"] == 1
     assert report["counters"]["duplicate_orders"] == retries
+    assert report["counters"]["conflicting_orders"] == 1
     assert report["counters"]["duplicate_fills"] == 1
     assert report["counters"]["orders"] == 1
     signed = float(qty if side == "BUY" else -qty)
@@ -119,10 +126,10 @@ def test_loopback_duplicate_client_id_fills_once(
     ack = broker.submit(first)
     assert ack.status == "filled"
     assert ack.filled_quantity == pytest.approx(qty)
-    for attempt in range(retries):
-        retry = LiveOrder(client, "AAPL", "sell", float(qty + extra), float(price + 1), 2 + attempt)
-        again = broker.submit(retry)
-        assert again is ack
+    for _ in range(retries):
+        assert broker.submit(first) is ack
+    with pytest.raises(LiveGateError, match="client_order_id conflicts with a different order"):
+        broker.submit(LiveOrder(client, "AAPL", "sell", float(qty + extra), float(price + 1), 9))
     assert broker.positions["AAPL"] == pytest.approx(qty)
     assert broker.cash == pytest.approx(1_000_000.0 - qty * price)
     assert len(broker.fills(broker_to_client={}).fills) == 1
@@ -144,9 +151,10 @@ def test_loopback_rejected_client_id_retries_stay_rejected(
     ack = broker.submit(sell)
     assert ack.status == "rejected"
     assert ack.reason == "insufficient position"
-    for attempt in range(retries):
-        retry = LiveOrder(client, "AAPL", "buy", float(qty), float(price), 2 + attempt)
-        assert broker.submit(retry) is ack
+    for _ in range(retries):
+        assert broker.submit(sell) is ack
+    with pytest.raises(LiveGateError, match="client_order_id conflicts with a different order"):
+        broker.submit(LiveOrder(client, "AAPL", "buy", float(qty), float(price), 2))
     assert broker.positions["AAPL"] == pytest.approx(1.0)
     assert broker.cash == pytest.approx(500.0)
     assert broker.fills(broker_to_client={}).fills == ()
@@ -167,15 +175,19 @@ def test_paper_adapter_duplicate_order_id_does_not_double(
             state_path=Path(raw) / "paper.json",
             endpoint_kind="paper",
             starting_cash=_CASH,
+            accept_orders=True,
         )
         assert adapter.submit(_order("o1", "BUY", qty)) == "accepted"
         for _ in range(retries):
-            assert adapter.submit(_order("o1", "SELL", qty + extra)) == "duplicate_order"
+            assert adapter.submit(_order("o1", "BUY", qty)) == "duplicate_order"
+        with pytest.raises(OrderLedgerError, match="order_id conflicts with a different order"):
+            adapter.submit(_order("o1", "SELL", qty + extra))
         assert adapter.apply_fill(_fill("f1", qty, price, seconds=1)) == "accepted"
         assert adapter.apply_fill(_fill("f1", qty, price, seconds=1)) == "duplicate_fill"
         report = adapter.reconcile()
         assert report["n_orders"] == 1
         assert report["counters"]["duplicate_orders"] == retries
+        assert report["counters"]["conflicting_orders"] == 1
         assert report["computed_positions"]["A"] == pytest.approx(qty)
         assert adapter.position("A") == pytest.approx(qty)
         assert report["live_pnl_claim"] is False
@@ -215,9 +227,9 @@ def test_desk_duplicate_client_id_returns_the_first_fill(
             for attempt in range(retries):
                 again = desk.submit(
                     "aapl",
-                    "SELL",
-                    float(qty + extra),
-                    float(price + 1),
+                    "BUY",
+                    float(qty),
+                    float(price),
                     TS_NS + 2 + attempt,
                     client_order_id=client,
                 )
@@ -230,6 +242,17 @@ def test_desk_duplicate_client_id_returns_the_first_fill(
                 assert replay["side"] == "BUY"
                 assert replay["filled_qty"] == pytest.approx(qty)
                 assert again["positions"] == {"AAPL": float(qty)}
+            with pytest.raises(
+                LiveDeskError, match="client_order_id conflicts with a different order"
+            ):
+                desk.submit(
+                    "aapl",
+                    "SELL",
+                    float(qty + extra),
+                    float(price + 1),
+                    TS_NS + 20,
+                    client_order_id=client,
+                )
             assert desk.cash == pytest.approx(1_000_000.0 - qty * price)
             assert len(desk.orders) == 1
         finally:

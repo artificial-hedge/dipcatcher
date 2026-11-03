@@ -268,7 +268,7 @@ def test_ledger_cancel_after_fill_does_not_change_the_book(
     data: st.DataObject,
 ) -> None:
     filled = qty if complete else data.draw(st.integers(1, qty - 1))
-    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=_CASH)
+    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=_CASH, accept_orders=True)
     assert (
         ledger.submit(Order(order_id="o1", security_id="A", side=side, quantity=float(qty)))
         == "accepted"
@@ -305,7 +305,7 @@ def test_ledger_cancel_after_fill_does_not_change_the_book(
 @given(qty=st.integers(1, 16), price=st.integers(10, 40), extra=st.integers(1, 5))
 @_FAST
 def test_ledger_overfill_is_stored_and_not_applied(qty: int, price: int, extra: int) -> None:
-    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=_CASH)
+    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=_CASH, accept_orders=True)
     ledger.submit(Order(order_id="o1", security_id="A", side="BUY", quantity=float(qty)))
     assert (
         ledger.record_fill(_paper_fill("too-big", float(qty + extra), float(price), seconds=1))

@@ -82,6 +82,7 @@ def test_broker_position_mismatch_alarms_and_halts_new_orders(
         starting_cash=_CASH,
         cash_tolerance=_TOLERANCE,
         position_tolerance=_TOLERANCE,
+        accept_orders=True,
     )
     assert ledger.submit(_paper_order(side, qty)) == "accepted"
     assert ledger.record_fill(_paper_fill(qty, price)) == "accepted"
@@ -124,7 +125,7 @@ def test_broker_position_mismatch_alarms_and_halts_new_orders(
 )
 @_FAST
 def test_broker_report_inside_tolerance_stays_clean(qty: int, price: int, side: str) -> None:
-    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=_CASH)
+    ledger = OrderFillLedger(endpoint_kind="paper", starting_cash=_CASH, accept_orders=True)
     ledger.submit(_paper_order(side, qty))
     ledger.record_fill(_paper_fill(qty, price))
     book = ledger.reconcile()
