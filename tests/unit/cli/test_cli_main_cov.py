@@ -1042,14 +1042,15 @@ def test_report_writes_latest_markdown(tmp_path: Path, monkeypatch: pytest.Monke
 def test_api_loopback_invokes_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def fake(app_path: str, host: str, port: int, reload: bool) -> None:
-        calls.update(app=app_path, host=host, port=port)
+    def fake(app_path: str, host: str, port: int, reload: bool, **kwargs: object) -> None:
+        calls.update(app=app_path, host=host, port=port, kwargs=kwargs)
 
     monkeypatch.setattr("uvicorn.run", fake)
     result = runner.invoke(app, ["api"])
     assert result.exit_code == 0, result.output
     assert calls["host"] == "127.0.0.1"
     assert calls["port"] == 8000
+    assert calls["kwargs"] == {"server_header": False, "date_header": False}
 
 
 def test_api_non_loopback_with_key(monkeypatch: pytest.MonkeyPatch) -> None:

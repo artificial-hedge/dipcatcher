@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from quant_fund.observe.flags import observe_enabled
+from quant_fund.utils.secret_guard import redact_text
 
 _correlation: ContextVar[str | None] = ContextVar("dipcatcher_correlation_id", default=None)
 _sink: list[dict[str, Any]] | None = None
@@ -35,7 +36,8 @@ def log_event(event: str, **fields: Any) -> None:
     """Emit one JSON object. Returns immediately when observability is off.
 
     Field names ending in ``_key``, ``_token``, or ``_secret``, and names
-    containing ``password``, are replaced with ``[redacted]``.
+    containing ``password``, are replaced with ``[redacted]``. String
+    values are passed through the same redaction filter as the root logger.
     """
     if not observe_enabled():
         return
@@ -47,11 +49,17 @@ def log_event(event: str, **fields: Any) -> None:
         "service": "dipcatcher",
     }
     for key, value in fields.items():
-        record[str(key)] = "[redacted]" if _secret_field(str(key)) else value
+        if _secret_field(str(key)):
+            record[str(key)] = "[redacted]"
+        elif isinstance(value, str):
+            record[str(key)] = redact_text(value)
+        else:
+            record[str(key)] = value
     if _sink is not None:
         _sink.append(record)
         return
-    sys.stderr.write(json.dumps(record, sort_keys=True, default=str) + "\n")
+    line = json.dumps(record, sort_keys=True, default=str)
+    sys.stderr.write(redact_text(line) + "\n")
 
 
 def _secret_field(key: str) -> bool:

@@ -10,7 +10,11 @@ panel, native-grid, and honesty contracts are fully testable offline. One
 from __future__ import annotations
 
 import sys
+import sysconfig
 import types
+from collections.abc import Iterator
+from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -154,16 +158,79 @@ def test_registry_wires_head() -> None:
     assert isinstance(head, Tirex2Distribution)
 
 
+def _python_headers_present() -> bool:
+    """True when inductor's C++ backend can include ``Python.h``."""
+    include = sysconfig.get_path("include")
+    return bool(include) and Path(include, "Python.h").is_file()
+
+
+@contextmanager
+def _eager_if_python_h_missing() -> Iterator[None]:
+    """Disable Dynamo for one call when ``Python.h`` is absent, then restore it.
+
+    TiRex-2 compiles its forward with inductor. The C++ backend needs that
+    header. The smoke still checks the checkpoint's quantile row on the eager
+    backend, and later tests in the same process keep the previous flag.
+    """
+    torch = pytest.importorskip("torch")
+    previous = torch._dynamo.config.disable
+    if not _python_headers_present():
+        torch._dynamo.config.disable = True
+    try:
+        yield
+    finally:
+        torch._dynamo.config.disable = previous
+
+
+def test_python_headers_follow_the_sysconfig_include(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(sysconfig, "get_path", lambda _name: str(tmp_path))
+    assert _python_headers_present() is False
+    (tmp_path / "Python.h").write_text("/* present */\n", encoding="utf-8")
+    assert _python_headers_present() is True
+    monkeypatch.setattr(sysconfig, "get_path", lambda _name: "")
+    assert _python_headers_present() is False
+
+
+def test_missing_headers_force_eager_only_for_the_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(sys.modules[__name__], "_python_headers_present", lambda: False)
+    previous = torch._dynamo.config.disable
+    torch._dynamo.config.disable = False
+    try:
+        with _eager_if_python_h_missing():
+            assert torch._dynamo.config.disable is True
+        assert torch._dynamo.config.disable is False
+    finally:
+        torch._dynamo.config.disable = previous
+
+
+def test_present_headers_leave_the_compiled_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(sys.modules[__name__], "_python_headers_present", lambda: True)
+    previous = torch._dynamo.config.disable
+    torch._dynamo.config.disable = False
+    try:
+        with _eager_if_python_h_missing():
+            assert torch._dynamo.config.disable is False
+    finally:
+        torch._dynamo.config.disable = previous
+
+
 @pytest.mark.network
 def test_real_checkpoint_smoke() -> None:
     """Tiny CPU smoke: loads the real TiRex-2 checkpoint (~380M HF download).
 
     Skipped by default (``network`` marker) — run explicitly with
-    ``pytest -m network tests/unit/models/test_tirex2.py``.
+    ``pytest -m network tests/unit/models/test_tirex2.py``. When ``Python.h``
+    is absent, this call uses the eager backend and still requires a finite
+    monotone quantile row from the loaded checkpoint.
     """
     pytest.importorskip("tirex2")
-    head = Tirex2Distribution(lookback=64).fit(np.zeros(4), _series(96))
-    q = head.predict(np.zeros((2, 1)))
+    with _eager_if_python_h_missing():
+        head = Tirex2Distribution(lookback=64).fit(np.zeros(4), _series(96))
+        q = head.predict(np.zeros((2, 1)))
     assert q.shape == (2, 3)
     assert np.isfinite(q).all()
     assert np.all(np.diff(q, axis=1) >= 0.0)

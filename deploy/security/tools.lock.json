@@ -1,0 +1,62 @@
+{
+  "schema": "dipcatcher.security_tools/1",
+  "tools": {
+    "bandit": {
+      "binary": "bandit",
+      "filename": "bandit-1.9.4-py3-none-any.whl",
+      "kind": "wheel",
+      "sha256": "f89ffa663767f5a0585ea075f01020207e966a9c0f2b9ef56a57c7963a3f6f8e",
+      "url": "https://files.pythonhosted.org/packages/05/a4/a26d5b25671d27e03afb5401a0be5899d94ff8fab6a698b1ac5be3ec29ef/bandit-1.9.4-py3-none-any.whl",
+      "version": "1.9.4"
+    },
+    "gitleaks": {
+      "binary": "gitleaks",
+      "filename": "gitleaks_8.30.1_linux_x64.tar.gz",
+      "kind": "tar",
+      "sha256": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+      "url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
+      "version": "8.30.1"
+    },
+    "hadolint": {
+      "binary": "hadolint",
+      "filename": "hadolint-linux-x86_64",
+      "kind": "file",
+      "sha256": "c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507",
+      "url": "https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-x86_64",
+      "version": "2.15.1"
+    },
+    "osv-scanner": {
+      "binary": "osv-scanner",
+      "filename": "osv-scanner_linux_amd64",
+      "kind": "file",
+      "sha256": "160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b",
+      "url": "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64",
+      "version": "2.7.0"
+    },
+    "pip-audit": {
+      "binary": "pip-audit",
+      "filename": "pip_audit-2.10.1-py3-none-any.whl",
+      "kind": "wheel",
+      "sha256": "99ef3f600a317c1945f1e89e227ef26e1c2d618429b8bd3fa6f4f7c440c4611a",
+      "url": "https://files.pythonhosted.org/packages/a3/a7/b0c504148114047bd1bc9d97447453c6850ca176bb2f3c0038835994e8b7/pip_audit-2.10.1-py3-none-any.whl",
+      "version": "2.10.1"
+    },
+    "trivy": {
+      "binary": "trivy",
+      "filename": "trivy_0.76.1_Linux-64bit.tar.gz",
+      "kind": "tar",
+      "sha256": "c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0",
+      "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_Linux-64bit.tar.gz",
+      "version": "0.76.1"
+    },
+    "zap": {
+      "binary": "zap-baseline.py",
+      "filename": "zaproxy",
+      "image": "ghcr.io/zaproxy/zaproxy@sha256:030d3df57735dacbb83464854758e674dd9ad01d79d12a129a8e58b1fd384238",
+      "kind": "image",
+      "sha256": "030d3df57735dacbb83464854758e674dd9ad01d79d12a129a8e58b1fd384238",
+      "url": "https://ghcr.io/zaproxy/zaproxy@sha256:030d3df57735dacbb83464854758e674dd9ad01d79d12a129a8e58b1fd384238",
+      "version": "2.17.0"
+    }
+  }
+}

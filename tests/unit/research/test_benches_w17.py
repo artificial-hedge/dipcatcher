@@ -107,6 +107,17 @@ def diffusion_forecaster() -> dict[str, float]:
     return bench_diffusion_forecaster()
 
 
+def test_extra_conformal_emits_synthetic_scores() -> None:
+    from quant_fund.research.benches_w17 import bench_extra_conformal
+
+    blob = bench_extra_conformal()
+    assert blob
+    assert np.isfinite(blob["xc_coverage"])
+    assert np.isfinite(blob["xc_harm_coverage_gap"])
+    assert family_blob_has_finite_observation(blob)
+    assert family_blob_forbidden_metrics_absent(blob)
+
+
 def test_families_registered_as_optional() -> None:
     for fam in _FAMILIES:
         assert fam in OPTIONAL_BENCHMARK_FAMILIES

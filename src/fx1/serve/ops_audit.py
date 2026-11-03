@@ -121,7 +121,7 @@ _SWEPT_ENVS = (
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
     "FX1_SDK_STATE_DIR",
-    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    "FX1_PRIVATE_ALLOW_CIDRS",
 )
 
 # Gated read surface — every path here requires a credential once auth is

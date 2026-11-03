@@ -25,9 +25,9 @@ import typing
 from pathlib import Path
 from typing import Any, get_args, get_origin
 
-import yaml
 from pydantic import BaseModel
 
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -104,7 +104,7 @@ def compat_report(
 ) -> dict[str, Any]:
     """Check a config mapping (or YAML path) against a model tree."""
     if isinstance(config, Path):
-        config = yaml.safe_load(config.read_text()) or {}
+        config = load_yaml_document(config.read_text()) or {}
     flat = _flatten(dict(config))
     tree = model_schema_tree(model)
     extra = sorted(k for k in flat if k not in tree)

@@ -38,6 +38,27 @@ def _run(script: str) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def test_fx1_import_redacts_without_loading_quant_fund() -> None:
+    _run(
+        """
+import io
+import logging
+import sys
+import fx1
+assert 'quant_fund' not in sys.modules
+stream = io.StringIO()
+root = logging.getLogger()
+root.addHandler(logging.StreamHandler(stream))
+root.setLevel(logging.WARNING)
+marker = 'sk-' + 'unitredactsecret'
+root.warning('api_key=%s', marker)
+text = stream.getvalue()
+assert marker not in text, text
+assert '[redacted]' in text
+"""
+    )
+
+
 def test_package_import_does_not_load_serving_stack() -> None:
     _run(
         """

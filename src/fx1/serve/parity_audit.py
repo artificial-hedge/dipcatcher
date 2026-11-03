@@ -57,8 +57,8 @@ import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
 
-from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
-from quant_fund.utils.reproducibility import git_revision
+from fx1.secret_guard import secrets_equal
+from fx1.serve.parity_audit_bench import parity_audit_bench
 
 _MESSAGES_PATH = "/v1/messages"
 _COMPLETIONS_PATH = "/v1/completions"
@@ -402,14 +402,14 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             *_BYOK_ENVS,
             *_LOCAL_ENVS,
             "MOONSHOT_API_KEY",
-            "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+            "FX1_PRIVATE_ALLOW_CIDRS",
         )
     }
     try:
         os.environ.pop(_API_KEY_ENV, None)
         # The webhook probes deliver to a loopback sink; production
         # callbacks stay public-network-only unless opted in.
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
 
         sdk, client = _surfaces(_ParityBackend)
         msg = [{"role": "user", "content": "ping"}]
@@ -2972,7 +2972,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     out["client_submit_callback_url"] = (
         jid_cb == "cb1"
         and cb_seen[0].get("callback_url") == "https://hooks.test/x"
-        and cb_seen[0].get("callback_secret") == "whsec-t"
+        and secrets_equal(cb_seen[0].get("callback_secret"), "whsec-t")
     )
 
     # --- job SSE stream: client parses event frames --------------------------
@@ -3103,8 +3103,8 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     _bw, _bw_hits, _bw_srv = _start_hook_sink()
     # The webhook probes deliver to a loopback sink; the outer env save/set
     # above already restored ambient state, so scope the SSRF opt-in here.
-    _bw_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    _bw_hook_prev = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
         bwsub = c_b.create_batch(
@@ -3150,9 +3150,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             # Never leak the private-network callback opt-in if server
             # cleanup raises while unwinding the probe.
             if _bw_hook_prev is None:
-                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+                os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
             else:
-                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bw_hook_prev
+                os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = _bw_hook_prev
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])
@@ -4462,52 +4462,4 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         ]
         == "ValidationError"
     )
-    return out
-
-
-def parity_audit_bench() -> dict[str, Any]:
-    r = parity_audit()
-    ok = all(v is True for v in r.values())
-    out: dict[str, Any] = {
-        "kind": "parity_audit",
-        "schema": "parity_audit.v1",
-        "git_revision": git_revision(),
-        "data_label": "SYNTHETIC",
-        "research_only": True,
-        "live_pnl_claim": False,
-        "claim": {"results": r, "ok": ok},
-        "interpretation": (
-            "three-surface parity holds: SDK, HTTP API, and HarnessClient "
-            "return byte-identical content, envelopes, chunk lists, error "
-            "classes, verifier verdicts, registry, and health over the same "
-            "injected backend; the in-flight cap fails saturated work with "
-            "503+Retry-After while cheap routes respond, and releases "
-            "cleanly. Both surfaces keep a per-call completion log whose "
-            "records share prompt/output sha256s (the completion_id itself "
-            "is a per-surface mint — not part of the parity claim). Each "
-            "surface also exports its own logged call as a sealed "
-            "fx1_completion_record.v1 receipt — same record hashes, each "
-            "doc verifiable through either surface's verifier. A terminal "
-            "wire job's fx1_job_record.v1 embeds the same digested run "
-            "result that Fx1Harness.run_receipt seals in-process as "
-            "fx1_run_result.v1 — identical on the shared fields. "
-            "Fine-tuning parity holds: the SDK's synchronous "
-            "create_finetune_job produces the same terminal job fields "
-            "(status, ft:-name grammar, result_files, event feed) as the "
-            "wire route under the same runner, and guards map "
-            "ValueError↔HarnessTransportError / KeyError↔KeyError. The "
-            "model registry holds on both surfaces: a succeeded job's ft: "
-            "name lists and retrieves, completions naming it resolve to "
-            "local_fx1 at the job's checkpoint, and unregistered ft: names "
-            "fail closed (OpenAICompatError in-process, 404 on the wire). "
-            "Flags: "
-            "unknown backend names are KeyError in-process "
-            "vs 422 literal rejection over the wire (request validation "
-            "runs before resolution); empty batches are [] in-process vs "
-            "422 over the wire."
-            if ok
-            else f"PARITY AUDIT DEFECT: {r}"
-        ),
-    }
-    out["receipt_sha256"] = hash_bytes(canonical_json_bytes(out))
     return out

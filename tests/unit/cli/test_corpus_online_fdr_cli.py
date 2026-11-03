@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import types
 from pathlib import Path
@@ -24,6 +25,13 @@ from quant_fund.cli.main import app
 from quant_fund.research.receipt_v2 import verify_receipt_file
 
 runner = CliRunner()
+_BOX = re.compile(r"[\u2500-\u257f]")
+
+
+def _panel_text(output: str) -> str:
+    """Collapse a rich panel so a wrapped phrase is one line of words."""
+    return re.sub(r"\s+", " ", _BOX.sub(" ", output))
+
 
 CORPUS_MODULE = "quant_fund.research.corpus_inference"
 ONLINE_MODULE = "quant_fund.research.online_fdr"
@@ -187,7 +195,7 @@ def test_corpus_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     _install_corpus_module(monkeypatch)
     result = runner.invoke(app, ["corpus", "--receipts-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    assert "does not exist" in result.output
+    assert "does not exist" in _panel_text(result.output)
 
 
 def test_online_fdr_per_finding_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -370,4 +378,4 @@ def test_online_fdr_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.Monkey
     _install_online_module(monkeypatch)
     result = runner.invoke(app, ["online-fdr", "--receipts-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    assert "does not exist" in result.output
+    assert "does not exist" in _panel_text(result.output)

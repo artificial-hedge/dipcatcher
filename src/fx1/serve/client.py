@@ -53,8 +53,27 @@ from fx1.sdk import (
     StoredReceipt,
 )
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
+from fx1.serve.client_wire import (
+    fx1_opts as _fx1_opts,
+)
+from fx1.serve.client_wire import (
+    hget as _hget,
+)
+from fx1.serve.client_wire import (
+    openai_sse_chunks as _openai_sse_chunks,
+)
+from fx1.serve.client_wire import (
+    responses_replay_events as _responses_replay_events,
+)
+from fx1.serve.client_wire import (
+    responses_sse_events as _responses_sse_events,
+)
+from fx1.serve.client_wire import (
+    retry_after_s as _retry_after_s,
+)
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 __all__ = [
     "BackendNotConfiguredError",
@@ -111,6 +130,21 @@ class HarnessCompatError(RuntimeError):
         self.code = code
 
 
+def _pinned_harness_exchange(
+    req: urllib.request.Request, timeout_s: float
+) -> tuple[int, dict[str, str], bytes]:
+    """Resolve once and dial that numeric address. Redirects stay as statuses.
+
+    Loopback and RFC1918 literals stay allowed. Other hostnames must resolve
+    entirely to public addresses; ``localhost`` may resolve to loopback.
+    """
+    try:
+        with open_pinned(req, timeout=timeout_s, allow_loopback=True, allow_private=True) as handle:
+            return int(handle.status), dict(handle.headers), handle.read()
+    except OutboundRefused as exc:
+        raise HarnessTransportError(f"harness destination refused: {exc}") from exc
+
+
 def _urllib_transport(
     method: str,
     url: str,
@@ -129,8 +163,7 @@ def _urllib_transport(
         req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
-            return resp.status, dict(resp.headers), resp.read()
+        return _pinned_harness_exchange(req, timeout_s)
     except urllib.error.HTTPError as exc:
         # HTTPError owns the rejected response/socket.  The normal ``with``
         # path cannot close it because urlopen raises before it is entered.
@@ -148,130 +181,6 @@ def _urllib_transport(
         # body-cap) — are transport errors under the same contract as
         # URLError; don't leak raw errno classes to callers.
         raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
-
-
-def _retry_after_s(headers: Mapping[str, str]) -> float | None:
-    """Parse a Retry-After seconds hint; absent/malformed -> None."""
-    for key, value in headers.items():
-        if key.lower() == "retry-after":
-            try:
-                return max(0.0, float(value))
-            except ValueError:
-                return None
-    return None
-
-
-def _fx1_opts(
-    *,
-    backend: str | None,
-    byok: dict[str, str] | None,
-    checkpoint_dir: str | Path | None,
-    fallbacks: list[str] | None,
-    receipt_hashes: list[str] | None,
-    timeout_s: float | None,
-) -> dict[str, Any]:
-    """Assemble the ``fx1`` extension object every completion-surface
-    method merges into its payload: backend link name, BYOK endpoint
-    override, checkpoint dir, ordered fallbacks, evidence seals, and the
-    backend deadline — only the knobs the caller actually set."""
-    fx1: dict[str, Any] = {}
-    if backend is not None:
-        fx1["backend"] = backend
-    if byok is not None:
-        fx1["byok"] = byok
-    if checkpoint_dir is not None:
-        fx1["checkpoint_dir"] = str(checkpoint_dir)
-    if fallbacks:
-        fx1["fallbacks"] = list(fallbacks)
-    if receipt_hashes:
-        fx1["receipt_hashes"] = list(receipt_hashes)
-    if timeout_s is not None:
-        fx1["timeout_s"] = timeout_s
-    return fx1
-
-
-def _openai_sse_chunks(body: bytes) -> list[dict[str, Any]]:
-    """Parse the OpenAI SSE grammar — ``data: <json>`` frames up to the
-    terminal ``[DONE]``. Fails closed when the stream ends unterminated."""
-    chunks: list[dict[str, Any]] = []
-    saw_done = False
-    for line in body.decode().splitlines():
-        if not line.startswith("data: "):
-            continue
-        frame = line[len("data: ") :].strip()
-        if frame == "[DONE]":
-            saw_done = True
-            break
-        chunks.append(json.loads(frame))
-    if not saw_done:
-        raise HarnessTransportError("stream ended without [DONE]")
-    return chunks
-
-
-def _hget(headers: Mapping[str, str], name: str) -> str | None:
-    """Case-insensitive header lookup — transports differ in casing
-    (urllib preserves the wire casing; test clients lowercase)."""
-    low = name.lower()
-    for k, v in headers.items():
-        if k.lower() == low:
-            return v
-    return None
-
-
-def _responses_sse_events(body: bytes) -> list[dict[str, Any]]:
-    """Collect Responses SSE frames until the terminal event.
-
-    ``response.incomplete`` is the terminal event on a truncated turn
-    (e.g. ``max_tool_calls``) — it ends the stream like ``completed``.
-    """
-    events: list[dict[str, Any]] = []
-    saw_terminal = False
-    for line in body.decode().splitlines():
-        if not line.startswith("data: "):
-            continue
-        frame = json.loads(line[len("data: ") :])
-        events.append(frame)
-        if frame.get("type") in ("response.completed", "response.incomplete"):
-            saw_terminal = True
-            break
-    if not saw_terminal:
-        raise HarnessTransportError("stream ended without response.completed/response.incomplete")
-    return events
-
-
-_REPLAY_TERMINAL_EVENTS = frozenset(
-    {
-        "response.completed",
-        "response.incomplete",
-        "response.failed",
-        "response.cancelled",
-    }
-)
-
-
-def _responses_replay_events(body: bytes) -> list[dict[str, Any]]:
-    """Collect Responses *replay* frames until the terminal event.
-
-    Wider than :func:`_responses_sse_events`: a replayed record can end
-    in any terminal status — ``response.failed`` and ``response.cancelled``
-    are terminals here (a create-time stream never emits them).
-    """
-    events: list[dict[str, Any]] = []
-    saw_terminal = False
-    for line in body.decode().splitlines():
-        if not line.startswith("data: "):
-            continue
-        frame = json.loads(line[len("data: ") :])
-        events.append(frame)
-        if frame.get("type") in _REPLAY_TERMINAL_EVENTS:
-            saw_terminal = True
-            break
-    if not saw_terminal:
-        raise HarnessTransportError(
-            "replay stream ended without a terminal response.* event "
-            "(response.completed/incomplete/failed/cancelled)"
-        )
-    return events
 
 
 class HarnessClient:
@@ -326,6 +235,10 @@ class HarnessClient:
         self._last_response_headers: dict[str, str] = {}
         self._cb_failures = 0
         self._cb_open_until = 0.0
+
+    def __repr__(self) -> str:
+        state = "set" if self._headers.get("X-API-Key") else "unset"
+        return f"HarnessClient(credential={state})"
 
     # ---- transport ----------------------------------------------------
 
