@@ -94,7 +94,8 @@ def test_structlog_processor_scrubs_event_dict() -> None:
     assert "syntheticpublic" not in blob
     assert _QUERY not in blob
     assert _BEARER not in blob
-    assert out["api_key"] == REDACTED
+    redacted_key = out["api_key"]
+    assert redacted_key == REDACTED
     assert out["key_id"] == "visible"
 
 
