@@ -65,7 +65,7 @@ def _read_yaml(path: Path) -> dict[str, Any]:
     try:
         try:
             raw = loader.get_single_data()
-        except RecursionError as exc:
+        except (RecursionError, yaml.YAMLError) as exc:
             raise ValueError(f"Config {path} is not valid YAML") from exc
     finally:
         loader.dispose()
