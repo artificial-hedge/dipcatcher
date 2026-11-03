@@ -1,7 +1,8 @@
 """Regression pins for fail-open broker defects found by seeded property tests.
 
-- A duplicate live ``order_id`` silently overwrote the resting order; a later
-  bar could then fill the wrong order object.
+- A duplicate live ``order_id`` used to overwrite the resting order; a later
+  bar could then fill the wrong order object. The retry now returns the
+  first acknowledgement and leaves that resting order in place.
 - A bar whose open sat outside its own [low, high] range produced fills at
   prices the bar never printed.
 - ``target_to_orders`` crashed on NaN marks (pydantic raised on the derived
@@ -39,17 +40,20 @@ def _order(oid: str, side: OrderSide, qty: float, limit: float | None = None) ->
     )
 
 
-def test_duplicate_live_order_id_rejected() -> None:
+def test_duplicate_live_order_id_keeps_the_resting_order() -> None:
     broker = _broker()
-    broker.submit(
+    first = broker.submit(
         _order("dup", OrderSide.BUY, 10.0, limit=99.0), price=100.0, nav=1e6, adv_dollars=1e9
     )
-    with pytest.raises(ValueError, match="already working"):
-        broker.submit(
-            _order("dup", OrderSide.SELL, 50.0, limit=101.0), price=100.0, nav=1e6, adv_dollars=1e9
-        )
-    # the original intent is still the working order
-    assert broker.open_orders["dup"].side is OrderSide.BUY
+    replay = broker.submit(
+        _order("dup", OrderSide.SELL, 50.0, limit=101.0), price=100.0, nav=1e6, adv_dollars=1e9
+    )
+    assert replay is first
+    assert not broker.fills
+    resting = broker.open_orders["dup"]
+    assert resting.side is OrderSide.BUY
+    assert resting.quantity == pytest.approx(10.0)
+    assert resting.limit_price == pytest.approx(99.0)
 
 
 def test_malformed_bar_cannot_print_phantom_fill() -> None:

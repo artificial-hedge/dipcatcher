@@ -120,7 +120,10 @@ class LiveLedger:
         self._cash = cash
         self._positions = dict(self.baseline_positions)
         self._expects: dict[str, bool] = {}
+        self._authorized: dict[str, float] = {}
+        self._filled_qty: dict[str, float] = {}
         self._fills: dict[str, LedgerFill] = {}
+        self._applied: set[str] = set()
         self._order: list[str] = []
         self._by_order: dict[str, list[str]] = {}
         self._last_ns: dict[str, int] = {}
@@ -128,12 +131,27 @@ class LiveLedger:
         self._conflicting_fills = 0
         self._orphan_fills = 0
         self._out_of_order_fills = 0
+        self._overfills = 0
         self._declared_cash: float | None = None
         self._declared_positions: dict[str, float] | None = None
         self._superseded: dict[str, list[LedgerFill]] = {}
 
-    def note_order(self, client_order_id: str, *, expects_fill: bool) -> None:
-        self._expects[str(client_order_id)] = bool(expects_fill)
+    def note_order(
+        self,
+        client_order_id: str,
+        *,
+        expects_fill: bool,
+        quantity: float | None = None,
+    ) -> None:
+        """Remember an order. ``quantity`` caps applied fills when the caller knows it."""
+        key = str(client_order_id)
+        self._expects[key] = bool(expects_fill)
+        if quantity is None:
+            return
+        qty = float(quantity)
+        if not math.isfinite(qty) or qty <= 0.0:
+            raise ValueError("order quantity must be finite and positive")
+        self._authorized[key] = qty
 
     def set_expects_fill(self, client_order_id: str, expects_fill: bool) -> None:
         key = str(client_order_id)
@@ -155,11 +173,14 @@ class LiveLedger:
             return late_verdict
         replaced = self._drop_provisional(fill)
         if fill.client_order_id not in self._expects:
-            self._fills[fill.fill_id] = fill
-            self._order.append(fill.fill_id)
+            self._store(fill, applied=False)
             if not replaced:
                 self._orphan_fills += 1
             return "orphan_fill"
+        if self._exceeds_authorization(fill):
+            self._store(fill, applied=False)
+            self._overfills += 1
+            return "overfill"
         verdict = "replaced_provisional" if replaced else "accepted"
         last = self._last_ns.get(fill.client_order_id)
         if last is not None and fill.fill_time_ns < last:
@@ -167,8 +188,7 @@ class LiveLedger:
             if verdict == "accepted":
                 verdict = "out_of_order_fill"
         self._apply(fill)
-        self._fills[fill.fill_id] = fill
-        self._order.append(fill.fill_id)
+        self._store(fill, applied=True)
         self._by_order.setdefault(fill.client_order_id, []).append(fill.fill_id)
         self._last_ns[fill.client_order_id] = max(fill.fill_time_ns, last or fill.fill_time_ns)
         return verdict
@@ -243,6 +263,13 @@ class LiveLedger:
     def fills(self) -> list[LedgerFill]:
         return [self._fills[fill_id] for fill_id in self._order]
 
+    def has_fill(self, fill_id: str) -> bool:
+        return str(fill_id) in self._fills
+
+    def was_applied(self, fill_id: str) -> bool:
+        """True when the fill moved cash and positions. Orphans and overfills do not."""
+        return str(fill_id) in self._applied
+
     @property
     def computed_cash(self) -> float:
         return self._cash
@@ -290,6 +317,7 @@ class LiveLedger:
             self._conflicting_fills
             or self._orphan_fills
             or self._out_of_order_fills
+            or self._overfills
             or missing
             or drift["alarm"]
         )
@@ -300,6 +328,7 @@ class LiveLedger:
             "conflicting_fills": self._conflicting_fills,
             "orphan_fills": self._orphan_fills,
             "out_of_order_fills": self._out_of_order_fills,
+            "overfills": self._overfills,
             "drift": drift,
             "computed_cash": self._cash,
             "computed_positions": dict(self._positions),
@@ -346,6 +375,7 @@ class LiveLedger:
             prior = self._fills.pop(fill_id)
             self._superseded.setdefault(fill_id, []).append(prior)
             self._order.remove(fill_id)
+            self._applied.discard(fill_id)
             bucket = self._by_order.get(prior.client_order_id, [])
             if fill_id in bucket:
                 bucket.remove(fill_id)
@@ -361,12 +391,31 @@ class LiveLedger:
                     self._last_ns.pop(prior.client_order_id, None)
         return True
 
+    def _exceeds_authorization(self, fill: LedgerFill) -> bool:
+        cap = self._authorized.get(fill.client_order_id)
+        if cap is None:
+            return False
+        filled = self._filled_qty.get(fill.client_order_id, 0.0)
+        return fill.quantity > (cap - filled) + 1e-9
+
+    def _store(self, fill: LedgerFill, *, applied: bool) -> None:
+        self._fills[fill.fill_id] = fill
+        self._order.append(fill.fill_id)
+        if applied:
+            self._applied.add(fill.fill_id)
+
     def _apply(self, fill: LedgerFill) -> None:
         signed = fill.quantity if fill.side == "buy" else -fill.quantity
         self._positions[fill.symbol] = self._positions.get(fill.symbol, 0.0) + signed
         self._cash -= signed * fill.price
+        self._filled_qty[fill.client_order_id] = (
+            self._filled_qty.get(fill.client_order_id, 0.0) + fill.quantity
+        )
 
     def _unwind(self, fill: LedgerFill) -> None:
         signed = fill.quantity if fill.side == "buy" else -fill.quantity
         self._positions[fill.symbol] = self._positions.get(fill.symbol, 0.0) - signed
         self._cash += signed * fill.price
+        self._filled_qty[fill.client_order_id] = (
+            self._filled_qty.get(fill.client_order_id, 0.0) - fill.quantity
+        )

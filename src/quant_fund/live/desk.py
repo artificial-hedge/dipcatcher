@@ -332,7 +332,14 @@ class LiveDesk:
         self._refuse_unconfirmed()
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
-        self._gate_quote(symbol, ts_ns, new_tick=False)
+        try:
+            self._gate_quote(symbol, ts_ns, new_tick=False)
+        except LiveDeskError as exc:
+            if "stale quote" not in str(exc):
+                raise
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        if self._mark_is_stale(symbol, ts_ns):
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -860,6 +867,12 @@ class LiveDesk:
                 )
         except QuoteHalt as exc:
             raise LiveDeskError(str(exc)) from exc
+
+    def _mark_is_stale(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        if prior is None:
+            return False
+        return ts_ns > prior + int(self.config.limits.max_mark_age_ns)
 
     def _going_backwards(self, ts_ns: int) -> bool:
         last = int(self.engine.book.last_ts)

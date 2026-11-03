@@ -477,6 +477,12 @@ class AlpacaBroker:
         except (BrokerRejected, BrokerTimeout, OSError, http.client.HTTPException) as exc:
             raise BrokerUnconfirmed(_unconfirmed_message(order.client_order_id, why)) from exc
         if found is None:
+            if (
+                isinstance(cause, BrokerRejected)
+                and "HTTP 422" in str(cause)
+                and "client_order_id" in str(cause)
+            ):
+                raise cause
             raise BrokerUnconfirmed(_unconfirmed_message(order.client_order_id, why)) from cause
         _require_same_ack(order, found)
         return found
