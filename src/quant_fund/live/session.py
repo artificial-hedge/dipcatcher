@@ -30,6 +30,7 @@ from quant_fund.live.brokers import (
     LiveOrder,
     LoopbackBroker,
     alpaca_credentials,
+    broker_fallback_credentials,
     map_broker_status,
 )
 from quant_fund.live.config import LiveConfig, load_gateway_pretrade
@@ -1038,7 +1039,13 @@ def open_session(
 def _default_broker(config: LiveConfig, *, transport: Any) -> Broker:
     if config.venue == "loopback":
         return LoopbackBroker(cash=float(config.starting_cash))
-    return AlpacaBroker(config.venue, alpaca_credentials(), transport=transport)
+    return AlpacaBroker(
+        config.venue,
+        alpaca_credentials(),
+        fallback=broker_fallback_credentials(),
+        reread_env=True,
+        transport=transport,
+    )
 
 
 def _hmac_for_engine(state_dir: Path) -> bytes:

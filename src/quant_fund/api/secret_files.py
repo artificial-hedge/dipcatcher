@@ -13,6 +13,8 @@ import os
 import stat
 from urllib.parse import urlsplit
 
+from quant_fund.utils.secret_tokens import parse_overlap
+
 SECRET_NAMES = (
     "QUANT_API_KEY",
     "RESEARCH_API_KEY",
@@ -69,9 +71,10 @@ def _load(name: str, file_var: str, path: str) -> str | None:
     readable, value = _read_token(path)
     if not readable:
         return f"{file_var} is not a readable file"
-    if not _single_token(value):
-        return f"{file_var} must contain one token"
-    os.environ[name] = value
+    tokens = parse_overlap(value)
+    if tokens is None:
+        return f"{file_var} must contain one or two tokens"
+    os.environ[name] = tokens[0]
     _LOADED[name] = path
     _OWNED.add(name)
     return None
@@ -109,13 +112,7 @@ def _strip_secret(raw: bytes) -> str:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         return ""
-    return text.removesuffix("\n").removesuffix("\r")
-
-
-def _single_token(value: str) -> bool:
-    if not value or any(char.isspace() for char in value):
-        return False
-    return not any(char in value for char in "\"'{}#")
+    return text.rstrip("\r\n")
 
 
 def _webhook_problem(production: bool) -> str | None:

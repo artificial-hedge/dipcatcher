@@ -148,6 +148,16 @@ def _single_token(value: str) -> bool:
     return not any(char in value for char in "\"'{}#")
 
 
+def _overlap_tokens(value: str) -> tuple[str, ...] | None:
+    """One token, or a current token plus the previous token on the next line."""
+    parts = [part for part in value.split("\n") if part]
+    if not parts or len(parts) > 2:
+        return None
+    if any(not _single_token(part) for part in parts):
+        return None
+    return tuple(parts)
+
+
 def _read_secret(path: str) -> str | None:
     """Return the file text, or ``None`` when it cannot be read. Do not log it."""
     if not path or os.path.islink(path):
@@ -172,11 +182,7 @@ def _read_secret(path: str) -> str | None:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         return None
-    if text.endswith("\n"):
-        text = text[:-1]
-    if text.endswith("\r"):
-        text = text[:-1]
-    return text
+    return text.rstrip("\r\n")
 
 
 def _one_secret(name: str, production: bool) -> str | None:
@@ -190,8 +196,8 @@ def _one_secret(name: str, production: bool) -> str | None:
     if not path:
         return None
     value = _read_secret(path)
-    if value is None or not _single_token(value):
-        return f"{file_var} must contain one token"
+    if value is None or _overlap_tokens(value) is None:
+        return f"{file_var} must contain one or two tokens"
     return None
 
 

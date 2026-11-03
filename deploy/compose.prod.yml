@@ -218,8 +218,11 @@ services:
       - --path.rootfs=/host
       - --collector.disable-defaults
       - --collector.filesystem
+      - --collector.textfile
+      - --collector.textfile.directory=/textfile
     volumes:
       - /:/host:ro
+      - ${DIPCATCHER_TEXTFILE_DIR:-/tmp/dipcatcher-ops7-textfile}:/textfile:ro
     logging: *json-log
 
 secrets:

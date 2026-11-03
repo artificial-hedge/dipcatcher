@@ -2,8 +2,9 @@
 # auto_https is off. Mount the certificate at /certs/dev.crt and the key at
 # /certs/dev.key. deploy/prod.mk generates a dev pair outside the repo.
 # {$QUANT_API_KEY} and {$RESEARCH_API_KEY} are loaded from *_FILE by
-# deploy/proxy/secret-entrypoint.sh. They must be a single token: no spaces,
-# quotes, braces, or '#'.
+# deploy/proxy/secret-entrypoint.sh. The process receives the first line.
+# A second line is the previous token and is not loaded here. Each line is
+# one token: no spaces, quotes, braces, or '#'.
 # A client X-Request-Id is forwarded when it is present. Otherwise the
 # request uuid is. Access logs are JSON on stdout.
 # Active checks use /ready. Only HTTP 200 stays in the pool, so a drained

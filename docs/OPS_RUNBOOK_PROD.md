@@ -122,6 +122,14 @@ userinfo. `prod-secrets` keeps an existing webhook token file when the
 shell variable is unset, or writes a random token. It does not print the
 token. Do not commit `SECRET_DIR`.
 
+A secret file may hold two lines during rotation. Line 1 is what the proxy
+and Prometheus load at start. Line 2 is the previous token. The API reads
+the file on each request, so both tokens work without an API restart.
+`prod-secrets` keeps those two lines when the shell token is already one
+of them. A shell token that is on neither line replaces the file with that
+one token. Do not run that replacement in the middle of an overlap. The
+rotation section below is the procedure. `prod-rotate-drill` is the check.
+
 ## Request ids
 
 The proxy forwards `X-Request-Id` to the replica. When the header is
@@ -334,9 +342,9 @@ lines. The drill exits 0 only when every check passed, the digest
 matches, and the final `prod-down` exited 0. Stdout is one JSON object.
 It does not print API keys. It does not place an order.
 
-Measured RTO on this host: 16.566 seconds. The phases were destroy
-0.007 seconds, `prod-up` 14.229 seconds, restore 2.301 seconds, and TLS
-health 0.03 seconds. `prod-up` reused cached image layers from the smoke
+Measured RTO on this host: 16.033 seconds. The phases were destroy
+0.007 seconds, `prod-up` 13.839 seconds, restore 2.144 seconds, and TLS
+health 0.044 seconds. `prod-up` reused cached image layers from the smoke
 run on the same host, and that boot also started the unpublished
 node-exporter. The restored ledger digest was
 `08e1c3bc35d053fb228ef8ce4ef1caf2fff3114d9aae99848fc6f0b3c688263e`.
@@ -473,3 +481,133 @@ the stack. Do not point the canary at it.
 make -f deploy/prod.mk prod-build
 make -f deploy/prod.mk prod-canary
 ```
+
+## Alert drill
+
+`prod-alert-drill` starts Prometheus and Alertmanager on the loopback
+ports `19090` and `19093`. It does not start the lab stack and it does
+not page an operator. A local webhook records each notification. The
+rules are the files in `deploy/observability/alerts.yml` and
+`slo_rules.yml`, including the real `for` durations. The longest `for`
+is 5 minutes, so the drill waits through firing and through resolve.
+
+The fixture publishes one series per alert. Gauges cover readiness,
+drain, the kill switch, stale data, reconcile drift, backup age, canary
+abort, and disk pressure. Counters cover stage errors, stage latency,
+HTTP errors, and HTTP latency. A second scrape target stays closed until
+resolve, which is `DipcatcherTargetDown`. After every name has fired,
+the drill waits 20 seconds and requires no further webhook post. It then
+publishes the healthy gauges, stops moving the counters, and opens the
+down target. Each fingerprint must show one firing notification and a
+later resolved notification.
+
+```bash
+make -f deploy/prod.mk prod-alert-drill
+```
+
+Textfile gauges are `dipcatcher_reconcile_drift`,
+`dipcatcher_backup_last_success_timestamp`, and
+`dipcatcher_canary_abort`. `prod-backup-ship` writes the backup stamp
+after a verified copy. `prod-canary` writes abort `1` when the roll does
+not finish and `0` when it does. Reconcile is not published on a timer:
+`python scripts/ops_signals.py reconcile` reads the same six corpora as
+`owner_restamp` and does not stamp or sign. The directory is
+`DIPCATCHER_TEXTFILE_DIR` (default `/tmp/dipcatcher-ops7-textfile`).
+Absent series stay silent. Node-exporter reads that directory and
+publishes no port of its own.
+
+Measured on this host: 15 alerts, 15 fingerprints, 30 webhook posts.
+Each fingerprint was delivered once while firing and once when it
+resolved. A 20 second quiet interval added no post. Deduped and
+resolved were both true. The drill took 655.973 seconds.
+
+## Secret rotation
+
+Rotate the API keys, the broker pair, and the webhook HMAC without
+taking the API down. Use the files and env names that already exist.
+Do not add names, and do not edit `.env.example`.
+
+API and webhook files:
+
+- `DIPCATCHER_QUANT_API_KEY_FILE` (container path `QUANT_API_KEY_FILE`)
+- `DIPCATCHER_RESEARCH_API_KEY_FILE`
+- `DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE`
+
+Put the new token in the shell variable of the same name and run
+overlap. Line 1 stays the current token. Line 2 becomes the new token.
+Clients on either token get through the API. A third token is rejected.
+The webhook check tries every line and does not stop at the first match.
+The signature is `sha256=<hex>` over `timestamp.body`, with a five
+minute window.
+
+```bash
+make -f deploy/prod.mk prod-rotate-drill
+python scripts/prod_rotate.py overlap
+python scripts/prod_rotate.py promote
+python scripts/prod_rotate.py retire
+```
+
+`promote` swaps the lines so a restarted proxy or Prometheus loads the
+new token. `retire` keeps line 1. Overlap refuses to run when
+`QUANT_API_KEY` or `RESEARCH_API_KEY` is empty. The webhook file is
+included when it already exists. Overlap does not print the values.
+
+The proxy and Prometheus read line 1 into the process at start. After
+promote, recreate only those two so they load the new line. Leave the
+API replicas up. One proxy recreate drops the connections that were on
+that process. It does not restart the API.
+
+```bash
+sudo --preserve-env docker compose -f deploy/compose.prod.yml up -d \
+  --no-build --no-deps --force-recreate proxy prometheus
+python scripts/prod_rotate.py retire
+```
+
+Before the next `prod-secrets`, `prod-up`, or `prod-down`, export the
+token that remains on line 1. Those targets call `prod-secrets`. During
+overlap it keeps both lines. After retire a shell token that is not the
+remaining line replaces the file.
+
+Broker overlap uses `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY` as
+the current pair and `APCA_API_KEY_ID` and `APCA_API_SECRET_KEY` as the
+previous pair. There is no broker file. A mixed pair, one key from one
+name and the secret from the other, is refused. The session reads both
+pairs on each call. A 401 or 403 from the current pair is retried once
+with the previous pair. A 200 is not retried. `alpaca-live` is still
+refused before any HTTP. The lab containers are not a broker. A process
+does not see environment edits made from outside it. Export both pairs
+before the gateway starts, or change them inside that process. Drop
+`APCA_*` to retire the previous pair. The next call sees the change.
+
+```bash
+make -f deploy/prod.mk prod-rotate-drill
+```
+
+Measured on this host: during overlap the previous and new API tokens
+and both webhook signatures were accepted, and the broker exposed two
+pairs. After retire the previous API token was rejected, the previous
+webhook signature no longer verified, and one broker pair remained.
+122 requests during the overlap write all returned 200. `gap` was false.
+
+## Capacity soak
+
+`prod-soak` holds `https://127.0.0.1:$LAB_TLS_PORT/health` for 1200
+seconds at concurrency 20. `/health` is outside the rate limit. The
+script samples `lab-a` RSS and open file descriptors every 30 seconds.
+After a 120 second warmup, a file-descriptor slope above 0.05 per second
+or an RSS slope above 20 KiB per second is a leak and the command exits
+1. The JSON reports `p50_ms`, `p99_ms`, and `error_rate`. Set
+`DIPCATCHER_SOAK_SECONDS` only to shorten a rerun. The default stays
+1200, and a value above 1200 is refused.
+
+If `/health` is down, the script runs `prod-up` and, only in that case,
+`prod-down` afterwards. A stack that was already up is left up.
+
+```bash
+make -f deploy/prod.mk prod-soak
+```
+
+Measured on this host: 1200 seconds at concurrency 20, 2158990 requests,
+error rate 0. p50 was 10.164 ms and p99 was 31.884 ms. After the 120
+second warmup, lab-a RSS slope was -50.420 KiB/s and the open-descriptor
+slope was -0.000487 per second across 40 samples. `leak` was false.

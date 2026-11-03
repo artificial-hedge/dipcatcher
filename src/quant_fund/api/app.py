@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -136,17 +135,17 @@ def _client_is_loopback(request: Request) -> bool:
     return host in {"127.0.0.1", "::1", "localhost", "testclient"}
 
 
-async def _authenticate_request(
-    request: Request, call_next: Any, path: str, expected: str | None
-) -> Any:
+async def _authenticate_request(request: Request, call_next: Any, path: str) -> Any:
     if path in _PUBLIC_PATHS:
         return await call_next(request)
-    if expected:
-        from quant_fund.utils.api_auth import credential_matches, presented_api_key
+    from quant_fund.utils.api_auth import presented_api_key
+    from quant_fund.utils.secret_tokens import auth_decision
 
-        if not credential_matches(presented_api_key(request.headers), expected):
-            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
+    decision = auth_decision("QUANT_API_KEY", presented_api_key(request.headers))
+    if decision == "ok":
         return await call_next(request)
+    if decision == "reject":
+        return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
     if not _client_is_loopback(request):
         return JSONResponse(
             status_code=403,
@@ -164,13 +163,12 @@ async def _authenticate_request(
 async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Secure default:
 
-    - If ``QUANT_API_KEY`` is set: require it as ``X-API-Key`` or ``Authorization: Bearer`` on non-public routes.
+    - If ``QUANT_API_KEY`` or ``QUANT_API_KEY_FILE`` is set: require it as ``X-API-Key`` or ``Authorization: Bearer`` on non-public routes. A second file line is the previous token and is also accepted. The file is read per request.
     - If unset: allow only loopback clients (refuse remote unauthenticated access).
     - Reject malformed or oversized request bodies before route work is performed.
     """
     path = request.url.path
     response: JSONResponse | Any
-    expected = os.environ.get("QUANT_API_KEY")
     received_bytes = 0
     original_receive = request._receive
 
@@ -204,9 +202,9 @@ async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-u
                         content={"detail": "request body exceeds the 64 KiB limit"},
                     )
                 else:
-                    response = await _authenticate_request(request, call_next, path, expected)
+                    response = await _authenticate_request(request, call_next, path)
         else:
-            response = await _authenticate_request(request, call_next, path, expected)
+            response = await _authenticate_request(request, call_next, path)
     except _RequestBodyTooLarge:
         response = JSONResponse(
             status_code=413,

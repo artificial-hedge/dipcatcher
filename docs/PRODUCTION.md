@@ -224,3 +224,39 @@ cannot re-sign and must not try:
 **Never commit a secret.** If a key is exposed, follow "Gate-key rotation" in
 [`OPERATIONS_RUNBOOK.md`](OPERATIONS_RUNBOOK.md); rollback of a key is
 revocation, not an edit to the signed files.
+
+## 5. Ops drills and what is still the owner's
+
+This lane is research and simulated paper. The lab compose file has no broker.
+Nothing here is a live-trading claim.
+
+Verified in this tree, by the drills in [`OPS_RUNBOOK_PROD.md`](OPS_RUNBOOK_PROD.md):
+
+- [x] Every Prometheus alert under `deploy/observability/` routes through a
+      local Alertmanager webhook, is deduped, and resolves.
+      `make -f deploy/prod.mk prod-alert-drill`.
+- [x] API, broker, and webhook HMAC secrets overlap on the existing paths
+      and the previous token still works until retire.
+      `make -f deploy/prod.mk prod-rotate-drill`.
+- [x] Lab soak under synthetic `/health` load records p50, p99, and the
+      error rate, and checks RSS and file-descriptor slope.
+      `make -f deploy/prod.mk prod-soak`. The measured figures are in
+      the capacity soak section of the ops runbook. No leak was found.
+- [x] `make -f deploy/prod.mk prod-smoke` and
+      `make -f deploy/prod.mk prod-dr-drill` still pass on this host.
+      The measured RTO is in the disaster-recovery section of the ops runbook.
+
+Still the owner's. This slice does not do them:
+
+- [ ] Re-sign. `docs/`, `src/`, and `tests/` moved, so epoch verification is
+      stale until the key holder runs `stamp-epochs`, `sign-pins`,
+      `anchor-pins`, and `checkpoint`. Do not run those here.
+- [ ] fx-1 weights. No fine-tuned weights are published. `fx1.__version__`
+      is the harness API, not a model release.
+- [ ] A `v*` tag. `release.yml` runs only on a tag, and no tag has been cut.
+- [ ] Dockerfile `USER` and `HEALTHCHECK`. Both Dockerfiles already run as
+      `dipcatcher` and define a `HEALTHCHECK`. This lane does not edit them.
+      Any further image user or healthcheck change stays with the owner.
+- [ ] The virtualenv bump. `uv.lock` already pins virtualenv `21.14.12`
+      under the constraint `virtualenv>=21.14.9`. This lane does not edit
+      the lock. A further bump stays with the owner.

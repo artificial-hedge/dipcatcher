@@ -37,8 +37,8 @@ def main(argv: list[str]) -> int:
     quant_path = _path("DIPCATCHER_QUANT_API_KEY_FILE", "quant_api_key")
     research_path = _path("DIPCATCHER_RESEARCH_API_KEY_FILE", "research_api_key")
     webhook_path = _path("DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE", "alert_webhook_secret")
-    _write(quant_path, quant)
-    _write(research_path, research)
+    _write(quant_path, _preserved(quant_path, quant))
+    _write(research_path, _preserved(research_path, research))
     webhook = _webhook_text(webhook_path)
     if webhook is None:
         sys.stderr.write("DIPCATCHER_ALERT_WEBHOOK_SECRET must contain one token\n")
@@ -65,9 +65,26 @@ def _webhook_text(path: Path) -> str | None:
             return None
         return plain
     existing = _read(path)
-    if existing is not None and _single_token(existing):
+    if existing is not None and _overlap_text(existing):
         return ""
     return secrets.token_hex(32)
+
+
+def _preserved(path: Path, incoming: str) -> str:
+    """Keep both lines when the shell token is already one of them."""
+    existing = _read(path)
+    if existing is None or not _overlap_text(existing) or "\n" not in existing:
+        return incoming
+    if incoming in existing.split("\n"):
+        return existing
+    return incoming
+
+
+def _overlap_text(value: str) -> bool:
+    parts = [part for part in value.split("\n") if part]
+    if not parts or len(parts) > 2:
+        return False
+    return all(_single_token(part) for part in parts)
 
 
 def _read(path: Path) -> str | None:

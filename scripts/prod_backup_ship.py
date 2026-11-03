@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -260,7 +262,31 @@ def ship(
     failure = _copy(mode, target, dest, chosen, run)
     if failure is not None:
         return {**checked, "copy": mode, "error": failure, "ok": False}
+    _publish_backup(env)
     return {**checked, "copy": mode, "ok": True}
+
+
+def _signals() -> object | None:
+    path = Path(__file__).resolve().parent / "ops_signals.py"
+    name = "dipcatcher_ops_signals"
+    cached = sys.modules.get(name)
+    if cached is not None:
+        return cached
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _publish_backup(env: Mapping[str, str]) -> None:
+    raw = env.get("DIPCATCHER_TEXTFILE_DIR", "").strip()
+    module = _signals()
+    if not raw or module is None:
+        return
+    module.publish(raw, {"dipcatcher_backup_last_success_timestamp": int(time.time())})
 
 
 def _run(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:

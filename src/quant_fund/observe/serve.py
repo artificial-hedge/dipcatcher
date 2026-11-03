@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from quant_fund.observe.metrics import render_prometheus
-from quant_fund.utils.api_auth import credential_matches, presented_api_key
+from quant_fund.utils.api_auth import presented_api_key
+from quant_fund.utils.secret_tokens import auth_decision
 
 _SERVER: ThreadingHTTPServer | None = None
 _THREAD: threading.Thread | None = None
@@ -43,11 +43,10 @@ class _Handler(BaseHTTPRequestHandler):
         if type(self).allow_unauthenticated:
             return True
         name = type(self).key_env
-        expected = os.environ.get(name, "").strip() if name else ""
-        if not expected:
+        if not name:
             return False
         presented = presented_api_key({str(key): str(value) for key, value in self.headers.items()})
-        return credential_matches(presented, expected)
+        return auth_decision(name, presented) == "ok"
 
     def log_message(self, format: str, *args: object) -> None:
         return

@@ -13,6 +13,9 @@
 #   make -f deploy/prod.mk prod-dr-drill
 #   make -f deploy/prod.mk prod-log-retain
 #   make -f deploy/prod.mk prod-canary
+#   make -f deploy/prod.mk prod-alert-drill
+#   make -f deploy/prod.mk prod-rotate-drill
+#   make -f deploy/prod.mk prod-soak
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. prod-secrets writes them
 # to files under SECRET_DIR and does not print them. Containers read those
@@ -37,12 +40,13 @@ RESEARCH_B ?= $(PROJECT)-research-b-1
 BACKUP_DIR ?= /tmp/dipcatcher-ops7-backup
 BACKUP_ROOT ?= /tmp/dipcatcher-ops7-backups
 LOG_DIR ?= /tmp/dipcatcher-ops7-logs
+TEXTFILE_DIR ?= /tmp/dipcatcher-ops7-textfile
 SECRET_DIR ?= /tmp/dipcatcher-ops7-secrets
 LAB_IMAGE ?= dipcatcher:local
 LAB_PREVIOUS ?= dipcatcher:previous
 RESEARCH_IMAGE ?= dipcatcher-research-api:latest
 RESEARCH_PREVIOUS ?= dipcatcher-research-api:previous
-PRESERVE := QUANT_API_KEY,RESEARCH_API_KEY,DIPCATCHER_ALERT_WEBHOOK_SECRET,DIPCATCHER_ALERT_WEBHOOK_URL,DIPCATCHER_LAB_DATA,DIPCATCHER_RESEARCH_DATA,DIPCATCHER_TLS_DIR,DIPCATCHER_QUANT_API_KEY_FILE,DIPCATCHER_RESEARCH_API_KEY_FILE,DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE,LAB_TLS_PORT,RESEARCH_TLS_PORT,PROMETHEUS_PUBLISH_PORT,GRAFANA_PUBLISH_PORT,DIPCATCHER_LOG_DIR,DIPCATCHER_LOG_MAX_SIZE,DIPCATCHER_LOG_MAX_FILE,DIPCATCHER_BACKUP_COPY,DIPCATCHER_BACKUP_RSYNC_TARGET,DIPCATCHER_BACKUP_S3_URI
+PRESERVE := QUANT_API_KEY,RESEARCH_API_KEY,DIPCATCHER_ALERT_WEBHOOK_SECRET,DIPCATCHER_ALERT_WEBHOOK_URL,DIPCATCHER_LAB_DATA,DIPCATCHER_RESEARCH_DATA,DIPCATCHER_TLS_DIR,DIPCATCHER_QUANT_API_KEY_FILE,DIPCATCHER_RESEARCH_API_KEY_FILE,DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE,LAB_TLS_PORT,RESEARCH_TLS_PORT,PROMETHEUS_PUBLISH_PORT,GRAFANA_PUBLISH_PORT,DIPCATCHER_LOG_DIR,DIPCATCHER_LOG_MAX_SIZE,DIPCATCHER_LOG_MAX_FILE,DIPCATCHER_BACKUP_COPY,DIPCATCHER_BACKUP_RSYNC_TARGET,DIPCATCHER_BACKUP_S3_URI,DIPCATCHER_TEXTFILE_DIR
 
 export DIPCATCHER_LAB_DATA := $(LAB_DATA)
 export DIPCATCHER_RESEARCH_DATA := $(RESEARCH_DATA)
@@ -63,6 +67,7 @@ export DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE := $(SECRET_DIR)/alert_webhook_secre
 export BACKUP_DIR
 export BACKUP_ROOT
 export DIPCATCHER_LOG_DIR := $(LOG_DIR)
+export DIPCATCHER_TEXTFILE_DIR := $(TEXTFILE_DIR)
 
 ifeq ($(SUDO),)
 COMPOSE := docker compose -f $(COMPOSE_FILE)
@@ -70,7 +75,7 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-certs prod-data prod-build prod-secrets
+.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-certs prod-data prod-build prod-secrets
 
 ifeq ($(SUDO),)
 SHIP := $(ROOT)/.venv/bin/python
@@ -156,6 +161,17 @@ prod-canary:
 	@cd $(ROOT) && uv run --quiet python scripts/prod_secrets.py
 	cd $(ROOT) && DIPCATCHER_COMPOSE_PRESERVE='$(PRESERVE)' uv run --quiet python scripts/prod_canary.py
 
+prod-alert-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_alert_drill.py
+
+prod-rotate-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_rotate.py drill
+
+prod-soak:
+	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
+	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
+	cd $(ROOT) && uv run --quiet python scripts/prod_soak.py
+
 prod-restore:
 	cd $(ROOT) && $(SUDO) $(ROOT)/.venv/bin/python scripts/paper_state_backup.py restore \
 		--archive $(BACKUP_DIR) --dest $(LAB_DATA)
@@ -183,6 +199,12 @@ prod-data:
 	esac
 	$(SUDO) mkdir -p "$(LOG_DIR)/app" "$(LOG_DIR)/proxy" "$(LOG_DIR)/audit"
 	$(SUDO) chown -R 10001:10001 "$(LOG_DIR)"
+	@case "$(TEXTFILE_DIR)" in \
+		/tmp/dipcatcher-*|/var/lib/dipcatcher*) ;; \
+		*) echo "TEXTFILE_DIR must be a dipcatcher directory" >&2; exit 1 ;; \
+	esac
+	$(SUDO) mkdir -p "$(TEXTFILE_DIR)"
+	$(SUDO) chown "$$(id -u):$$(id -g)" "$(TEXTFILE_DIR)"
 
 prod-build:
 	@if $(SUDO) docker image inspect $(LAB_IMAGE) >/dev/null 2>&1; then \

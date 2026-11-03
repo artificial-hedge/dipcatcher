@@ -6,11 +6,11 @@
 set -eu
 
 token_ok() {
-  value=$1
-  if [ -z "$value" ]; then
+  token=$1
+  if [ -z "$token" ]; then
     return 1
   fi
-  case "$value" in
+  case "$token" in
     *[[:space:]]*)
       return 1
       ;;
@@ -21,8 +21,8 @@ token_ok() {
   dq='"'
   sq="'"
   for fragment in "$hash" "$open" "$close" "$dq" "$sq"; do
-    rest=${value#*"$fragment"}
-    if [ "$rest" != "$value" ]; then
+    rest=${token#*"$fragment"}
+    if [ "$rest" != "$token" ]; then
       return 1
     fi
   done
@@ -46,17 +46,27 @@ load_secret() {
     return 0
   fi
   if [ -L "$path" ] || [ ! -f "$path" ]; then
-    echo "${name}_FILE must contain one token" >&2
+    echo "${name}_FILE must contain one or two tokens" >&2
     exit 1
   fi
-  value=$(tr -d '\r\n' < "$path")
+  count=$(grep -cve '^[[:space:]]*$' "$path" || true)
+  if [ "$count" -lt 1 ] || [ "$count" -gt 2 ]; then
+    echo "${name}_FILE must contain one or two tokens" >&2
+    exit 1
+  fi
+  value=$(awk 'NF { print; exit }' "$path" | tr -d '\r')
+  second=$(awk 'NF { n++; if (n == 2) { print; exit } }' "$path" | tr -d '\r')
   if ! token_ok "$value"; then
-    echo "${name}_FILE must contain one token" >&2
+    echo "${name}_FILE must contain one or two tokens" >&2
+    exit 1
+  fi
+  if [ "$count" -eq 2 ] && ! token_ok "$second"; then
+    echo "${name}_FILE must contain one or two tokens" >&2
     exit 1
   fi
   export "$name=$value"
   unset "${name}_FILE"
-  unset value
+  unset value second
 }
 
 load_secret QUANT_API_KEY

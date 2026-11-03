@@ -13,6 +13,7 @@ required and are not printed.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import shlex
@@ -170,6 +171,7 @@ def execute(
     )
     if _code(started) != 0:
         report["error"] = "canary up"
+        _publish_canary(env, 1)
         return report
     try:
         checks = _probe(env, run, pause, attempts)
@@ -184,6 +186,30 @@ def execute(
     finally:
         removed = run([*base, "--profile", "canary", "rm", "-sf", CANARY_SERVICE])
         report["removed"] = _code(removed) == 0
+        _publish_canary(env, 0 if report.get("ok") else 1)
+
+
+def _signals() -> object | None:
+    path = Path(__file__).resolve().parent / "ops_signals.py"
+    name = "dipcatcher_ops_signals"
+    cached = sys.modules.get(name)
+    if cached is not None:
+        return cached
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _publish_canary(env: Mapping[str, str], abort: int) -> None:
+    raw = env.get("DIPCATCHER_TEXTFILE_DIR", "").strip()
+    module = _signals()
+    if not raw or module is None:
+        return
+    module.publish(raw, {"dipcatcher_canary_abort": abort})
 
 
 def _run(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:

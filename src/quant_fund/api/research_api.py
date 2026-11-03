@@ -458,30 +458,38 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         """Loopback-only by default; X-API-Key when RESEARCH_API_KEY is set."""
         if request.url.path in _PUBLIC_PATHS:
             response = await call_next(request)
-        elif cfg.api_key:
-            from quant_fund.utils.api_auth import credential_matches, presented_api_key
+        else:
+            from quant_fund.utils.api_auth import presented_api_key
+            from quant_fund.utils.secret_tokens import auth_decision, credential_matches_any
 
-            if credential_matches(presented_api_key(request.headers), cfg.api_key):
-                response = await call_next(request)
+            presented = presented_api_key(request.headers)
+            if os.environ.get("RESEARCH_API_KEY_FILE", "").strip():
+                decision = auth_decision("RESEARCH_API_KEY", presented)
+            elif cfg.api_key:
+                decision = "ok" if credential_matches_any(presented, (cfg.api_key,)) else "reject"
             else:
+                decision = "unset"
+            if decision == "ok":
+                response = await call_next(request)
+            elif decision == "reject":
                 response = JSONResponse(
                     status_code=401, content={"detail": "invalid or missing X-API-Key"}
                 )
-        else:
-            host = (request.client.host if request.client else "") or ""
-            if host not in _LOOPBACK_HOSTS:
-                response = JSONResponse(
-                    status_code=403,
-                    content={
-                        "detail": (
-                            "RESEARCH_API_KEY is unset; non-localhost clients are "
-                            "refused. Set RESEARCH_API_KEY and send X-API-Key, or "
-                            "bind to 127.0.0.1 only."
-                        )
-                    },
-                )
             else:
-                response = await call_next(request)
+                host = (request.client.host if request.client else "") or ""
+                if host not in _LOOPBACK_HOSTS:
+                    response = JSONResponse(
+                        status_code=403,
+                        content={
+                            "detail": (
+                                "RESEARCH_API_KEY is unset; non-localhost clients are "
+                                "refused. Set RESEARCH_API_KEY and send X-API-Key, or "
+                                "bind to 127.0.0.1 only."
+                            )
+                        },
+                    )
+                else:
+                    response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Referrer-Policy"] = "no-referrer"

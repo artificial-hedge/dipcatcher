@@ -72,3 +72,30 @@ groups:
           severity: page
         annotations:
           summary: A filesystem has under 15 percent free.
+      # 1 means owner-restamp would list a drifted corpus. The series is a
+      # textfile gauge. Absent means this rule stays silent.
+      - alert: DipcatcherReconcileDrift
+        expr: dipcatcher_reconcile_drift == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A pinned corpus epoch does not match the working tree.
+      # 86400 seconds is the backup-age knob. The gauge is the unix time of
+      # the last verified stamp. Prometheus does not substitute an environment
+      # variable into this file.
+      - alert: DipcatcherBackupAge
+        expr: (time() - dipcatcher_backup_last_success_timestamp) > 86400
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The last verified backup is older than 86400 seconds.
+      # 1 means the canary probe failed or the roll did not finish.
+      - alert: DipcatcherCanaryAbort
+        expr: dipcatcher_canary_abort == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: The canary did not roll the stack.
