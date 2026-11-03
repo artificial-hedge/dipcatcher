@@ -76,10 +76,32 @@ def _nonloopback_status(path: str) -> int:
     return asyncio.run(_run())
 
 
+def _push_names(names: tuple[str, ...]) -> list[tuple[str, str | None]]:
+    return [(name, _push_env(name)) for name in names]
+
+
+def _pop_names(saved: list[tuple[str, str | None]]) -> None:
+    for name, value in saved:
+        _pop_env(name, value)
+
+
 def middleware_audit() -> dict[str, Any]:
+    from quant_fund.api.admin_audit import audit_log_env_names
+    from quant_fund.api.http_controls import (
+        key_file_env_names,
+        loopback_rate_env_names,
+        rate_backend_env_names,
+    )
+
     results: dict[str, Any] = {}
     saved = _push_env("QUANT_API_KEY")
     saved_read = _push_env("QUANT_API_READ_KEY")
+    saved_files = _push_names(
+        key_file_env_names()
+        + loopback_rate_env_names()
+        + audit_log_env_names()
+        + rate_backend_env_names()
+    )
     try:
         client = _client()
         r = client.get("/health")
@@ -143,6 +165,7 @@ def middleware_audit() -> dict[str, Any]:
     finally:
         _pop_env("QUANT_API_KEY", saved)
         _pop_env("QUANT_API_READ_KEY", saved_read)
+        _pop_names(saved_files)
     return results
 
 

@@ -347,7 +347,12 @@ def test_create_app_uses_environment_settings(
 
 
 def _clear_bind_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("RESEARCH_API_HOST", "RESEARCH_API_PORT", "RESEARCH_API_KEY"):
+    for name in (
+        "RESEARCH_API_HOST",
+        "RESEARCH_API_PORT",
+        "RESEARCH_API_KEY",
+        "RESEARCH_API_KEY_FILE",
+    ):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -438,6 +443,25 @@ def test_main_starts_the_shared_server_with_validated_bind_settings(
     monkeypatch.setenv("RESEARCH_API_HOST", " 0.0.0.0 ")
     monkeypatch.setenv("RESEARCH_API_PORT", "65535")
     monkeypatch.setenv("RESEARCH_API_KEY", "not-a-real-key")
+    calls: list[dict[str, object]] = []
+
+    def fake_serve(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("quant_fund.api.serve.serve_research", fake_serve)
+    main()
+
+    assert calls == [{"server_header": False, "date_header": False}]
+
+
+def test_main_accepts_a_file_backed_key_off_loopback(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear_bind_env(monkeypatch)
+    key_path = tmp_path / "research.key"
+    key_path.write_text("not-a-real-key\n", encoding="utf-8")
+    monkeypatch.setenv("RESEARCH_API_HOST", "0.0.0.0")
+    monkeypatch.setenv("RESEARCH_API_KEY_FILE", str(key_path))
     calls: list[dict[str, object]] = []
 
     def fake_serve(*args: object, **kwargs: object) -> None:

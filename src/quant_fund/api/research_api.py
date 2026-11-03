@@ -25,16 +25,22 @@ Secure default: ``/health`` is the only unauthenticated route. ``/ready``
 is readiness: 200 only when the evidence roots are directories and the
 process is accepting work, and 503 otherwise. Loopback may probe it
 without a key. A non-loopback client is refused first (403 when no key
-is set, 401 when a key is set and not presented). ``RESEARCH_API_KEY`` is the admin key and
-``RESEARCH_API_READ_KEY`` is the read key. When either is set, every other
-route requires ``X-API-Key`` or ``Authorization: Bearer``. The admin key
-authorizes every method. The read key authorizes GET, HEAD, and OPTIONS.
-When both are unset only loopback clients are served. An app built with
+is set, 401 when a key is set and not presented). ``RESEARCH_API_KEY`` is
+the admin key and ``RESEARCH_API_READ_KEY`` is the read key. A ``*_FILE``
+path replaces the environment value and is read on each request. A previous
+file is accepted until the timestamp in the matching ``*_GRACE_UNTIL_FILE``.
+When either slot is set, every other route requires ``X-API-Key`` or
+``Authorization: Bearer``. The admin key authorizes every method. The read
+key authorizes GET, HEAD, and OPTIONS. A previous key in its grace window
+authorizes the same methods as the current key. When every slot is unset
+only loopback clients are served. An app built with
 ``ResearchApiSettings.from_env`` reads the admin key on each request. An
 explicit ``api_key`` is a test override and is not taken from the
-environment. The read key is always the environment variable. The service
-holds no credentials and exposes no trading surface, but it must still
-never be bound to a non-loopback interface without ``RESEARCH_API_KEY``.
+environment or from ``RESEARCH_API_KEY_FILE``. The read key still comes
+from its environment value or file. The service holds no credentials and
+exposes no trading surface, but it must still never be bound to a
+non-loopback interface without ``RESEARCH_API_KEY`` or
+``RESEARCH_API_KEY_FILE``.
 """
 
 from __future__ import annotations
@@ -51,6 +57,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from quant_fund import __firm__, __version__
+from quant_fund.api.admin_audit import audited_call, denied_audit_response
 from quant_fund.api.http_controls import (
     BODY_TOO_LARGE_DETAIL,
     MAX_BODY_BYTES,
@@ -65,7 +72,7 @@ from quant_fund.api.http_controls import (
     ip_rate_response,
     is_loopback_host,
     key_rate_response,
-    nonempty_env,
+    load_key_slot,
     reject_declared_body,
     reject_deep_json,
 )
@@ -487,13 +494,19 @@ def _loopback_ready(request: Request, path: str) -> bool:
     return path == "/ready" and is_loopback_host(client_host(request))
 
 
+def research_admin_slot(cfg: ResearchApiSettings) -> tuple[str | None, str | None]:
+    """Current and previous admin keys. An explicit settings key ignores files."""
+    if cfg.key_from_env:
+        return load_key_slot("RESEARCH_API_KEY")
+    if cfg.api_key:
+        return cfg.api_key, None
+    return None, None
+
+
 def research_api_key(cfg: ResearchApiSettings) -> str | None:
     """Explicit settings keep their key. Env-backed apps read it per request."""
-    if cfg.key_from_env:
-        return nonempty_env("RESEARCH_API_KEY")
-    if cfg.api_key:
-        return cfg.api_key
-    return None
+    current, _previous = research_admin_slot(cfg)
+    return current
 
 
 def _evidence_checks(cfg: ResearchApiSettings) -> dict[str, bool]:
@@ -529,21 +542,41 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
     limited = ip_rate_response(request, "RESEARCH_API")
     if limited is not None:
         return limited
+    admin_key, admin_previous = research_admin_slot(cfg)
+    read_key, read_previous = load_key_slot("RESEARCH_API_READ_KEY")
     refusal = credential_refusal(
         request,
-        research_api_key(cfg),
-        nonempty_env("RESEARCH_API_READ_KEY"),
+        admin_key,
+        read_key,
         _RESEARCH_UNSET_DETAIL,
+        admin_previous,
+        read_previous,
     )
     if refusal is not None:
-        return refusal
+        return denied_audit_response(
+            request,
+            refusal,
+            admin_current=admin_key,
+            admin_previous=admin_previous,
+            read_current=read_key,
+            read_previous=read_previous,
+            log_env="RESEARCH_API_AUDIT_LOG",
+        )
     from quant_fund.utils.api_auth import presented_api_key
 
     presented = presented_api_key(request.headers) or ""
     limited_key = key_rate_response(request, "RESEARCH_API", presented)
     if limited_key is not None:
         return limited_key
-    return await call_next(request)
+    return await audited_call(
+        request,
+        call_next,
+        admin_current=admin_key,
+        admin_previous=admin_previous,
+        read_current=read_key,
+        read_previous=read_previous,
+        log_env="RESEARCH_API_AUDIT_LOG",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1119,7 +1152,8 @@ def main() -> None:
     """Validate the bind, then start through the shared research server.
 
     The shared server hides the uvicorn banner, drains on shutdown, and
-    refuses a non-loopback bind without ``RESEARCH_API_KEY``.
+    refuses a non-loopback bind without ``RESEARCH_API_KEY`` or
+    ``RESEARCH_API_KEY_FILE``.
     """
     from quant_fund.api.http_controls import serve_banner_kwargs
     from quant_fund.api.serve import serve_research
@@ -1133,8 +1167,9 @@ def main() -> None:
             for error in exc.errors()
         )
         raise SystemExit(f"invalid research API environment: {details}") from None
-    api_key = os.environ.get("RESEARCH_API_KEY")
-    if settings.host not in {"127.0.0.1", "::1", "localhost"} and not (api_key and api_key.strip()):
+    env_key = os.environ.get("RESEARCH_API_KEY", "").strip()
+    file_key = os.environ.get("RESEARCH_API_KEY_FILE", "").strip()
+    if settings.host not in {"127.0.0.1", "::1", "localhost"} and not (env_key or file_key):
         raise SystemExit(
             "non-loopback binding requires RESEARCH_API_KEY; refusing unauthenticated exposure"
         )

@@ -12,10 +12,15 @@ claims. `quant_fund.api.app._stamp_research_honesty` overwrites
 
 ## Assets
 
-- Operator API keys in the process environment: `QUANT_API_KEY`,
-  `QUANT_API_READ_KEY`, `RESEARCH_API_KEY`, `RESEARCH_API_READ_KEY`, and, on
-  the harness, `FX1_API_KEY`. The request path sees them only as an
-  `X-API-Key` header. Bucket ids store a SHA-256 digest, not the key.
+- Operator API keys in the process environment and, when set, in the
+  mode-`0600` files named by `QUANT_API_KEY_FILE`, `QUANT_API_READ_KEY_FILE`,
+  `RESEARCH_API_KEY_FILE`, `RESEARCH_API_READ_KEY_FILE`, and the matching
+  `*_PREVIOUS_FILE` values. The harness key remains `FX1_API_KEY`. The
+  request path sees a key only as an `X-API-Key` header. Bucket ids and
+  audit key ids store a SHA-256 digest, not the key.
+- The append-only admin audit log (`QUANT_API_AUDIT_LOG` and
+  `RESEARCH_API_AUDIT_LOG`). A line holds time, route, key id, request id,
+  outcome, kind, and the SHA-256 of the previous line. It does not hold the key.
 - Research evidence on disk: `receipts/`, `verifier/`, `artifacts/`, and the
   run notebooks under the research data root. The research API is read-only.
 - Lab configs under `configs/`. `resolve_allowed_config_path` refuses a path
@@ -33,22 +38,102 @@ claims. `quant_fund.api.app._stamp_research_honesty` overwrites
 |---|---|---|
 | Direct peer | `request.client.host` as the immediate TCP peer | `X-Forwarded-For`, `Forwarded`, and any client-supplied host header |
 | Loopback | `127.0.0.1`, `::1`, `localhost`, and the ASGI test peer `testclient` | `::ffff:127.0.0.1` and every other address, including IPv4-mapped loopback |
-| Environment | The key read on that request | A key copied into the app at import, for the env-backed apps |
+| Environment and key files | The current file, or the env value when no file is set, read on that request. A previous file only before its grace deadline | A key copied into the app at import, for the env-backed apps. An env value is ignored while `{NAME}_FILE` is set |
 | Filesystem | Paths that stay inside the configured root after resolve | User path segments that escape the root (`research_api._contained`, `resolve_allowed_config_path`) |
 | Reverse proxy | Nothing, until a key is set | A proxy on the same host makes every browser look like loopback |
 
 `X-Forwarded-For` is not read. A reverse proxy bound to loopback collapses
-every client into the loopback peer: the no-key fallback allows them, and the
-rate limit does not apply. Set the API key before placing either service
-behind a proxy.
+every client into the loopback peer: the no-key fallback allows them, and
+they share the higher loopback bucket. Set the API key before placing either
+service behind a proxy.
+
+## STRIDE
+
+Each row names the control and the test or gate that exercises it. A gap is
+a threat this tree does not close.
+
+### Direct peer
+
+| Threat | Control | Covered by |
+|---|---|---|
+| Spoofing | The peer is `request.client.host`. `X-Forwarded-For` is not a peer. | `test_forwarded_for_does_not_become_loopback` |
+| Tampering | 64 KiB body cap, JSON depth cap, header checks, config path allowlist, research id checks | `tests/unit/api/test_http_controls.py`, `tests/unit/security/test_pentest_surface.py`, `tests/unit/api/test_research_api.py`, `tests/unit/security/test_auth_rate_fuzz.py` |
+| Repudiation | An admin-key unsafe request appends one JSON line. A rejected key on an unsafe method is outcome `denied`. A ledger or position read is outcome `read` | `tests/unit/security/test_admin_audit.py`. Other safe methods are not lines. That remains a gap |
+| Information disclosure | Unhandled errors are `{"detail":"internal error"}`. Package version is on `GET /health` only | `test_lab_internal_error_hides_the_exception`, `test_health_is_the_only_lab_version_surface` |
+| Denial of service | Per-IP and per-key token buckets, body cap, 128-header cap. `sqlite` and `file` share one store across workers | `tests/unit/api/test_http_controls.py`, `tests/unit/api/test_rate_store.py` |
+| Elevation of privilege | Admin key, read key, wrong key, and no key have a fixed status on every route | `tests/unit/security/test_authz_matrix.py` |
+
+### Loopback
+
+| Threat | Control | Covered by |
+|---|---|---|
+| Spoofing | Loopback is `127.0.0.1`, `::1`, `localhost`, and `testclient`. `::ffff:127.0.0.1` is remote | `test_ipv4_mapped_loopback_is_a_remote_peer`, `middleware_audit` |
+| Tampering | Same body and path controls as any peer | The peer tests above |
+| Repudiation | A loopback request with no admin key does not write an audit line for an unsafe method. A sensitive read still appends outcome `read` when the reads flag is on | `test_admin_audit` (the unauthenticated mutation is absent), `test_loopback_without_a_key_audits_a_sensitive_read` |
+| Information disclosure | `/health` on loopback returns the package version | `test_health_is_the_only_lab_version_surface` |
+| Denial of service | Loopback uses `{PREFIX}_LOOPBACK_RATE_PER_SEC` (default 100) and `{PREFIX}_LOOPBACK_RATE_BURST` (default 1000). `/health` stays unlimited | `test_loopback_uses_its_own_higher_limit` |
+| Elevation of privilege | With no key configured, loopback is allowed and every other peer is 403 | `middleware_audit` |
+
+### Key files and environment
+
+| Threat | Control | Covered by |
+|---|---|---|
+| Spoofing | A previous key works only before `*_GRACE_UNTIL_FILE`. After that instant it is 401 | `test_previous_admin_key_works_only_inside_the_grace_window`, `test_grace_boundary_is_strict` |
+| Tampering | `{NAME}_FILE` replaces the env value on the next request. A missing or oversized file stays configured and matches nothing | `test_file_replaces_the_env_value_without_a_restart`, `test_unreadable_key_file_fails_closed`, `test_oversized_key_file_matches_nothing` |
+| Repudiation | The audit key id is `sha256` of the presented key. Each line's `prev` is the SHA-256 of the previous raw line | `test_admin_mutation_is_appended_and_the_key_stays_out_of_the_log`, `tests/unit/security/test_audit_chain.py` |
+| Information disclosure | The key is absent from the audit line, including when `X-Request-ID` is the key, and from the read-key 403 body | `test_admin_audit`, `test_read_key_cannot_modify` |
+| Denial of service | A key file over 4096 bytes is not loaded | `test_oversized_key_file_matches_nothing` |
+| Elevation of privilege | The read key, current or previous, cannot call an unsafe method. A previous admin key can | `test_previous_read_key_is_safe_methods_only`, `test_read_key_cannot_modify` |
+
+### Filesystem
+
+| Threat | Control | Covered by |
+|---|---|---|
+| Spoofing | Config paths must resolve under `configs/`. Research ids must match a closed expression and stay under the evidence root | `test_lab_config_path_traversal`, research path tests in `test_research_api.py` |
+| Tampering | Backtest artifact paths cannot leave the artifact root | `get_backtest` path checks. Gap: no separate fuzz corpus beyond `test_pentest_surface.py` |
+| Repudiation | `POST /backtest` is kind `ledger`. `GET /backtest/{id}` is kind `ledger` with outcome `read`. Position reads are kind `positions` with outcome `read`. `POST /portfolio/optimize` is kind `optimize`. `dump_resolved`, `PaperLedger.flush`, `LiveDesk.kill`, and the gateway `kill` append `config`, `ledger`, and `kill-file`. With no HTTP actor the route is `cli:<user>@<host>` | `test_process_mutations_bind_a_cli_actor`, `test_portfolio_optimize_kind_is_optimize`, `test_sensitive_reads_append_outcome_read` |
+| Information disclosure | A 200 can still name `source` or `artifact_path` | Residual below. No gate fails that response |
+| Denial of service | Artifact writes are the backtest route, which is admin-only and body-capped | `test_authz_matrix` |
+| Elevation of privilege | A path that escapes the root is 400 or 422 | `test_pentest_surface.py` |
+
+### Reverse proxy
+
+| Threat | Control | Covered by |
+|---|---|---|
+| Spoofing | Forwarded headers are not trusted | `test_forwarded_for_does_not_become_loopback` |
+| Elevation of privilege | A proxy that connects from loopback inherits the no-key fallback | No test can see a proxy the process does not observe. Gap. Set a key before adding a proxy |
+
+### fx-1 harness
+
+`src/fx1/serve/api.py` is a separate process and is hash-pinned. This tree does
+not change it. Spoofing of `::ffff:127.0.0.1`, per-request key reload, and
+the constant-time compare described under Pending harness change are gaps.
+No gate in this slice covers them. `make -f deploy/security.mk security-gate`
+does not scan that process.
+
+### Supply chain and the running images
+
+| Threat | Control | Covered by |
+|---|---|---|
+| Tampering of dependencies, images, Dockerfiles, or git history | `make -f deploy/security.mk security-gate` | `scripts/check_security_gate_summary.py` requires `ok` true, `dirty` false, an empty `new_findings` list, and `head` equal to `git rev-parse HEAD` |
+| Information disclosure on the published ports | ZAP baseline plus the lab `/ready` 503 rule | `deploy/security/zap-rules.tsv`, `tests/unit/security/test_ready_not_ready.py` |
+| Denial of service via the SQL rules' request rate | Production keeps 10 requests/second. A scanner sets the rate to `off` only in an uncommitted override | `docs/SECURITY_GATE.md` |
+
+## Gaps
+
+- Safe methods other than ledger and position reads are not audit lines. `GET /backtest/{id}` and `HEAD /backtest/{id}` are kind `ledger` with outcome `read`. `GET /risk/portfolio`, `GET /portfolio/target`, and `GET /portfolio/exposures` are kind `positions` with outcome `read`. `QUANT_API_AUDIT_READS` and `RESEARCH_API_AUDIT_READS` default on. `0`, `off`, `false`, or `no` disables those lines. The config dump is `dump_resolved`, which appends outcome `written`. There is no HTTP config-dump route. A full disk after the handler has started can return 503 `audit log unavailable` while a backtest artifact from that request already exists. A denied line that cannot be appended becomes that same 503, and the route does not run. A sensitive read does too, before the handler, when the log path cannot be opened.
+- The default rate backend is in-process memory, so workers do not share buckets until `DIPCATCHER_RATE_BACKEND` is `sqlite` or `file` and `DIPCATCHER_RATE_STORE` points at the shared volume. A missing or unreadable store is 503 `rate store unavailable`. Loopback and remote peers use separate buckets on every backend.
+- The hash chain detects a torn, deleted, or reordered line. `scripts/anchor_audit_head.py` appends the head digest and the time to a separate anchors file. That line is unsigned. Signing it is an owner step, the same as `gate_pins.sig`. A rewrite of the log and the anchors file still verifies. `scripts/verify_audit_chain.py` checks the chain. `scripts/prod_backup.py` copies the chain and the anchors file. `gate_pins.sig` is not re-signed here.
+- The harness gaps in the pending section remain.
+- `.env.example` does not list the file, grace, audit-log, loopback-rate, audit max-byte, rate-backend, audit-reads, or anchors variables.
 
 ## Entrypoints
 
 | Entrypoint | Bind guard | Request gate |
 |---|---|---|
-| `dipcatcher api` (`quant_fund.cli.ops_cmds.api`) | Refuses a host other than `127.0.0.1`, `::1`, or `localhost` when `QUANT_API_KEY` is missing or empty. Default `127.0.0.1:8000`. | `api_auth_middleware` |
+| `dipcatcher api` (`quant_fund.cli.ops_cmds.api`) | Refuses a host other than `127.0.0.1`, `::1`, or `localhost` when `QUANT_API_KEY` and `QUANT_API_KEY_FILE` are both missing or empty. Default `127.0.0.1:8000`. | `api_auth_middleware` |
 | `uvicorn quant_fund.api.app:app` | No bind guard. The request gate still refuses a non-loopback peer when no key is set. | `api_auth_middleware` |
-| `python -m quant_fund.api.research_api` | Refuses a non-loopback `RESEARCH_API_HOST` when `RESEARCH_API_KEY` is missing or empty. Default `127.0.0.1:8010`. | `research_api_auth` |
+| `python -m quant_fund.api.research_api` | Refuses a non-loopback `RESEARCH_API_HOST` when `RESEARCH_API_KEY` and `RESEARCH_API_KEY_FILE` are both missing or empty. Default `127.0.0.1:8010`. | `research_api_auth` |
 | `uvicorn quant_fund.api.research_api:app` | No bind guard. Same request gate. | `research_api_auth` |
 | `fx1 harness serve`, `python -m fx1.serve.api` | Refuses a non-loopback bind when `FX1_API_KEY` is missing or empty. Loopback still boots with no key. See the pending proposal. | `harness_api_auth` in `src/fx1/serve/api.py` |
 
@@ -80,26 +165,51 @@ configured. Neither app mounts `/docs` or `/redoc` (`docs_url` and
 | Both missing or empty | loopback set above | Allowed |
 | Both missing or empty | anything else | 403. The detail names the admin env var and tells the operator to set it or bind loopback. It does not echo a key. |
 
-`_authenticate_request` reads both lab variables on every non-public request.
-An empty string is unset. `research_api_key` supplies the research admin key.
-The research read key is always `nonempty_env("RESEARCH_API_READ_KEY")`.
-`ResearchApiSettings.from_env` sets `key_from_env`, and `research_api_key`
-calls `nonempty_env("RESEARCH_API_KEY")` on every request. An explicit
-`ResearchApiSettings.api_key` is a frozen override used by tests; it does not
-read the environment.
+`_authenticate_request` loads both lab slots on every non-public request.
+An empty string is unset. `load_key_slot` reads `{NAME}_FILE` when that
+variable is set and otherwise reads the environment value. The research
+admin slot does the same when `key_from_env` is true. An explicit
+`ResearchApiSettings.api_key` is a frozen override used by tests; it does
+not read `RESEARCH_API_KEY` or `RESEARCH_API_KEY_FILE`. The research read
+slot still uses `load_key_slot("RESEARCH_API_READ_KEY")`.
 
-`credential_refusal` runs `keys_match` twice, once for the admin key and once
-for the read key, including when a variable is unset. A missing header or an
-unset key is digested as the stand-in `absent-api-key`. Both sides of each
-call are SHA-256 digested and the digests are compared with
-`hmac.compare_digest`, so each compare is fixed length. A surrogate that
-cannot be encoded as UTF-8 is a mismatch, not a 500. Hash time still depends
-on the length of the header value.
+`credential_refusal` runs `keys_match` four times, in order: current admin,
+previous admin, current read, previous read. A missing header or an unset
+slot is digested as the stand-in `absent-api-key`. The previous compare runs
+even when the current key matched. Both sides of each call are SHA-256
+digested and the digests are compared with `hmac.compare_digest`, so each
+compare is fixed length. A surrogate that cannot be encoded as UTF-8 is a
+mismatch, not a 500. Hash time still depends on the length of the header
+value.
 
-The CLI bind guard still requires the admin key. `QUANT_API_READ_KEY` alone
-does not allow `dipcatcher api` to bind a non-loopback host, and
-`RESEARCH_API_READ_KEY` alone does not allow
-`python -m quant_fund.api.research_api` to do so.
+`{NAME}_FILE` is read on each request. While it is set, the environment
+value of `{NAME}` is not accepted. `{NAME}_PREVIOUS_FILE` is accepted only
+while the clock is strictly before the timestamp in
+`{NAME}_GRACE_UNTIL_FILE`. The runbook is in `docs/SECURITY_GATE.md`. An
+admin-key unsafe method appends a line to `QUANT_API_AUDIT_LOG` or
+`RESEARCH_API_AUDIT_LOG` when that variable is set, and always emits the
+same JSON through the `quant_fund.api.audit` logger. A rejected key on an
+unsafe method appends outcome `denied`. If the configured file cannot be
+opened, the mutation or the denial is 503 `audit log unavailable` and the
+route does not run. `GET` and `HEAD` of `/backtest/{id}`, and `GET` of
+`/risk/portfolio`, `/portfolio/target`, and `/portfolio/exposures`, append
+outcome `read` when `QUANT_API_AUDIT_READS` is unset or any value other
+than `0`, `off`, `false`, or `no`. The research flag is
+`RESEARCH_API_AUDIT_READS`. The research API has no ledger, position, or
+config-dump route, so it writes no read line. `dump_resolved` appends
+outcome `written`. `PaperLedger.flush`, `LiveDesk.kill`, and the gateway
+session `kill` append when that file is set. With no HTTP
+actor the route is `cli:<user>@<host>`. Each line's `prev` is the SHA-256
+of the previous raw line. The active file rotates to `NAME.1` when the next
+line would pass `{LOG}_MAX_BYTES` (default 1048576).
+`scripts/anchor_audit_head.py` appends that head digest and the time to a
+separate anchors file. The line is unsigned. `scripts/prod_backup.py` copies
+the chain and the anchors file.
+
+The CLI bind guard still requires the admin key. `QUANT_API_KEY_FILE`
+satisfies it. `QUANT_API_READ_KEY` and `QUANT_API_READ_KEY_FILE` do not.
+The research module's bind guard is the same for `RESEARCH_API_KEY` and
+`RESEARCH_API_KEY_FILE`.
 
 ## Controls on both APIs
 
@@ -124,22 +234,24 @@ used to stream an unbounded body.
 
 ### Rate limit
 
-In-memory token bucket, one process, not shared across workers.
+Token bucket. `DIPCATCHER_RATE_BACKEND` selects the store. Unset, empty, or `memory` keeps the bucket in the process and refills from `time.monotonic`. `sqlite` stores the bucket in a SQLite file at `DIPCATCHER_RATE_STORE`. `file` stores JSON at that path and takes an exclusive `fcntl` lock for the update. The shared backends refill from `time.time`, so two workers on one volume share a clock. A missing path, an unknown backend, or a store that cannot be opened is 503 `{"detail": "rate store unavailable"}`.
 
 - `QUANT_API_RATE_PER_SEC` and `RESEARCH_API_RATE_PER_SEC` default to `10`.
 - `QUANT_API_RATE_BURST` and `RESEARCH_API_RATE_BURST` default to `30`.
-- `0`, `off`, `false`, `no`, or an empty value disables that API's limit.
-- A value that does not parse keeps 10 per second and a burst of 30.
-- Loopback peers, including `testclient`, skip the limit.
+- `QUANT_API_LOOPBACK_RATE_PER_SEC` and `RESEARCH_API_LOOPBACK_RATE_PER_SEC` default to `100`.
+- `QUANT_API_LOOPBACK_RATE_BURST` and `RESEARCH_API_LOOPBACK_RATE_BURST` default to `1000`.
+- `0`, `off`, `false`, `no`, or an empty value disables the bucket named by that variable. Turning off the remote pair leaves the loopback pair in place.
+- A value that does not parse keeps that pair's default.
+- Loopback peers, including `testclient`, take the loopback pair. Their key bucket is separate from the remote key bucket. The bucket id is still a SHA-256 digest.
 - `/health` is not counted.
 - Other routes take an IP token first, including a request that will 401 or
   403. After the key matches, a second bucket is taken. Its id is
   `sha256(key)`, not the key. A read key refused for a mutating method does
   not take that second bucket.
-- At 1024 identities the oldest bucket is dropped.
+- At 1024 identities the oldest bucket is dropped. The shared store drops the oldest row the same way.
 - Over the limit: 429 `{"detail": "rate limit exceeded"}` and `Retry-After: 1`.
 
-`reset_rate_gates` clears process state for tests.
+`reset_rate_gates` clears the in-process buckets. It does not delete a shared store. `tests/unit/api/test_rate_store.py` runs two processes against one sqlite or file store. The memory backend keeps a separate bucket in each process.
 
 ### CORS
 
@@ -258,8 +370,7 @@ apps in this branch do not unwrap IPv4-mapped addresses. On those two apps,
 
 - A reverse proxy in front of loopback inherits the no-key fallback and skips
   the rate limit. Set the key first.
-- Buckets are per process. Several workers multiply the budget. A restart
-  clears them. The limit is not a quota.
+- The memory backend is per process. Several workers on that backend multiply the budget, and a restart clears it. `sqlite` and `file` share `DIPCATCHER_RATE_STORE`. The limit is not a quota. A shared volume that does not honor SQLite locks or `fcntl` fails closed with 503.
 - `/health` is unauthenticated and unlimited. It returns status, firm,
   product, version, and mode. It does not return a key.
 - SHA-256 of the presented key takes time proportional to the header length.

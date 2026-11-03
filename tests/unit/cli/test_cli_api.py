@@ -318,6 +318,7 @@ def test_cli_api_refuses_non_loopback_without_key(monkeypatch) -> None:
     from quant_fund.cli.main import app as cli
 
     monkeypatch.delenv("QUANT_API_KEY", raising=False)
+    monkeypatch.delenv("QUANT_API_KEY_FILE", raising=False)
     for name in (
         "DIPCATCHER_BIND_PORT",
         "DIPCATCHER_CONFIG",
@@ -421,18 +422,22 @@ def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
     monkeypatch.setattr(controls.hmac, "compare_digest", recording_compare)
     monkeypatch.setenv("QUANT_API_KEY", "secret-test-key")
     monkeypatch.delenv("QUANT_API_READ_KEY", raising=False)
+    for name in controls.key_file_env_names():
+        monkeypatch.delenv(name, raising=False)
     client = TestClient(app)
     short = client.get("/doctor", headers={"X-API-Key": "x"})
     longer = client.get("/doctor", headers={"X-API-Key": "wrong-key"})
     assert short.status_code == 401
     assert longer.status_code == 401
-    assert len(calls) == 4
+    assert len(calls) == 8
     expected = hashlib.sha256(b"secret-test-key").digest()
     stand_in = hashlib.sha256(b"absent-api-key").digest()
-    assert calls[0] == (hashlib.sha256(b"x").digest(), expected)
-    assert calls[1] == (hashlib.sha256(b"x").digest(), stand_in)
-    assert calls[2] == (hashlib.sha256(b"wrong-key").digest(), expected)
-    assert calls[3] == (hashlib.sha256(b"wrong-key").digest(), stand_in)
+    short_digest = hashlib.sha256(b"x").digest()
+    longer_digest = hashlib.sha256(b"wrong-key").digest()
+    assert calls[0] == (short_digest, expected)
+    assert calls[1] == calls[2] == calls[3] == (short_digest, stand_in)
+    assert calls[4] == (longer_digest, expected)
+    assert calls[5] == calls[6] == calls[7] == (longer_digest, stand_in)
     assert len(calls[0][0]) == len(calls[0][1]) == len(calls[2][0]) == 32
 
 

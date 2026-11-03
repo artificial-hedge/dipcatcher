@@ -1,8 +1,9 @@
 """Shared HTTP controls for the lab API and the research evidence API.
 
-Body size, in-memory token buckets, a closed CORS default, and a 500
-response that carries no exception text. Loopback peers skip the rate
-limit so TestClient and local probes are not throttled.
+Body size, token buckets, a closed CORS default, and a 500 response that
+carries no exception text. Loopback peers use a separate, higher token
+bucket than other peers. The default bucket is in-process. ``sqlite`` and
+``file`` share one store across workers.
 """
 
 from __future__ import annotations
@@ -10,13 +11,24 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import secrets
 import threading
 import time
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.requests import empty_receive
+
+from quant_fund.api.rate_store import (
+    backend_name,
+    shared_take,
+)
+from quant_fund.api.rate_store import (
+    rate_backend_env_names as _rate_backend_env_names,
+)
 
 MAX_BODY_BYTES = 64 * 1024
 BODY_TOO_LARGE_DETAIL = "request body exceeds the 64 KiB limit"
@@ -149,27 +161,53 @@ def _configured_match(provided: str | None, expected: str | None) -> bool:
     return matched
 
 
+def _slot_match(provided: str | None, current: str | None, previous: str | None) -> bool:
+    """Digest the current key and the previous key before deciding.
+
+    The previous compare always runs, including when the current key matched
+    and when the previous key is unset.
+    """
+    current_ok = _configured_match(provided, current)
+    previous_ok = _configured_match(provided, previous)
+    return current_ok or previous_ok
+
+
+def _any_key(*keys: str | None) -> bool:
+    return any(keys)
+
+
+def admin_key_matches(
+    provided: str | None,
+    current: str | None,
+    previous: str | None,
+) -> bool:
+    """True when the header matches the current or previous admin key."""
+    return _slot_match(provided, current, previous)
+
+
 def scoped_auth_decision(
     method: str,
     provided: str | None,
     admin_key: str | None,
     read_key: str | None,
+    admin_previous: str | None = None,
+    read_previous: str | None = None,
 ) -> str:
     """Return ``ok``, ``unauthorized``, ``forbidden``, or ``read_denied``.
 
     The admin key authorizes every method. The read key authorizes safe
-    methods only. Both digests run before the decision, including when a key
-    is unset and when the admin key matches.
+    methods only. Current and previous digests both run before the decision,
+    including when a key is unset and when the current key matches.
     """
-    admin_ok = _configured_match(provided, admin_key)
-    read_ok = _configured_match(provided, read_key)
+    admin_ok = _slot_match(provided, admin_key, admin_previous)
+    read_ok = _slot_match(provided, read_key, read_previous)
     if admin_ok:
         return "ok"
     if read_ok and method.upper() in _SAFE_METHODS:
         return "ok"
     if read_ok:
         return "read_denied"
-    if admin_key or read_key:
+    if _any_key(admin_key, read_key, admin_previous, read_previous):
         return "unauthorized"
     return "forbidden"
 
@@ -179,6 +217,8 @@ def credential_refusal(
     admin_key: str | None,
     read_key: str | None,
     unset_detail: str,
+    admin_previous: str | None = None,
+    read_previous: str | None = None,
 ) -> JSONResponse | None:
     """401, 403, or None when the request may proceed."""
     from quant_fund.utils.api_auth import presented_api_key
@@ -188,6 +228,8 @@ def credential_refusal(
         presented_api_key(request.headers),
         admin_key,
         read_key,
+        admin_previous,
+        read_previous,
     )
     if decision == "ok":
         return None
@@ -261,24 +303,176 @@ def nonempty_env(name: str) -> str | None:
     return value
 
 
-def rate_config(prefix: str) -> tuple[float, float] | None:
-    """``{PREFIX}_RATE_PER_SEC`` / ``{PREFIX}_RATE_BURST``.
+_SECRET_FILE_BYTES = 4096
+_UNREADABLE_SECRET = "file-secret-unreadable-" + secrets.token_hex(16)
+_KEY_FILE_SUFFIXES = ("_FILE", "_PREVIOUS_FILE", "_GRACE_UNTIL_FILE")
+_KEY_SLOTS = (
+    "QUANT_API_KEY",
+    "QUANT_API_READ_KEY",
+    "RESEARCH_API_KEY",
+    "RESEARCH_API_READ_KEY",
+)
 
-    ``0``, ``off``, ``false``, or ``no`` disables the limit. A value that
-    does not parse keeps the default of 10 requests/second and a burst of 30.
+
+def key_file_env_names() -> tuple[str, ...]:
+    """Environment names that point at key material or a grace deadline."""
+    return tuple(f"{slot}{suffix}" for slot in _KEY_SLOTS for suffix in _KEY_FILE_SUFFIXES)
+
+
+def admin_key_configured(name: str) -> bool:
+    """True when the admin env value or its ``*_FILE`` path is set.
+
+    A read-key file does not satisfy this check. The bind guard uses it so a
+    file-backed admin key can listen beyond loopback.
     """
-    raw = os.environ.get(f"{prefix}_RATE_PER_SEC", "10").strip().lower()
-    burst_raw = os.environ.get(f"{prefix}_RATE_BURST", "30").strip().lower()
+    if nonempty_env(name):
+        return True
+    return bool(os.environ.get(f"{name}_FILE", "").strip())
+
+
+def load_key_slot(name: str, *, now: datetime | None = None) -> tuple[str | None, str | None]:
+    """Current and previous secrets for one key name.
+
+    ``{name}_FILE`` replaces the environment value. ``{name}_PREVIOUS_FILE``
+    is accepted only while ``now`` is strictly before the timestamp in
+    ``{name}_GRACE_UNTIL_FILE``. A set file that cannot be read stays
+    configured and matches nothing.
+    """
+    moment = now if now is not None else datetime.now(UTC)
+    return _current_secret(name), _previous_secret(name, moment)
+
+
+def _current_secret(name: str) -> str | None:
+    if os.environ.get(f"{name}_FILE", "").strip():
+        return _secret_from_env_path(f"{name}_FILE")
+    return nonempty_env(name)
+
+
+def _previous_secret(name: str, now: datetime) -> str | None:
+    if not _grace_open(name, now):
+        return None
+    env_name = f"{name}_PREVIOUS_FILE"
+    if not os.environ.get(env_name, "").strip():
+        return None
+    return _secret_from_env_path(env_name)
+
+
+def _grace_open(name: str, now: datetime) -> bool:
+    deadline = _grace_deadline(name)
+    if deadline is None:
+        return False
+    return now < deadline
+
+
+def _grace_deadline(name: str) -> datetime | None:
+    raw_path = os.environ.get(f"{name}_GRACE_UNTIL_FILE", "").strip()
+    if not raw_path:
+        return None
+    try:
+        text = Path(raw_path).read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return None
+    try:
+        return _parse_deadline(text)
+    except ValueError:
+        return None
+
+
+def _parse_deadline(text: str) -> datetime:
+    line = text.strip()
+    if len(line) > 64:
+        raise ValueError("deadline is too long")
+    if line.endswith("Z"):
+        line = line[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(line)
+    if parsed.tzinfo is None:
+        raise ValueError("deadline needs a timezone")
+    return parsed.astimezone(UTC)
+
+
+def _secret_from_env_path(env_name: str) -> str:
+    raw = os.environ.get(env_name, "").strip()
+    if not raw:
+        return _UNREADABLE_SECRET
+    try:
+        return _read_secret_file(Path(raw))
+    except (OSError, UnicodeError, ValueError):
+        return _UNREADABLE_SECRET
+
+
+def _read_secret_file(path: Path) -> str:
+    data = path.read_bytes()
+    if len(data) > _SECRET_FILE_BYTES:
+        raise ValueError("secret file is too large")
+    lines = data.decode("utf-8").splitlines()
+    if len(lines) != 1 or lines[0] == "":
+        raise ValueError("secret file must be a single line")
+    return lines[0]
+
+
+def rate_backend_env_names() -> tuple[str, ...]:
+    """Environment names for the shared rate-limit store."""
+    return _rate_backend_env_names()
+
+
+def loopback_rate_env_names() -> tuple[str, ...]:
+    """Environment names for the separate loopback buckets."""
+    return (
+        "QUANT_API_LOOPBACK_RATE_PER_SEC",
+        "QUANT_API_LOOPBACK_RATE_BURST",
+        "RESEARCH_API_LOOPBACK_RATE_PER_SEC",
+        "RESEARCH_API_LOOPBACK_RATE_BURST",
+    )
+
+
+def _rate_pair(
+    rate_name: str,
+    burst_name: str,
+    default_rate: float,
+    default_burst: float,
+) -> tuple[float, float] | None:
+    raw = os.environ.get(rate_name, str(int(default_rate))).strip().lower()
+    burst_raw = os.environ.get(burst_name, str(int(default_burst))).strip().lower()
     if raw in _DISABLED or burst_raw in _DISABLED:
         return None
     try:
         rate = float(raw)
         burst = float(burst_raw)
     except ValueError:
-        return 10.0, 30.0
+        return default_rate, default_burst
     if rate <= 0 or burst <= 0:
         return None
     return rate, burst
+
+
+def rate_config(prefix: str) -> tuple[float, float] | None:
+    """``{PREFIX}_RATE_PER_SEC`` / ``{PREFIX}_RATE_BURST``.
+
+    ``0``, ``off``, ``false``, or ``no`` disables the limit. A value that
+    does not parse keeps the default of 10 requests/second and a burst of 30.
+    Loopback peers use ``loopback_rate_config`` instead of this pair.
+    """
+    return _rate_pair(f"{prefix}_RATE_PER_SEC", f"{prefix}_RATE_BURST", 10.0, 30.0)
+
+
+def loopback_rate_config(prefix: str) -> tuple[float, float] | None:
+    """``{PREFIX}_LOOPBACK_RATE_PER_SEC`` / ``{PREFIX}_LOOPBACK_RATE_BURST``.
+
+    The default is 100 requests/second and a burst of 1000. The same disable
+    words as ``rate_config`` turn this bucket off without changing the remote one.
+    """
+    return _rate_pair(
+        f"{prefix}_LOOPBACK_RATE_PER_SEC",
+        f"{prefix}_LOOPBACK_RATE_BURST",
+        100.0,
+        1000.0,
+    )
+
+
+def _rate_for_peer(prefix: str, host: str) -> tuple[float, float] | None:
+    if is_loopback_host(host):
+        return loopback_rate_config(prefix)
+    return rate_config(prefix)
 
 
 def _gate(prefix: str) -> _Gate:
@@ -289,6 +483,21 @@ def _gate(prefix: str) -> _Gate:
     return gate
 
 
+def take_rate_token(prefix: str, identity: str, rate: float, burst: float) -> bool | None:
+    """Take one token. ``None`` means the selected store cannot be used.
+
+    ``memory`` keeps ``time.monotonic`` so one process can freeze its clock.
+    ``sqlite`` and ``file`` use ``time.time`` so two workers share a clock.
+    """
+    kind = backend_name()
+    if kind == "memory":
+        return _gate(prefix).allow(identity, rate, burst, time.monotonic())
+    store = os.environ.get("DIPCATCHER_RATE_STORE", "").strip()
+    if not store:
+        return None
+    return shared_take(kind, store, identity, rate, burst, time.time())
+
+
 def _too_many() -> JSONResponse:
     return JSONResponse(
         status_code=429,
@@ -297,25 +506,32 @@ def _too_many() -> JSONResponse:
     )
 
 
+def _token_response(allowed: bool | None) -> JSONResponse | None:
+    if allowed is None:
+        return JSONResponse(status_code=503, content={"detail": "rate store unavailable"})
+    if not allowed:
+        return _too_many()
+    return None
+
+
 def ip_rate_response(request: Request, prefix: str) -> JSONResponse | None:
     host = client_host(request)
-    if is_loopback_host(host):
-        return None
-    config = rate_config(prefix)
+    config = _rate_for_peer(prefix, host)
     if config is None:
         return None
     rate, burst = config
-    allowed = _gate(prefix).allow(f"{prefix}:ip:{host}", rate, burst, time.monotonic())
-    if allowed:
-        return None
-    return _too_many()
+    return _token_response(take_rate_token(prefix, f"{prefix}:ip:{host}", rate, burst))
 
 
 def key_rate_response(request: Request, prefix: str, key: str) -> JSONResponse | None:
-    """Per-key bucket. The bucket id is a digest, not the key."""
-    if is_loopback_host(client_host(request)):
-        return None
-    config = rate_config(prefix)
+    """Per-key bucket. The bucket id is a digest, not the key.
+
+    Loopback and other peers keep separate buckets, so the higher loopback
+    limit is not the remote bucket with a new label. A shared store uses
+    that same identity.
+    """
+    host = client_host(request)
+    config = _rate_for_peer(prefix, host)
     if config is None:
         return None
     rate, burst = config
@@ -323,10 +539,9 @@ def key_rate_response(request: Request, prefix: str, key: str) -> JSONResponse |
         digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
     except UnicodeEncodeError:
         return None
-    allowed = _gate(prefix).allow(f"{prefix}:key:{digest}", rate, burst, time.monotonic())
-    if allowed:
-        return None
-    return _too_many()
+    scope = "loopback" if is_loopback_host(host) else "remote"
+    identity = f"{prefix}:key:{scope}:{digest}"
+    return _token_response(take_rate_token(prefix, identity, rate, burst))
 
 
 def reject_bad_headers(request: Request) -> JSONResponse | None:

@@ -275,6 +275,9 @@ class LiveSession:
             self.kill_state = {"latched": True, "actor": who, "reason": why}
             self._persist()
             self._audit("kill", {"actor": who, "reason": why})
+            from quant_fund.api.admin_audit import note_process_mutation
+
+            note_process_mutation("kill-file", "halted")
             return {
                 "ok": True,
                 "kill_latched": True,

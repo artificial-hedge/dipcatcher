@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from quant_fund import __firm__, __version__
+from quant_fund.api.admin_audit import audited_call, denied_audit_response, note_mutation
 from quant_fund.api.http_controls import (
     apply_security_headers,
     buffer_capped_body,
@@ -22,7 +23,7 @@ from quant_fund.api.http_controls import (
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
-    nonempty_env,
+    load_key_slot,
     reject_bad_headers,
     reject_deep_json,
 )
@@ -199,30 +200,52 @@ async def _authenticate_request(request: Request, call_next: Any, path: str) -> 
     limited = ip_rate_response(request, "QUANT_API")
     if limited is not None:
         return limited
+    admin_key, admin_previous = load_key_slot("QUANT_API_KEY")
+    read_key, read_previous = load_key_slot("QUANT_API_READ_KEY")
     refusal = credential_refusal(
         request,
-        nonempty_env("QUANT_API_KEY"),
-        nonempty_env("QUANT_API_READ_KEY"),
+        admin_key,
+        read_key,
         _QUANT_UNSET_DETAIL,
+        admin_previous,
+        read_previous,
     )
     if refusal is not None:
-        return refusal
+        return denied_audit_response(
+            request,
+            refusal,
+            admin_current=admin_key,
+            admin_previous=admin_previous,
+            read_current=read_key,
+            read_previous=read_previous,
+            log_env="QUANT_API_AUDIT_LOG",
+        )
     from quant_fund.utils.api_auth import presented_api_key
 
     presented = presented_api_key(request.headers) or ""
     limited_key = key_rate_response(request, "QUANT_API", presented)
     if limited_key is not None:
         return limited_key
-    return await call_next(request)
+    return await audited_call(
+        request,
+        call_next,
+        admin_current=admin_key,
+        admin_previous=admin_previous,
+        read_current=read_key,
+        read_previous=read_previous,
+        log_env="QUANT_API_AUDIT_LOG",
+    )
 
 
 @app.middleware("http")
 async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-untyped-def]
     """Secure default:
 
-    - If ``QUANT_API_KEY`` or ``QUANT_API_READ_KEY`` is set: require a matching
-      ``X-API-Key`` or ``Authorization: Bearer``. The admin key authorizes every
-      method. The read key authorizes GET, HEAD, and OPTIONS.
+    - If ``QUANT_API_KEY`` or ``QUANT_API_READ_KEY`` is set, including a
+      ``*_FILE`` value: require a matching ``X-API-Key`` or
+      ``Authorization: Bearer``. The admin key authorizes every method. The
+      read key authorizes GET, HEAD, and OPTIONS. A previous key in its grace
+      window authorizes the same methods as the current key.
     - If both are unset: allow only loopback clients.
     - Reject malformed or oversized request bodies before route work is performed.
     """
@@ -367,6 +390,7 @@ def _write_backtest_artifact(
         artifact_path, json.dumps(artifact, sort_keys=True, indent=2, default=str) + "\n"
     )
     artifact["artifact_path"] = str(artifact_path)
+    note_mutation("ledger", "written")
     return artifact
 
 

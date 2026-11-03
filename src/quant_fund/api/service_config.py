@@ -152,7 +152,14 @@ def _env(name: str) -> str:
 
 
 def _key_configured(name: str) -> bool:
-    return bool(os.environ.get(name, "").strip())
+    """True when the env value or its ``*_FILE`` path is non-blank.
+
+    Whitespace-only values stay unset. A file path counts so a non-loopback
+    bind can use a file-backed key without putting the secret in the env.
+    """
+    if os.environ.get(name, "").strip():
+        return True
+    return bool(os.environ.get(f"{name}_FILE", "").strip())
 
 
 def _resolve_port(
