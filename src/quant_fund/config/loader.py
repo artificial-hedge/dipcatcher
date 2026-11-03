@@ -22,8 +22,9 @@ def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
+    text = path.read_text()
     try:
-        raw = load_yaml_document(path.read_text()) or {}
+        raw = load_yaml_document(text) or {}
     except ValueError as exc:
         raise ValueError(f"Config {path.name} is not valid YAML") from exc
     if not isinstance(raw, dict):
