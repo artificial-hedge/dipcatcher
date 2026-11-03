@@ -1,8 +1,8 @@
 """Retries and duplicate client order ids apply an order once.
 
-The paper ledger keys on ``order_id``. Loopback and the desk key on
-``client_order_id`` and return the first acknowledgement, including when the
-retry names a different quantity or side. Fills are SYNTHETIC and
+The paper ledger and the simulated broker key on ``order_id``. Loopback and
+the desk key on ``client_order_id``. A retry returns the first acknowledgement,
+including when it names a different quantity or side. Fills are SYNTHETIC and
 ``live_pnl_claim`` stays false.
 """
 
@@ -17,10 +17,14 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from quant_fund.execution.order_recon import Fill, Order, OrderFillLedger
+from quant_fund.execution.simulated_broker import SimulatedBroker
 from quant_fund.live.brokers import LiveOrder, LoopbackBroker
 from quant_fund.live.desk import LiveDesk
 from quant_fund.paper.broker_adapter import PaperBrokerAdapter
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig
+from quant_fund.schemas.orders import Order as BrokerOrder
+from quant_fund.schemas.orders import OrderSide, OrderStatus
+from tests.property._books import research_config
 from tests.unit.pretrade.support import HMAC_KEY, TS_NS, limit_config
 
 _FAST = settings(derandomize=True, max_examples=20, deadline=None)
@@ -230,3 +234,113 @@ def test_desk_duplicate_client_id_returns_the_first_fill(
             assert len(desk.orders) == 1
         finally:
             desk.close()
+
+
+def _sim_order(
+    order_id: str,
+    side: OrderSide,
+    qty: int,
+    *,
+    limit: float | None = None,
+) -> BrokerOrder:
+    return BrokerOrder(
+        order_id=order_id,
+        security_id="A",
+        symbol="A",
+        side=side,
+        quantity=float(qty),
+        signal_time=_T0,
+        decision_time=_T0,
+        order_time=_T0,
+        status=OrderStatus.NEW,
+        limit_price=limit,
+    )
+
+
+@given(
+    qty=st.integers(1, 12),
+    extra=st.integers(1, 6),
+    price=st.integers(10, 40),
+    retries=st.integers(1, 4),
+    side=st.sampled_from((OrderSide.BUY, OrderSide.SELL)),
+    order_id=_CLIENT,
+    rest=st.booleans(),
+)
+@_FAST
+def test_simulated_broker_duplicate_order_id_applies_once(
+    qty: int,
+    extra: int,
+    price: int,
+    retries: int,
+    side: OrderSide,
+    order_id: str,
+    rest: bool,
+) -> None:
+    """``order_id`` is the simulated broker's client-order key.
+
+    A market fill and a resting limit both keep the first record across
+    retries and across ``from_state``. The retry's side and size are ignored.
+    """
+    cfg = research_config()
+    cfg.costs.frictionless = True
+    cfg.costs.participation_limit = 1.0
+    broker = SimulatedBroker(config=cfg, initial_cash=_CASH)
+    broker.mark({"A": float(price)})
+    limit = float(price) if rest else None
+    first = broker.submit(
+        _sim_order(order_id, side, qty, limit=limit),
+        price=float(price),
+        nav=_CASH,
+        adv_dollars=1e12,
+        sigma=0.0,
+    )
+    if rest:
+        assert first.fill is None
+        assert first.order.status is OrderStatus.ACKED
+    else:
+        assert first.fill is not None
+        assert first.order.status is OrderStatus.FILLED
+    cash = broker.cash
+    shares = dict(broker.shares)
+    n_fills = len(broker.fills)
+    n_history = len(broker.history)
+    other = OrderSide.SELL if side is OrderSide.BUY else OrderSide.BUY
+    for _ in range(retries):
+        again = broker.submit(
+            _sim_order(order_id, other, qty + extra, limit=float(price + 1)),
+            price=float(price + 1),
+            nav=_CASH,
+            adv_dollars=1e12,
+            sigma=0.0,
+        )
+        assert again is first
+        assert again.order.side is side
+        assert again.order.quantity == pytest.approx(qty if rest else first.order.quantity)
+    assert broker.cash == pytest.approx(cash)
+    assert broker.shares == shares
+    assert len(broker.fills) == n_fills
+    assert len(broker.history) == n_history
+    if not rest:
+        signed = float(qty if side is OrderSide.BUY else -qty)
+        assert broker.shares.get("A", 0.0) == pytest.approx(signed)
+
+    restored = SimulatedBroker.from_state(cfg, broker.to_dict())
+    replay = restored.submit(
+        _sim_order(order_id, other, qty + extra),
+        price=float(price),
+        nav=_CASH,
+        adv_dollars=1e12,
+        sigma=0.0,
+    )
+    assert replay.order.order_id == order_id
+    assert replay.order.side is side
+    assert len(restored.fills) == n_fills
+    assert len(restored.history) == n_history
+    assert restored.shares == shares
+    assert restored.cash == pytest.approx(cash)
+    if rest:
+        assert replay.fill is None
+        assert order_id in restored.open_orders
+    else:
+        assert replay.fill is not None
+        assert replay.fill.fill_id == first.fill.fill_id
