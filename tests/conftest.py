@@ -20,9 +20,6 @@ os.environ["MLFLOW_DISABLE_TELEMETRY"] = "true"
 os.environ["NO_COLOR"] = "1"
 os.environ["_TYPER_FORCE_DISABLE_TERMINAL"] = "1"
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-# Scorecard adapters keep production bench defaults unless this is ci.
-# Pytest uses the shrunk fixtures already pinned by the model unit tests.
-os.environ.setdefault("DIP_SCORECARD_BUDGET", "ci")
 # Do NOT pin OPENBLAS_CORETYPE. Forcing HASWELL segfaults numpy.linalg.lstsq
 # on AMD EPYC. Leave core detection to OpenBLAS.
 # Mirror Makefile TEST_ENV / CI thread pinning before any native extension

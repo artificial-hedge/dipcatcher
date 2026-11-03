@@ -1,7 +1,7 @@
 """Shrunk scorecard budgets for the pytest lane.
 
 ``dipcatcher research`` keeps each bench's default fixture. Pytest sets
-``DIP_SCORECARD_BUDGET=ci`` (see ``tests/conftest.py``) so the scorecard
+``DIP_SCORECARD_BUDGET=ci`` (see ``tests/support/session_cache.py``) so the scorecard
 adapters use smaller fixtures. Model unit tests that need a directional
 margin call the benches directly and are not affected.
 Explicit keyword arguments from the caller win over the CI map.
