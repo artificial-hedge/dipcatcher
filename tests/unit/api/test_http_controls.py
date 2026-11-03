@@ -8,7 +8,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from quant_fund.api.app import app
-from quant_fund.api.http_controls import keys_match, reset_rate_gates
+from quant_fund.api.http_controls import (
+    keys_match,
+    loopback_rate_config,
+    rate_config,
+    reset_rate_gates,
+)
 from quant_fund.api.research_api import ResearchApiSettings, create_app
 
 
@@ -37,13 +42,55 @@ def test_keys_match_is_equal_for_same_bytes_and_rejects_other_lengths() -> None:
     assert not keys_match("", "alpha")
 
 
-def test_loopback_is_not_rate_limited(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_loopback_uses_its_own_higher_limit(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.delenv("QUANT_API_KEY", raising=False)
+    for name in (
+        "QUANT_API_RATE_PER_SEC",
+        "QUANT_API_RATE_BURST",
+        "QUANT_API_LOOPBACK_RATE_PER_SEC",
+        "QUANT_API_LOOPBACK_RATE_BURST",
+        "RESEARCH_API_LOOPBACK_RATE_PER_SEC",
+        "RESEARCH_API_LOOPBACK_RATE_BURST",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    assert rate_config("QUANT_API") == (10.0, 30.0)
+    assert loopback_rate_config("QUANT_API") == (100.0, 1000.0)
     monkeypatch.setenv("QUANT_API_RATE_PER_SEC", "1")
     monkeypatch.setenv("QUANT_API_RATE_BURST", "1")
     client = TestClient(app, raise_server_exceptions=False)
     assert client.get("/models").status_code == 200
     assert client.get("/models").status_code == 200
+    monkeypatch.setenv("QUANT_API_LOOPBACK_RATE_PER_SEC", "1")
+    monkeypatch.setenv("QUANT_API_LOOPBACK_RATE_BURST", "1")
+    reset_rate_gates()
+    assert client.get("/models").status_code == 200
+    limited = client.get("/models")
+    assert limited.status_code == 429
+    assert limited.json() == {"detail": "rate limit exceeded"}
+    assert client.get("/health").status_code == 200
+    remote = TestClient(app, client=("198.51.100.70", 9), raise_server_exceptions=False)
+    assert remote.get("/models").status_code == 403
+    assert remote.get("/models").status_code == 429
+    monkeypatch.setenv("QUANT_API_LOOPBACK_RATE_PER_SEC", "off")
+    reset_rate_gates()
+    assert client.get("/models").status_code == 200
+    assert client.get("/models").status_code == 200
+    for name in ("data", "receipts", "verifier", "artifacts"):
+        (tmp_path / name).mkdir()
+    settings = ResearchApiSettings(
+        data_root=tmp_path / "data",
+        receipts_dir=tmp_path / "receipts",
+        verifier_dir=tmp_path / "verifier",
+        artifacts_dir=tmp_path / "artifacts",
+    )
+    monkeypatch.setenv("RESEARCH_API_LOOPBACK_RATE_PER_SEC", "1")
+    monkeypatch.setenv("RESEARCH_API_LOOPBACK_RATE_BURST", "1")
+    reset_rate_gates()
+    research = TestClient(create_app(settings), raise_server_exceptions=False)
+    assert research.get("/receipts").status_code == 200
+    assert research.get("/receipts").status_code == 429
 
 
 def test_remote_ip_and_key_buckets(monkeypatch: pytest.MonkeyPatch) -> None:

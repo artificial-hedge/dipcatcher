@@ -1,8 +1,8 @@
 """Shared HTTP controls for the lab API and the research evidence API.
 
 Body size, in-memory token buckets, a closed CORS default, and a 500
-response that carries no exception text. Loopback peers skip the rate
-limit so TestClient and local probes are not throttled.
+response that carries no exception text. Loopback peers use a separate,
+higher token bucket than other peers.
 """
 
 from __future__ import annotations
@@ -399,24 +399,64 @@ def _read_secret_file(path: Path) -> str:
     return lines[0]
 
 
-def rate_config(prefix: str) -> tuple[float, float] | None:
-    """``{PREFIX}_RATE_PER_SEC`` / ``{PREFIX}_RATE_BURST``.
+def loopback_rate_env_names() -> tuple[str, ...]:
+    """Environment names for the separate loopback buckets."""
+    return (
+        "QUANT_API_LOOPBACK_RATE_PER_SEC",
+        "QUANT_API_LOOPBACK_RATE_BURST",
+        "RESEARCH_API_LOOPBACK_RATE_PER_SEC",
+        "RESEARCH_API_LOOPBACK_RATE_BURST",
+    )
 
-    ``0``, ``off``, ``false``, or ``no`` disables the limit. A value that
-    does not parse keeps the default of 10 requests/second and a burst of 30.
-    """
-    raw = os.environ.get(f"{prefix}_RATE_PER_SEC", "10").strip().lower()
-    burst_raw = os.environ.get(f"{prefix}_RATE_BURST", "30").strip().lower()
+
+def _rate_pair(
+    rate_name: str,
+    burst_name: str,
+    default_rate: float,
+    default_burst: float,
+) -> tuple[float, float] | None:
+    raw = os.environ.get(rate_name, str(int(default_rate))).strip().lower()
+    burst_raw = os.environ.get(burst_name, str(int(default_burst))).strip().lower()
     if raw in _DISABLED or burst_raw in _DISABLED:
         return None
     try:
         rate = float(raw)
         burst = float(burst_raw)
     except ValueError:
-        return 10.0, 30.0
+        return default_rate, default_burst
     if rate <= 0 or burst <= 0:
         return None
     return rate, burst
+
+
+def rate_config(prefix: str) -> tuple[float, float] | None:
+    """``{PREFIX}_RATE_PER_SEC`` / ``{PREFIX}_RATE_BURST``.
+
+    ``0``, ``off``, ``false``, or ``no`` disables the limit. A value that
+    does not parse keeps the default of 10 requests/second and a burst of 30.
+    Loopback peers use ``loopback_rate_config`` instead of this pair.
+    """
+    return _rate_pair(f"{prefix}_RATE_PER_SEC", f"{prefix}_RATE_BURST", 10.0, 30.0)
+
+
+def loopback_rate_config(prefix: str) -> tuple[float, float] | None:
+    """``{PREFIX}_LOOPBACK_RATE_PER_SEC`` / ``{PREFIX}_LOOPBACK_RATE_BURST``.
+
+    The default is 100 requests/second and a burst of 1000. The same disable
+    words as ``rate_config`` turn this bucket off without changing the remote one.
+    """
+    return _rate_pair(
+        f"{prefix}_LOOPBACK_RATE_PER_SEC",
+        f"{prefix}_LOOPBACK_RATE_BURST",
+        100.0,
+        1000.0,
+    )
+
+
+def _rate_for_peer(prefix: str, host: str) -> tuple[float, float] | None:
+    if is_loopback_host(host):
+        return loopback_rate_config(prefix)
+    return rate_config(prefix)
 
 
 def _gate(prefix: str) -> _Gate:
@@ -437,9 +477,7 @@ def _too_many() -> JSONResponse:
 
 def ip_rate_response(request: Request, prefix: str) -> JSONResponse | None:
     host = client_host(request)
-    if is_loopback_host(host):
-        return None
-    config = rate_config(prefix)
+    config = _rate_for_peer(prefix, host)
     if config is None:
         return None
     rate, burst = config
@@ -450,10 +488,13 @@ def ip_rate_response(request: Request, prefix: str) -> JSONResponse | None:
 
 
 def key_rate_response(request: Request, prefix: str, key: str) -> JSONResponse | None:
-    """Per-key bucket. The bucket id is a digest, not the key."""
-    if is_loopback_host(client_host(request)):
-        return None
-    config = rate_config(prefix)
+    """Per-key bucket. The bucket id is a digest, not the key.
+
+    Loopback and other peers keep separate buckets, so the higher loopback
+    limit is not the remote bucket with a new label.
+    """
+    host = client_host(request)
+    config = _rate_for_peer(prefix, host)
     if config is None:
         return None
     rate, burst = config
@@ -461,7 +502,8 @@ def key_rate_response(request: Request, prefix: str, key: str) -> JSONResponse |
         digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
     except UnicodeEncodeError:
         return None
-    allowed = _gate(prefix).allow(f"{prefix}:key:{digest}", rate, burst, time.monotonic())
+    scope = "loopback" if is_loopback_host(host) else "remote"
+    allowed = _gate(prefix).allow(f"{prefix}:key:{scope}:{digest}", rate, burst, time.monotonic())
     if allowed:
         return None
     return _too_many()
