@@ -59,8 +59,8 @@ def test_every_alert_links_a_runbook() -> None:
                     "## Rollback and kill switch",
                 ):
                     assert heading in text
-    assert len(names) == 17
-    assert len(set(names)) == 17
+    assert len(names) == 20
+    assert len(set(names)) == 20
     assert "DipcatcherTargetDown" in names
     index = (_ROOT / "docs" / "incidents" / "README.md").read_text(encoding="utf-8")
     for name in names:

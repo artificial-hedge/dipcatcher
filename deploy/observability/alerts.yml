@@ -130,3 +130,30 @@ groups:
         annotations:
           summary: A ledger, journal, rate-store, or audit write did not land.
           runbook: docs/incidents/DipcatcherWriteHalt.md
+      # 1 means this process lost or was refused the paper order lease.
+      - alert: DipcatcherSplitBrain
+        expr: dipcatcher_split_brain == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Two paper order loops contended for one state directory.
+          runbook: docs/incidents/DipcatcherSplitBrain.md
+      # 1 means DNS, TLS, or the broker port failed closed before a submit.
+      - alert: DipcatcherDependencyDown
+        expr: dipcatcher_dependency_down == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A paper broker dependency probe failed closed.
+          runbook: docs/incidents/DipcatcherDependencyDown.md
+      # 1 means startup rejected the paper journal or audit hash chain.
+      - alert: DipcatcherAuditTamper
+        expr: dipcatcher_audit_tamper == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A paper journal or audit hash chain failed at startup.
+          runbook: docs/incidents/DipcatcherAuditTamper.md

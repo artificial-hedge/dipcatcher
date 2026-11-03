@@ -12,6 +12,8 @@ from pathlib import Path
 
 from quant_fund.observe.write_halt import DurableWriteError
 from quant_fund.paper.durable_book import serve
+from quant_fund.paper.order_lease import SplitBrainError
+from quant_fund.paper.runtime_log import AuditTamperError
 from quant_fund.paper.trading_session import SessionCommandError
 
 
@@ -33,6 +35,12 @@ def main(argv: list[str]) -> int:
         return 1
     try:
         return serve(Path(argv[1]), count, prefix)
+    except SplitBrainError:
+        sys.stderr.write("split_brain\n")
+        return 1
+    except AuditTamperError as exc:
+        sys.stderr.write(f"audit_tamper {exc.code}\n")
+        return 1
     except (SessionCommandError, DurableWriteError, OSError):
         sys.stderr.write("paper_flow_failed\n")
         return 1

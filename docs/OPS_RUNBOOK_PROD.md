@@ -846,3 +846,77 @@ slope was 0 per second and the descriptor count stayed 5. The RSS slope
 was 0.010642 KiB/s. RSS moved from 338156 KiB to 338256 KiB. Thread
 growth was 0 and the count stayed 11. `leak` was false. Exit was 0.
 
+## Split brain
+
+`prod-split-brain-drill` points two simulated paper processes at one
+state directory. The holder takes `.dipcatcher-order.lock` and a fencing
+token. The second process submits nothing and pages
+`DipcatcherSplitBrain`. A SIGKILL drops the flock. The lock file stays.
+The next acquirer increments the token on the same inode. A dead pid is
+not a reason to delete the file. Two processes that race the recovery
+produce one winner.
+
+```bash
+make -f deploy/prod.mk prod-split-brain-drill
+```
+
+Measured on this host: the holder token was 1. The blocked process
+accepted nothing (`blocked_orders` 0) and its acceptance code was
+`split_brain`. SIGKILL returned -9. The lock file was still present and
+its inode did not change. The winner's token was 2. The loser's order
+count was 0. The ledger held the winner's order once. Replaying that
+order id returned `duplicate` and the count stayed 1.
+
+## Dependency outages
+
+`prod-dependency-drill` runs the paper loop with
+`DIPCATCHER_PAPER_BROKER_URL` set. DNS failure, an expired TLS
+certificate, a broker port that refuses the connection at session open,
+and a broker slower than the timeout each fail closed. No book is
+opened and no intent line is written. The dependency gauge pages. A
+later healthy local port accepts the order once.
+
+```bash
+make -f deploy/prod.mk prod-dependency-drill
+```
+
+Measured on this host: DNS lookup of `dipcatcher-ops17-nx.invalid`
+returned `[Errno -2] Name or service not known`. The TLS leaf was
+not-valid-after `2020-01-02T00:00:00+00:00` and the handshake returned
+`certificate has expired`. Each of the four cases left
+`opened_during_outage` false and `intents_during_outage` 0, then
+recovered with ledger count 1 and a second submit of `duplicate`.
+promtool exit was 0.
+
+## Audit tamper
+
+`prod-audit-tamper-drill` chains new paper journal and audit lines with
+`prev_hash` and `line_hash`. Startup rejects a truncated file, a
+reordered file, an edited line, and a torn tail. Lines written before
+the chain remain a prefix. No signing key is read.
+
+```bash
+make -f deploy/prod.mk prod-audit-tamper-drill
+```
+
+Measured on this host: a clean book passed. Truncation and a torn tail
+returned `truncated`. Swapped lines returned `reordered`. An edited
+journal line and an edited audit line returned `edited`. In every case
+the ledger digest was unchanged, the acceptance code was `audit_<code>`,
+and `dipcatcher_audit_tamper` was 1.
+
+## Log rotation
+
+`prod-log-journal-drill` rotates a service log that is over the size
+cap. `events.jsonl` is sealed, so the order journal is not renamed or
+deleted. The rotator does not take the paper order lease. The next
+submit is accepted once.
+
+```bash
+make -f deploy/prod.mk prod-log-journal-drill
+```
+
+Measured on this host: `service.log` moved to `service.log.1`. The
+journal bytes were unchanged. The submit returned `accepted` and the
+same order id then returned `duplicate`.
+

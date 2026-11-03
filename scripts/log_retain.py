@@ -5,7 +5,9 @@
 Active files rotate when the next byte would pass the size cap. Rotated
 copies older than the age cap, or past the file cap, are deleted. The
 hash-chained ledger names ``entries.jsonl`` and ``checkpoints.jsonl`` are
-left in place, including their numbered copies.
+left in place, including their numbered copies. ``events.jsonl`` is the
+paper order journal and is left in place the same way. Rotation does not
+take the paper order lease.
 
 ``--docker-project`` prunes rotated Docker json-file logs for that compose
 project. The live ``*-json.log`` is not renamed; the daemon rotates it on
@@ -27,7 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 STREAMS = ("app", "proxy", "audit")
-SEALED_STEMS = ("entries.jsonl", "checkpoints.jsonl")
+SEALED_STEMS = ("entries.jsonl", "checkpoints.jsonl", "events.jsonl")
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024
 DEFAULT_MAX_AGE_S = 7 * 24 * 60 * 60
 DEFAULT_MAX_FILES = 5

@@ -3,7 +3,9 @@
 Simulated paper only. A SIGTERM or SIGINT finishes the order that is already
 inside ``submit_once`` and then stops. A kill during the ledger replace leaves
 the previous file in place; the intent line is how restart applies that order
-once. This module does not open a broker socket.
+once. Broker probes live in ``quant_fund.paper.dependencies`` and run
+only when ``DIPCATCHER_PAPER_BROKER_URL`` is set. This module does not
+open a broker socket itself.
 """
 
 from __future__ import annotations
@@ -17,7 +19,11 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import NoReturn
 
+from quant_fund.observe.order_guard import audit_tamper
 from quant_fund.observe.write_halt import DurableWriteError, errno_code, note_write_failure
+from quant_fund.paper.dependencies import dependency_refusal
+from quant_fund.paper.order_lease import acquire_order_lease, assert_fence
+from quant_fund.paper.runtime_log import AuditTamperError, append_runtime, verify_book
 from quant_fund.paper.trading_session import PaperTradingSession, SessionCommandError
 
 SCHEMA = "paper_order_journal.v1"
@@ -228,16 +234,31 @@ def _checkpoint_order(session: PaperTradingSession, order_id: str) -> str:
     return "error"
 
 
+def _startup(state: Path) -> None:
+    """Hold the lease and refuse a tampered journal before any order."""
+    acquire_order_lease(state)
+    assert_fence(state)
+    verify_book(state)
+
+
+def _latched_tamper() -> None:
+    code = audit_tamper()
+    if code is not None:
+        raise AuditTamperError(code)
+
+
 def _close(state: Path, order_id: str, kind: str) -> None:
-    append_json_line(
-        journal_path(state),
+    append_runtime(
+        state,
+        "journal",
         {"kind": kind, "order_id": order_id, "schema": SCHEMA},
     )
 
 
 def _audit(state: Path, order_id: str, result: str) -> None:
-    append_json_line(
-        audit_path(state),
+    append_runtime(
+        state,
+        "audit",
         {
             "event": "paper_order",
             "order_id": order_id,
@@ -249,8 +270,9 @@ def _audit(state: Path, order_id: str, result: str) -> None:
 
 
 def _intent(state: Path, order_id: str) -> None:
-    append_json_line(
-        journal_path(state),
+    append_runtime(
+        state,
+        "journal",
         {
             "kind": "intent",
             "order_id": order_id,
@@ -264,6 +286,9 @@ def _intent(state: Path, order_id: str) -> None:
 
 def reconcile(session: PaperTradingSession, state: Path) -> list[str]:
     """Apply each open intent that is not already in the ledger. Once."""
+    _startup(state)
+    if dependency_refusal() is not None:
+        return []
     rows = read_json_lines(journal_path(state))
     closed = _ids(rows, {"commit", "reject"})
     present = _ledger_ids(session)
@@ -297,6 +322,12 @@ def _already(session: PaperTradingSession, state: Path, order_id: str) -> bool:
 
 def submit_once(session: PaperTradingSession, state: Path, order_id: str) -> str:
     """Journal the intent, checkpoint, then commit. A duplicate does not submit."""
+    acquire_order_lease(state)
+    assert_fence(state)
+    _latched_tamper()
+    blocked = dependency_refusal()
+    if blocked is not None:
+        return blocked
     if _already(session, state, order_id):
         return "duplicate"
     _intent(state, order_id)
@@ -312,8 +343,13 @@ def submit_once(session: PaperTradingSession, state: Path, order_id: str) -> str
 def run_orders(state: Path, count: int, prefix: str) -> int:
     """Submit ``count`` new orders. A stop latch ends the loop between orders."""
     state.mkdir(parents=True, exist_ok=True)
+    _startup(state)
+    if dependency_refusal() is not None:
+        return 1
     session = open_book(state)
     reconcile(session, state)
+    if dependency_refusal() is not None:
+        return 1
     (state / "ready").write_text("1\n", encoding="utf-8")
     used = _ids(read_json_lines(journal_path(state)), {"intent", "commit", "reject"})
     issued = 0

@@ -1,0 +1,60 @@
+# promtool unit test for the paper split-brain, dependency, and tamper pages.
+# `promtool test rules deploy/observability/ops17_guard_test.yml`
+
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: dipcatcher_split_brain
+        values: '1+0x10'
+      - series: dipcatcher_dependency_down
+        values: '1+0x10'
+      - series: dipcatcher_audit_tamper
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: DipcatcherSplitBrain
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherSplitBrain.md
+              summary: Two paper order loops contended for one state directory.
+      - eval_time: 5m
+        alertname: DipcatcherDependencyDown
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherDependencyDown.md
+              summary: A paper broker dependency probe failed closed.
+      - eval_time: 5m
+        alertname: DipcatcherAuditTamper
+        exp_alerts:
+          - exp_labels:
+              severity: page
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherAuditTamper.md
+              summary: A paper journal or audit hash chain failed at startup.
+  - interval: 1m
+    input_series:
+      - series: dipcatcher_split_brain
+        values: '0+0x10'
+      - series: dipcatcher_dependency_down
+        values: '0+0x10'
+      - series: dipcatcher_audit_tamper
+        values: '0+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: DipcatcherSplitBrain
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: DipcatcherDependencyDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: DipcatcherAuditTamper
+        exp_alerts: []

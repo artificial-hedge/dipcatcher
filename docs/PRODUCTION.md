@@ -276,6 +276,17 @@ Verified in this tree, by the drills in [`OPS_RUNBOOK_PROD.md`](OPS_RUNBOOK_PROD
 - [x] `prod-paper-soak` holds a simulated paper loop for 3600 seconds
       and checks RSS, open file descriptors, and thread count. The
       measured series is in the ops runbook.
+- [x] `prod-split-brain-drill` keeps two paper processes on one state
+      directory from both submitting. A SIGKILL leaves the lock file in
+      place, and the next acquirer increments the fencing token.
+- [x] `prod-dependency-drill` fails closed on DNS, an expired certificate,
+      a broker that is down at session open, and a broker slower than the
+      timeout. Recovery accepts the order once. promtool exit was 0.
+- [x] `prod-audit-tamper-drill` halts startup when a paper journal or
+      audit line is truncated, reordered, or edited. The chain covers new
+      runtime lines. No signing key is used.
+- [x] `prod-log-journal-drill` rotates a service log under a size cap
+      without renaming the order journal or blocking the next submit.
 
 Still the owner's. This slice does not do them:
 
