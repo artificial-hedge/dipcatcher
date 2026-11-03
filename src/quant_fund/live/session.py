@@ -200,6 +200,7 @@ class LiveSession:
         self._sids: dict[str, int] = {}
         self._engine_noted: set[str] = set()
         self._pretrade_blob: object = None
+        self._risk_session_initialized = False
         self._model_settled = float(config.starting_cash)
         self._disk_token: str | None = None
         self.engine = PretradeEngine(
@@ -513,7 +514,7 @@ class LiveSession:
         self.marks[cleaned] = reference
         self.mark_ts[cleaned] = ts
         self.broker.set_mark(cleaned, reference)
-        self._sync_account(ts, reset_session=not self.orders)
+        self._sync_account(ts)
         placeholder = {
             "client_order_id": client,
             "broker_order_id": "",
@@ -763,7 +764,7 @@ class LiveSession:
         self._model_settled = float(self.engine.book.settled)
         self.engine.set_symbol(sid, pos=pos_after, ref_px=mark, ref_ts_ns=ts, bid=mark)
 
-    def _sync_account(self, ts: int, *, reset_session: bool = False) -> None:
+    def _sync_account(self, ts: int) -> None:
         account = self.broker.account()
         if not math.isfinite(account.cash) or account.cash < 0.0:
             raise LiveGateError("broker cash is not usable")
@@ -772,6 +773,7 @@ class LiveSession:
         self._absorb_broker_marks(account)
         reserved_qty, reserved_cash = self._working_exposure()
         self._require_marks(account.positions, reserved_qty)
+        reset_session = not self._risk_session_initialized
         self.engine.update_account(
             nav=account.equity,
             mark_ts_ns=ts,
@@ -787,6 +789,7 @@ class LiveSession:
                 continue
             qty = float(account.positions.get(symbol, 0.0)) + float(reserved_qty.get(symbol, 0.0))
             self._install(symbol, qty, mark, ts)
+        self._risk_session_initialized = True
 
     def _absorb_broker_marks(self, account: BrokerAccount) -> None:
         for symbol, price in account.marks.items():
@@ -1209,6 +1212,9 @@ class LiveSession:
         if self._pretrade_blob is not None:
             restore_pretrade(self.engine, self._pretrade_blob)
         self._replay_fills_into_engine(self._now())
+        self._risk_session_initialized = (
+            self._pretrade_blob is not None and self._baseline_from_broker
+        )
 
     def _rebuild_engine_accounting(self) -> None:
         self._pretrade_blob = export_pretrade(self.engine)
