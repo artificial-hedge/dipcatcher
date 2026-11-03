@@ -280,6 +280,8 @@ def _maybe_install_observation_hooks() -> None:
         return
     # smoke-up installs hooks at import, before serve_lab names the credential.
     # The research process sets this itself before its own install.
+    import os
+
     os.environ.setdefault("DIPCATCHER_METRICS_KEY_ENV", "QUANT_API_KEY")
     from quant_fund.observe.install import install_passive_hooks
 
