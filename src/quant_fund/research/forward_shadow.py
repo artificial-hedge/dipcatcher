@@ -362,6 +362,8 @@ def _settle(
 
 def rebuild(events: list[dict[str, Any]]) -> dict[str, Any]:
     manifest = events[0]["payload"]
+    if type(manifest.get("schema")) is not int or manifest["schema"] != 1:
+        raise ValueError("unsupported shadow manifest schema")
     if manifest["identity"] != _identity():
         raise ValueError("frozen shadow code/runtime changed; restore the original environment")
     state = _initial(manifest)
