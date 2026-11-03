@@ -15,7 +15,7 @@ from quant_fund.compute.cache import FitCache
 
 @pytest.mark.parametrize("max_entries", [0, -1, -10])
 def test_non_positive_capacity_is_rejected(max_entries: int) -> None:
-    with pytest.raises(ValueError, match="max_entries must be positive"):
+    with pytest.raises(ValueError, match="max_entries must be a positive integer"):
         FitCache(max_entries=max_entries)
 
 
