@@ -17,6 +17,7 @@ import threading
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, NoReturn
@@ -43,6 +44,23 @@ from quant_fund.live.gateway_arm import (
     zero_audit_head,
 )
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
+from quant_fund.live.market_data import (
+    ActionPlan,
+    MarketDataError,
+    ReferenceSnapshot,
+    assess_quote,
+    jump_problem,
+    mapping_is_bijective,
+    plan_action,
+    price_problem,
+    require_internal,
+    size_problems,
+    snapshot_from_dict,
+    snapshot_problem,
+)
+from quant_fund.live.market_data import (
+    bind_symbol as bind_map,
+)
 from quant_fund.live.risk_limits import (
     install_ceilings,
     loosened_names,
@@ -108,6 +126,88 @@ def _limit_payload(limits: LimitConfig | None) -> dict[str, Any] | None:
         return None
     dumped: dict[str, Any] = limits.model_dump(mode="json")
     return dumped
+
+
+def _market_reply(**fields: object) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "ok": True,
+        "live_pnl_claim": False,
+        "research_evidence": False,
+    }
+    body.update(fields)
+    return body
+
+
+def _action_record(kind: str, plan: ActionPlan, ts: int) -> dict[str, Any]:
+    return {
+        "kind": kind,
+        "symbol": plan.symbol,
+        "new_symbol": plan.new_symbol,
+        "apply": plan.apply,
+        "halt": plan.halt,
+        "reason": plan.reason,
+        "qty_factor": plan.qty_factor,
+        "cash_delta": plan.cash_delta,
+        "ts_ns": ts,
+    }
+
+
+def _action_reply(record: dict[str, Any]) -> dict[str, Any]:
+    body = dict(record)
+    body["ok"] = bool(record["apply"])
+    body["live_pnl_claim"] = False
+    body["research_evidence"] = False
+    return body
+
+
+def _action_list(raw: object) -> list[dict[str, Any]]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise LiveGateError("corporate actions are malformed")
+    rows: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            raise LiveGateError("corporate action is malformed")
+        rows.append(
+            {
+                "kind": str(item.get("kind", "")),
+                "symbol": str(item["symbol"]),
+                "new_symbol": str(item.get("new_symbol", item["symbol"])),
+                "apply": bool(item.get("apply")),
+                "halt": bool(item.get("halt")),
+                "reason": str(item.get("reason", "")),
+                "qty_factor": float(item.get("qty_factor", 1.0)),
+                "cash_delta": float(item.get("cash_delta", 0.0)),
+                "ts_ns": int(item.get("ts_ns", 0)),
+            }
+        )
+    return rows
+
+
+def _feed_map(raw: object) -> dict[str, tuple[int | None, bool]]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise LiveGateError("feed state is malformed")
+    feeds: dict[str, tuple[int | None, bool]] = {}
+    for symbol, item in raw.items():
+        if not isinstance(item, dict):
+            raise LiveGateError("feed state is malformed")
+        seq = item.get("seq")
+        feeds[str(symbol)] = (None if seq is None else int(seq), bool(item.get("stale")))
+    return feeds
+
+
+def _reference_from_state(raw: object) -> ReferenceSnapshot | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise LiveGateError("reference snapshot is malformed")
+    try:
+        return snapshot_from_dict(raw)
+    except (MarketDataError, KeyError, TypeError, ValueError) as exc:
+        raise LiveGateError("reference snapshot is malformed") from exc
 
 
 def _limit_reply(
@@ -244,6 +344,11 @@ class LiveSession:
         self._halted: dict[str, bool] = {}
         self._locate: dict[str, bool] = {}
         self._limit_override: LimitConfig | None = None
+        self._symbol_map: dict[str, str] = {}
+        self._feeds: dict[str, tuple[int | None, bool]] = {}
+        self._reference: ReferenceSnapshot | None = None
+        self._actions: list[dict[str, Any]] = []
+        self._action_halt: set[str] = set()
         self._thread_lock = threading.Lock()
         self.ledger = LiveLedger(
             baseline_cash=float(config.starting_cash),
@@ -370,6 +475,10 @@ class LiveSession:
             ts = self._clock(at_ns)
             if self._quote_moves_backward(cleaned, ts):
                 raise LiveGateError("mark timestamp is older than the stored quote")
+            problem = jump_problem(self.marks.get(cleaned), number)
+            if problem:
+                raise LiveGateError(problem)
+            self._bind_identity(cleaned)
             self.marks[cleaned] = number
             self.broker.set_mark(cleaned, number)
             self._sync_account(ts)
@@ -382,6 +491,74 @@ class LiveSession:
                 "live_pnl_claim": False,
                 "research_evidence": False,
             }
+
+    def bind_symbol(self, *, internal: str, broker: str, actor: str) -> dict[str, Any]:
+        """Bind one internal id to one broker symbol. A second binding is an error."""
+        with self._lock():
+            self._require_trading()
+            _actor(actor)
+            left = _symbol(internal)
+            try:
+                bind_map(self._symbol_map, left, broker)
+            except MarketDataError as exc:
+                raise LiveGateError(str(exc)) from exc
+            self._persist()
+            self._audit("symbol_map", {"internal": left, "broker": self._symbol_map[left]})
+            return _market_reply(symbol=left, broker=self._symbol_map[left])
+
+    def ingest_quote(
+        self,
+        *,
+        symbol: str,
+        bid: float,
+        ask: float,
+        seq: int,
+        actor: str,
+        at_ns: int | None = None,
+        snapshot: bool = False,
+    ) -> dict[str, Any]:
+        """Accept a sequenced quote or leave the stored mark untouched."""
+        with self._lock():
+            self._require_trading()
+            _actor(actor)
+            return self._ingest_locked(
+                symbol=symbol, bid=bid, ask=ask, seq=seq, at_ns=at_ns, snapshot=snapshot
+            )
+
+    def set_reference(self, snapshot: ReferenceSnapshot, *, actor: str) -> dict[str, Any]:
+        """Install the lot and tick snapshot used on the next order."""
+        with self._lock():
+            self._require_trading()
+            _actor(actor)
+            self._require_reference(snapshot)
+            self._reference = snapshot
+            self._persist()
+            self._audit("reference", {"version": snapshot.version})
+            return _market_reply(version=snapshot.version)
+
+    def apply_corporate_action(
+        self,
+        *,
+        kind: str,
+        symbol: str,
+        actor: str,
+        ratio: float | None = None,
+        cash_per_share: float | None = None,
+        new_symbol: str | None = None,
+        at_ns: int | None = None,
+    ) -> dict[str, Any]:
+        """Adjust one name, or halt it, without changing account value."""
+        with self._lock():
+            self._require_trading()
+            _actor(actor)
+            return self._apply_action_locked(
+                kind=kind,
+                symbol=symbol,
+                ratio=ratio,
+                cash_per_share=cash_per_share,
+                new_symbol=new_symbol,
+                at_ns=at_ns,
+            )
 
     def set_symbol_controls(
         self,
@@ -586,9 +763,10 @@ class LiveSession:
         if blocked is not None:
             return blocked
         self._capture_baseline()
-        if self._quote_is_stale(cleaned, ts):
+        blocked_market = self._market_block(cleaned, ts, qty, reference)
+        if blocked_market:
             denied = _denied(
-                reasons=("stale_data",),
+                reasons=blocked_market,
                 symbol=cleaned,
                 side=order_side,
                 quantity=qty,
@@ -598,10 +776,12 @@ class LiveSession:
             )
             self._audit(
                 "deny",
-                {"actor": who, "client_order_id": client, "reasons": ["stale_data"]},
+                {"actor": who, "client_order_id": client, "reasons": list(blocked_market)},
             )
             self._persist()
             return denied
+        prior_mark = self.marks.get(cleaned)
+        self._bind_identity(cleaned)
         self.marks[cleaned] = reference
         self.broker.set_mark(cleaned, reference)
         self._sync_account(ts, reset_session=not self.orders)
@@ -621,6 +801,7 @@ class LiveSession:
         }
         decision = self.engine.decide(self._view(placeholder, limit, ts, KIND_ORDER), apply=False)
         if not decision.allowed:
+            self._drop_unaccepted_mark(cleaned, prior_mark)
             denied = _denied(
                 reasons=decision.reasons,
                 symbol=cleaned,
@@ -794,6 +975,7 @@ class LiveSession:
     def _record_fill(self, fill: BrokerFill, ts: int) -> str:
         if fill.side not in {"buy", "sell"}:
             raise LiveGateError("broker fill side is not buy or sell")
+        fill = self._translate_fill(fill)
         if not self.ledger.has_fill(fill.fill_id):
             row = self._find(fill.client_order_id)
             if row is not None and str(row["status"]) in _TERMINAL:
@@ -838,6 +1020,254 @@ class LiveSession:
         reason = f"{verdict} {fill_id}"
         self.engine.trip("broker", reason, ts)
         self.kill_state = {"latched": True, "actor": "broker", "reason": reason}
+
+    def _ingest_locked(
+        self,
+        *,
+        symbol: str,
+        bid: float,
+        ask: float,
+        seq: int,
+        at_ns: int | None,
+        snapshot: bool,
+    ) -> dict[str, Any]:
+        try:
+            cleaned = require_internal(self._symbol_map, symbol)
+        except MarketDataError as exc:
+            raise LiveGateError(str(exc)) from exc
+        ts = self._clock(at_ns)
+        previous_seq, was_stale = self._feeds.get(cleaned, (None, False))
+        decision = assess_quote(
+            bid=float(bid),
+            ask=float(ask),
+            seq=int(seq),
+            previous_seq=previous_seq,
+            previous_mark=self.marks.get(cleaned),
+            was_stale=was_stale,
+            snapshot=snapshot,
+        )
+        self._feeds[cleaned] = (decision.seq, decision.stale)
+        if decision.accept and decision.mark is not None:
+            self.marks[cleaned] = decision.mark
+            self.broker.set_mark(cleaned, decision.mark)
+            self._sync_account(ts)
+            self._enforce_kill(ts)
+        self._persist()
+        return _market_reply(
+            ok=decision.accept,
+            symbol=cleaned,
+            stale=decision.stale,
+            reasons=list(decision.reasons),
+            mark=self.marks.get(cleaned),
+        )
+
+    def _apply_action_locked(
+        self,
+        *,
+        kind: str,
+        symbol: str,
+        ratio: float | None,
+        cash_per_share: float | None,
+        new_symbol: str | None,
+        at_ns: int | None,
+    ) -> dict[str, Any]:
+        ts = self._clock(at_ns)
+        cleaned = _symbol(symbol)
+        account = self.broker.account()
+        plan = plan_action(
+            kind=kind,
+            symbol=cleaned,
+            cash=float(account.cash),
+            positions={str(key): float(value) for key, value in account.positions.items()},
+            marks=dict(self.marks),
+            working=self._symbol_working(cleaned),
+            ratio=ratio,
+            cash_per_share=cash_per_share,
+            new_symbol=new_symbol,
+            qty_cap=float(self.pretrade.limits.max_position_quantity),
+        )
+        if plan.apply:
+            self._commit_action(plan, ts)
+        elif plan.halt:
+            self._halt_for_action(plan.symbol, ts)
+        record = _action_record(kind, plan, ts)
+        self._actions.append(record)
+        if plan.apply:
+            self._sync_account(ts)
+            self._enforce_kill(ts)
+        self._persist()
+        self._audit("corporate_action", record)
+        return _action_reply(record)
+
+    def _commit_action(self, plan: ActionPlan, ts: int) -> None:
+        self._restate_broker(plan.cash, plan.positions)
+        self._replace_marks(plan.marks)
+        self._model_settled += float(plan.cash_delta)
+        if plan.new_symbol != plan.symbol:
+            self._rename_book(plan.symbol, plan.new_symbol, plan.qty_factor, ts)
+        else:
+            self._scale_lots(plan.symbol, plan.qty_factor)
+        self._clear_action_halt(plan, ts)
+        renamed = None if plan.new_symbol == plan.symbol else plan.new_symbol
+        self.ledger.apply_factors(
+            symbol=plan.symbol,
+            qty_factor=plan.qty_factor,
+            cash_delta=plan.cash_delta,
+            new_symbol=renamed,
+        )
+
+    def _halt_for_action(self, symbol: str, ts: int) -> None:
+        self._halted[symbol] = True
+        self._action_halt.add(symbol)
+        self._reinstall_controls(symbol, ts)
+
+    def _clear_action_halt(self, plan: ActionPlan, ts: int) -> None:
+        symbol = plan.new_symbol
+        if plan.symbol not in self._action_halt and symbol not in self._action_halt:
+            return
+        self._action_halt.discard(plan.symbol)
+        self._action_halt.discard(symbol)
+        self._halted[symbol] = False
+        self._reinstall_controls(symbol, ts)
+
+    def _rename_book(self, old: str, new: str, factor: float, ts: int) -> None:
+        broker_name = self._symbol_map.pop(old, old)
+        self._symbol_map[new] = new if broker_name == old else broker_name
+        feed = self._feeds.pop(old, None)
+        if feed is not None:
+            self._feeds[new] = feed
+        for row in self.orders:
+            if str(row["symbol"]) == old:
+                row["symbol"] = new
+        self._move_engine_symbol(old, new, factor, ts)
+        if old in self._halted and new not in self._halted:
+            self._halted[new] = self._halted.pop(old)
+        else:
+            self._halted.pop(old, None)
+        if old in self._locate:
+            self._locate[new] = self._locate.pop(old)
+
+    def _move_engine_symbol(self, old: str, new: str, factor: float, ts: int) -> None:
+        sid = self._sids.get(old)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        mark = float(self.marks.get(new, 0.0))
+        lots = [
+            (float(sym.lq[index]), int(sym.ls[index]), int(sym.lu[index]))
+            for index in range(int(sym.nlot))
+        ]
+        self.engine.set_symbol(
+            sid, pos=0.0, ref_px=mark if mark > 0.0 else 1.0, ref_ts_ns=ts, bid=mark
+        )
+        for index in range(int(sym.nlot)):
+            sym.lq[index] = 0.0
+        sym.nlot = 0
+        if mark <= 0.0:
+            return
+        qty = float(self.broker.account().positions.get(new, 0.0))
+        new_sid = self._install(new, qty, mark, ts, seed_lots=False)
+        for lot_qty, settles, funded in lots:
+            scaled = lot_qty * factor
+            if scaled > 0.0:
+                self.engine.restore_lot(
+                    new_sid, qty=scaled, settles_ns=settles, unsettled_funded=bool(funded)
+                )
+
+    def _scale_lots(self, symbol: str, factor: float) -> None:
+        if factor == 1.0:
+            return
+        sid = self._sids.get(symbol)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        for index in range(int(sym.nlot)):
+            sym.lq[index] = float(sym.lq[index]) * factor
+
+    def _restate_broker(self, cash: float, positions: dict[str, float]) -> None:
+        broker: Any = self.broker
+        if not hasattr(broker, "cash") or not hasattr(broker, "positions"):
+            raise LiveGateError("broker cannot restate a corporate action offline")
+        broker.cash = float(cash)
+        broker.positions = {str(key): float(value) for key, value in positions.items()}
+
+    def _replace_marks(self, marks: dict[str, float]) -> None:
+        broker_marks = getattr(self.broker, "marks", None)
+        self.marks = {str(key): float(value) for key, value in marks.items()}
+        if isinstance(broker_marks, dict):
+            for symbol in list(broker_marks):
+                if symbol not in self.marks:
+                    broker_marks.pop(symbol, None)
+        for symbol, price in self.marks.items():
+            self.broker.set_mark(symbol, price)
+
+    def _market_block(self, symbol: str, ts: int, qty: float, price: float) -> tuple[str, ...]:
+        if self._quote_is_stale(symbol, ts) or self._feed_stale(symbol):
+            return ("stale_data",)
+        reasons: list[str] = []
+        jumped = jump_problem(self.marks.get(symbol), price)
+        if jumped:
+            reasons.append(jumped)
+        ref = snapshot_problem(self._reference, symbol, ts)
+        if ref:
+            reasons.append(ref)
+        elif self._reference is not None:
+            reasons.extend(
+                size_problems(
+                    qty,
+                    price,
+                    self._reference.lot_size[symbol],
+                    self._reference.tick_size[symbol],
+                )
+            )
+        return tuple(reasons)
+
+    def _feed_stale(self, symbol: str) -> bool:
+        row = self._feeds.get(symbol)
+        return row is not None and bool(row[1])
+
+    def _symbol_working(self, symbol: str) -> bool:
+        return any(
+            row["status"] in _WORKING and str(row["symbol"]) == symbol for row in self.orders
+        )
+
+    def _bind_identity(self, symbol: str) -> None:
+        if symbol in self._symbol_map:
+            return
+        bind_map(self._symbol_map, symbol, symbol)
+
+    def _drop_unaccepted_mark(self, symbol: str, prior: float | None) -> None:
+        """A denied order must not leave the first print behind as a reference."""
+        if prior is not None:
+            return
+        self.marks.pop(symbol, None)
+        broker_marks = getattr(self.broker, "marks", None)
+        if isinstance(broker_marks, dict):
+            broker_marks.pop(symbol, None)
+
+    def _translate_fill(self, fill: BrokerFill) -> BrokerFill:
+        internal = self._known_fill_symbol(fill.symbol)
+        if internal == fill.symbol:
+            return fill
+        return replace(fill, symbol=internal)
+
+    def _known_fill_symbol(self, symbol: str) -> str:
+        try:
+            return require_internal(self._symbol_map, symbol)
+        except MarketDataError:
+            cleaned = symbol.strip().upper()
+            if cleaned in self._symbol_map:
+                return cleaned
+            raise LiveGateError(f"unknown broker symbol {cleaned}") from None
+
+    def _require_reference(self, snapshot: ReferenceSnapshot) -> None:
+        if snapshot.version < 1 or snapshot.max_age_ns < 0 or snapshot.as_of_ns < 0:
+            raise LiveGateError("bad_reference_version")
+        if set(snapshot.lot_size) != set(snapshot.tick_size):
+            raise LiveGateError("bad_reference")
+        for name in snapshot.lot_size:
+            if price_problem(snapshot.lot_size[name]) or price_problem(snapshot.tick_size[name]):
+                raise LiveGateError("bad_reference")
 
     def _quote_is_stale(self, symbol: str, ts: int) -> bool:
         """True when the stored quote is older than ``ts`` allows. Does not refresh it.
@@ -1195,6 +1625,85 @@ class LiveSession:
             if "locate_ok" in item:
                 self._locate[name] = bool(item["locate_ok"])
 
+    def _read_market(self, stored: dict[str, Any]) -> None:
+        self._actions = _action_list(stored.get("corporate_actions"))
+        halted = stored.get("action_halt") or []
+        if not isinstance(halted, list):
+            raise LiveGateError("action halt set is malformed")
+        self._action_halt = {str(item) for item in halted}
+        self._feeds = _feed_map(stored.get("feeds"))
+        self._reference = _reference_from_state(stored.get("reference"))
+        if "symbol_map" not in stored:
+            self._symbol_map = {}
+            self._seed_identity(stored.get("fills"))
+            return
+        raw_map = stored.get("symbol_map")
+        if not isinstance(raw_map, dict):
+            raise LiveGateError("symbol map is malformed")
+        self._symbol_map = {str(key): str(value) for key, value in raw_map.items()}
+        if self._symbol_map and not mapping_is_bijective(self._symbol_map):
+            raise LiveGateError("symbol map is not bijective")
+
+    def _seed_identity(self, fills: object) -> None:
+        names = set(self.marks)
+        names.update(str(row["symbol"]) for row in self.orders)
+        if isinstance(fills, list):
+            for item in fills:
+                if isinstance(item, dict) and item.get("symbol"):
+                    names.add(str(item["symbol"]))
+        for name in sorted(names):
+            if name not in self._symbol_map:
+                bind_map(self._symbol_map, name, name)
+
+    def _apply_stored_factors(self) -> None:
+        for action in self._actions:
+            if not action.get("apply"):
+                continue
+            symbol = str(action["symbol"])
+            new_symbol = str(action["new_symbol"])
+            renamed = None if new_symbol == symbol else new_symbol
+            self.ledger.apply_factors(
+                symbol=symbol,
+                qty_factor=float(action["qty_factor"]),
+                cash_delta=float(action["cash_delta"]),
+                new_symbol=renamed,
+            )
+
+    def _reapply_actions_to_engine(self, ts: int) -> None:
+        for action in self._actions:
+            if not action.get("apply"):
+                continue
+            symbol = str(action["symbol"])
+            new_symbol = str(action["new_symbol"])
+            factor = float(action["qty_factor"])
+            self._model_settled += float(action["cash_delta"])
+            self._restamp_engine(symbol, new_symbol, factor, ts)
+
+    def _restamp_engine(self, symbol: str, new_symbol: str, factor: float, ts: int) -> None:
+        sid = self._sids.get(symbol)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        mark = float(self.marks.get(new_symbol, self.marks.get(symbol, 0.0)))
+        if mark <= 0.0:
+            return
+        if new_symbol != symbol:
+            self._move_engine_symbol(symbol, new_symbol, factor, ts)
+            return
+        qty = float(sym.pos) * factor
+        self.engine.set_symbol(
+            sid,
+            pos=qty,
+            ref_px=mark,
+            ref_ts_ns=ts,
+            bid=mark,
+            halted=self._halted.get(symbol, False),
+            locate_ok=self._locate.get(symbol, True),
+        )
+        if factor != 1.0:
+            for index in range(int(sym.nlot)):
+                sym.lq[index] = float(sym.lq[index]) * factor
+
     def _read_limit_override(self, stored: dict[str, Any]) -> None:
         payload = stored.get("limit_override")
         if payload is None:
@@ -1293,6 +1802,11 @@ class LiveSession:
         self._halted = {}
         self._locate = {}
         self._limit_override = None
+        self._symbol_map = {}
+        self._feeds = {}
+        self._reference = None
+        self._actions = []
+        self._action_halt = set()
         self._pretrade_blob = None
         self._baseline_from_broker = self.venue == "loopback"
         self.ledger = self._new_ledger(float(self.config.starting_cash), {})
@@ -1311,6 +1825,7 @@ class LiveSession:
         self.kill_state = _kill_from_state(kill)
         self._read_controls(stored)
         self._read_limit_override(stored)
+        self._read_market(stored)
         self._pretrade_blob = stored.get("pretrade")
         baseline_positions = stored.get("baseline_positions") or {}
         if not isinstance(baseline_positions, dict):
@@ -1323,6 +1838,7 @@ class LiveSession:
             {str(key): float(value) for key, value in baseline_positions.items()},
         )
         self._replay(fills)
+        self._apply_stored_factors()
         if isinstance(self.broker, LoopbackBroker):
             self.broker.cash = self.ledger.computed_cash
             self.broker.positions = self.ledger.computed_positions
@@ -1360,6 +1876,13 @@ class LiveSession:
             "kill": dict(self.kill_state),
             "symbol_controls": self._controls_payload(),
             "limit_override": _limit_payload(self._limit_override),
+            "symbol_map": dict(self._symbol_map),
+            "feeds": {
+                symbol: {"seq": seq, "stale": stale} for symbol, (seq, stale) in self._feeds.items()
+            },
+            "reference": None if self._reference is None else self._reference.as_dict(),
+            "corporate_actions": list(self._actions),
+            "action_halt": sorted(self._action_halt),
             "pretrade": export_pretrade(self.engine),
             "live_pnl_claim": False,
             "research_evidence": False,
@@ -1473,6 +1996,7 @@ class LiveSession:
         if self._pretrade_blob is not None:
             restore_pretrade(self.engine, self._pretrade_blob)
         self._replay_fills_into_engine(self._now())
+        self._reapply_actions_to_engine(self._now())
 
     def _replay_fills_into_engine(self, ts: int) -> None:
         positions: dict[str, float] = {}

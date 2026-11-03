@@ -7,8 +7,10 @@ from pathlib import Path
 import pytest
 from scripts import mutation_test as mt
 from scripts.mutation_campaign import (
+    EQUIVALENT,
     SUITES,
     below_min_score,
+    reclassify_equivalent,
     select_picks,
     stable_pytest_command,
     suites_by_name,
@@ -21,10 +23,10 @@ from scripts.mutation_campaign import (
 )
 
 
-def test_curated_campaign_pins_seventy_mutants() -> None:
+def test_curated_campaign_pins_every_suite() -> None:
     picks = [(suite.target, pick.mutant_id) for suite in SUITES for pick in suite.picks]
-    assert len(picks) == 70
-    assert len(set(picks)) == 70
+    assert len(picks) == 87
+    assert len(set(picks)) == 87
     names = [suite.name for suite in SUITES]
     assert names == [
         "kill-switch",
@@ -38,16 +40,11 @@ def test_curated_campaign_pins_seventy_mutants() -> None:
         "daily-loss-floors",
         "staleness",
         "live-broker",
+        "live-risk-limits",
+        "live-market-data",
     ]
-    added = {
-        "reconcile-drift",
-        "order-lifecycle",
-        "risk-ceilings",
-        "daily-loss-floors",
-        "staleness",
-        "live-broker",
-    }
-    assert sum(len(suite.picks) for suite in SUITES if suite.name in added) == 40
+    assert sum(len(suite.picks) for suite in SUITES if suite.name == "live-risk-limits") == 8
+    assert sum(len(suite.picks) for suite in SUITES if suite.name == "live-market-data") == 9
 
 
 def test_mutation_make_target_fails_under_ninety_percent() -> None:
@@ -87,6 +84,75 @@ def test_stable_command_disables_random_order() -> None:
     command = stable_pytest_command(("tests/property/test_accounting_invariants.py",))
     assert "-p" in command and "no:randomly" in command
     assert command[-1].endswith("test_accounting_invariants.py")
+
+
+def test_equivalent_survivors_leave_the_score_and_kills_stay_kills() -> None:
+    by_name = {suite.name: suite for suite in SUITES}
+    for item in EQUIVALENT:
+        picks = [pick for pick in by_name[item.suite].picks if pick.mutant_id == item.mutant_id]
+        assert picks == [CampaignPick(item.mutant_id, item.lineno, item.operator)]
+    survived = mt.CampaignReport(
+        created_utc="t",
+        target="kill_switch.py",
+        module="quant_fund.monitoring.kill_switch",
+        selectors=(),
+        seed=0,
+        timeout_s=1.0,
+        total_mutants=2,
+        sampled=2,
+        counts={"killed": 0, "survived": 2, "timeout": 0, "error": 0},
+        score=0.0,
+        results=[
+            {
+                "mutant_id": "M0000",
+                "lineno": 23,
+                "operator": "negation-insertion",
+                "status": "survived",
+                "description": "empty pass",
+            },
+            {
+                "mutant_id": "M0001",
+                "lineno": 29,
+                "operator": "negation-insertion",
+                "status": "survived",
+                "description": "real branch",
+            },
+        ],
+        survivors=[],
+    )
+    reclassify_equivalent(survived, "kill-switch")
+    assert survived.results[0]["status"] == "equivalent"
+    assert survived.results[1]["status"] == "survived"
+    assert survived.counts["equivalent"] == 1
+    assert survived.counts["survived"] == 1
+    assert survived.counts["killed"] == 0
+    assert survived.score == 0.0
+    killed = mt.CampaignReport(
+        created_utc="t",
+        target="kill_switch.py",
+        module="quant_fund.monitoring.kill_switch",
+        selectors=(),
+        seed=0,
+        timeout_s=1.0,
+        total_mutants=1,
+        sampled=1,
+        counts={"killed": 1, "survived": 0, "timeout": 0, "error": 0},
+        score=1.0,
+        results=[
+            {
+                "mutant_id": "M0000",
+                "lineno": 23,
+                "operator": "negation-insertion",
+                "status": "killed",
+                "description": "empty pass",
+            }
+        ],
+        survivors=[],
+    )
+    reclassify_equivalent(killed, "kill-switch")
+    assert killed.counts["killed"] == 1
+    assert killed.score == 1.0
+    assert "equivalent" not in killed.counts
 
 
 def test_kill_switch_suite_restores_the_harness_and_the_file() -> None:

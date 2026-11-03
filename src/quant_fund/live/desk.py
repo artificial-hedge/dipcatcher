@@ -30,6 +30,22 @@ from quant_fund.live.arming import (
     write_arming,
 )
 from quant_fund.live.bridge import BridgeError, BrokerEvent, DropBridge, LoopbackBridge
+from quant_fund.live.market_data import (
+    ActionPlan,
+    MarketDataError,
+    ReferenceSnapshot,
+    assess_quote,
+    jump_problem,
+    plan_action,
+    price_problem,
+    require_internal,
+    size_problems,
+    snapshot_from_dict,
+    snapshot_problem,
+)
+from quant_fund.live.market_data import (
+    bind_symbol as bind_map,
+)
 from quant_fund.live.risk_limits import (
     install_ceilings,
     loosened_names,
@@ -150,6 +166,11 @@ class LiveDesk:
     _settled_before: float = 0.0
     controls: dict[str, tuple[bool, bool]] = field(default_factory=dict)
     _limit_override: LimitConfig | None = None
+    symbol_map: dict[str, str] = field(default_factory=dict)
+    feeds: dict[str, tuple[int | None, bool]] = field(default_factory=dict)
+    reference: ReferenceSnapshot | None = None
+    actions: list[dict[str, Any]] = field(default_factory=list)
+    action_halt: set[str] = field(default_factory=set)
     _gate: Any = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -338,6 +359,10 @@ class LiveDesk:
             _price(px)
             if self._quote_is_older(symbol, ts_ns):
                 raise LiveDeskError("mark timestamp is older than the stored quote")
+            problem = jump_problem(self.marks.get(symbol), px)
+            if problem:
+                raise LiveDeskError(problem)
+            self._bind_identity(symbol)
             self.marks[symbol] = px
             self.mark_ts[symbol] = ts_ns
             self._project(ts_ns)
@@ -346,6 +371,71 @@ class LiveDesk:
             self._journal("mark", {"symbol": symbol, "px": px, "ts_ns": ts_ns})
             self._save()
             return self._envelope(accepted=True, status="marked")
+
+    def bind_symbol(self, internal: str, broker: str, ts_ns: int) -> dict[str, object]:
+        """Bind one internal id to one broker symbol. A second binding is an error."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            left = _symbol(internal)
+            try:
+                bind_map(self.symbol_map, left, broker)
+            except MarketDataError as exc:
+                raise LiveDeskError(str(exc)) from exc
+            self._journal("symbol_map", {"internal": left, "broker": self.symbol_map[left]})
+            self._save()
+            return self._envelope(accepted=True, status="symbol_map", symbol=left)
+
+    def ingest_quote(
+        self,
+        symbol: str,
+        bid: float,
+        ask: float,
+        seq: int,
+        ts_ns: int,
+        *,
+        snapshot: bool = False,
+    ) -> dict[str, object]:
+        """Accept a sequenced quote or leave the stored mark untouched."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            return self._ingest_locked(symbol, bid, ask, seq, ts_ns, snapshot=snapshot)
+
+    def set_reference(self, snapshot: ReferenceSnapshot, ts_ns: int) -> dict[str, object]:
+        """Install the lot and tick snapshot used on the next order."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            self._require_reference(snapshot)
+            self.reference = snapshot
+            self._journal("reference", {"version": snapshot.version})
+            self._save()
+            return self._envelope(accepted=True, status="reference", version=snapshot.version)
+
+    def apply_corporate_action(
+        self,
+        kind: str,
+        symbol: str,
+        ts_ns: int,
+        *,
+        ratio: float | None = None,
+        cash_per_share: float | None = None,
+        new_symbol: str | None = None,
+    ) -> dict[str, object]:
+        """Adjust one name, or halt it, without changing account value."""
+        with self._gate:
+            self._alive()
+            self._require_funded()
+            self._clock(ts_ns)
+            return self._apply_action_locked(
+                kind,
+                symbol,
+                ts_ns,
+                ratio=ratio,
+                cash_per_share=cash_per_share,
+                new_symbol=new_symbol,
+            )
 
     def submit(
         self,
@@ -390,10 +480,11 @@ class LiveDesk:
                 idempotent=True,
                 order=order.as_dict(),
             )
-        if self._going_backwards(ts_ns):
-            return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
-        if self._mark_is_stale(symbol, ts_ns):
-            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        blocked = self._market_block(symbol, ts_ns, qty, px)
+        if blocked:
+            return self._deny(symbol, side, qty, px, ts_ns, client, blocked)
+        prior_mark = self.marks.get(symbol)
+        self._bind_identity(symbol)
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -428,6 +519,7 @@ class LiveDesk:
         )
         self._store(order)
         if reasons or not decision.allowed:
+            self._drop_unaccepted_mark(symbol, prior_mark)
             order.status = "denied"
             self._journal("deny", order.as_dict())
             self._save()
@@ -734,6 +826,30 @@ class LiveDesk:
             reauthorized=reauthorized,
         )
 
+    def _restore_market(self, raw: Mapping[str, Any]) -> None:
+        self.actions = _action_list(raw.get("corporate_actions"))
+        halted = raw.get("action_halt") or []
+        if not isinstance(halted, list):
+            raise LiveDeskError("action halt set is malformed")
+        self.action_halt = {str(item) for item in halted}
+        self.feeds = _feed_map(raw.get("feeds"))
+        self.reference = _reference_from_state(raw.get("reference"))
+        if "symbol_map" not in raw:
+            self.symbol_map = {}
+            self._seed_identity()
+            return
+        payload = raw.get("symbol_map")
+        if not isinstance(payload, dict):
+            raise LiveDeskError("symbol map is malformed")
+        self.symbol_map = {str(key): str(value) for key, value in payload.items()}
+
+    def _seed_identity(self) -> None:
+        names = set(self.positions) | set(self.marks)
+        names.update(order.symbol for order in self.orders.values())
+        for name in sorted(names):
+            if name not in self.symbol_map:
+                bind_map(self.symbol_map, name, name)
+
     def _restore_controls(self, raw: Mapping[str, Any]) -> None:
         payload = raw.get("symbol_controls") or {}
         if not isinstance(payload, dict):
@@ -954,6 +1070,230 @@ class LiveDesk:
         count = sum(1 for stamp in self.rate_message_ts if ts_ns - stamp <= window)
         return count >= int(self.config.limits.max_messages_per_window)
 
+    def _ingest_locked(
+        self,
+        symbol: str,
+        bid: float,
+        ask: float,
+        seq: int,
+        ts_ns: int,
+        *,
+        snapshot: bool,
+    ) -> dict[str, object]:
+        try:
+            cleaned = require_internal(self.symbol_map, symbol)
+        except MarketDataError as exc:
+            raise LiveDeskError(str(exc)) from exc
+        previous_seq, was_stale = self.feeds.get(cleaned, (None, False))
+        decision = assess_quote(
+            bid=float(bid),
+            ask=float(ask),
+            seq=int(seq),
+            previous_seq=previous_seq,
+            previous_mark=self.marks.get(cleaned),
+            was_stale=was_stale,
+            snapshot=snapshot,
+        )
+        self.feeds[cleaned] = (decision.seq, decision.stale)
+        if decision.accept and decision.mark is not None:
+            self.marks[cleaned] = decision.mark
+            self.mark_ts[cleaned] = ts_ns
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+        self._journal(
+            "quote",
+            {"symbol": cleaned, "accepted": decision.accept, "reasons": list(decision.reasons)},
+        )
+        self._save()
+        return self._envelope(
+            accepted=decision.accept,
+            status="quote",
+            symbol=cleaned,
+            stale=decision.stale,
+            reasons=list(decision.reasons),
+            mark=self.marks.get(cleaned),
+        )
+
+    def _apply_action_locked(
+        self,
+        kind: str,
+        symbol: str,
+        ts_ns: int,
+        *,
+        ratio: float | None,
+        cash_per_share: float | None,
+        new_symbol: str | None,
+    ) -> dict[str, object]:
+        cleaned = _symbol(symbol)
+        plan = plan_action(
+            kind=kind,
+            symbol=cleaned,
+            cash=float(self.cash),
+            positions=dict(self.positions),
+            marks=dict(self.marks),
+            working=self._symbol_working(cleaned),
+            ratio=ratio,
+            cash_per_share=cash_per_share,
+            new_symbol=new_symbol,
+            qty_cap=float(self.config.limits.max_position_quantity),
+        )
+        if plan.apply:
+            self._commit_action(plan, ts_ns)
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+        elif plan.halt:
+            self._halt_for_action(plan.symbol, ts_ns)
+        record = _action_record(kind, plan, ts_ns)
+        self.actions.append(record)
+        self._journal("corporate_action", record)
+        self._save()
+        return self._envelope(
+            accepted=plan.apply,
+            status="corporate_action",
+            reason=plan.reason,
+            symbol=plan.symbol,
+            new_symbol=plan.new_symbol,
+            halted=bool(self.controls.get(plan.new_symbol, (False, True))[0]),
+        )
+
+    def _commit_action(self, plan: ActionPlan, ts_ns: int) -> None:
+        self.cash = float(plan.cash)
+        self.positions = {str(key): float(value) for key, value in plan.positions.items()}
+        self.marks = {str(key): float(value) for key, value in plan.marks.items()}
+        self._scale_desk_orders(plan)
+        if plan.new_symbol != plan.symbol:
+            self._rename_desk(plan.symbol, plan.new_symbol, plan.qty_factor, ts_ns)
+        else:
+            self._scale_lots(plan.symbol, plan.qty_factor)
+        self._clear_action_halt(plan, ts_ns)
+
+    def _halt_for_action(self, symbol: str, ts_ns: int) -> None:
+        self.action_halt.add(symbol)
+        halt, locate = self._symbol_flags(symbol)
+        del halt
+        self.controls[symbol] = (True, locate)
+        if symbol in self.marks:
+            self._project(ts_ns)
+
+    def _clear_action_halt(self, plan: ActionPlan, ts_ns: int) -> None:
+        if plan.symbol not in self.action_halt and plan.new_symbol not in self.action_halt:
+            return
+        self.action_halt.discard(plan.symbol)
+        self.action_halt.discard(plan.new_symbol)
+        _halt, locate = self._symbol_flags(plan.new_symbol)
+        self.controls[plan.new_symbol] = (False, locate)
+
+    def _scale_desk_orders(self, plan: ActionPlan) -> None:
+        factor = float(plan.qty_factor)
+        for order in self.orders.values():
+            if order.symbol != plan.symbol:
+                continue
+            if factor != 1.0:
+                order.qty *= factor
+                order.filled_qty *= factor
+                order.px /= factor
+            if plan.new_symbol != plan.symbol:
+                order.symbol = plan.new_symbol
+        if factor != 1.0 and plan.symbol in self.reserved_qty:
+            self.reserved_qty[plan.symbol] = float(self.reserved_qty[plan.symbol]) * factor
+        if plan.new_symbol == plan.symbol:
+            return
+        if plan.symbol in self.reserved_qty:
+            self.reserved_qty[plan.new_symbol] = self.reserved_qty.pop(plan.symbol)
+        if plan.symbol in self.mark_ts:
+            self.mark_ts[plan.new_symbol] = self.mark_ts.pop(plan.symbol)
+
+    def _rename_desk(self, old: str, new: str, factor: float, ts_ns: int) -> None:
+        broker_name = self.symbol_map.pop(old, old)
+        self.symbol_map[new] = new if broker_name == old else broker_name
+        feed = self.feeds.pop(old, None)
+        if feed is not None:
+            self.feeds[new] = feed
+        if old in self.controls:
+            self.controls[new] = self.controls.pop(old)
+        self._move_lots(old, new, factor, ts_ns)
+
+    def _move_lots(self, old: str, new: str, factor: float, ts_ns: int) -> None:
+        sid = self.engine._ids.get(old)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        lots = [
+            (float(sym.lq[index]) * factor, int(sym.ls[index]), int(sym.lu[index]))
+            for index in range(int(sym.nlot))
+        ]
+        self.engine.set_symbol(sid, pos=0.0, ref_px=1.0, ref_ts_ns=ts_ns, locate_ok=True)
+        for index in range(int(sym.nlot)):
+            sym.lq[index] = 0.0
+        sym.nlot = 0
+        new_sid = self._sid(new)
+        for qty, settles, funded in lots:
+            if qty > 0.0:
+                self.engine.restore_lot(
+                    new_sid, qty=qty, settles_ns=settles, unsettled_funded=bool(funded)
+                )
+
+    def _scale_lots(self, symbol: str, factor: float) -> None:
+        if factor == 1.0:
+            return
+        sid = self.engine._ids.get(symbol)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        for index in range(int(sym.nlot)):
+            sym.lq[index] = float(sym.lq[index]) * factor
+
+    def _market_block(self, symbol: str, ts_ns: int, qty: float, px: float) -> tuple[str, ...]:
+        if self._going_backwards(ts_ns):
+            return ("non_monotonic_time",)
+        if self._mark_is_stale(symbol, ts_ns) or self._feed_stale(symbol):
+            return ("stale_data",)
+        reasons: list[str] = []
+        jumped = jump_problem(self.marks.get(symbol), px)
+        if jumped:
+            reasons.append(jumped)
+        ref = snapshot_problem(self.reference, symbol, ts_ns)
+        if ref:
+            reasons.append(ref)
+        elif self.reference is not None:
+            reasons.extend(
+                size_problems(
+                    qty, px, self.reference.lot_size[symbol], self.reference.tick_size[symbol]
+                )
+            )
+        return tuple(reasons)
+
+    def _feed_stale(self, symbol: str) -> bool:
+        row = self.feeds.get(symbol)
+        return row is not None and bool(row[1])
+
+    def _symbol_working(self, symbol: str) -> bool:
+        return any(
+            order.symbol == symbol and order.lifecycle in {"new", "partial"}
+            for order in self.orders.values()
+        )
+
+    def _bind_identity(self, symbol: str) -> None:
+        if symbol in self.symbol_map:
+            return
+        bind_map(self.symbol_map, symbol, symbol)
+
+    def _drop_unaccepted_mark(self, symbol: str, prior: float | None) -> None:
+        """A denied order must not leave the first print behind as a reference."""
+        if prior is not None:
+            return
+        self.marks.pop(symbol, None)
+        self.mark_ts.pop(symbol, None)
+
+    def _require_reference(self, snapshot: ReferenceSnapshot) -> None:
+        if snapshot.version < 1 or snapshot.max_age_ns < 0 or snapshot.as_of_ns < 0:
+            raise LiveDeskError("bad_reference_version")
+        if set(snapshot.lot_size) != set(snapshot.tick_size):
+            raise LiveDeskError("bad_reference")
+        for name in snapshot.lot_size:
+            if price_problem(snapshot.lot_size[name]) or price_problem(snapshot.tick_size[name]):
+                raise LiveDeskError("bad_reference")
+
     def _mark_is_stale(self, symbol: str, ts_ns: int) -> bool:
         prior = self.mark_ts.get(symbol)
         if prior is None:
@@ -1097,6 +1437,13 @@ class LiveDesk:
                 for symbol, (halt, locate) in self.controls.items()
             },
             "limit_override": _limit_payload(self._limit_override),
+            "symbol_map": dict(self.symbol_map),
+            "feeds": {
+                symbol: {"seq": seq, "stale": stale} for symbol, (seq, stale) in self.feeds.items()
+            },
+            "reference": None if self.reference is None else self.reference.as_dict(),
+            "corporate_actions": list(self.actions),
+            "action_halt": sorted(self.action_halt),
         }
 
     def _load_without_snapshot(
@@ -1175,6 +1522,7 @@ class LiveDesk:
         self.rate_message_ts = [int(item) for item in list(raw.get("rate_message_ts", []))]
         self.dupes = [_dupe(item) for item in list(raw.get("dupes", []))]
         self._restore_orders(raw)
+        self._restore_market(raw)
         self._restore_engine(raw)
         self._restore_controls(raw)
         self._restore_saved_limits(raw)
@@ -1308,6 +1656,70 @@ class LiveDesk:
             self._lock_path = path
             return
         raise LiveDeskError(f"desk is locked: {path}")
+
+
+def _action_record(kind: str, plan: ActionPlan, ts_ns: int) -> dict[str, Any]:
+    return {
+        "kind": kind,
+        "symbol": plan.symbol,
+        "new_symbol": plan.new_symbol,
+        "apply": plan.apply,
+        "halt": plan.halt,
+        "reason": plan.reason,
+        "qty_factor": plan.qty_factor,
+        "cash_delta": plan.cash_delta,
+        "ts_ns": ts_ns,
+    }
+
+
+def _action_list(raw: object) -> list[dict[str, Any]]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise LiveDeskError("corporate actions are malformed")
+    rows: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            raise LiveDeskError("corporate action is malformed")
+        rows.append(
+            {
+                "kind": str(item.get("kind", "")),
+                "symbol": str(item["symbol"]),
+                "new_symbol": str(item.get("new_symbol", item["symbol"])),
+                "apply": bool(item.get("apply")),
+                "halt": bool(item.get("halt")),
+                "reason": str(item.get("reason", "")),
+                "qty_factor": float(item.get("qty_factor", 1.0)),
+                "cash_delta": float(item.get("cash_delta", 0.0)),
+                "ts_ns": int(item.get("ts_ns", 0)),
+            }
+        )
+    return rows
+
+
+def _feed_map(raw: object) -> dict[str, tuple[int | None, bool]]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise LiveDeskError("feed state is malformed")
+    feeds: dict[str, tuple[int | None, bool]] = {}
+    for symbol, item in raw.items():
+        if not isinstance(item, dict):
+            raise LiveDeskError("feed state is malformed")
+        seq = item.get("seq")
+        feeds[str(symbol)] = (None if seq is None else int(seq), bool(item.get("stale")))
+    return feeds
+
+
+def _reference_from_state(raw: object) -> ReferenceSnapshot | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise LiveDeskError("reference snapshot is malformed")
+    try:
+        return snapshot_from_dict({str(key): value for key, value in raw.items()})
+    except (MarketDataError, KeyError, TypeError, ValueError) as exc:
+        raise LiveDeskError("reference snapshot is malformed") from exc
 
 
 def _positive(value: float | None, default: float | None) -> float:

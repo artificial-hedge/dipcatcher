@@ -232,6 +232,37 @@ class LiveLedger:
             "research_evidence": False,
         }
 
+    def apply_factors(
+        self,
+        *,
+        symbol: str,
+        qty_factor: float,
+        cash_delta: float,
+        new_symbol: str | None = None,
+    ) -> None:
+        """Restate computed cash and positions. Baseline and fills stay as recorded."""
+        factor = float(qty_factor)
+        delta = float(cash_delta)
+        if not math.isfinite(factor) or factor <= 0.0:
+            raise ValueError("quantity factor must be finite and positive")
+        if not math.isfinite(delta):
+            raise ValueError("cash delta must be finite")
+        name = str(symbol)
+        target = str(new_symbol) if new_symbol else name
+        qty = float(self._positions.get(name, 0.0)) * factor
+        if target != name and abs(self._positions.get(target, 0.0)) > 1e-12:
+            raise ValueError("symbol collision")
+        cash = self._cash + delta
+        if not math.isfinite(cash) or cash < -1e-9:
+            raise ValueError("adjusted cash must be finite and non-negative")
+        if target != name:
+            self._positions.pop(name, None)
+        if abs(qty) <= 1e-12:
+            self._positions.pop(target, None)
+        else:
+            self._positions[target] = qty
+        self._cash = cash if cash > 0.0 else 0.0
+
     def _drop_provisional(self, fill: LedgerFill) -> bool:
         if fill.fill_id.startswith("order:"):
             return False

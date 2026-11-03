@@ -48,6 +48,47 @@ class Suite:
     selectors: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class Equivalent:
+    """A sampled mutant whose edit cannot change behavior.
+
+    The campaign still runs it. A survivor is removed from the score
+    denominator. A kill still counts as a kill.
+    """
+
+    suite: str
+    mutant_id: str
+    lineno: int
+    operator: str
+    reason: str
+
+
+EQUIVALENT: tuple[Equivalent, ...] = (
+    Equivalent(
+        "kill-switch",
+        "M0000",
+        23,
+        "negation-insertion",
+        "Empty pass body; negating the test still passes.",
+    ),
+    Equivalent(
+        "kill-switch",
+        "M0005",
+        23,
+        "comparison-swap",
+        "Empty pass body; swapping not-in for in still passes.",
+    ),
+    Equivalent(
+        "risk-ceilings",
+        "M0055",
+        23,
+        "comparison-swap",
+        "value > limit versus >= both return False at equality; "
+        "a zero breach never reaches the slack test.",
+    ),
+)
+
+
 def _picks(rows: Sequence[tuple[str, int, str]]) -> tuple[Pick, ...]:
     return tuple(Pick(mutant_id, lineno, operator) for mutant_id, lineno, operator in rows)
 
@@ -56,8 +97,7 @@ SUITES: tuple[Suite, ...] = (
     Suite(
         name="kill-switch",
         target="src/quant_fund/monitoring/kill_switch.py",
-        # M0000 and M0005 only rewrite ``if self.state not in VALID_STATES: pass``.
-        # The body is empty, so those two edits are equivalent and stay in the score.
+        # M0000 and M0005 rewrite an empty ``pass``. See EQUIVALENT.
         picks=_picks(
             (
                 ("M0000", 23, "negation-insertion"),
@@ -190,9 +230,7 @@ SUITES: tuple[Suite, ...] = (
     Suite(
         name="risk-ceilings",
         target="src/quant_fund/portfolio/risk_gate.py",
-        # M0055 flips ``value > limit`` to ``>=`` on the early return. Equality
-        # still returns False: a zero breach is not above the slack. It stays
-        # in the score.
+        # M0055 flips ``value > limit`` to ``>=``. See EQUIVALENT.
         picks=_picks(
             (
                 ("M0003", 23, "negation-removal"),
@@ -278,6 +316,24 @@ SUITES: tuple[Suite, ...] = (
         ),
         selectors=("tests/unit/live/test_risk_limit_decisions.py",),
     ),
+    Suite(
+        name="live-market-data",
+        target="src/quant_fund/live/market_data.py",
+        picks=_picks(
+            (
+                ("M0118", 72, "comparison-swap"),  # <= to < ; zero must reject
+                ("M0062", 83, "comparison-swap"),  # > to >= ; equality stays inside
+                ("M0067", 118, "comparison-swap"),  # == to != ; a duplicate must fail
+                ("M0070", 122, "comparison-swap"),  # > to >= ; the next seq is not a gap
+                ("M0132", 156, "comparison-swap"),  # version < 1 to > ; version 0 fails
+                ("M0139", 158, "comparison-swap"),  # > to >= ; the age boundary is fresh
+                ("M0089", 267, "comparison-swap"),  # bid > ask to >= ; locked is not crossed
+                ("M0169", 327, "comparison-swap"),  # >= to <= ; ratio 2 is not a reverse
+                ("M0191", 426, "comparison-swap"),  # > to < ; a clean split must apply
+            )
+        ),
+        selectors=("tests/unit/live/test_market_data_decisions.py",),
+    ),
 )
 
 
@@ -347,7 +403,7 @@ def run_suite(
         mt.build_command = previous_command  # type: ignore[method-assign]
     if target.read_bytes() != before:
         raise mt.MutationTestError(f"{target} changed during the campaign")
-    return mt.build_report(
+    report = mt.build_report(
         target,
         module_name,
         selectors,
@@ -356,17 +412,56 @@ def run_suite(
         total_mutants=len(mutants),
         results=results,
     )
+    return reclassify_equivalent(report, suite.name)
+
+
+def reclassify_equivalent(report: mt.CampaignReport, suite_name: str) -> mt.CampaignReport:
+    """Move documented equivalent survivors out of the score denominator.
+
+    A mutant that the tests kill stays killed. Only a survivor whose id, line,
+    and operator match EQUIVALENT is relabeled.
+    """
+    matched = {
+        (item.mutant_id, item.lineno, item.operator)
+        for item in EQUIVALENT
+        if item.suite == suite_name
+    }
+    if not matched:
+        return report
+    moved = 0
+    survivors: list[dict[str, object]] = []
+    for row in report.results:
+        if row.get("status") != "survived":
+            continue
+        ident = (row.get("mutant_id"), row.get("lineno"), row.get("operator"))
+        if ident in matched:
+            row["status"] = "equivalent"
+            moved += 1
+        else:
+            survivors.append(row)
+    if moved == 0:
+        return report
+    report.counts["survived"] = int(report.counts.get("survived", 0)) - moved
+    report.counts["equivalent"] = int(report.counts.get("equivalent", 0)) + moved
+    report.survivors = survivors
+    killed = int(report.counts.get("killed", 0))
+    survived = int(report.counts.get("survived", 0))
+    timeout = int(report.counts.get("timeout", 0))
+    scored = killed + survived + timeout
+    report.score = round((killed + timeout) / scored, 4) if scored else 0.0
+    return report
 
 
 def totals(reports: Sequence[mt.CampaignReport]) -> dict[str, Any]:
-    """Score across suites. Errors stay out of the denominator."""
-    counts = {"killed": 0, "survived": 0, "timeout": 0, "error": 0}
+    """Score across suites. Errors and equivalent survivors stay out of the denominator."""
+    counts = {"killed": 0, "survived": 0, "timeout": 0, "error": 0, "equivalent": 0}
     for report in reports:
         for key, value in report.counts.items():
-            counts[key] += int(value)
-    attempted = sum(counts.values()) - counts["error"]
-    score = (counts["killed"] + counts["timeout"]) / attempted if attempted else 0.0
-    return {"counts": counts, "sampled": sum(counts.values()), "score": round(score, 4)}
+            counts[key] = counts.get(key, 0) + int(value)
+    scored = counts["killed"] + counts["survived"] + counts["timeout"]
+    score = (counts["killed"] + counts["timeout"]) / scored if scored else 0.0
+    sampled = scored + counts["error"] + counts["equivalent"]
+    return {"counts": counts, "sampled": sampled, "score": round(score, 4)}
 
 
 def campaign_payload(reports: Sequence[mt.CampaignReport]) -> dict[str, Any]:
@@ -395,12 +490,20 @@ def format_campaign(payload: dict[str, Any]) -> str:
                 f"  survived {row['mutant_id']} line {row['lineno']}: "
                 f"[{row['operator']}] {row['description']}"
             )
+        for row in suite["results"]:
+            if row["status"] != "equivalent":
+                continue
+            lines.append(
+                f"  equivalent {row['mutant_id']} line {row['lineno']}: "
+                f"[{row['operator']}] {row['description']}"
+            )
     overall = payload["totals"]
     counts = overall["counts"]
     lines.append(
         f"overall: score {overall['score']:.2%} "
         f"killed={counts['killed']} survived={counts['survived']} "
-        f"timeout={counts['timeout']} error={counts['error']} sampled={overall['sampled']}"
+        f"timeout={counts['timeout']} error={counts['error']} "
+        f"equivalent={counts['equivalent']} sampled={overall['sampled']}"
     )
     lines.append(mt.WATERMARK)
     return "\n".join(lines)
