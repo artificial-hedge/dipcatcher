@@ -47,6 +47,16 @@ def _resolve(root: Path | None) -> Path:
     return _default_root() if root is None else root
 
 
+def _write_key(root: Path, key: bytes) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / "hmac.key"
+    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        os.write(fd, key)
+    finally:
+        os.close(fd)
+
+
 def _key(root: Path) -> bytes:
     path = root / "hmac.key"
     if path.exists():
@@ -54,13 +64,8 @@ def _key(root: Path) -> bytes:
         if len(key) < 16:
             raise LiveDeskError("hmac.key must be at least 16 bytes")
         return key
-    root.mkdir(parents=True, exist_ok=True)
     key = secrets.token_bytes(32)
-    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    try:
-        os.write(fd, key)
-    finally:
-        os.close(fd)
+    _write_key(root, key)
     return key
 
 
@@ -74,8 +79,11 @@ def _open_desk(
 ) -> LiveDesk:
     from quant_fund.pretrade.config import load_pretrade_config
 
-    key = _key(root)
+    key_path = root / "hmac.key"
+    key = _key(root) if key_path.exists() else secrets.token_bytes(32)
     config, _digest, _sig = load_pretrade_config(config_path, hmac_key=key)
+    if not key_path.exists():
+        _write_key(root, key)
     return LiveDesk.open(
         root,
         hmac_key=key,

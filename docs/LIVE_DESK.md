@@ -36,7 +36,7 @@ persisted numbers and refuse a second grant.
 The default directory is `~/.dipcatcher/live` (`DIP_LIVE_ROOT` overrides it).
 
 ```text
-hmac.key          local pre-trade HMAC, mode 0600, created on first use
+hmac.key          local pre-trade HMAC, mode 0600, created after config validation
 arming.json       venue. A file that sets live_pnl_claim true is refused
 state.json        positions, reservations, lifecycle trace
 journal.jsonl     hash-chained audit
