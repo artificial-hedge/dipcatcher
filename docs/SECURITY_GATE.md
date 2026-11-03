@@ -38,6 +38,10 @@ The same disable words turn that pair off. A published Docker port is not a loop
 
 The rescan for this slice sent 40 keyed requests to each service after the override. Every one was HTTP 200. ZAP's API scan then ran with active rules outside the SQL family set to IGNORE. Rules 40018, 40019, 40020, 40021, 40022, and 40027 passed on the lab and the research API, in the unauthenticated scan and in the keyed scan. The raw report's only HTTP 503 is lab `GET /ready`. The pinned ZAP 2.17.0 catalog has no active rule 40024. No handler change came out of that rescan.
 
+## Shared rate-limit store
+
+`DIPCATCHER_RATE_BACKEND` selects the bucket store. Unset, empty, or `memory` keeps the in-process bucket. `sqlite` uses a SQLite file at `DIPCATCHER_RATE_STORE`. `file` uses a JSON file at that path and an exclusive `fcntl` lock. The shared backends use the wall clock so two workers on one volume share a limit. A missing path, an unknown backend, or a store that cannot be opened is 503 `{"detail": "rate store unavailable"}`. The default remains memory. `.env.example` is hash-pinned and does not list these names. `tests/unit/api/test_rate_store.py` covers two processes and the closed failure.
+
 ## Authorization
 
 `QUANT_API_KEY` and `RESEARCH_API_KEY` are the admin keys. `QUANT_API_READ_KEY` and `RESEARCH_API_READ_KEY` are the read keys. Safe methods are GET, HEAD, and OPTIONS. The matrix in `tests/unit/security/test_authz_matrix.py` fails when a new route is missing. `.env.example` does not gain the read-key names.
@@ -68,13 +72,19 @@ not contain the key. `POST /backtest` is kind `ledger`. `POST /portfolio/optimiz
 is kind `optimize`: the handler returns a research weight envelope and writes
 no kill file, ledger, or config. Any other admin-key unsafe route is
 `unclassified`. A rejected key on an unsafe method, including a read key,
-appends outcome `denied`. Safe methods do not.
+appends outcome `denied`. `GET` and `HEAD` of `/backtest/{id}` append kind
+`ledger` and outcome `read`. `GET /risk/portfolio`, `GET /portfolio/target`,
+and `GET /portfolio/exposures` append kind `positions` and outcome `read`.
+`QUANT_API_AUDIT_READS` and `RESEARCH_API_AUDIT_READS` default on. `0`,
+`off`, `false`, or `no` disables those lines. Other safe methods do not
+append. The research API has no ledger, position, or config-dump route.
+`dump_resolved` stays outcome `written`.
 
 `dump_resolved`, `PaperLedger.flush`, `LiveDesk.kill`, and the gateway
 session `kill` append `config`, `ledger`, and `kill-file`. When no HTTP
 actor is bound the route is `cli:<user>@<host>`, with the user and host
 reduced to an ASCII token. A log path that cannot be opened turns the
-mutation, and a denied attempt, into 503 before the route runs.
+mutation, a denied attempt, and a sensitive read into 503 before the route runs.
 
 `{LOG}_MAX_BYTES` defaults to 1048576. `off` disables rotation. When the
 next line would pass the cap, the active file is renamed to `NAME.1` and
@@ -83,12 +93,25 @@ older siblings shift up. The new file's first `prev` is the last line of
 `audit chain ok` when the chain holds, including across those siblings.
 The chain is not a signature.
 
-`tests/unit/security/test_admin_audit.py` and
-`tests/unit/security/test_audit_chain.py` cover the line, the redaction,
-the CLI actor, the optimize kind, and the chain.
+`python scripts/anchor_audit_head.py PATH --anchors ANCHORS` appends one
+JSON line with `time` and `head`. `head` is the SHA-256 hex of the last raw
+line in the chain, which is the `prev` the next audit line would store. An
+empty chain anchors the SHA-256 of empty bytes. The anchors file is
+append-only, mode `0600`, and unsigned. Signing that digest is an owner
+step, the same key material as `gate_pins.sig`. This command does not sign.
+
+`python scripts/prod_backup.py --audit-log PATH --anchors ANCHORS --dest DIR`
+is the prod-backup copy for this set. It writes the active log, every
+rotated sibling `NAME.N`, and the anchors file into `DIR` at mode `0600`.
+
+`tests/unit/security/test_admin_audit.py`,
+`tests/unit/security/test_audit_chain.py`, and
+`tests/unit/security/test_audit_anchor.py` cover the line, the redaction,
+the CLI actor, the optimize kind, the sensitive read, the chain, and the anchor.
 
 ## Owner steps this gate does not perform
 
 - Bump the crown `uv.lock` virtualenv pin past 21.14.12 for GHSA-cx6f-vjhg-g3cc.
 - Change the crown `Dockerfile` numeric `USER` and the JSON `HEALTHCHECK`.
 - Restamp epochs and re-sign `gate_pins.sig`.
+- Sign an audit anchor. `scripts/anchor_audit_head.py` writes the head digest unsigned.
