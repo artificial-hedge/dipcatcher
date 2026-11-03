@@ -310,6 +310,8 @@ class LiveDesk:
             )
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
+        if self._mark_is_stale(symbol, ts_ns):
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -756,6 +758,12 @@ class LiveDesk:
                 return True
         count = sum(1 for stamp in self.rate_message_ts if ts_ns - stamp <= window)
         return count >= int(self.config.limits.max_messages_per_window)
+
+    def _mark_is_stale(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        if prior is None:
+            return False
+        return ts_ns > prior + int(self.config.limits.max_mark_age_ns)
 
     def _going_backwards(self, ts_ns: int) -> bool:
         last = int(self.engine.book.last_ts)
