@@ -7,6 +7,7 @@ over a real duckdb file in tmp_path.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Literal
 
 import pytest
@@ -544,3 +545,176 @@ def test_predate_schema_db_is_refused(tmp_path) -> None:
     con.close()
     with pytest.raises(ProvenanceError, match="predates"):
         ProvenanceDB(db_path)
+
+
+def test_new_db_stamps_current_schema_version(tmp_path) -> None:
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        row = db._con.execute("SELECT schema_version FROM proofcore_schema_version").fetchone()
+    assert row == (provenance_mod.PROOFCORE_SCHEMA_VERSION,)
+
+
+def test_unversioned_current_schema_is_preserved_then_stamped(tmp_path) -> None:
+    import duckdb
+
+    path = tmp_path / "prov.duckdb"
+    bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+    with ProvenanceDB(path) as db:
+        db.insert_bundle(bundle, None)
+    con = duckdb.connect(str(path))
+    con.execute("DROP TABLE proofcore_schema_version")
+    con.close()
+    before = path.read_bytes()
+
+    with ProvenanceDB(path, read_only=True) as db:
+        assert [row["bundle_id"] for row in db.bundles()] == [bundle.bundle_id]
+    assert path.read_bytes() == before
+
+    with ProvenanceDB(path) as db:
+        assert db._con.execute(
+            "SELECT schema_version FROM proofcore_schema_version"
+        ).fetchone() == (provenance_mod.PROOFCORE_SCHEMA_VERSION,)
+        assert [row["bundle_id"] for row in db.bundles()] == [bundle.bundle_id]
+
+
+def test_unknown_schema_version_is_refused(tmp_path) -> None:
+    path = tmp_path / "prov.duckdb"
+    with ProvenanceDB(path) as db:
+        db._con.execute("UPDATE proofcore_schema_version SET schema_version = 999")
+    with pytest.raises(ProvenanceError, match="unsupported provenance schema version: 999"):
+        ProvenanceDB(path)
+    with pytest.raises(ProvenanceError, match="unsupported provenance schema version: 999"):
+        ProvenanceDB(path, read_only=True)
+
+
+def test_narrower_unversioned_schema_is_not_migrated(tmp_path) -> None:
+    import duckdb
+
+    path = tmp_path / "prov.duckdb"
+    with ProvenanceDB(path):
+        pass
+    con = duckdb.connect(str(path))
+    con.execute("DROP TABLE trial_ledger")
+    con.execute("ALTER TABLE proof_bundles DROP COLUMN verified_ok")
+    con.execute("DROP TABLE proofcore_schema_version")
+    con.execute(provenance_mod._DDL)
+    con.close()
+    with pytest.raises(ProvenanceError, match="incompatible provenance schema"):
+        ProvenanceDB(path)
+    con = duckdb.connect(str(path), read_only=True)
+    assert con.execute(
+        "SELECT count(*) FROM information_schema.tables "
+        "WHERE table_name = 'proofcore_schema_version'"
+    ).fetchone() == (0,)
+    con.close()
+
+
+def test_existing_unrelated_duckdb_is_not_initialized(tmp_path) -> None:
+    import duckdb
+
+    path = tmp_path / "unrelated.duckdb"
+    con = duckdb.connect(str(path))
+    con.execute("CREATE TABLE unrelated (value INTEGER)")
+    con.close()
+    with pytest.raises(ProvenanceError, match="ledger tables are missing"):
+        ProvenanceDB(path)
+    con = duckdb.connect(str(path), read_only=True)
+    assert con.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name = 'proof_bundles'"
+    ).fetchone() == (0,)
+    assert con.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name = 'unrelated'"
+    ).fetchone() == (1,)
+    con.close()
+
+
+def test_read_only_open_requires_an_existing_file(tmp_path) -> None:
+    path = tmp_path / "missing" / "prov.duckdb"
+    with pytest.raises(ProvenanceError, match="file does not exist"):
+        ProvenanceDB(path, read_only=True)
+    assert not path.exists()
+    assert not path.parent.exists()
+
+
+def test_read_only_cli_commands_do_not_create_missing_db(tmp_path) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.proofcore.cli import proofcore_app
+
+    path = tmp_path / "missing.duckdb"
+    out = tmp_path / "trials.jsonl"
+    runner = CliRunner()
+    for args in (
+        ["query", "--db", str(path)],
+        ["chain-head", "--db", str(path)],
+        ["export", "--db", str(path), "--out", str(out)],
+    ):
+        result = runner.invoke(proofcore_app, args)
+        assert result.exit_code != 0, args
+    assert not path.exists()
+    assert not out.exists()
+
+
+def test_export_paths_cannot_alias_db_wal_or_each_other(tmp_path) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.proofcore.cli import proofcore_app
+
+    path = tmp_path / "prov.duckdb"
+    out = tmp_path / "trials.jsonl"
+    with ProvenanceDB(path):
+        pass
+    before = path.read_bytes()
+    cases = (
+        ["export", "--db", str(path), "--out", str(path)],
+        ["export", "--db", str(path), "--out", str(out), "--csv", str(path)],
+        ["export", "--db", str(path), "--out", str(out), "--bundles-out", str(path)],
+        ["export", "--db", str(path), "--out", str(Path(f"{path}.wal"))],
+        ["export", "--db", str(path), "--out", str(out), "--csv", str(out)],
+        ["export", "--db", str(path), "--out", str(out), "--bundles-out", str(out)],
+    )
+    runner = CliRunner()
+    for args in cases:
+        result = runner.invoke(proofcore_app, args)
+        assert result.exit_code == 2, args
+        assert path.read_bytes() == before
+        assert not out.exists()
+
+
+def test_export_rejects_hardlink_to_db(tmp_path) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.proofcore.cli import proofcore_app
+
+    path = tmp_path / "prov.duckdb"
+    alias = tmp_path / "alias.jsonl"
+    with ProvenanceDB(path):
+        pass
+    try:
+        alias.hardlink_to(path)
+    except OSError as exc:
+        pytest.skip(f"hard links unavailable: {exc}")
+    before = path.read_bytes()
+    result = CliRunner().invoke(proofcore_app, ["export", "--db", str(path), "--out", str(alias)])
+    assert result.exit_code == 2
+    assert path.read_bytes() == before
+    assert alias.read_bytes() == before
+
+
+def test_corrupt_db_export_preserves_source_and_publishes_nothing(tmp_path) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.proofcore.cli import proofcore_app
+
+    valid = tmp_path / "valid.duckdb"
+    with ProvenanceDB(valid):
+        pass
+    corrupt_payloads = (b"", b"not a duckdb file", valid.read_bytes()[:128])
+    runner = CliRunner()
+    for index, payload in enumerate(corrupt_payloads):
+        path = tmp_path / f"corrupt-{index}.duckdb"
+        out = tmp_path / f"corrupt-{index}.jsonl"
+        path.write_bytes(payload)
+        result = runner.invoke(proofcore_app, ["export", "--db", str(path), "--out", str(out)])
+        assert result.exit_code != 0
+        assert path.read_bytes() == payload
+        assert not out.exists()

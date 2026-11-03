@@ -12,6 +12,7 @@ fail-closed; bundles may be logged as unverified evidence.
 from __future__ import annotations
 
 import re
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from quant_fund.proofcore.contracts import (
 )
 
 DEFAULT_DB_PATH: Path = Path("data/metadata/proofcore.duckdb")
+PROOFCORE_SCHEMA_VERSION = 1
 
 _BUNDLE_COLUMNS: tuple[str, ...] = (
     "bundle_id",
@@ -95,6 +97,12 @@ CREATE TABLE IF NOT EXISTS trial_ledger (
 );
 """
 
+_SCHEMA_VERSION_DDL = """
+CREATE TABLE proofcore_schema_version (
+    schema_version BIGINT PRIMARY KEY
+);
+"""
+
 # Bare names only. Quotes, comments, dots, and statement breaks never interpolate.
 _SQL_IDENTIFIER = re.compile(r"\A[A-Za-z_][A-Za-z0-9_]*\Z")
 
@@ -154,18 +162,183 @@ def _order_by(columns: tuple[str, ...]) -> str:
     return " ORDER BY " + _sql_identifier_list(columns)
 
 
-class ProvenanceDB:
-    """duckdb file at <root>/metadata/proofcore.duckdb. Two tables:
+_BUNDLE_SQL_TYPES = (
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "BOOLEAN",
+    "VARCHAR",
+)
+_TRIAL_SQL_TYPES = (
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+)
 
-    proof_bundles(bundle_id TEXT PK, created_utc TEXT, run_kind TEXT,
-                  git_revision TEXT, config_sha256 TEXT, seed BIGINT,
-                  merkle_root TEXT, prev_bundle_hash TEXT, signature_scheme TEXT,
-                  bundle_json TEXT, verified_ok BOOLEAN, verification_json TEXT)
-    trial_ledger(trial_id TEXT PK, bundle_hash TEXT REFERENCES proof_bundles,
-                 family TEXT, strategy TEXT, cluster_id TEXT, n_obs BIGINT,
-                 periods_per_year DOUBLE, sharpe_periodic DOUBLE, skew DOUBLE,
-                 kurtosis_raw DOUBLE, returns_sha256 TEXT, created_utc TEXT,
-                 prev_trial_hash TEXT UNIQUE)
+
+def _table_info(connection: duckdb.DuckDBPyConnection, table: str) -> list[Any]:
+    present = connection.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [table]
+    ).fetchone()
+    if present is None or int(present[0]) == 0:
+        return []
+    return connection.execute(f"PRAGMA table_info({_sql_identifier(table)})").fetchall()
+
+
+def _validate_table(
+    connection: duckdb.DuckDBPyConnection,
+    table: str,
+    columns: tuple[str, ...],
+    sql_types: tuple[str, ...],
+    nullable: frozenset[str],
+    primary_key: str,
+) -> None:
+    rows = _table_info(connection, table)
+    actual = {str(row[1]): row for row in rows}
+    if len(rows) != len(columns) or set(actual) != set(columns):
+        raise ProvenanceError(f"incompatible provenance schema: {table} columns")
+    for name, sql_type in zip(columns, sql_types, strict=True):
+        row = actual[name]
+        if (
+            str(row[2]).upper() != sql_type
+            or bool(row[3]) != (name not in nullable)
+            or bool(row[5]) != (name == primary_key)
+        ):
+            raise ProvenanceError(f"incompatible provenance schema: {table}.{name}")
+
+
+def _validate_constraints(
+    connection: duckdb.DuckDBPyConnection,
+    table: str,
+    required: set[tuple[str, tuple[str, ...], str | None, tuple[str, ...]]],
+) -> None:
+    rows = connection.execute(
+        "SELECT constraint_type, constraint_column_names, referenced_table, "
+        "referenced_column_names FROM duckdb_constraints() WHERE table_name = ?",
+        [table],
+    ).fetchall()
+    actual = {
+        (str(kind), tuple(columns or []), referenced, tuple(referenced_columns or []))
+        for kind, columns, referenced, referenced_columns in rows
+    }
+    if not required <= actual:
+        raise ProvenanceError(f"incompatible provenance schema: {table} constraints")
+
+
+def _schema_version_status(connection: duckdb.DuckDBPyConnection) -> bool:
+    if not _table_info(connection, "proofcore_schema_version"):
+        return False
+    _validate_table(
+        connection,
+        "proofcore_schema_version",
+        ("schema_version",),
+        ("BIGINT",),
+        frozenset(),
+        "schema_version",
+    )
+    _validate_constraints(
+        connection,
+        "proofcore_schema_version",
+        {("PRIMARY KEY", ("schema_version",), None, ())},
+    )
+    rows = connection.execute("SELECT schema_version FROM proofcore_schema_version").fetchall()
+    if len(rows) != 1 or type(rows[0][0]) is not int:
+        raise ProvenanceError("incompatible provenance schema: version metadata")
+    if rows[0][0] != PROOFCORE_SCHEMA_VERSION:
+        raise ProvenanceError(f"unsupported provenance schema version: {rows[0][0]}")
+    return True
+
+
+_SCHEMA_BUNDLE_COLUMNS = _BUNDLE_COLUMNS
+_SCHEMA_TRIAL_COLUMNS = _TRIAL_STORAGE_COLUMNS
+
+
+def _validate_existing_schema(connection: duckdb.DuckDBPyConnection) -> bool:
+    bundle_info = _table_info(connection, "proof_bundles")
+    trial_info = _table_info(connection, "trial_ledger")
+    if not bundle_info or not trial_info:
+        raise ProvenanceError("incompatible provenance schema: ledger tables are missing")
+    if "prev_trial_hash" not in {str(row[1]) for row in trial_info}:
+        raise ProvenanceError(
+            "trial_ledger predates the prev_trial_hash chain schema — "
+            "regenerate the provenance DB rather than migrating a "
+            "ledger that claims append-only evidence"
+        )
+    _validate_table(
+        connection,
+        "proof_bundles",
+        _SCHEMA_BUNDLE_COLUMNS,
+        _BUNDLE_SQL_TYPES,
+        frozenset({"verified_ok", "verification_json"}),
+        "bundle_id",
+    )
+    _validate_table(
+        connection,
+        "trial_ledger",
+        _SCHEMA_TRIAL_COLUMNS,
+        _TRIAL_SQL_TYPES,
+        frozenset(),
+        "trial_id",
+    )
+    _validate_constraints(
+        connection,
+        "proof_bundles",
+        {
+            ("PRIMARY KEY", ("bundle_id",), None, ()),
+            ("UNIQUE", ("prev_bundle_hash",), None, ()),
+        },
+    )
+    _validate_constraints(
+        connection,
+        "trial_ledger",
+        {
+            ("PRIMARY KEY", ("trial_id",), None, ()),
+            ("UNIQUE", ("prev_trial_hash",), None, ()),
+            ("FOREIGN KEY", ("bundle_hash",), "proof_bundles", ("bundle_id",)),
+        },
+    )
+    return _schema_version_status(connection)
+
+
+def _write_schema(connection: duckdb.DuckDBPyConnection, *, initialize: bool) -> None:
+    connection.execute("BEGIN TRANSACTION")
+    try:
+        if initialize:
+            connection.execute(_DDL)
+        connection.execute(_SCHEMA_VERSION_DDL)
+        connection.execute(
+            "INSERT INTO proofcore_schema_version VALUES (?)", [PROOFCORE_SCHEMA_VERSION]
+        )
+        connection.execute("COMMIT")
+    except Exception:
+        with suppress(Exception):
+            connection.execute("ROLLBACK")
+        raise
+
+
+class ProvenanceDB:
+    """Versioned DuckDB provenance ledger with explicit read-only opens.
+
+    Exact current-layout databases without version metadata are legacy schema
+    v1. Read-only opens preserve them; writable opens validate then stamp v1.
+    Unknown versions and narrower historical layouts are never auto-migrated.
 
     Trials chain like bundles: each insert binds ``prev_trial_hash`` to the
     current ``_trial_head()``, so a DELETE of a losing trial — the deflation
@@ -173,30 +346,33 @@ class ProvenanceDB:
     ``verify_trial_chain`` and ``_trial_head`` both surface.
     """
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
         self.path = Path(path)
-        if self.path.parent and str(self.path.parent) not in ("", "."):
+        existed = self.path.exists()
+        if read_only and not self.path.is_file():
+            raise ProvenanceError(f"cannot open provenance DB at {self.path}: file does not exist")
+        if not read_only and self.path.parent and str(self.path.parent) not in ("", "."):
             self.path.parent.mkdir(parents=True, exist_ok=True)
+        connection: duckdb.DuckDBPyConnection | None = None
         try:
-            self._con = duckdb.connect(str(self.path))
-            # duckdb enforces declared FK constraints natively (no pragma).
-            self._con.execute(_DDL)
-            # CREATE TABLE IF NOT EXISTS upgrades nothing: an older file keeps
-            # its narrower schema. The ledger is declared append-only, so a
-            # missing chain column means the file predates the tamper-evident
-            # schema — refuse to extend it silently.
-            trial_cols = {
-                r[1] for r in self._con.execute("PRAGMA table_info(trial_ledger)").fetchall()
-            }
-            if "prev_trial_hash" not in trial_cols:
-                raise ProvenanceError(
-                    "trial_ledger predates the prev_trial_hash chain schema — "
-                    "regenerate the provenance DB rather than migrating a "
-                    "ledger that claims append-only evidence"
-                )
+            connection = duckdb.connect(str(self.path), read_only=read_only)
+            if not existed:
+                _write_schema(connection, initialize=True)
+                _validate_existing_schema(connection)
+            else:
+                versioned = _validate_existing_schema(connection)
+                if not read_only and not versioned:
+                    _write_schema(connection, initialize=False)
+            self._con = connection
         except ProvenanceError:
+            if connection is not None:
+                with suppress(Exception):
+                    connection.close()
             raise
-        except Exception as exc:  # duckdb.IOException and friends
+        except Exception as exc:
+            if connection is not None:
+                with suppress(Exception):
+                    connection.close()
             raise ProvenanceError(f"cannot open provenance DB at {self.path}: {exc}") from exc
 
     # ------------------------------------------------------------------

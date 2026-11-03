@@ -115,6 +115,28 @@ def log_bundle(
     typer.echo(f"chain_head={head}")
 
 
+def _paths_alias(left: Path, right: Path) -> bool:
+    if left.resolve() == right.resolve():
+        return True
+    try:
+        return os.path.samefile(left, right)
+    except OSError:
+        return False
+
+
+def _validate_export_paths(
+    db: Path, out: Path, bundles_out: Path | None, csv_out: Path | None
+) -> None:
+    outputs = [path for path in (out, bundles_out, csv_out) if path is not None]
+    protected = (db, Path(f"{db}.wal"))
+    for output in outputs:
+        if any(_paths_alias(output, source) for source in protected):
+            raise typer.BadParameter("export outputs must not alias the provenance DB or its WAL")
+    for index, output in enumerate(outputs):
+        if any(_paths_alias(output, other) for other in outputs[index + 1 :]):
+            raise typer.BadParameter("export output paths must be distinct")
+
+
 @proofcore_app.command("query")
 def query(
     db: Path = _DB_OPTION,
@@ -123,7 +145,7 @@ def query(
     """Print a JSON summary: bundle/trial counts, family split, chain head."""
     from quant_fund.proofcore.provenance import ProvenanceDB
 
-    with ProvenanceDB(db) as prov:
+    with ProvenanceDB(db, read_only=True) as prov:
         bundles = prov.bundles()
         trials = prov.trials(family=family)
         head = prov.chain_head()
@@ -151,9 +173,10 @@ def export(
     ),
 ) -> None:
     """Export the trial ledger (and optionally bundles) as JSONL (DESIGN.md §14.4)."""
+    _validate_export_paths(db, out, bundles_out, csv_out)
     from quant_fund.proofcore.provenance import ProvenanceDB
 
-    with ProvenanceDB(db) as prov:
+    with ProvenanceDB(db, read_only=True) as prov:
         trials = prov.trials()
         bundles = prov.bundles()
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -181,5 +204,5 @@ def chain_head(db: Path = _DB_OPTION) -> None:
     """Print the current bundle-chain head hash (GENESIS_HASH when empty)."""
     from quant_fund.proofcore.provenance import ProvenanceDB
 
-    with ProvenanceDB(db) as prov:
+    with ProvenanceDB(db, read_only=True) as prov:
         typer.echo(prov.chain_head())
