@@ -28,6 +28,43 @@ def _write(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
+@pytest.mark.parametrize(
+    "tolerance",
+    [float("nan"), float("inf"), float("-inf"), -1e-6],
+)
+def test_constructor_rejects_invalid_nav_tolerance(tmp_path: Path, tolerance: float) -> None:
+    with pytest.raises(OrderLedgerError, match="nav_tolerance must be finite and non-negative"):
+        PaperBrokerAdapter(state_path=tmp_path / "state.json", nav_tolerance=tolerance)
+
+
+@pytest.mark.parametrize("tolerance", [float("nan"), float("inf")])
+def test_resume_rejects_non_finite_persisted_nav_tolerance(
+    tmp_path: Path, tolerance: float
+) -> None:
+    path = tmp_path / "state.json"
+    state = _state()
+    state["nav"] = 5.0
+    state["nav_tolerance"] = tolerance
+    _write(path, state)
+
+    with pytest.raises(OrderLedgerError, match="nav_tolerance must be finite and non-negative"):
+        PaperBrokerAdapter.resume(path)
+
+
+def test_zero_nav_tolerance_still_detects_a_seam_mismatch(tmp_path: Path) -> None:
+    path = tmp_path / "state.json"
+    state = _state()
+    state["nav"] = 5.0
+    _write(path, state)
+    adapter = PaperBrokerAdapter(state_path=path, nav_tolerance=0.0)
+
+    report = adapter.seam_report()
+
+    assert report["ok"] is False
+    assert report["nav_seam_parity"] is False
+    assert report["errors"] == ["nav_seam_mismatch"]
+
+
 def test_seam_report_requires_an_existing_state_file(tmp_path: Path) -> None:
     adapter = PaperBrokerAdapter(state_path=tmp_path / "missing.json")
     with pytest.raises(OrderLedgerError, match="no broker state"):
