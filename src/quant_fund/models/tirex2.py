@@ -49,7 +49,9 @@ from __future__ import annotations
 
 import shutil
 import sys
+import sysconfig
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -75,6 +77,20 @@ DECONTAMINATED_MODEL_IDS = (
     "NX-AI/TiRex-2-gifteval-zs",
     "NX-AI/TiRex-2-fevbench",
 )
+
+
+def inductor_cpp_backend_unusable() -> bool:
+    """True when ``torch.compile`` cannot build its C++ wrapper.
+
+    TiRex-2 compiles its forward. Inductor's wrapper includes ``Python.h``
+    and, on Windows, needs ``cl``. A checkout with a compiler but no Python
+    development headers fails the same way a missing ``cl`` does, so the
+    caller falls back to eager mode instead of raising ``CppCompileError``.
+    """
+    if sys.platform == "win32" and shutil.which("cl") is None:
+        return True
+    header = Path(sysconfig.get_path("include")) / "Python.h"
+    return not header.is_file()
 
 
 def _as_tau_grid(taus: Sequence[float]) -> Array:
@@ -195,11 +211,11 @@ class Tirex2Distribution(JoblibMixin):
             load_model, ts_type = _load_model_fns()
             import torch  # local lane dep; installed alongside tirex-2
 
-            # TiRex-2 internally @torch.compile-s its forward. On Windows this
-            # requires an MSVC (cl) compiler for the inductor C++ backend. If
-            # cl is not on PATH, disable Dynamo so the model falls back to eager
-            # mode rather than raising InvalidCxxCompiler mid-predict.
-            if sys.platform == "win32" and shutil.which("cl") is None:
+            # TiRex-2 internally @torch.compile-s its forward. Without a
+            # usable C++ toolchain (MSVC ``cl`` on Windows, or ``Python.h``
+            # for the inductor wrapper), disable Dynamo so the model falls
+            # back to eager mode rather than raising mid-predict.
+            if inductor_cpp_backend_unusable():
                 torch._dynamo.config.disable = True
             model = load_model(self.model_id, device=self.device)
             self._ts_type = ts_type
