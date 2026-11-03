@@ -178,7 +178,10 @@ def _yahoo_row(
     ingested: datetime,
 ) -> dict[str, object]:
     try:
-        day = datetime.fromtimestamp(int(stamps[index]), tz=UTC).date()
+        stamp = stamps[index]
+        if isinstance(stamp, bool) or not isinstance(stamp, int | float | str):
+            raise TypeError(f"yahoo chart timestamp at row {index} is invalid")
+        day = datetime.fromtimestamp(int(stamp), tz=UTC).date()
         ts = session_close(day, suffix)
     except (TypeError, ValueError, OverflowError, OSError) as exc:
         raise ValueError(f"yahoo chart timestamp at row {index} is invalid") from exc
