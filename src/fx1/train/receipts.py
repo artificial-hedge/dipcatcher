@@ -19,11 +19,14 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.atomicio import publish_text_once
 
 
 def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+_GIT_TIMEOUT_S = 15
 
 
 def _git_revision(repo_root: Path) -> tuple[str, bool]:
@@ -35,6 +38,7 @@ def _git_revision(repo_root: Path) -> tuple[str, bool]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,
         ).stdout.strip()
         dirty = bool(
             subprocess.run(
@@ -43,11 +47,14 @@ def _git_revision(repo_root: Path) -> tuple[str, bool]:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=_GIT_TIMEOUT_S,
             ).stdout.strip()
         )
-        return sha, dirty
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.SubprocessError):
         return "unknown", True
+    if not sha:
+        return "unknown", True
+    return sha, dirty
 
 
 class TrainingReceipt(BaseModel):
@@ -98,7 +105,7 @@ def issue_receipt(
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(out, receipt.model_dump_json(indent=2))
+    publish_text_once(out, receipt.model_dump_json(indent=2))
     return receipt
 
 

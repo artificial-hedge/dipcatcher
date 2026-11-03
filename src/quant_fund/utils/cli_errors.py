@@ -29,8 +29,9 @@ def user_error_message(exc: BaseException) -> str | None:
         return "file is not valid UTF-8"
     if isinstance(exc, json.JSONDecodeError):
         return f"invalid JSON: {exc.msg} (line {exc.lineno})"
-    if isinstance(exc, ValueError) and str(exc).startswith("Config "):
-        return str(exc)
+    config_message = _config_message(exc)
+    if config_message is not None:
+        return config_message
     yaml_message = _yaml_message(exc)
     if yaml_message is not None:
         return yaml_message
@@ -100,6 +101,18 @@ def _target(exc: OSError) -> object:
     if exc.filename:
         return exc.filename
     return exc.strerror or exc
+
+
+def _config_message(exc: BaseException) -> str | None:
+    """One line for loader ``ValueError``. A parse failure keeps the YAML label."""
+    if not isinstance(exc, ValueError):
+        return None
+    text = str(exc)
+    if not text.startswith("Config "):
+        return None
+    if "is not valid YAML" in text:
+        return f"invalid YAML: {text}"
+    return text
 
 
 def _yaml_message(exc: BaseException) -> str | None:

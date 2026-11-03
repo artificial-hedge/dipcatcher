@@ -68,6 +68,7 @@ from fx1.serve.webhooks import (
     deliver_signed,
     sign_webhook,
     verify_webhook,
+    webhook_signature,
 )
 
 if TYPE_CHECKING:
@@ -100,7 +101,7 @@ _ENV_KEYS = (
     "FX1_LOCAL_MODEL",
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
-    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    "FX1_PRIVATE_ALLOW_CIDRS",
 )
 
 _FT_CORPUS = b'{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
@@ -164,7 +165,11 @@ class _Sink:
                 pass
 
         self._srv = ThreadingHTTPServer(("127.0.0.1", 0), _H)
-        self._thread = threading.Thread(target=self._srv.serve_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self._srv.serve_forever,
+            kwargs={"poll_interval": 0.05},
+            daemon=True,
+        )
         self._thread.start()
 
     @property
@@ -260,7 +265,7 @@ def _wait_hits(sink: _Sink, n: int, timeout: float = _WAIT_S) -> None:
         time.sleep(0.05)
 
 
-def _busy_executor(app: FastAPI, slots: int, sleep_s: float = 1.5) -> None:
+def _busy_executor(app: FastAPI, slots: int, sleep_s: float = 0.4) -> None:
     """Occupy every worker thread with a sleeper so a submitted record
     stays 'queued' — the deterministic way to reach the queued-cancel
     path. All five surfaces share ``jobs_executor``."""
@@ -431,7 +436,7 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
     out["sig_timestamp_present_fresh"] = (
         isinstance(ts, str) and ts.isdigit() and abs(time.time() - float(ts)) < 60
     )
-    recomputed = sign_webhook(_SECRET, ts or "", hit.body)
+    recomputed = webhook_signature(_SECRET, ts or "", hit.body)
     out["sig_recomputed_matches"] = bool(sig) and hmac_mod.compare_digest(recomputed, sig or "")
     out["sig_verifies_at_sink"] = verify_webhook(_SECRET, ts, sig, hit.body)
     out["sig_wrong_secret_fails"] = not verify_webhook("whsec-other", ts, sig, hit.body)
@@ -445,9 +450,11 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
         sig,
         hit.body,
         now=time.time() + 600.0,  # 10 min past delivery > 300s tolerance
-    )
+    ) and not verify_webhook(_SECRET, ts, sig, hit.body)
+    alt_ts = str(int(time.time()) - 5)
+    alt_sig = sign_webhook(_SECRET, alt_ts, hit.body)
     out["sig_freshness_explicit_disable"] = verify_webhook(
-        _SECRET, ts, sig, hit.body, tolerance_s=-1.0, now=time.time() + 10**9
+        _SECRET, alt_ts, alt_sig, hit.body, tolerance_s=-1.0, now=time.time() + 10**9
     )
     out["sig_malformed_inputs_fail"] = (
         not verify_webhook(_SECRET, ts, "nonsense", hit.body)
@@ -675,7 +682,7 @@ def _probe_retry(ctx: _Ctx) -> dict[str, bool]:
 
     # sink that accepts then stalls past the read timeout: unit-level
     # deliver_signed with a short timeout — retried, bounded, loud error
-    sink.stall_s = 1.0
+    sink.stall_s = 2.0
     t0 = time.monotonic()
     ok, err, attempts = deliver_signed(
         sink.url("/stall"), None, b"{}", timeout_s=0.2, backoff_s=0.01
@@ -992,7 +999,7 @@ def webhook_audit() -> dict[str, Any]:
         os.environ.pop(k, None)
     # The audit's real HTTP sink is deliberately loopback-only. Production
     # callback delivery remains public-network-only unless explicitly opted in.
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     sink = _Sink()
     out: dict[str, Any] = {}
     try:

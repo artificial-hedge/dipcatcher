@@ -119,9 +119,18 @@ def evidence_audit_findings(
     return findings
 
 
+# Regenerating the evidence index is a local script, not an open-ended job.
+_INDEX_BUILD_TIMEOUT_S = 180.0
+_INDEX_TIMEOUT_S = _INDEX_BUILD_TIMEOUT_S
+
+
 def check_evidence_index_fresh(root: Path) -> bool | None:
     """Regenerate ``docs/evidence/index.md`` to a temp file and byte-compare.
-    Returns None when the builder cannot run (missing script, nonzero exit)."""
+
+    Returns None when the index or the builder script is absent. Returns
+    False when the builder fails, the spawn errors, the deadline hits, or
+    the bytes differ — an unproven index is not fresh.
+    """
     script = root / "scripts" / "build_evidence_report.py"
     index_path = root / "docs" / "evidence" / "index.md"
     if not script.is_file() or not index_path.is_file():
@@ -129,13 +138,18 @@ def check_evidence_index_fresh(root: Path) -> bool | None:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8") as tmp:
         tmp_path = Path(tmp.name)
     try:
-        proc = subprocess.run(
-            [sys.executable, str(script), "--root", str(root), "--out", str(tmp_path)],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            proc = subprocess.run(
+                [sys.executable, str(script), "--root", str(root), "--out", str(tmp_path)],
+                capture_output=True,
+                text=True,
+                timeout=_INDEX_TIMEOUT_S,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return False
         if proc.returncode != 0:
-            return None
+            return False
         regenerated = tmp_path.read_bytes()
         committed = index_path.read_bytes()
         return regenerated == committed

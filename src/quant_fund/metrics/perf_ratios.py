@@ -27,10 +27,20 @@ def _as_returns(r: Array, min_obs: int = 20) -> Array:
     return arr
 
 
+def _finite_scalar(name: str, value: float) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be finite") from exc
+    if not np.isfinite(number):
+        raise ValueError(f"{name} must be finite")
+    return number
+
+
 def adjusted_sharpe_ratio(returns: Array, rf: float = 0.0) -> float:
     """Pezier-White (2006) skew/kurtosis-adjusted Sharpe (per-period)."""
     arr = _as_returns(returns)
-    excess = arr - rf
+    excess = arr - _finite_scalar("rf", rf)
     sd = float(excess.std(ddof=1))
     if sd <= 0.0:
         raise ValueError("zero dispersion")
@@ -47,6 +57,10 @@ def m_squared(
     """Modigliani-Modigliani M^2 (annualised), reported vs the benchmark risk."""
     port = _as_returns(returns)
     bench = _as_returns(benchmark)
+    rf = _finite_scalar("rf", rf)
+    periods = _finite_scalar("periods_per_year", periods_per_year)
+    if periods <= 0.0:
+        raise ValueError("periods_per_year must be finite and positive")
     sd = float(port.std(ddof=1))
     if sd <= 0.0:
         raise ValueError("zero portfolio dispersion")
@@ -55,7 +69,7 @@ def m_squared(
     m2_period = rf + sr * sd_bench
     return {
         "m2_period": float(m2_period),
-        "m2_annual": float(m2_period * periods_per_year),
+        "m2_annual": float(m2_period * periods),
         "sharpe": float(sr),
     }
 
@@ -64,7 +78,7 @@ def rachev_ratio(returns: Array, alpha: float = 0.05, beta: float = 0.05, rf: fl
     """Rachev ratio: expected top-``beta`` gain over expected worst-``alpha`` loss."""
     if not (0.0 < alpha < 0.5 and 0.0 < beta < 0.5):
         raise ValueError("alpha and beta must lie in (0, 0.5)")
-    x = _as_returns(returns) - rf
+    x = _as_returns(returns) - _finite_scalar("rf", rf)
     q_low = float(np.quantile(x, alpha))
     q_high = float(np.quantile(x, 1.0 - beta))
     left = x[x <= q_low]
@@ -78,7 +92,7 @@ def rachev_ratio(returns: Array, alpha: float = 0.05, beta: float = 0.05, rf: fl
 
 def gain_to_pain_ratio(returns: Array, rf: float = 0.0) -> float:
     """Schwager gain-to-pain: sum of returns over the sum of absolute losses."""
-    x = _as_returns(returns) - rf
+    x = _as_returns(returns) - _finite_scalar("rf", rf)
     pain = float(np.sum(np.maximum(-x, 0.0)))
     if pain <= 0.0:
         raise ValueError("no losses; gain-to-pain undefined")
@@ -87,6 +101,7 @@ def gain_to_pain_ratio(returns: Array, rf: float = 0.0) -> float:
 
 def upside_potential_ratio(returns: Array, mar: float = 0.0) -> float:
     """Sortino-van der Meer-Plantinga (1999) upside potential ratio."""
+    mar = _finite_scalar("mar", mar)
     x = _as_returns(returns)
     upside = float(np.mean(np.maximum(x - mar, 0.0)))
     downside = float(np.sqrt(np.mean(np.minimum(x - mar, 0.0) ** 2)))

@@ -6,6 +6,8 @@ SYNTHETIC correctness evidence, never market evidence.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import numpy as np
 import pytest
 
@@ -18,6 +20,13 @@ from quant_fund.models.hierarchical_conformal import (
     hcp_predict,
     weighted_measure_quantile,
 )
+
+
+@pytest.fixture(autouse=True)
+def _restore_numpy_rng() -> Iterator[None]:
+    state = np.random.get_state()
+    yield
+    np.random.set_state(state)
 
 
 def _hier_gaussian_groups(

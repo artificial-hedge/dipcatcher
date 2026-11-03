@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 QUALITY_REPORT_SCHEMA = "dipcatcher.data.quality.v1"
 
@@ -63,14 +63,23 @@ class QualityConfig(BaseModel):
     where the checks overlap (``stale_run_length``, ``max_abs_log_return``).
     """
 
-    stale_run_length: int = 5
-    max_abs_log_return: float = 0.5
-    mad_z_threshold: float = 3.5
-    expected_interval_seconds: float | None = None
-    gap_factor: float = 1.5
-    max_offenders: int = 8
+    stale_run_length: int = Field(default=5, ge=2)
+    max_abs_log_return: float = Field(default=0.5, gt=0, allow_inf_nan=False)
+    mad_z_threshold: float = Field(default=3.5, gt=0, allow_inf_nan=False)
+    expected_interval_seconds: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    gap_factor: float = Field(default=1.5, gt=0, allow_inf_nan=False)
+    max_offenders: int = Field(default=8, ge=0)
     symbol_column: str | None = None
     clock_column: str | None = None
+
+    @field_validator("symbol_column", "clock_column")
+    @classmethod
+    def _column_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("column name must be a non-empty string")
+        return value
 
 
 class QualityReport(BaseModel):

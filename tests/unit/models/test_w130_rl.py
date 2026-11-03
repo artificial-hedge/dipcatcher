@@ -17,6 +17,7 @@ from quant_fund.models.trajectory_transformer import (
     bench_trajectory_transformer,
     synth_offline,
 )
+from quant_fund.research.scorecard_budget import call_bench
 
 
 class TestDecisionTransformer:
@@ -51,7 +52,7 @@ class TestTrajectoryTransformer:
         assert len(tr) == 4 and len(tr[0]) == 10 and len(tr[0][0]) == 5
 
     def test_bench(self) -> None:
-        out = bench_trajectory_transformer(seed=11, n_ep=60, iters=150)
+        out = call_bench(bench_trajectory_transformer, seed=11)
         assert np.isfinite(out["synthetic_tt_reward"])
 
 

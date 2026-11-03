@@ -88,6 +88,22 @@ def test_delta_emits_sealed_file(two_epochs: tuple[Path, str, str]) -> None:
     assert verify_epoch_delta(payload, root) == []
 
 
+def test_delta_write_preserves_prior_file_on_crash(
+    two_epochs: tuple[Path, str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, prev, nxt = two_epochs
+    path = write_epoch_delta(root, prev, nxt, root)
+    prior = path.read_bytes()
+
+    def crash(_fd: int, _mode: str) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("quant_fund.utils.atomicio.os.fdopen", crash)
+    with pytest.raises(KeyboardInterrupt):
+        write_epoch_delta(root, prev, nxt, root)
+    assert path.read_bytes() == prior
+
+
 def test_delta_rejects_same_epoch(two_epochs: tuple[Path, str, str]) -> None:
     root, prev, _ = two_epochs
     with pytest.raises(ValueError, match="must differ"):

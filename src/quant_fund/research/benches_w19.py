@@ -125,7 +125,7 @@ def bench_langevin_impact() -> dict[str, float]:
             if k != "runtime_seconds"  # wall-clock telemetry, not a diagnostic
         }
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -148,7 +148,7 @@ def bench_event_time_flow() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -176,7 +176,7 @@ def bench_fukasawa_iv() -> dict[str, float]:
             if k not in {"runtime_seconds", "synthetic_runtime_seconds"}
         }
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -200,7 +200,7 @@ def bench_ivs_diffusion() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -219,7 +219,7 @@ def bench_rccp() -> dict[str, float]:
         raw = _rccp_core_bench(seed=_RCCP_SEED)
         mapped = {k: float(v) for k, v in raw.items()}
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -238,5 +238,5 @@ def bench_dcp() -> dict[str, float]:
         raw = _dcp_core_bench(seed=_DCP_SEED)
         mapped = {k: float(v) for k, v in raw.items()}
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

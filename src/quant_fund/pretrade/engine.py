@@ -142,7 +142,7 @@ class PretradeEngine:
         ref_ts_ns: int,
         halted: bool = False,
         sho_restricted: bool = False,
-        locate_ok: bool = True,
+        locate_ok: bool = False,
         bid: float = 0.0,
     ) -> None:
         sym = self._symbol(symbol_id)
@@ -153,7 +153,7 @@ class PretradeEngine:
         sym.halted = 1 if halted else 0
         sym.sho = 1 if sho_restricted else 0
         sym.locate = 1 if locate_ok else 0
-        sym.bid = float(bid) if bid == bid else 0.0
+        sym.bid = float(bid) if math.isfinite(bid) else 0.0
         self.recompute_exposure()
 
     def update_account(
@@ -164,16 +164,25 @@ class PretradeEngine:
         session_start_nav: float | None = None,
         peak_nav: float | None = None,
     ) -> None:
+        if not math.isfinite(nav):
+            raise ValueError("nav must be finite")
+        if session_start_nav is not None and not math.isfinite(session_start_nav):
+            raise ValueError("session start nav must be finite")
+        if peak_nav is not None and not math.isfinite(peak_nav):
+            raise ValueError("peak nav must be finite")
+        try:
+            stamp = int(mark_ts_ns)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("mark timestamp must be an integer") from exc
         self.book.nav = float(nav)
         if session_start_nav is not None:
             self.book.session_start = float(session_start_nav)
         if peak_nav is not None:
             self.book.peak = float(peak_nav)
-        elif nav == nav and nav > self.book.peak:
+        elif nav > self.book.peak:
             self.book.peak = float(nav)
         self._recompute_floors()
-        stamp = int(mark_ts_ns)
-        if nav == nav and nav > 0.0 and stamp >= 0:
+        if nav > 0.0 and stamp >= 0:
             self.book.mark_deadline = stamp + self._max_mark_age
             self.book.mark_ts = stamp
             self.book.name_limit = self._concentration * float(nav)
@@ -244,7 +253,7 @@ class PretradeEngine:
     ) -> None:
         """Cold-path lot restore. A full table fails closed."""
         sym = self._symbol(symbol_id)
-        if qty != qty or qty <= 0.0:
+        if not math.isfinite(qty) or qty <= 0.0:
             raise ValueError("lot quantity must be finite and positive")
         if sym.nlot >= self.book.max_lots:
             raise RuntimeError("lot table is full")
@@ -386,7 +395,7 @@ class PretradeEngine:
         return self.book.syms[symbol_id]
 
     def _set_ref(self, sym: SymbolSlot, ref: float, ref_ts: int) -> None:
-        if ref != ref or ref <= 0.0:
+        if not math.isfinite(ref) or ref <= 0.0:
             sym.ref_ok = 0
             sym.ref = 0.0
             sym.hi = 0.0

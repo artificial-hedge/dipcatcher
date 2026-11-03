@@ -54,6 +54,9 @@ from fx1.sdk import (
 )
 from fx1.serve.backends import BackendNotConfiguredError as BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
+from fx1.serve.harness_pin import _pinned_harness_exchange
+from fx1.serve.transport_text import bad_base_url, fault, unreachable
+from fx1.serve.transport_text import timeout_s as checked_timeout
 from fx1.serve.usage_report import UsageReport
 
 __all__ = [
@@ -71,9 +74,7 @@ Transport = Callable[
     "tuple[int, Mapping[str, str], bytes]",
 ]
 
-# Patch three-state: an omitted kwarg keeps the declared policy while
-# an explicit ``None`` sends the JSON-null that clears the bound.
-_UNSET: Any = object()
+_UNSET: Any = object()  # omitted patch keeps policy; explicit None clears it
 
 
 class HarnessTransportError(RuntimeError):
@@ -129,8 +130,7 @@ def _urllib_transport(
         req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
-            return resp.status, dict(resp.headers), resp.read()
+        return _pinned_harness_exchange(req, timeout_s)
     except urllib.error.HTTPError as exc:
         # HTTPError owns the rejected response/socket.  The normal ``with``
         # path cannot close it because urlopen raises before it is entered.
@@ -141,13 +141,11 @@ def _urllib_transport(
             with contextlib.suppress(Exception):
                 exc.close()
     except urllib.error.URLError as exc:
-        raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
+        raise HarnessTransportError(unreachable(url, exc.reason)) from exc
     except (http.client.HTTPException, OSError) as exc:
-        # socket faults before a status line exists — e.g. a mid-upload
-        # reset when the server rejects early on headers alone (413
-        # body-cap) — are transport errors under the same contract as
-        # URLError; don't leak raw errno classes to callers.
-        raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
+        # Socket faults before a status line, including a 413 body-cap reset,
+        # are transport errors under the same contract as URLError.
+        raise HarnessTransportError(fault(url, exc)) from exc
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
@@ -295,9 +293,8 @@ class HarnessClient:
     ) -> None:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"base_url must be http(s)://host[:port], got {base_url!r}")
-        if timeout_s <= 0:
-            raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
+            raise ValueError(bad_base_url(base_url))
+        timeout_s = checked_timeout(timeout_s)
         if max_retries < 0:
             raise ValueError(f"max_retries must be >= 0, got {max_retries}")
         if retry_backoff_s <= 0:
@@ -314,8 +311,7 @@ class HarnessClient:
         self._headers = {"X-API-Key": api_key} if api_key else {}
         self._timeout_s = timeout_s
         self._transport = transport or _urllib_transport
-        self._max_retries = max_retries
-        self._retry_backoff_s = retry_backoff_s
+        self._max_retries, self._retry_backoff_s = max_retries, retry_backoff_s
         self._retry_writes = retry_writes
         self._max_retry_wait_s = max_retry_wait_s
         self._sleep = sleep
@@ -324,8 +320,11 @@ class HarnessClient:
         self._clock = clock
         self._last_api_version: str | None = None
         self._last_response_headers: dict[str, str] = {}
-        self._cb_failures = 0
-        self._cb_open_until = 0.0
+        self._cb_failures, self._cb_open_until = 0, 0.0
+
+    def __repr__(self) -> str:
+        flag = "set" if self._headers.get("X-API-Key") else "unset"
+        return f"HarnessClient(credential={flag})"
 
     # ---- transport ----------------------------------------------------
 

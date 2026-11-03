@@ -48,7 +48,7 @@ def bench_vmd() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_VMD_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -60,7 +60,7 @@ def bench_stockwell() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_STOCKWELL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -72,7 +72,7 @@ def bench_cca() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CCA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -84,7 +84,7 @@ def bench_isomap() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ISOMAP_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -96,7 +96,7 @@ def bench_kriging() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_KRIGING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -110,6 +110,6 @@ def bench_innovations_ets() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_INNOVATIONS_ETS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

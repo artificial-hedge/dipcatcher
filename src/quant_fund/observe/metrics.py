@@ -8,7 +8,9 @@ they are not a live P&L claim.
 from __future__ import annotations
 
 import math
+import re
 import threading
+from collections.abc import Callable
 from typing import Any
 
 from quant_fund.observe.flags import STAGES, observe_enabled
@@ -29,7 +31,128 @@ METRIC_HELP = {
     "dipcatcher_simulation_net_exposure": (
         "Simulated net exposure. Not a live trading position and not a research score."
     ),
+    "dipcatcher_ready": "1 when the lab process may accept work. 0 when readiness is closed.",
+    "dipcatcher_draining": "1 when the lab SIGTERM drain latch is set.",
+    "dipcatcher_kill_switch_blocking": "1 when the operator kill file blocks new orders.",
+    "dipcatcher_kill_switch_info": (
+        "Current operator kill code. The code label is a stable reader code, never the file body."
+    ),
+    "dipcatcher_http_requests_total": (
+        "HTTP responses by status code. Operational telemetry, not a research score."
+    ),
+    "dipcatcher_http_request_duration_seconds": (
+        "HTTP request latency in seconds. Operational telemetry, not a research score."
+    ),
 }
+
+_OPS_CODE = re.compile(r"^[A-Za-z0-9_:-]{1,64}$")
+_OpsSampler = Callable[[], tuple[float, float, float, str]]
+_OPS_SAMPLER: _OpsSampler | None = None
+
+_COUNTER_HELP = {
+    "dipcatcher_live_order_submits_total": (
+        "Operational telemetry for live order submissions; not a live P&L claim."
+    ),
+    "dipcatcher_live_order_results_total": (
+        "Operational telemetry for live order results; not a live P&L claim."
+    ),
+    "dipcatcher_live_fill_records_total": (
+        "Operational telemetry for fill records, which are not unique economic executions; "
+        "not a live P&L claim."
+    ),
+    "dipcatcher_live_pretrade_denials_total": (
+        "Operational telemetry for pre-trade denials, with one primary reason per decision; "
+        "not a live P&L claim."
+    ),
+    "dipcatcher_live_kill_switch_transitions_total": (
+        "Operational telemetry for live kill-switch transitions; not a live P&L claim."
+    ),
+    "dipcatcher_live_order_recovery_attempts_total": (
+        "Operational telemetry for live order recovery attempts; not a live P&L claim."
+    ),
+}
+
+_COUNTER_LABELS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
+    "dipcatcher_live_order_submits_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+    ),
+    "dipcatcher_live_order_results_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        (
+            "status",
+            (
+                "accepted",
+                "filled",
+                "partially_filled",
+                "canceled",
+                "rejected",
+                "not_acknowledged",
+                "expired",
+                "replaced",
+                "done_for_day",
+                "pending_cancel",
+                "pending_replace",
+                "suspended",
+                "unmapped",
+                "response_lost",
+            ),
+        ),
+    ),
+    "dipcatcher_live_fill_records_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        (
+            "verdict",
+            ("accepted", "out_of_order_fill", "replaced_provisional", "orphan_fill"),
+        ),
+    ),
+    "dipcatcher_live_pretrade_denials_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        ("kind", ("order", "cancel")),
+        (
+            "primary_reason",
+            (
+                "kill_switch",
+                "stale_data",
+                "non_finite",
+                "market_closed",
+                "halted",
+                "max_order_quantity",
+                "max_order_notional",
+                "price_collar",
+                "position_quantity",
+                "position_notional",
+                "gross_exposure",
+                "net_exposure",
+                "concentration",
+                "duplicate_order",
+                "order_rate",
+                "message_rate",
+                "reg_sho",
+                "pattern_day_trader",
+                "good_faith_violation",
+                "daily_loss",
+                "trailing_drawdown",
+                "internal_error",
+                "buying_power",
+                "state_full",
+                "unknown_symbol",
+                "non_monotonic_time",
+                "manual_kill",
+                "other",
+            ),
+        ),
+    ),
+    "dipcatcher_live_kill_switch_transitions_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        ("state", ("latched", "reset")),
+    ),
+    "dipcatcher_live_order_recovery_attempts_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        ("outcome", ("recovered", "not_found", "error")),
+    ),
+}
+
+_ALL_METRIC_HELP = {**METRIC_HELP, **_COUNTER_HELP}
 
 
 class _Histogram:
@@ -56,6 +179,9 @@ class _Registry:
         self.histograms: dict[str, _Histogram] = {}
         self.errors: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
+        self.counters: dict[str, dict[tuple[str, ...], int]] = {}
+        self.http_counts: dict[tuple[str, str], int] = {}
+        self.http_latency: dict[str, _Histogram] = {}
 
     def observe(self, stage: str, seconds: float) -> None:
         if stage not in STAGES:
@@ -73,11 +199,32 @@ class _Registry:
         with self._lock:
             self.errors[stage] = self.errors.get(stage, 0) + 1
 
+    def observe_http(self, service: str, code: str, seconds: float) -> None:
+        with self._lock:
+            key = (service, code)
+            self.http_counts[key] = self.http_counts.get(key, 0) + 1
+            histogram = self.http_latency.get(service)
+            if histogram is None:
+                histogram = _Histogram()
+                self.http_latency[service] = histogram
+            histogram.observe(seconds)
+
     def gauge(self, name: str, value: float) -> None:
         if name not in METRIC_HELP or not math.isfinite(value):
             raise ValueError(f"cannot record gauge {name}")
         with self._lock:
             self.gauges[name] = float(value)
+
+    def counter(self, name: str, values: tuple[str, ...]) -> None:
+        labels = _COUNTER_LABELS.get(name)
+        if labels is None or len(values) != len(labels):
+            raise ValueError(f"cannot record counter {name}")
+        for (label, allowed), value in zip(labels, values, strict=True):
+            if value not in allowed:
+                raise ValueError(f"invalid {label} for {name}")
+        with self._lock:
+            series = self.counters.setdefault(name, {})
+            series[values] = series.get(values, 0) + 1
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
@@ -93,6 +240,16 @@ class _Registry:
                 "histograms": histograms,
                 "errors": dict(self.errors),
                 "gauges": dict(self.gauges),
+                "counters": {name: dict(series) for name, series in self.counters.items()},
+                "http_counts": dict(self.http_counts),
+                "http_latency": {
+                    service: {
+                        "bucket_counts": list(histogram.bucket_counts),
+                        "total": histogram.total,
+                        "n": histogram.n,
+                    }
+                    for service, histogram in self.http_latency.items()
+                },
             }
 
     def reset(self) -> None:
@@ -100,6 +257,9 @@ class _Registry:
             self.histograms.clear()
             self.errors.clear()
             self.gauges.clear()
+            self.counters.clear()
+            self.http_counts.clear()
+            self.http_latency.clear()
 
 
 REGISTRY = _Registry()
@@ -121,6 +281,15 @@ def record_error(stage: str) -> None:
     REGISTRY.error(stage)
 
 
+def record_http_request(service: str, status: int, seconds: float) -> None:
+    """Count one HTTP response when observability is on. Ignore unknown labels."""
+    if not observe_enabled():
+        return
+    if service not in {"lab", "research"} or status < 100 or status > 599:
+        return
+    REGISTRY.observe_http(service, str(status), seconds)
+
+
 def set_data_freshness(seconds: float) -> None:
     if not observe_enabled():
         return
@@ -134,6 +303,39 @@ def set_simulation_state(*, pnl: float, gross_exposure: float, net_exposure: flo
     REGISTRY.gauge("dipcatcher_simulation_pnl", pnl)
     REGISTRY.gauge("dipcatcher_simulation_gross_exposure", gross_exposure)
     REGISTRY.gauge("dipcatcher_simulation_net_exposure", net_exposure)
+
+
+def _record_live_counter(name: str, values: tuple[str, ...]) -> None:
+    if not observe_enabled():
+        return
+    REGISTRY.counter(name, values)
+
+
+def record_live_order_submit(*, venue: str) -> None:
+    _record_live_counter("dipcatcher_live_order_submits_total", (venue,))
+
+
+def record_live_order_result(*, venue: str, status: str) -> None:
+    _record_live_counter("dipcatcher_live_order_results_total", (venue, status))
+
+
+def record_live_fill_record(*, venue: str, verdict: str) -> None:
+    _record_live_counter("dipcatcher_live_fill_records_total", (venue, verdict))
+
+
+def record_live_pretrade_denial(*, venue: str, kind: str, primary_reason: str) -> None:
+    _record_live_counter(
+        "dipcatcher_live_pretrade_denials_total",
+        (venue, kind, primary_reason),
+    )
+
+
+def record_live_kill_switch_transition(*, venue: str, state: str) -> None:
+    _record_live_counter("dipcatcher_live_kill_switch_transitions_total", (venue, state))
+
+
+def record_live_order_recovery(*, venue: str, outcome: str) -> None:
+    _record_live_counter("dipcatcher_live_order_recovery_attempts_total", (venue, outcome))
 
 
 def histogram_quantile_upper(stage: str, quantile: float) -> float:
@@ -151,6 +353,61 @@ def histogram_quantile_upper(stage: str, quantile: float) -> float:
         if cumulative >= target:
             return bound
     return math.inf
+
+
+def register_ops_sampler(sampler: _OpsSampler) -> None:
+    """Register the lab scrape sampler. Values are read on each exposition."""
+    global _OPS_SAMPLER
+    _OPS_SAMPLER = sampler
+
+
+def clear_ops_sampler() -> None:
+    """Drop the lab scrape sampler. Used when the process stops and in tests."""
+    global _OPS_SAMPLER
+    _OPS_SAMPLER = None
+
+
+def _append_operator_gauges(lines: list[str]) -> None:
+    """Add readiness, drain, and kill series when the lab process registered them.
+
+    The series are operator signals, not research scores. A missing sampler
+    leaves the exposition unchanged. The kill label is the reader code.
+    """
+    sampler = _OPS_SAMPLER
+    if sampler is None:
+        return
+    ready, draining, blocking, code = sampler()
+    if not _unit_gauge(ready) or not _unit_gauge(draining) or not _unit_gauge(blocking):
+        return
+    safe = code if _OPS_CODE.fullmatch(code) else "kill_switch_invalid"
+    _emit_gauge(lines, "dipcatcher_ready", ready)
+    _emit_gauge(lines, "dipcatcher_draining", draining)
+    _emit_gauge(lines, "dipcatcher_kill_switch_blocking", blocking)
+    _help(lines, "dipcatcher_kill_switch_info", "gauge")
+    lines.append(f'dipcatcher_kill_switch_info{{code="{safe}"}} 1')
+
+
+def _unit_gauge(value: object) -> bool:
+    return isinstance(value, float) and value in {0.0, 1.0}
+
+
+def _emit_gauge(lines: list[str], name: str, value: float) -> None:
+    _help(lines, name, "gauge")
+    lines.append(f"{name} {_num(value)}")
+
+
+def _append_live_counters(lines: list[str], snap: dict[str, Any]) -> None:
+    """Emit labeled live counters. Empty series stay out of the exposition."""
+    for name, labels in _COUNTER_LABELS.items():
+        series = snap["counters"].get(name)
+        if not series:
+            continue
+        _help(lines, name, "counter")
+        for values in sorted(series):
+            label_text = ",".join(
+                f'{label}="{value}"' for (label, _), value in zip(labels, values, strict=True)
+            )
+            lines.append(f"{name}{{{label_text}}} {series[values]}")
 
 
 def render_prometheus() -> str:
@@ -191,14 +448,65 @@ def render_prometheus() -> str:
         if name in snap["gauges"]:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
+    _append_operator_gauges(lines)
+    _append_live_counters(lines, snap)
+    _append_http(lines, snap)
     text = "\n".join(lines)
     if text:
         text += "\n"
     return text
 
 
+def _append_http(lines: list[str], snap: dict[str, Any]) -> None:
+    counts: dict[tuple[str, str], int] = snap["http_counts"]
+    if counts:
+        _append_http_counts(lines, counts)
+    latency: dict[str, dict[str, Any]] = snap["http_latency"]
+    if latency:
+        _append_http_latency(lines, latency)
+
+
+def _append_http_counts(lines: list[str], counts: dict[tuple[str, str], int]) -> None:
+    _help(lines, "dipcatcher_http_requests_total", "counter")
+    for service, code in sorted(counts):
+        lines.append(
+            f'dipcatcher_http_requests_total{{code="{code}",service="{service}"}} '
+            f"{counts[(service, code)]}"
+        )
+
+
+def _append_http_latency(lines: list[str], latency: dict[str, dict[str, Any]]) -> None:
+    _help(lines, "dipcatcher_http_request_duration_seconds", "histogram")
+    for service in ("lab", "research"):
+        histogram = latency.get(service)
+        if histogram is not None:
+            _append_http_buckets(lines, service, histogram)
+
+
+def _append_http_buckets(lines: list[str], service: str, histogram: dict[str, Any]) -> None:
+    cumulative = 0
+    for index, bound in enumerate(BUCKETS):
+        cumulative += histogram["bucket_counts"][index]
+        lines.append(
+            "dipcatcher_http_request_duration_seconds_bucket"
+            f'{{le="{_num(bound)}",service="{service}"}} {cumulative}'
+        )
+    cumulative += histogram["bucket_counts"][-1]
+    lines.append(
+        "dipcatcher_http_request_duration_seconds_bucket"
+        f'{{le="+Inf",service="{service}"}} {cumulative}'
+    )
+    lines.append(
+        "dipcatcher_http_request_duration_seconds_sum"
+        f'{{service="{service}"}} {_num(histogram["total"])}'
+    )
+    lines.append(
+        f'dipcatcher_http_request_duration_seconds_count{{service="{service}"}} {histogram["n"]}'
+    )
+
+
 def _help(lines: list[str], name: str, metric_type: str) -> None:
-    lines.append(f"# HELP {name} {METRIC_HELP[name]}")
+    lines.append(f"# HELP {name} {_ALL_METRIC_HELP[name]}")
     lines.append(f"# TYPE {name} {metric_type}")
 
 

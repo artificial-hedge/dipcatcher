@@ -39,6 +39,8 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from fx1.serve.api_audit_reuse import _OiAppReuse, isolated_client
+
 _MESSAGES_PATH = "/v1/messages"
 _LEGACY_PATH = "/v1/completions"
 _PING_MSG = "clean:ping"
@@ -75,32 +77,12 @@ def _client(
     api_key: str | None = None,
 ) -> tuple[TestClient, ModuleType]:
     """(TestClient, api_module) — isolated env per construction."""
-    from fastapi.testclient import TestClient
-
-    import fx1.serve.api as api_mod
-    from fx1.harness import Harness
-
     # An injected runner keeps the audit hermetic — probes never spawn real
     # lab processes, exactly like harness_audit's in-process probes.
-    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-        return 0, f"ran:{' '.join(argv)}", ""
-
-    saved = {
-        k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
-    }
-    try:
-        if api_key is None:
-            os.environ.pop(_API_KEY_ENV, None)
-        else:
-            os.environ[_API_KEY_ENV] = api_key
-        app = api_mod.create_app(harness=Harness(runner=fake_runner))
-        return TestClient(app, raise_server_exceptions=False), api_mod
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+    return isolated_client(
+        api_key,
+        (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY"),
+    )
 
 
 def api_audit() -> dict[str, Any]:
@@ -109,7 +91,8 @@ def api_audit() -> dict[str, Any]:
 
     _RateLimiter._clock_box = _clk
     try:
-        return _api_audit_impl(_clk)
+        with _OiAppReuse():
+            return _api_audit_impl(_clk)
     finally:
         _RateLimiter._clock_box = None
 
@@ -987,8 +970,10 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         max_inflight=2,
     )
     qc = _TC2(qapp)
-    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
-    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
+    # Release the busy workers after the queued-cancel asserts, not on a fixed sleep.
+    _queue_release = threading.Event()
+    qapp.state.jobs_executor.submit(lambda: _queue_release.wait(timeout=5))
+    qapp.state.jobs_executor.submit(lambda: _queue_release.wait(timeout=5))
     j1 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     j2 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     out["job_queues_when_workers_busy"] = (
@@ -1006,6 +991,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         qc.get(f"/harness/jobs/{j2}").json()["result"] is None
         and qc.get(f"/harness/jobs/{j2}").json()["finished_at"] is not None
     )
+    _queue_release.set()
     # once a worker frees, j1 dequeues; deleting a live or finished job is 409
     dl = time.monotonic() + 10.0
     while qc.get(f"/harness/jobs/{j1}").json()["status"] == "queued" and time.monotonic() < dl:
@@ -1066,7 +1052,9 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
     )
     cbc = _TC2(cb_app)
     cb_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
-    cb_thread = _threading.Thread(target=cb_srv.serve_forever, daemon=True)
+    cb_thread = _threading.Thread(
+        target=cb_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    )
     cb_thread.start()
     cb_url = f"http://127.0.0.1:{cb_srv.server_address[1]}/hook"
     _dead_sock = _socket.socket()
@@ -1076,8 +1064,8 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
     # The probes below submit loopback callback_urls — the SSRF guard
     # refuses them unless the private-networks opt-in is set for this leg,
     # read per request (saved/restored verbatim).
-    saved_webhook_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_webhook_env = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
         jid_cb = ok_job.json()["job_id"]
@@ -1181,8 +1169,9 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
             and bool(st_dead.get("callback_error"))
         )
         # cancelling a queued job is a terminal transition — it fires too
-        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
-        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
+        _cb_release = threading.Event()
+        cb_app.state.jobs_executor.submit(lambda: _cb_release.wait(timeout=5))
+        cb_app.state.jobs_executor.submit(lambda: _cb_release.wait(timeout=5))
         qid = _submit_cb(cb_url)
         cxl = cbc.delete(f"/harness/jobs/{qid}")
         deadline = time.monotonic() + 10.0
@@ -1197,6 +1186,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
             and _cb_hits[-1]["job_id"] == qid
             and _cb_hits[-1]["status"] == "cancelled"
         )
+        _cb_release.set()
         dl = time.monotonic() + 10.0
         while cbc.get("/metrics").json()["inflight"] != 0 and time.monotonic() < dl:
             time.sleep(0.1)
@@ -1273,9 +1263,9 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         cb_srv.shutdown()
         cb_srv.server_close()
         if saved_webhook_env is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
         else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_webhook_env
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_webhook_env
 
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
     try:
@@ -2111,10 +2101,14 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         evc.get(f"/harness/jobs/{ev_jid}/events?timeout_s=0.5").status_code == 422
     )
     # a blocked worker keeps the next job queued: the stream emits the
-    # queued frame, keeps alive on the quiet job, then closes at timeout_s
-    ev_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    # queued frame, keeps alive on the quiet job, then closes at timeout_s.
+    # The route rejects timeout_s < 1. Hold the worker until that GET
+    # returns so the only data frame is still "queued".
+    _blk_hold = threading.Event()
+    ev_app.state.jobs_executor.submit(lambda: _blk_hold.wait(timeout=5))
     blk_jid = evc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     blk_resp = evc.get(f"/harness/jobs/{blk_jid}/events?timeout_s=1")
+    _blk_hold.set()
     blk_statuses = [
         _json.loads(ln[len("data: ") :])["status"]
         for ln in blk_resp.text.splitlines()
@@ -2192,7 +2186,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=1,
     )
-    cap_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    cap_app.state.jobs_executor.submit(lambda: time.sleep(0.3))
     cc2 = _TC2(cap_app)
     cap_out = cc2.post(
         "/harness/jobs/batch",
@@ -2308,7 +2302,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         max_inflight=1,
     )
     with _TC2(drain_app) as dc:
-        drain_app.state.jobs_executor.submit(lambda: time.sleep(3))
+        drain_app.state.jobs_executor.submit(lambda: time.sleep(0.3))
         jid_q = dc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     dead = drain_app.state.job_store.get(jid_q)
     out["shutdown_cancels_queued"] = (
@@ -4048,12 +4042,14 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             pass
 
     _ft_srv = ThreadingHTTPServer(("127.0.0.1", 0), _FTHook)
-    _threading.Thread(target=_ft_srv.serve_forever, daemon=True).start()
+    _threading.Thread(
+        target=_ft_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    ).start()
     _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
     # loopback callback_url is refused by the SSRF guard without the
     # private-networks opt-in, read per request (saved/restored verbatim).
-    saved_wh_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_wh_env = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
 
     def _wait_cb(job_id: str) -> dict[str, Any]:
         deadline = time.monotonic() + 10.0
@@ -4132,9 +4128,9 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.shutdown()
     _ft_srv.server_close()
     if saved_wh_env is None:
-        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
     else:
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_wh_env
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_wh_env
 
 
 def _probe_backend_probes(  # NOSONAR
@@ -5303,7 +5299,9 @@ def _probe_backend_probes(  # NOSONAR
             pass
 
     ev_srv = ThreadingHTTPServer(("127.0.0.1", 0), _EvalHook)
-    ev_thread = _threading.Thread(target=ev_srv.serve_forever, daemon=True)
+    ev_thread = _threading.Thread(
+        target=ev_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    )
     ev_thread.start()
     ev_cb_url = f"http://127.0.0.1:{ev_srv.server_address[1]}/evalhook"
     import socket as _socket2  # noqa: PLC0415
@@ -5314,8 +5312,8 @@ def _probe_backend_probes(  # NOSONAR
     _dsock.close()
     # loopback callback_url needs the private-networks opt-in, read per
     # request (saved/restored verbatim).
-    saved_ev_wh = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_ev_wh = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         sub_cb = eval_app.post(
             "/harness/evals",
@@ -5429,9 +5427,9 @@ def _probe_backend_probes(  # NOSONAR
         ev_srv.shutdown()
         ev_srv.server_close()
         if saved_ev_wh is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
         else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_ev_wh
+            os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_ev_wh
 
     # --- OpenAI-compatible ingress ------------------------------------------
     # POST /v1/chat/completions is a drop-in OpenAI surface over the gated
@@ -8122,10 +8120,8 @@ def _probe_backend_probes(  # NOSONAR
     out["batch_cancel_terminal_409"] = (
         fb.post(f"/v1/batches/{bterm['id']}/cancel").status_code == 409
     )
-    # cooperative cancel: a gated backend holds the worker mid-batch;
-    # cancel lands 'cancelling', the batch finishes 'cancelled' with the
-    # lines completed so far written to the output file
     gate_ev = _threading.Event()
+    entered = _threading.Event()
 
     class _GateBackend(_OiBackend):
         def complete(
@@ -8134,6 +8130,7 @@ def _probe_backend_probes(  # NOSONAR
             *,
             sampling: SamplingParams | None = None,
         ) -> str:
+            entered.set()
             gate_ev.wait(10)
             return super().complete(messages, sampling=sampling)
 
@@ -8143,6 +8140,7 @@ def _probe_backend_probes(  # NOSONAR
         "/v1/batches",
         json={"input_file_id": gid, "endpoint": "/v1/chat/completions"},
     )
+    assert entered.wait(10)
     gcc = gapp.post(f"/v1/batches/{gcb.json()['id']}/cancel")
     gate_ev.set()
     gterm = _wait_batch(gapp, gcb.json()["id"])
@@ -8192,12 +8190,14 @@ def _probe_backend_probes(  # NOSONAR
             pass
 
     _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
-    _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
+    _threading.Thread(
+        target=_bwh_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    ).start()
     _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
     # loopback callback_url needs the private-networks opt-in, read per
     # request (saved/restored verbatim).
-    saved_bwh_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    saved_bwh_env = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     bwh_fid = _upload(fb)["id"]
     bwh = fb.post(
         "/v1/batches",
@@ -8264,9 +8264,9 @@ def _probe_backend_probes(  # NOSONAR
     _bwh_srv.shutdown()
     _bwh_srv.server_close()
     if saved_bwh_env is None:
-        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
     else:
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_bwh_env
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = saved_bwh_env
     # Submit-time guards: a secret without a url is a 422, never a zombie.
     bad_cb = fb.post(
         "/v1/batches",
@@ -9239,7 +9239,7 @@ def _probe_backend_probes(  # NOSONAR
         def complete(
             self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
         ) -> str:
-            time.sleep(0.8)
+            time.sleep(0.3)
             return super().complete(messages, sampling=sampling)
 
     rp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _ReplaySlowBackend())

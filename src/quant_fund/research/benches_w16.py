@@ -120,7 +120,7 @@ def bench_vol_loss_decomposition() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -156,7 +156,7 @@ def bench_hierarchical_conformal() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -197,7 +197,7 @@ def bench_multisource_conformal() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -236,7 +236,7 @@ def bench_extra_tilt() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -274,7 +274,7 @@ def bench_forecast_selection() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -379,5 +379,5 @@ def bench_rl_market_maker() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

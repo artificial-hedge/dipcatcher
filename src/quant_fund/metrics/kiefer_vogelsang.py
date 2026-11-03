@@ -35,6 +35,8 @@ one deterministic simulation of ξ_b quantiles; deterministic
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -67,20 +69,40 @@ def fixedb_t(x: FloatArray, b: float = 0.1) -> dict[str, float]:
     return {"t_b": t_b, "j_hat": j_hat, "b": b, "m": float(m), "n": float(n)}
 
 
+def _bartlett_quadratic(rows: FloatArray, m: int) -> FloatArray:
+    """Row-wise xᵀKx for the Bartlett kernel K_ij = max(0, 1-|i-j|/m).
+
+    K is symmetric Toeplitz, so each quadratic form is a lag-weighted
+    autocorrelation. A zero-padded FFT computes every lag in one pass;
+    the weights match the dense kernel out to rounding of the transform.
+    """
+    n = rows.shape[1]
+    spec = np.fft.rfft(rows, n=2 * n, axis=1)
+    ac = np.fft.irfft(spec.real**2 + spec.imag**2, n=2 * n, axis=1)[:, :n]
+    m_use = min(m, n)
+    weights = 1.0 - np.arange(m_use, dtype=np.float64) / m
+    jb = ac[:, 0] * weights[0]
+    if m_use > 1:
+        jb = jb + 2.0 * (ac[:, 1:m_use] * weights[1:]).sum(axis=1)
+    return np.asarray(jb, dtype=np.float64)
+
+
+@lru_cache(maxsize=8)
 def _xi_b_samples(b: float, n_grid: int, n_rep: int, seed: int = 777) -> FloatArray:
     """Simulate ξ_b = W(1)/√J_b with J_b = ∫∫ k((r-s)/b)
     dB(r)dB(s) over Brownian-bridge increments — the paper's
-    own simulation approach (demeaned increments = bridge)."""
+    own simulation approach (demeaned increments = bridge).
+
+    Repeated calls with the same bandwidth reuse the draw. The critical
+    values are a fixed internal simulation, not a function of the series.
+    """
     rng = np.random.default_rng(seed)
     z = rng.normal(0, 1, (n_rep, n_grid))
     dz = z / np.sqrt(n_grid)  # BM increments scaled
     db = dz - dz.mean(axis=1, keepdims=True)  # bridge increments
     w1 = dz.sum(axis=1)  # W(1)
-    i = np.arange(n_grid)
     m = max(1, int(round(b * n_grid)))
-    k = _bartlett((i[:, None] - i[None, :]) / m)
-    jb = np.einsum("ri,ij,rj->r", db, k, db)
-    jb = np.clip(jb, 1e-12, None)
+    jb = np.clip(_bartlett_quadratic(db, m), 1e-12, None)
     return np.asarray(w1 / np.sqrt(jb), dtype=np.float64)
 
 

@@ -5,8 +5,7 @@ drawdown, liquidity, contextual bandits, conformal, e-values,
 Jackknife+, CRC, weighted CQR, interval caps, quantile Thompson,
 Northset (order book + candlesticks). robinhood+ is a core forecast
 engine (ADR-023) and an optional catalog family via
-``dipcatcher robinhood-plus``.
-Proper scores only — no Sharpe.
+``dipcatcher robinhood-plus``. Proper scores only — no Sharpe.
 """
 
 from __future__ import annotations
@@ -2362,9 +2361,10 @@ from quant_fund.research.catalog import (
     tail_es_battery_keys_present,
     tail_var_battery_keys_present,
 )
+from quant_fund.research.ci_blob_cache import bench_ids, cached_family_blobs
 from quant_fund.utils.hashing import canonical_frame_fingerprint, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
-from quant_fund.utils.seeds import set_global_seed
+from quant_fund.utils.seeds import pin_catalog_threads, set_global_seed
 
 
 def _atomic_write_text(path: Path, content: str) -> None:
@@ -2797,10 +2797,8 @@ def _provenance(
             default=lambda obj: getattr(obj, "__name__", str(obj)),
         ).encode("utf-8")
     )
-    # Shape-only provenance is insufficient: two datasets can share the same
-    # dimensions while containing different observations.  Polars' row hash
-    # is deterministic for the materialized frame and keeps the receipt
-    # independent of filesystem paths and cache locations.
+    # Row hash, not shape: equal dimensions can hide different observations.
+    # Polars' hash is deterministic and independent of paths and caches.
     content_hash = canonical_frame_fingerprint(frame)
     northset_inputs: dict[str, Any] = {}
     if northset_frame is not None:
@@ -3005,19 +3003,11 @@ def _ranker_data_snooping(
     n_boot: int = 1000,
     seed: int = 7,
 ) -> dict[str, Any] | None:
-    """Data-snooping battery over the ranker universe (research diagnostic).
+    """Data-snooping battery over ranker IC series. Returns None under 10 dates.
 
-    Aligns the rankers' date-level IC series on the common date intersection and
-    runs White's Reality Check, Hansen's SPA, Romano–Wolf StepM and the
-    Hansen–Lunde–Nason MCS (larger IC is better). Returns None when fewer than
-    two rankers expose >= 10 aligned finite dates. Never a live Sharpe claim.
+    White, Hansen SPA, Romano–Wolf, and MCS. Larger IC is better. Not a Sharpe.
     """
-    from quant_fund.metrics.snooping import (
-        model_confidence_set,
-        reality_check,
-        spa_test,
-        stepm,
-    )
+    from quant_fund.metrics.snooping import model_confidence_set, reality_check, spa_test, stepm
 
     usable: list[tuple[str, dict[str, float]]] = []
     for r in rankers:
@@ -3091,12 +3081,10 @@ def _horizon_bars(label: str) -> int:
 def _aligned_ranker_scores(
     rankers: list[dict[str, Any]],
 ) -> tuple[int, list[str], np.ndarray | None]:
-    """Trial count plus the common-date score matrix of evaluated rankers.
+    """Trial count and the common-date score matrix of evaluated rankers.
 
-    ``n_trials`` counts every non-internal ranker the runner evaluated.
-    The matrix contains only rankers with a finite date-level score series
-    on the intersection of those dates. Rankers that were evaluated but
-    cannot be aligned stay in ``n_trials`` and are absent from the matrix.
+    ``n_trials`` counts every non-internal ranker. The matrix keeps rankers
+    with a finite score on the shared dates; unaligned rankers stay counted.
     """
     evaluated = [
         ranker
@@ -4197,8 +4185,9 @@ def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
     return {name: payload for name, payload in families.items() if name not in retired}
 
 
-def _live_optional_family_blobs() -> dict[str, Any]:
+def _build_live_optional_family_blobs() -> dict[str, Any]:
     """Seeded live-optional benches. Default ``run_research`` still runs them."""
+    pin_catalog_threads()
     return {
         "anytime_valid": bench_anytime_valid(),
         "energy_score": bench_energy_score(),
@@ -5612,12 +5601,23 @@ def _live_optional_family_blobs() -> dict[str, Any]:
     }
 
 
+_CI_OPTIONAL_BLOBS: dict[str, dict[str, Any]] = {}
+_ORIGINAL_BENCH_IDS = bench_ids(globals())
+
+
+def _live_optional_family_blobs() -> dict[str, Any]:
+    return cached_family_blobs(
+        _CI_OPTIONAL_BLOBS, _build_live_optional_family_blobs, globals(), _ORIGINAL_BENCH_IDS
+    )
+
+
 def _merge_live_optional(families: dict[str, Any], *, include: bool) -> None:
     if include:
         families.update(_live_optional_family_blobs())
 
 
 def run_research(config: AppConfig, *, include_live_optional: bool = True) -> ResearchNotebook:
+    pin_catalog_threads()
     set_global_seed(config.train.random_seed)
     build_gold(config, refresh=config.data.source == "synthetic")
     df = panel(config)

@@ -26,6 +26,7 @@ from quant_fund.audit.canonical import canonical_json_bytes, json_safe, sha256_h
 from quant_fund.audit.errors import AuditError
 from quant_fund.audit.merkle import merkle_root
 from quant_fund.audit.signing import Signature
+from quant_fund.utils.path_safety import PathSafetyError, open_private
 
 if sys.platform == "win32":
     import msvcrt
@@ -210,9 +211,10 @@ class AuditLedger:
     @contextmanager
     def _lock(self) -> Iterator[None]:
         self.root.mkdir(parents=True, exist_ok=True)
-        fd = os.open(
-            self.root / ".lock", os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o600
-        )
+        try:
+            fd = open_private(self.root / ".lock", os.O_CREAT | os.O_RDWR)
+        except PathSafetyError as exc:
+            raise AuditError("refusing to lock through an unsafe path") from exc
         locked = False
         try:
             if sys.platform == "win32":
@@ -337,9 +339,10 @@ class AuditLedger:
 
     def _append_line(self, path: Path, body: bytes) -> None:
         line = body + b"\n"
-        fd = os.open(
-            path, os.O_CREAT | os.O_APPEND | os.O_WRONLY | getattr(os, "O_BINARY", 0), 0o644
-        )
+        try:
+            fd = open_private(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY)
+        except PathSafetyError as exc:
+            raise AuditError(f"refusing to append through an unsafe path: {path}") from exc
         try:
             view = line
             while view:

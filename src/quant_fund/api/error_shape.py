@@ -19,6 +19,7 @@ cleanly without the web extras.
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -45,8 +46,39 @@ def error_shape_audit() -> dict[str, Any]:
         raise RuntimeError("error_shape needs fastapi extras") from exc
     from quant_fund.api.research_api import create_app
 
-    client = TestClient(create_app(), raise_server_exceptions=False)
-    spec = client.get("/openapi.json").json()
+    # A sibling test can leave a process-wide rate in the environment. This
+    # audit measures route shape, so it clears that limit for the probes.
+    rate_names = ("DIPCATCHER_RATE_LIMIT_RPS", "DIPCATCHER_PROFILE")
+    saved = {name: os.environ.get(name) for name in rate_names}
+    os.environ.pop("DIPCATCHER_RATE_LIMIT_RPS", None)
+    os.environ.pop("DIPCATCHER_PROFILE", None)
+    try:
+        return _audit_client(TestClient(create_app(), raise_server_exceptions=False))
+    finally:
+        for name, value in saved.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
+def _openapi_spec(client: Any) -> dict[str, Any]:
+    """Schema from the app. HTTP ``/openapi.json`` is behind the auth gate."""
+    app = getattr(client, "app", None)
+    spec: dict[str, Any] = {}
+    if app is not None and hasattr(app, "openapi"):
+        loaded = app.openapi()
+        if isinstance(loaded, dict):
+            spec = loaded
+    if spec.get("paths"):
+        return spec
+    fetched = client.get("/openapi.json").json()
+    return fetched if isinstance(fetched, dict) else {}
+
+
+def _audit_client(client: Any) -> dict[str, Any]:
+    """Probe ``client`` and return the verdict record."""
+    spec = _openapi_spec(client)
     paths = [p for p, ops in spec.get("paths", {}).items() if "get" in ops]
 
     records: list[dict[str, Any]] = []

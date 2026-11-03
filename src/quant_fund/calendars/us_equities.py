@@ -19,7 +19,7 @@ from quant_fund.calendars.holidays import (
     us_equity_early_closes,
     us_equity_holidays,
 )
-from quant_fund.calendars.sessions import Session
+from quant_fund.calendars.sessions import Session, require_label_range
 
 ET = ZoneInfo("America/New_York")
 REGULAR_OPEN = time(9, 30)
@@ -78,6 +78,7 @@ class UsEquitiesCalendar:
         )
 
     def sessions(self, start: date, end: date) -> list[Session]:
+        require_label_range(start, end)
         out: list[Session] = []
         cur = start
         while cur <= end:

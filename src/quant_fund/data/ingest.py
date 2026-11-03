@@ -228,33 +228,55 @@ def ingest(config: AppConfig) -> dict[str, Path]:
 _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 
 
+def _artifact_name_error(name: object) -> str | None:
+    if not isinstance(name, str) or not name.strip():
+        return f"artifact:{name}:name_invalid"
+    return None
+
+
+def _columns_invalid(cols: object) -> bool:
+    if not isinstance(cols, list) or not cols:
+        return True
+    if any(not isinstance(column, str) for column in cols):
+        return True
+    return list(cols) != sorted(cols)
+
+
+def _artifact_field_errors(name: object, item: object) -> list[str]:
+    errors: list[str] = []
+    name_error = _artifact_name_error(name)
+    if name_error is not None:
+        errors.append(name_error)
+    if not isinstance(item, dict):
+        errors.append(f"artifact:{name}:not_object")
+        return errors
+    path = item.get("path")
+    if not isinstance(path, str) or not path.strip():
+        errors.append(f"artifact:{name}:path_invalid")
+    digest = item.get("sha256")
+    if not (isinstance(digest, str) and _SHA256_HEX.fullmatch(digest)):
+        errors.append(f"artifact:{name}:sha256_invalid")
+    rows = item.get("rows")
+    if isinstance(rows, bool) or not isinstance(rows, int) or rows < 0:
+        errors.append(f"artifact:{name}:rows_invalid")
+    if _columns_invalid(item.get("columns")):
+        errors.append(f"artifact:{name}:columns_invalid")
+    return errors
+
+
 def data_manifest_contract_errors(manifest: Mapping[str, Any]) -> list[str]:
     """Contract errors for a sealed data manifest (verify-receipt dispatch)."""
     errors: list[str] = []
-    if manifest.get("schema_version") != 1:
+    schema_version = manifest.get("schema_version")
+    if type(schema_version) is not int or schema_version != 1:
         errors.append("schema_version_not_1")
-    if not manifest.get("source"):
+    source = manifest.get("source")
+    if not isinstance(source, str) or not source.strip():
         errors.append("source_missing")
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, dict) or not artifacts:
         errors.append("artifacts_missing")
         return errors
     for name, item in artifacts.items():
-        if not isinstance(item, dict):
-            errors.append(f"artifact:{name}:not_object")
-            continue
-        digest = item.get("sha256")
-        if not (isinstance(digest, str) and _SHA256_HEX.fullmatch(digest)):
-            errors.append(f"artifact:{name}:sha256_invalid")
-        rows = item.get("rows")
-        if not (isinstance(rows, int) and not isinstance(rows, bool) and rows >= 0):
-            errors.append(f"artifact:{name}:rows_invalid")
-        cols = item.get("columns")
-        if not (
-            isinstance(cols, list)
-            and cols
-            and all(isinstance(c, str) for c in cols)
-            and cols == sorted(cols)
-        ):
-            errors.append(f"artifact:{name}:columns_invalid")
+        errors.extend(_artifact_field_errors(name, item))
     return errors

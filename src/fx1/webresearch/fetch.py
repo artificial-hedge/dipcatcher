@@ -21,16 +21,20 @@ so the engine and its tests never need a live socket.
 
 from __future__ import annotations
 
-import ipaddress
-import socket
+import email.message
+import math
 import threading
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from typing import Any
+from typing import Any, cast
+
+from quant_fund.utils.net_timeout import bounded_getaddrinfo
+from quant_fund.utils.outbound import OutboundRefused, open_pinned, public_addresses
 
 DEFAULT_USER_AGENT = "dipcatcher-research/0.1 (+https://github.com/artificial-hedge/dipcatcher)"
 DEFAULT_MAX_BYTES = 512 * 1024
@@ -40,6 +44,12 @@ ACCEPT = "text/html, text/plain;q=0.9, */*;q=0.1"
 
 OpenFn = Callable[[urllib.request.Request, float], Any]  # -> context manager over response
 ResolveFn = Callable[..., list[tuple[Any, ...]]]  # socket.getaddrinfo shape
+
+
+def _bounded_resolve(host: str, port: int) -> list[tuple[Any, ...]]:
+    """Default resolver: DNS cannot outlive the fetch timeout."""
+    # type=0 matches socket.getaddrinfo's default (every socket kind).
+    return bounded_getaddrinfo(host, port, DEFAULT_TIMEOUT_S, type=0)
 
 
 class FetchPolicyError(Exception):
@@ -71,52 +81,36 @@ class FetchResult:
 # ---------------------------------------------------------------------------
 
 
-def _ip_is_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    return (
-        not ip.is_private
-        and not ip.is_loopback
-        and not ip.is_link_local
-        and not ip.is_reserved
-        and not ip.is_multicast
-        and not ip.is_unspecified
-    )
-
-
-def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> tuple[bool, str]:
+def host_is_public(
+    host: str, *, resolve_fn: ResolveFn = _bounded_resolve, port: int = 80
+) -> tuple[bool, str]:
     """(allowed, reason) for fetching ``host``. Literal IPs need no resolution."""
     try:
-        literal = ipaddress.ip_address(host)
-    except ValueError:
-        literal = None
-    if literal is not None:
-        if _ip_is_public(literal):
-            return True, ""
-        return False, f"address {host} is not a public internet address"
-    try:
-        infos = resolve_fn(host, 80)
-    except OSError as exc:
-        return False, f"cannot resolve host ({type(exc).__name__})"
-    for info in infos:
-        addr = info[4][0]
-        try:
-            ip = ipaddress.ip_address(addr)
-        except ValueError:
-            continue
-        if not _ip_is_public(ip):
-            return False, f"host {host} resolves to non-public address {addr}"
+        public_addresses(host, port, resolve_fn=resolve_fn)
+    except OutboundRefused as exc:
+        return False, str(exc)
     return True, ""
 
 
-def url_policy_error(url: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> str | None:
+def url_policy_error(url: str, *, resolve_fn: ResolveFn = _bounded_resolve) -> str | None:
     """Why *url* may not be fetched; ``None`` when it may. Never echoes secrets."""
-    parsed = urllib.parse.urlparse(url)
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+    except ValueError:
+        return "invalid URL"
     if parsed.scheme not in {"http", "https"}:
         return f"scheme {parsed.scheme!r} is not http(s)"
     if parsed.username is not None or parsed.password is not None:
         return "url must not embed credentials"
-    if not parsed.hostname:
+    if not hostname:
         return "url names no host"
-    allowed, reason = host_is_public(parsed.hostname, resolve_fn=resolve_fn)
+    try:
+        explicit_port = parsed.port
+    except ValueError:
+        return "invalid URL"
+    port = explicit_port if explicit_port is not None else (443 if parsed.scheme == "https" else 80)
+    allowed, reason = host_is_public(hostname, resolve_fn=resolve_fn, port=port)
     if not allowed:
         return reason
     return None
@@ -127,28 +121,71 @@ def url_policy_error(url: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) ->
 # ---------------------------------------------------------------------------
 
 
-class _LimitedRedirectHandler(urllib.request.HTTPRedirectHandler):
-    """Cap redirects, fail loudly beyond the cap, and re-check fetch policy
-    on every hop — a public URL that redirects to a private address must not
-    become a lane into the operator's network."""
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
-    def __init__(self, max_redirects: int) -> None:
-        super().__init__()
-        self._max = max_redirects
-        self._hops = 0
 
-    def redirect_request(
-        self, req: urllib.request.Request, fp: Any, code: int, msg: str, headers: Any, newurl: str
-    ) -> urllib.request.Request | None:
-        self._hops += 1
-        if self._hops > self._max:
+def _redirect_url(handle: Any, current: str, resolve_fn: ResolveFn) -> str | None:
+    """Next hop, or None when ``handle`` is the final response."""
+    if int(handle.status) not in _REDIRECT_STATUSES:
+        return None
+    location = handle.headers.get("Location")
+    if not location:
+        raise FetchPolicyError("redirect refused by fetch policy: missing Location")
+    newurl = urllib.parse.urljoin(current, location)
+    policy = url_policy_error(newurl, resolve_fn=resolve_fn)
+    if policy is not None:
+        raise FetchPolicyError(f"redirect refused by fetch policy: {policy}")
+    return str(newurl)
+
+
+@contextmanager
+def _pinned_fetch(
+    request: urllib.request.Request,
+    timeout_s: float,
+    max_redirects: int,
+    resolve_fn: ResolveFn,
+) -> Iterator[Any]:
+    """Follow redirects by re-checking policy and re-pinning each hop."""
+    url = request.full_url
+    method = request.get_method()
+    data = request.data
+    headers = dict(request.header_items())
+    hops = 0
+    while True:
+        current = urllib.request.Request(url, data=data, headers=headers, method=method)
+        with open_pinned(current, timeout=timeout_s, resolve_fn=resolve_fn) as handle:
+            nxt = _redirect_url(handle, url, resolve_fn)
+            status = int(handle.status)
+            if nxt is None:
+                yield handle
+                return
+        hops += 1
+        if hops > max_redirects:
             raise urllib.error.HTTPError(
-                req.full_url, code, f"too many redirects (>{self._max})", headers, fp
+                url,
+                status,
+                f"too many redirects (>{max_redirects})",
+                email.message.Message(),
+                None,
             )
-        policy = url_policy_error(newurl)
-        if policy is not None:
-            raise FetchPolicyError(f"redirect refused by fetch policy: {policy}")
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+        if status == 303:
+            method = "GET"
+            data = None
+        url = nxt
+
+
+@contextmanager
+def _open_default(
+    request: urllib.request.Request,
+    timeout_s: float,
+    max_redirects: int,
+    resolve_fn: ResolveFn,
+) -> Iterator[Any]:
+    try:
+        with _pinned_fetch(request, timeout_s, max_redirects, resolve_fn) as handle:
+            yield handle
+    except OutboundRefused as exc:
+        raise FetchPolicyError(f"refused by fetch policy: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +366,32 @@ def clear_robots_cache() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _fetch_input_error(timeout_s: object, max_bytes: object, max_redirects: object) -> str:
+    """Empty when the fetch knobs are usable."""
+    try:
+        valid_timeout = (
+            not isinstance(timeout_s, bool)
+            and math.isfinite(cast(float, timeout_s))
+            and cast(float, timeout_s) > 0
+        )
+    except TypeError:
+        valid_timeout = False
+    if not valid_timeout:
+        return "invalid timeout_s: must be finite and > 0"
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 1:
+        return "invalid max_bytes: must be a positive integer"
+    if isinstance(max_redirects, bool) or not isinstance(max_redirects, int) or max_redirects < 0:
+        return "invalid max_redirects: must be a nonnegative integer"
+    return ""
+
+
+def _wire_url(url: str) -> str:
+    """Percent-encode an IRI. Already-encoded triplets survive (``%`` is safe)."""
+    if url.isascii():
+        return url
+    return urllib.parse.quote(url, safe=":/?&=%+#@")
+
+
 def fetch_page(
     url: str,
     *,
@@ -337,28 +400,28 @@ def fetch_page(
     max_redirects: int = DEFAULT_MAX_REDIRECTS,
     user_agent: str = DEFAULT_USER_AGENT,
     open_fn: OpenFn | None = None,
-    resolve_fn: ResolveFn = socket.getaddrinfo,
+    resolve_fn: ResolveFn = _bounded_resolve,
     check_policy: bool = True,
 ) -> FetchResult:
     """Fetch one URL with policy, size, and redirect limits. Never raises for
     policy or transport reasons — problems land in ``FetchResult.error``."""
     result = FetchResult(url=url)
+    input_error = _fetch_input_error(timeout_s, max_bytes, max_redirects)
+    if input_error:
+        result.error = input_error
+        return result
     if check_policy:
         policy = url_policy_error(url, resolve_fn=resolve_fn)
         if policy is not None:
             result.error = f"refused by fetch policy: {policy}"
             return result
-    if not url.isascii():
-        # IRIs must be percent-encoded before hitting the wire; already-encoded
-        # triplets survive because % is in the safe set.
-        url = urllib.parse.quote(url, safe=":/?&=%+#@")
+    url = _wire_url(url)
     request = urllib.request.Request(url, headers={"User-Agent": user_agent, "Accept": ACCEPT})
 
     def open_response() -> Any:
         if open_fn is not None:
             return open_fn(request, timeout_s)
-        opener = urllib.request.build_opener(_LimitedRedirectHandler(max_redirects))
-        return opener.open(request, timeout=timeout_s)
+        return _open_default(request, timeout_s, max_redirects, resolve_fn)
 
     try:
         with open_response() as response:

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import tempfile
 from dataclasses import asdict, dataclass
@@ -73,6 +74,12 @@ class SimLiveResult:
     loop: PaperLoopResult | None  # None in bench_only mode
 
 
+def _json_number(value: float) -> float | None:
+    """Strict-JSON number. Undefined ratios stay null, not NaN."""
+    number = float(value)
+    return number if math.isfinite(number) else None
+
+
 def _equity_stats(equity: pl.DataFrame, bars_per_year: float) -> dict[str, Any]:
     """Honest summary of the simulated champion equity curve."""
     if equity.is_empty() or "nav" not in equity.columns:
@@ -86,7 +93,7 @@ def _equity_stats(equity: pl.DataFrame, bars_per_year: float) -> dict[str, Any]:
     peak = np.maximum.accumulate(nav)
     dd = nav / peak - 1.0
     # A nonpositive nav ratio means the curve crossed zero — annualizing it
-    # would produce a complex number, so report NaN instead of guessing.
+    # would produce a complex number, so the receipt stores null.
     ann_ret = (
         float(nav[-1] / nav[0]) ** (bars_per_year / max(nav.size - 1, 1)) - 1.0
         if nav[0] > 0 and nav[-1] > 0
@@ -94,21 +101,20 @@ def _equity_stats(equity: pl.DataFrame, bars_per_year: float) -> dict[str, Any]:
     )
     ann_vol = float(annualized_vol(rets, periods_per_year=bars_per_year))
     # A2 F4 (PROOFCORE W4): delegate to the canonical fail-closed Sharpe in
-    # metrics/returns.py — same formula, same NaN policy (rets.size < 2 or
-    # zero vol -> NaN); the inline copy is retired (deprecation: do not
-    # re-inline Sharpe math outside metrics/returns.py).
+    # metrics/returns.py — same formula (rets.size < 2 or zero vol is
+    # undefined). The receipt stores null so the file stays strict JSON.
     sharpe = float(sharpe_ratio(rets, periods_per_year=bars_per_year)["sharpe"])
     return {
         "status": "ok",
         "n_marks": int(nav.size),
-        "nav_start": float(nav[0]),
-        "nav_end": float(nav[-1]),
-        "total_return": float(nav[-1] / nav[0] - 1.0),
-        "ann_return": ann_ret,
-        "ann_vol": ann_vol,
-        "sharpe_simulated": sharpe,
-        "max_drawdown": float(np.min(dd)),
-        "bars_per_year": float(bars_per_year),
+        "nav_start": _json_number(nav[0]),
+        "nav_end": _json_number(nav[-1]),
+        "total_return": _json_number(nav[-1] / nav[0] - 1.0),
+        "ann_return": _json_number(ann_ret),
+        "ann_vol": _json_number(ann_vol),
+        "sharpe_simulated": _json_number(sharpe),
+        "max_drawdown": _json_number(float(np.min(dd))),
+        "bars_per_year": _json_number(bars_per_year),
     }
 
 

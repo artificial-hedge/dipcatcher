@@ -20,6 +20,7 @@ Sealed ``dip_run_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -81,13 +82,21 @@ def dip_run_audit() -> dict[str, Any]:
             hashlib.sha256(p2.read_bytes()).hexdigest() != receipt["inputs_sha256"][p2.name]
         )
 
-    empty = tempfile.mkdtemp()
-    try:
-        run_dip_bench(empty)
-        out["empty_raises"] = "no-raise"
-    except FileNotFoundError:
-        out["empty_raises"] = "raise:FileNotFoundError"
+    out["empty_raises"] = _empty_dir_outcome(run_dip_bench)
     return out
+
+
+def _empty_dir_outcome(run: Any) -> str:
+    """Run the bench on a private empty directory and always remove it."""
+    empty = tempfile.mkdtemp(prefix="dip_run_empty_")
+    try:
+        run(empty)
+    except FileNotFoundError:
+        return "raise:FileNotFoundError"
+    else:
+        return "no-raise"
+    finally:
+        shutil.rmtree(empty, ignore_errors=True)
 
 
 def dip_run_audit_bench() -> dict[str, Any]:

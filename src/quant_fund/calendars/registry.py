@@ -20,6 +20,8 @@ _CALENDARS: dict[str, TradingCalendar] = {
 
 def get_calendar(name: str) -> TradingCalendar:
     """Look up a calendar by name (case-insensitive); fail closed on unknown."""
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError(f"calendar name must be a non-empty string, got {name!r}")
     key = name.strip().upper()
     try:
         return _CALENDARS[key]

@@ -16,6 +16,7 @@ from quant_fund.models.diff_mpc import bench_diff_mpc
 from quant_fund.models.input_convex import bench_input_convex
 from quant_fund.models.optnet_qp import bench_optnet_qp
 from quant_fund.models.spd_net import bench_spd_net
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -67,7 +68,9 @@ def bench_cvxpy_layer_family() -> dict[str, float]:
 
 def bench_input_convex_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("input_convex", bench_input_convex(seed=_SEED + 794)))
+        return _floats(
+            _finite_blob("input_convex", call_bench(bench_input_convex, seed=_SEED + 794))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -94,7 +97,7 @@ def bench_spd_net_family() -> dict[str, float]:
 
 def bench_diff_mpc_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("diff_mpc", bench_diff_mpc(seed=_SEED + 797)))
+        return _floats(_finite_blob("diff_mpc", call_bench(bench_diff_mpc, seed=_SEED + 797)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:

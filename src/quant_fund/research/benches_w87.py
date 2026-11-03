@@ -59,7 +59,7 @@ def bench_avellaneda_stoikov() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_AVELLANEDA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -73,7 +73,7 @@ def bench_gillespie_ssa() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GILLESPIE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -87,7 +87,7 @@ def bench_hamilton_filter() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HAMILTON_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -101,7 +101,7 @@ def bench_corwin_schultz() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CORWIN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -113,7 +113,7 @@ def bench_gwr_spatial() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GWR_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -125,6 +125,6 @@ def bench_pareto_nbd() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PARETO_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

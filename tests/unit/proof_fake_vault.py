@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 import numpy as np
 import polars as pl
@@ -56,7 +57,11 @@ class FakeVault:
         buffer = io.BytesIO()
         frame.write_parquet(buffer)
         payload = buffer.getvalue()
-        max_known = frame["known_at"].max() if "known_at" in frame.columns and frame.height else t
+        max_known = (
+            cast(datetime, frame["known_at"].max())
+            if "known_at" in frame.columns and frame.height
+            else t
+        )
         pit_frame = FakePitFrame(
             frame=frame,
             dataset=name,
@@ -208,7 +213,7 @@ def synthetic_signal_log(n_rows: int = 20) -> pl.DataFrame:
     ).with_columns(pl.col("decision_time").cast(pl.Datetime("us", "UTC")))
 
 
-def mint_synthetic_bundle(tmp_path, *, seed: int = 42, signer=None):
+def mint_synthetic_bundle(tmp_path, *, seed: int = 42, signer=None, created_utc: str | None = None):
     """Engine-free bundle mint via build_bundle (no backtest-engine import).
 
     Records two fake vault reads so the data manifest is non-trivial.
@@ -234,5 +239,6 @@ def mint_synthetic_bundle(tmp_path, *, seed: int = 42, signer=None):
         engine_metrics={"total_return": 0.01, "label": "SYNTHETIC"},
         bundle_dir=bundle_dir,
         signer=signer,
+        created_utc=created_utc,
     )
     return bundle, bundle_dir

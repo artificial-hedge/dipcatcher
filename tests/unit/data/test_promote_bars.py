@@ -21,6 +21,22 @@ from quant_fund.schemas.errors import PointInTimeError
 runner = CliRunner()
 
 _TS = datetime(2024, 1, 3, 21, 0, tzinfo=UTC)
+_INGESTED = datetime(2024, 2, 1, 15, 0, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def _freeze_promote_clocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Receipt stamps must not depend on the wall clock."""
+
+    class _Clock:
+        @staticmethod
+        def now(tz: object = None) -> datetime:
+            if tz is None:
+                return _INGESTED.replace(tzinfo=None)
+            return _INGESTED
+
+    monkeypatch.setattr("quant_fund.data.sources.storage.datetime", _Clock)
+    monkeypatch.setattr("quant_fund.data.promote.datetime", _Clock)
 
 
 def _frame(source: str = "yahoo", rows: int = 3) -> pl.DataFrame:
@@ -30,7 +46,7 @@ def _frame(source: str = "yahoo", rows: int = 3) -> pl.DataFrame:
             "security_id": ["AAPL"] * rows,
             "event_time": [base.replace(day=3 + i) for i in range(rows)],
             "available_time": [base.replace(day=3 + i) for i in range(rows)],
-            "ingested_time": [datetime.now(UTC)] * rows,
+            "ingested_time": [_INGESTED] * rows,
             "source": [source] * rows,
             "revision_id": ["v0"] * rows,
             "open": [100.0 + i for i in range(rows)],

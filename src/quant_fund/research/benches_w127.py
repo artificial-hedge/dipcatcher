@@ -16,6 +16,7 @@ from quant_fund.models.diff_policy import bench_diff_policy
 from quant_fund.models.hypernetwork_alloc import bench_hypernetwork_alloc
 from quant_fund.models.neural_thompson import bench_neural_thompson
 from quant_fund.models.option_vae import bench_option_vae
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -78,7 +79,9 @@ def bench_neural_thompson_family() -> dict[str, float]:
 
 def bench_bnn_ensemble_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("bnn_ensemble", bench_bnn_ensemble(seed=_SEED + 753)))
+        return _floats(
+            _finite_blob("bnn_ensemble", call_bench(bench_bnn_ensemble, seed=_SEED + 753))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:

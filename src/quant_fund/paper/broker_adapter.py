@@ -119,13 +119,16 @@ class PaperBrokerAdapter:
         endpoint_kind: str = "paper",
         starting_cash: float = 0.0,
         nav_tolerance: float = 1e-6,
+        accept_orders: bool = False,
     ) -> None:
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
         self.state_path = Path(state_path)
         self._nav_tolerance = float(nav_tolerance)
         self._starting_cash = float(starting_cash)
         self._ledger = OrderFillLedger(
-            endpoint_kind=self.endpoint_kind, starting_cash=starting_cash
+            endpoint_kind=self.endpoint_kind,
+            starting_cash=starting_cash,
+            accept_orders=accept_orders,
         )
         self._orders: dict[str, Order] = {}
         self._order_sequence: list[str] = []
@@ -264,6 +267,7 @@ class PaperBrokerAdapter:
         ledger = OrderFillLedger(
             endpoint_kind=str(persisted.get("endpoint_kind", "paper")),
             starting_cash=float(persisted.get("starting_cash", 0.0)),
+            accept_orders=True,
         )
         duplicate_orders = 0
         # Replay historical orders/fills BEFORE applying the persisted kill
@@ -277,8 +281,7 @@ class PaperBrokerAdapter:
             verdict = ledger.cancel(order_id)
             if verdict != "cancelled":
                 raise OrderLedgerError(f"cannot replay cancel of {order_id}: {verdict}")
-        if persisted.get("kill_state") == "HALT_NEW_ORDERS":
-            ledger.trip_kill("resumed_halt")
+        _apply_persisted_kill(ledger, persisted)
         marks = {str(k): float(v) for k, v in dict(persisted.get("marks", {})).items()}
         state = ledger.reconcile()
         cash = float(state["computed_cash"])
@@ -310,6 +313,7 @@ class PaperBrokerAdapter:
             endpoint_kind=str(persisted.get("endpoint_kind", endpoint_kind)),
             starting_cash=float(persisted.get("starting_cash", 0.0)),
             nav_tolerance=float(persisted.get("nav_tolerance", 1e-6)),
+            accept_orders=True,
         )
         for raw in persisted.get("orders", []):
             order = _order_from_dict(raw)
@@ -322,10 +326,19 @@ class PaperBrokerAdapter:
                 raise OrderLedgerError(f"cannot replay cancel of {order_id}: {verdict}")
         for sec, price in dict(persisted.get("marks", {})).items():
             adapter.mark(str(sec), float(price))
-        if persisted.get("kill_state") == "HALT_NEW_ORDERS":
-            adapter.trip_kill("resumed_halt")
+        _apply_persisted_kill(adapter._ledger, persisted)
         adapter._persisted_nav = float(persisted.get("nav", 0.0))
         return adapter, adapter.seam_report()
+
+
+def _apply_persisted_kill(ledger: OrderFillLedger, persisted: dict[str, Any]) -> None:
+    """Restore a checkpointed kill switch. Unknown values halt."""
+    state = persisted.get("kill_state")
+    if state == "ENABLED":
+        ledger.clear_kill()
+        return
+    reason = "resumed_halt" if state == "HALT_NEW_ORDERS" else "resumed_unknown_kill_state"
+    ledger.trip_kill(reason)
 
 
 def _cancelled_ids(persisted: dict[str, Any]) -> list[str]:

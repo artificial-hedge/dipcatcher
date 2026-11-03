@@ -75,7 +75,48 @@ def _assert_usage(result: object, argv: str) -> None:
     assert "Traceback" not in _blob(result)
 
 
+def _assert_command(typer_app: object, program: str, version: str, path: str) -> None:
+    runner = CliRunner()
+    argv = path.split()
+    shown_help = runner.invoke(typer_app, [*argv, "--help"])
+    assert shown_help.exit_code == 0, f"{program} {path} --help: {_blob(shown_help)}"
+    assert "Usage" in _blob(shown_help)
+    assert "Traceback" not in _blob(shown_help)
+    shown_version = runner.invoke(typer_app, [*argv, "--version"])
+    assert shown_version.exit_code == 0, path
+    assert shown_version.stdout == version
+    _assert_usage(
+        runner.invoke(typer_app, [*argv, "--not-a-real-option"]),
+        f"{program} {path} --not-a-real-option",
+    )
+
+
+_SURFACE_APP: object | None = None
+_SURFACE_PROGRAM = ""
+
+
+def _init_surface(program: str) -> None:
+    global _SURFACE_APP, _SURFACE_PROGRAM
+    _SURFACE_PROGRAM = program
+    if program == "dipcatcher":
+        from quant_fund.cli.main import app as loaded
+    elif program == "fx1":
+        from fx1.cli import app as loaded
+    elif program == "fxi":
+        from fx1.interactive.app import app as loaded
+    else:
+        from quant_fund.mc_engine.cli import app as loaded
+    _SURFACE_APP = loaded
+
+
+def _check_surface_path(path: str) -> None:
+    assert _SURFACE_APP is not None
+    _assert_command(_SURFACE_APP, _SURFACE_PROGRAM, _VERSION[_SURFACE_PROGRAM], path)
+
+
 def _assert_surface(typer_app: object, program: str) -> None:
+    from concurrent.futures import ProcessPoolExecutor
+
     version = _VERSION[program]
     root_help = _RUNNER.invoke(typer_app, ["--help"])
     assert root_help.exit_code == 0, _blob(root_help)
@@ -89,19 +130,12 @@ def _assert_surface(typer_app: object, program: str) -> None:
     _assert_usage(
         _RUNNER.invoke(typer_app, ["--not-a-real-option"]), f"{program} --not-a-real-option"
     )
-    for path in _command_paths(typer_app):
-        argv = path.split()
-        shown_help = _RUNNER.invoke(typer_app, [*argv, "--help"])
-        assert shown_help.exit_code == 0, f"{program} {path} --help: {_blob(shown_help)}"
-        assert "Usage" in _blob(shown_help)
-        assert "Traceback" not in _blob(shown_help)
-        shown_version = _RUNNER.invoke(typer_app, [*argv, "--version"])
-        assert shown_version.exit_code == 0, path
-        assert shown_version.stdout == version
-        _assert_usage(
-            _RUNNER.invoke(typer_app, [*argv, "--not-a-real-option"]),
-            f"{program} {path} --not-a-real-option",
-        )
+    paths = _command_paths(typer_app)
+    workers = min(4, len(paths) or 1)
+    with ProcessPoolExecutor(
+        max_workers=workers, initializer=_init_surface, initargs=(program,)
+    ) as pool:
+        list(pool.map(_check_surface_path, paths, chunksize=8))
 
 
 def test_dipcatcher_surface() -> None:
@@ -177,6 +211,47 @@ def test_doctor_user_errors_have_no_traceback(tmp_path: Path) -> None:
     directory_result = _RUNNER.invoke(dipcatcher_app, ["doctor", "--config", str(directory)])
     _assert_usage(directory_result, "doctor directory")
     assert "expected a file:" in (directory_result.stderr or "")
+
+
+@pytest.mark.parametrize(
+    ("document", "expected_text"),
+    [
+        ("[]\n", ("must be a mapping",)),
+        ("inherit: false\n", ("inherit", "string")),
+        ("runtime: {}\nruntime: {}\n", ("duplicate", "runtime")),
+    ],
+    ids=("falsey_root", "non_string_inherit", "duplicate_runtime"),
+)
+def test_doctor_config_errors_are_single_line(
+    tmp_path: Path, document: str, expected_text: tuple[str, ...]
+) -> None:
+    config = tmp_path / "invalid.yaml"
+    config.write_text(document, encoding="utf-8")
+
+    result = _RUNNER.invoke(dipcatcher_app, ["doctor", "--config", str(config)])
+
+    _assert_usage(result, "doctor invalid config")
+    assert result.stdout == ""
+    error_lines = (result.stderr or "").splitlines()
+    assert len(error_lines) == 1
+    assert error_lines[0].startswith("error: ")
+    for expected in expected_text:
+        assert expected in error_lines[0].lower()
+
+
+def test_doctor_rejects_empty_quantile_grid(tmp_path: Path) -> None:
+    config = tmp_path / "empty-quantiles.yaml"
+    config.write_text("quantiles:\n  levels: []\n", encoding="utf-8")
+
+    result = _RUNNER.invoke(dipcatcher_app, ["doctor", "--config", str(config)])
+
+    _assert_usage(result, "doctor empty quantiles")
+    assert result.stdout == ""
+    error_lines = (result.stderr or "").splitlines()
+    assert len(error_lines) == 1
+    assert "invalid config:" in error_lines[0]
+    assert "quantiles.levels" in error_lines[0]
+    assert "quantiles must be non-empty" in error_lines[0]
 
 
 def test_user_error_messages_cover_the_claimed_cases() -> None:
@@ -273,9 +348,29 @@ def _run(
     )
 
 
+def _check_entrypoint(args: list[str], program: str, home: Path) -> None:
+    version = _run([*args, "--version"], home)
+    assert version.returncode == 0, (args, version.stderr)
+    assert version.stdout == f"{program} {__version__}\n"
+    assert "RuntimeWarning" not in version.stderr
+    assert "Traceback" not in version.stderr
+    short = _run([*args, "-V"], home)
+    assert short.returncode == 0, (args, short.stderr)
+    assert short.stdout == version.stdout
+    first = _run([*args, "--help"], home)
+    second = _run([*args, "--help"], home)
+    assert first.returncode == 0, (args, first.stderr)
+    assert first.stdout == second.stdout
+    assert first.stderr == second.stderr
+    assert "usage" in first.stdout.lower()
+    assert "Traceback" not in first.stderr
+    assert "RuntimeWarning" not in first.stderr
+    assert not (home / ".dipcatcher").exists()
+
+
 def test_module_entrypoints_help_and_version_are_stable(tmp_path: Path) -> None:
-    home = tmp_path / "home"
-    home.mkdir()
+    from concurrent.futures import ThreadPoolExecutor
+
     cases = [
         (["-m", "dipcatcher_cli"], "dipcatcher"),
         (["-m", "quant_fund.cli"], "dipcatcher"),
@@ -291,24 +386,13 @@ def test_module_entrypoints_help_and_version_are_stable(tmp_path: Path) -> None:
         (["-m", "quant_fund.market_sim"], "market-sim"),
         (["-m", "quant_fund.robustness"], "robustness"),
     ]
-    for args, program in cases:
-        version = _run([*args, "--version"], home)
-        assert version.returncode == 0, (args, version.stderr)
-        assert version.stdout == f"{program} {__version__}\n"
-        assert "RuntimeWarning" not in version.stderr
-        assert "Traceback" not in version.stderr
-        short = _run([*args, "-V"], home)
-        assert short.returncode == 0, (args, short.stderr)
-        assert short.stdout == version.stdout
-        first = _run([*args, "--help"], home)
-        second = _run([*args, "--help"], home)
-        assert first.returncode == 0, (args, first.stderr)
-        assert first.stdout == second.stdout
-        assert first.stderr == second.stderr
-        assert "usage" in first.stdout.lower()
-        assert "Traceback" not in first.stderr
-        assert "RuntimeWarning" not in first.stderr
-    assert not (home / ".dipcatcher").exists()
+    homes = []
+    for index, (args, program) in enumerate(cases):
+        home = tmp_path / f"home{index}"
+        home.mkdir()
+        homes.append((args, program, home))
+    with ThreadPoolExecutor(max_workers=min(4, len(homes))) as pool:
+        list(pool.map(lambda item: _check_entrypoint(*item), homes))
 
 
 def test_redirected_dipcatcher_does_not_read_stdin(tmp_path: Path) -> None:

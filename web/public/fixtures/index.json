@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-23T22:15:26.432972+00:00",
+ "generated_at": "2026-11-02T06:56:37.964632+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "01268826f737dc0fc1fc7e28555ce3aeb54760c7d759a29bf6ad7c8be3c59e64": "configs/corpus_epoch_3c319fb43ab0351e.json",
@@ -336,7 +336,6 @@
   "c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996": "receipts/corpus_epoch_568c538fcf4b21cd.json",
   "c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850": "receipts/corpus_epoch_c5a45fd1b73737dc.json",
   "c2bfd7554d2aba52493daa287850c08aced9893f7beb8f0aa976e9b0c791ec8d": "receipts/metaorder_detect_amzn.json",
-  "c2edb7a020d4ecd07358915c28df2a54e33986faef25f35ecc566e2883ee5a29": "receipts/fx1_retrieval_audit.json",
   "c2f2b5caf9a82f3066a34abab1b0529acf44948abd7e61d7b3e1a35e20efbe23": "receipts/queue_occupancy_amzn.json",
   "c351dc60be497d864fc2cea3a06acfe8fcf3c9ef019836f3af0a0a6d58cbffd7": "receipts/mortal_repost.json",
   "c403f16743569dd1a6b7aa0711a58a42ca8bdd26abc5b0645bf5ab19952e792e": "receipts/api_fuzz.json",
@@ -997,7 +996,7 @@
    "file": "receipts/corpus_epoch_45e7c79ed405a79c.json",
    "id": "corpus_epoch_45e7c79ed405a79c",
    "live_pnl_claim": false,
-   "n_hash_matches": 402,
+   "n_hash_matches": 401,
    "n_hashes": 406,
    "research_only": true,
    "schema": "corpus_epoch.v1"
@@ -1030,7 +1029,7 @@
    "file": "receipts/corpus_epoch_52f80a0cc915f58d.json",
    "id": "corpus_epoch_52f80a0cc915f58d",
    "live_pnl_claim": false,
-   "n_hash_matches": 393,
+   "n_hash_matches": 392,
    "n_hashes": 403,
    "research_only": true,
    "schema": "corpus_epoch.v1"
@@ -1096,7 +1095,7 @@
    "file": "receipts/corpus_epoch_62bfa90c28254f19.json",
    "id": "corpus_epoch_62bfa90c28254f19",
    "live_pnl_claim": false,
-   "n_hash_matches": 392,
+   "n_hash_matches": 391,
    "n_hashes": 402,
    "research_only": true,
    "schema": "corpus_epoch.v1"
@@ -1393,7 +1392,7 @@
    "file": "receipts/corpus_epoch_f8d91d9a3266ce89.json",
    "id": "corpus_epoch_f8d91d9a3266ce89",
    "live_pnl_claim": false,
-   "n_hash_matches": 393,
+   "n_hash_matches": 392,
    "n_hashes": 403,
    "research_only": true,
    "schema": "corpus_epoch.v1"
@@ -1426,7 +1425,7 @@
    "file": "receipts/corpus_epoch_ff585b9d7c8badaa.json",
    "id": "corpus_epoch_ff585b9d7c8badaa",
    "live_pnl_claim": false,
-   "n_hash_matches": 395,
+   "n_hash_matches": 394,
    "n_hashes": 405,
    "research_only": true,
    "schema": "corpus_epoch.v1"
@@ -4798,7 +4797,7 @@
    "schema": "zone_ttl.v1"
   }
  ],
- "repo_revision": "f817b2ba144b50be9c40367cb06fb8672b7e2a9b",
+ "repo_revision": "96ac2c862d23ac731c4656ec25d0310caf504bba",
  "strategies": [
   {
    "data_source": "UNVERIFIED",

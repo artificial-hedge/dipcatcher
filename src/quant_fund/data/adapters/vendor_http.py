@@ -38,6 +38,7 @@ import polars as pl
 
 from quant_fund.data.adapters.stooq import USER_AGENT, np_finite
 from quant_fund.schemas.errors import ConfigError, DataContractError
+from quant_fund.utils.secrets import redact_text
 
 SOURCE = "vendor_http"
 REVISION = "VENDOR_HTTP_LICENSED"
@@ -148,7 +149,10 @@ def _parse_utc(value: object, *, field: str) -> datetime:
         raise VendorDataError(f"{field} is not ISO-8601: {value!r}") from exc
     if parsed.tzinfo is None:
         raise VendorDataError(f"{field} must be timezone-aware (UTC required): {value!r}")
-    return parsed.astimezone(UTC)
+    try:
+        return parsed.astimezone(UTC)
+    except (OverflowError, ValueError) as exc:
+        raise VendorDataError(f"{field} cannot be normalized to UTC: {value!r}") from exc
 
 
 def _require_str(row: Mapping[str, object], field: str) -> str:
@@ -168,7 +172,7 @@ def _opt_str(row: Mapping[str, object], field: str) -> str | None:
 def _finite_float(value: object, *, field: str) -> float:
     try:
         out = float(cast(Any, value))
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, OverflowError) as exc:
         raise VendorDataError(f"{field} must be numeric, got {value!r}") from exc
     if not np_finite(out):
         raise VendorDataError(f"{field} must be finite, got {out}")
@@ -220,7 +224,9 @@ class VendorHttpAdapter:
                 "refusing to construct without an entitlement"
             )
         if not config.base_url.startswith(("https://", "http://")):
-            raise VendorEntitlementError(f"base_url must be an HTTP(S) URL: {config.base_url!r}")
+            raise VendorEntitlementError(
+                "base_url must be an HTTP(S) URL: " + repr(redact_text(config.base_url))
+            )
         self._config = config
         self._headers: dict[str, str] = {
             "Authorization": f"Bearer {api_key}",
@@ -329,6 +335,8 @@ class VendorHttpAdapter:
                 raise VendorDataError(f"negative volume for {key}")
             if high < low:
                 raise VendorDataError(f"inverted envelope (high < low) for {key}")
+            if not (low <= opn <= high and low <= close <= high):
+                raise VendorDataError(f"OHLC outside [low, high] envelope for {key}")
             out.append(
                 {
                     "security_id": security_id,

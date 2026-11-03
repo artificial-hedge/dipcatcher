@@ -17,13 +17,16 @@ from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given
 from hypothesis import settings as h_settings
 from hypothesis import strategies as st
+from pydantic import ValidationError
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.api.research_api import (
     ArtifactDetail,
     ArtifactListResponse,
     HealthResponse,
     ReceiptDetail,
     ReceiptListResponse,
+    ResearchApiBindSettings,
     ResearchApiSettings,
     ResultDetail,
     ResultListResponse,
@@ -36,6 +39,7 @@ from quant_fund.api.research_api import (
     VerifierVersionDetail,
     VerifierVersionListResponse,
     create_app,
+    main,
 )
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
@@ -230,6 +234,259 @@ def client(settings: ResearchApiSettings) -> TestClient:
     return TestClient(create_app(settings))
 
 
+_SETTINGS_ENV = (
+    "RESEARCH_API_DATA_ROOT",
+    "QUANT_DATA_ROOT",
+    "RESEARCH_API_RECEIPTS_DIR",
+    "RESEARCH_API_VERIFIER_DIR",
+    "RESEARCH_API_ARTIFACTS_DIR",
+    "RESEARCH_API_KEY",
+)
+
+
+def _clear_settings_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in _SETTINGS_ENV:
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_settings_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_settings_env(monkeypatch)
+    repo_root = Path(__file__).resolve().parents[3]
+
+    settings = ResearchApiSettings.from_env()
+
+    assert settings.data_root == repo_root / "data"
+    assert settings.receipts_dir == repo_root / "receipts"
+    assert settings.verifier_dir == repo_root / "verifier"
+    assert settings.artifacts_dir == repo_root / "artifacts"
+    assert settings.api_key is None
+
+
+def test_settings_from_env_overrides_and_precedence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _clear_settings_env(monkeypatch)
+    expected = {
+        "data_root": tmp_path / "primary-data",
+        "receipts_dir": tmp_path / "receipts",
+        "verifier_dir": tmp_path / "verifier",
+        "artifacts_dir": tmp_path / "artifacts",
+    }
+    monkeypatch.setenv("QUANT_DATA_ROOT", str(tmp_path / "fallback-data"))
+    for field, path in expected.items():
+        monkeypatch.setenv(f"RESEARCH_API_{field.upper()}", str(path))
+    monkeypatch.setenv("RESEARCH_API_KEY", "not-a-real-key")
+
+    settings = ResearchApiSettings.from_env()
+
+    for field, path in expected.items():
+        assert getattr(settings, field) == path
+    assert secrets_equal(settings.api_key, "not-a-real-key")
+    assert "not-a-real-key" not in repr(settings)
+
+
+def test_settings_from_env_uses_quant_data_root_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _clear_settings_env(monkeypatch)
+    monkeypatch.setenv("QUANT_DATA_ROOT", str(tmp_path / "fallback"))
+
+    assert ResearchApiSettings.from_env().data_root == tmp_path / "fallback"
+
+
+@pytest.mark.parametrize(
+    ("name", "field"),
+    [
+        ("RESEARCH_API_DATA_ROOT", "data_root"),
+        ("QUANT_DATA_ROOT", "data_root"),
+        ("RESEARCH_API_RECEIPTS_DIR", "receipts_dir"),
+        ("RESEARCH_API_VERIFIER_DIR", "verifier_dir"),
+        ("RESEARCH_API_ARTIFACTS_DIR", "artifacts_dir"),
+    ],
+)
+def test_settings_from_env_rejects_blank_paths(
+    monkeypatch: pytest.MonkeyPatch, name: str, field: str
+) -> None:
+    _clear_settings_env(monkeypatch)
+    monkeypatch.setenv(name, " \t")
+    monkeypatch.setenv("RESEARCH_API_KEY", "not-a-real-key")
+
+    with pytest.raises(ValidationError) as caught:
+        ResearchApiSettings.from_env()
+
+    message = str(caught.value)
+    assert field in message
+    assert "non-empty path" in message
+    assert "not-a-real-key" not in message
+
+
+@pytest.mark.parametrize("value", ["", " \t"])
+def test_settings_from_env_treats_blank_api_key_as_unset(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    _clear_settings_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_KEY", value)
+
+    assert ResearchApiSettings.from_env().api_key is None
+
+
+def test_create_app_uses_environment_settings(
+    evidence_tree: dict[str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _clear_settings_env(monkeypatch)
+    for field, path in evidence_tree.items():
+        monkeypatch.setenv(f"RESEARCH_API_{field.upper()}", str(path))
+
+    response = TestClient(create_app()).get("/health")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data_root_present"] is True
+    assert body["receipts_dir_present"] is True
+    assert body["verifier_dir_present"] is True
+    assert body["artifacts_dir_present"] is True
+
+
+def _clear_bind_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in (
+        "RESEARCH_API_HOST",
+        "RESEARCH_API_PORT",
+        "RESEARCH_API_KEY",
+        "RESEARCH_API_KEY_FILE",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_bind_settings_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_bind_env(monkeypatch)
+
+    settings = ResearchApiBindSettings.from_env()
+
+    assert settings.host == "127.0.0.1"
+    assert settings.port == 8010
+
+
+def test_bind_settings_from_env_normalizes_host_and_allows_ephemeral_port(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", "  localhost\n")
+    monkeypatch.setenv("RESEARCH_API_PORT", "0")
+
+    settings = ResearchApiBindSettings.from_env()
+
+    assert settings.host == "localhost"
+    assert settings.port == 0
+
+
+@pytest.mark.parametrize("value", ["", " \t"])
+def test_bind_settings_reject_blank_host(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", value)
+
+    with pytest.raises(ValidationError, match="non-empty host"):
+        ResearchApiBindSettings.from_env()
+
+
+@pytest.mark.parametrize("value", ["", "not-a-number", "-1", "65536", "1.5"])
+def test_bind_settings_reject_invalid_port(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_PORT", value)
+
+    with pytest.raises(ValidationError) as caught:
+        ResearchApiBindSettings.from_env()
+
+    assert "port" in str(caught.value)
+
+
+def test_main_rejects_invalid_port_before_the_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_PORT", "not-a-number")
+    calls: list[object] = []
+
+    def fake_serve(*args: object, **kwargs: object) -> None:
+        calls.append(args)
+
+    monkeypatch.setattr("quant_fund.api.serve.serve_research", fake_serve)
+    with pytest.raises(SystemExit) as caught:
+        main()
+
+    message = str(caught.value)
+    assert "invalid research API environment" in message
+    assert "RESEARCH_API_PORT" in message
+    assert calls == []
+
+
+@pytest.mark.parametrize("api_key", [None, "", " \t"])
+def test_main_preserves_non_loopback_key_guard(
+    monkeypatch: pytest.MonkeyPatch, api_key: str | None
+) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", "0.0.0.0")
+    if api_key is not None:
+        monkeypatch.setenv("RESEARCH_API_KEY", api_key)
+    calls: list[object] = []
+
+    def fake_serve(*args: object, **kwargs: object) -> None:
+        calls.append(args)
+
+    monkeypatch.setattr("quant_fund.api.serve.serve_research", fake_serve)
+    with pytest.raises(SystemExit, match="non-loopback binding requires RESEARCH_API_KEY"):
+        main()
+
+    assert calls == []
+
+
+def test_main_starts_the_shared_server_with_validated_bind_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", " 0.0.0.0 ")
+    monkeypatch.setenv("RESEARCH_API_PORT", "65535")
+    monkeypatch.setenv("RESEARCH_API_KEY", "not-a-real-key")
+    calls: list[dict[str, object]] = []
+
+    def fake_serve(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("quant_fund.api.serve.serve_research", fake_serve)
+    main()
+
+    assert calls == [{"server_header": False, "date_header": False}]
+
+
+def test_main_accepts_a_file_backed_key_off_loopback(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear_bind_env(monkeypatch)
+    key_path = tmp_path / "research.key"
+    key_path.write_text("not-a-real-key\n", encoding="utf-8")
+    monkeypatch.setenv("RESEARCH_API_HOST", "0.0.0.0")
+    monkeypatch.setenv("RESEARCH_API_KEY_FILE", str(key_path))
+    calls: list[dict[str, object]] = []
+
+    def fake_serve(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("quant_fund.api.serve.serve_research", fake_serve)
+    main()
+
+    assert calls == [{"server_header": False, "date_header": False}]
+
+
+def test_main_allows_loopback_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_bind_env(monkeypatch)
+    calls: list[dict[str, object]] = []
+
+    def fake_serve(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("quant_fund.api.serve.serve_research", fake_serve)
+    main()
+
+    assert calls == [{"server_header": False, "date_header": False}]
+
+
 # ---------------------------------------------------------------------------
 # Contract: every route validates against its declared response model
 # ---------------------------------------------------------------------------
@@ -243,6 +500,31 @@ def test_health(client: TestClient) -> None:
     assert body.mode == "read_only"
     assert body.data_root_present and body.receipts_dir_present
     assert body.claim == "research_only"
+
+
+def test_ready_when_evidence_roots_exist(client: TestClient) -> None:
+    resp = client.get("/ready")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ready"
+    assert body["claim"] == "research_only"
+    assert body["checks"] == {
+        "data_root": True,
+        "receipts_dir": True,
+        "verifier_dir": True,
+        "artifacts_dir": True,
+    }
+
+
+def test_ready_fails_closed_when_a_root_is_missing(settings: ResearchApiSettings) -> None:
+    missing = settings.model_copy(update={"receipts_dir": settings.receipts_dir / "absent"})
+    resp = TestClient(create_app(missing)).get("/ready")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["status"] == "not_ready"
+    assert body["claim"] == "research_only"
+    assert body["checks"]["receipts_dir"] is False
+    assert body["checks"]["data_root"] is True
 
 
 def test_runs_list_and_pagination(client: TestClient) -> None:
@@ -398,6 +680,7 @@ def test_path_traversal_rejected(client: TestClient) -> None:
 def test_remote_client_refused_without_key(settings: ResearchApiSettings) -> None:
     remote = TestClient(create_app(settings), client=("203.0.113.7", 9))
     assert remote.get("/health").status_code == 200
+    assert remote.get("/ready").status_code == 403
     assert remote.get("/receipts").status_code == 403
     assert remote.get("/runs").status_code == 403
 
@@ -412,6 +695,7 @@ def test_api_key_gate(settings: ResearchApiSettings) -> None:
     )
     remote = TestClient(create_app(keyed), client=("203.0.113.7", 9))
     assert remote.get("/health").status_code == 200
+    assert remote.get("/ready").status_code == 401
     assert remote.get("/receipts").status_code == 401
     assert remote.get("/receipts", headers={"X-API-Key": "wrong"}).status_code == 401
     ok = remote.get("/receipts", headers={"X-API-Key": "s3cret"})

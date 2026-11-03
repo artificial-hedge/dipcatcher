@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, tzinfo
+
+import pytest
 
 from quant_fund.simtest.clock import SimClock, crosses_us_dst
 from quant_fund.simtest.faults import Fault
+
+
+class _OffsetlessTZ(tzinfo):
+    def utcoffset(self, value: datetime | None) -> timedelta | None:
+        return None
 
 
 def test_spring_forward_and_fall_back_match_america_new_york() -> None:
@@ -19,6 +26,30 @@ def test_spring_forward_and_fall_back_match_america_new_york() -> None:
     )
     assert spring == 3600
     assert fall == -3600
+
+
+@pytest.mark.parametrize(
+    "value",
+    [datetime(2026, 3, 6, 21, 0), datetime(2026, 3, 6, 21, 0, tzinfo=_OffsetlessTZ())],
+)
+def test_dst_comparison_rejects_datetimes_without_an_offset(value: datetime) -> None:
+    aware = datetime(2026, 3, 9, 21, 0, tzinfo=UTC)
+    with pytest.raises(ValueError, match="timezone-aware"):
+        crosses_us_dst(value, aware)
+    with pytest.raises(ValueError, match="timezone-aware"):
+        crosses_us_dst(aware, value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [datetime(2026, 3, 6, 21, 0), datetime(2026, 3, 6, 21, 0, tzinfo=_OffsetlessTZ())],
+)
+def test_sim_clock_rejects_datetimes_without_an_offset(value: datetime) -> None:
+    with pytest.raises(ValueError, match="timezone-aware"):
+        SimClock(value)
+    clock = SimClock(datetime(2026, 3, 6, 21, 0, tzinfo=UTC))
+    with pytest.raises(ValueError, match="timezone-aware"):
+        clock.advance_to(value, ())
 
 
 def test_leap_fault_repeats_the_previous_instant_once() -> None:

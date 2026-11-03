@@ -67,3 +67,24 @@ def test_malformed_manifest_fails_closed(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="manifest is malformed"):
         load_joblib_artifact(artifact)
+
+
+def test_undecodable_manifest_fails_closed(tmp_path: Path) -> None:
+    artifact = tmp_path / "policy.joblib"
+    save_joblib_artifact({"value": 1}, artifact)
+    (tmp_path / "policy.joblib.manifest.json").write_bytes(b"\xff")
+
+    with pytest.raises(ValueError, match="manifest is malformed"):
+        load_joblib_artifact(artifact)
+
+
+def test_duplicate_manifest_keys_fail_closed(tmp_path: Path) -> None:
+    """Last-win must not restore a valid schema after a conflicting key."""
+    artifact = tmp_path / "policy.joblib"
+    save_joblib_artifact({"value": 1}, artifact)
+    manifest_path = tmp_path / "policy.joblib.manifest.json"
+    body = manifest_path.read_text(encoding="utf-8").strip()
+    manifest_path.write_text('{"schema": "not-a-manifest", ' + body[1:], encoding="utf-8")
+
+    with pytest.raises(ValueError, match="manifest is malformed"):
+        load_joblib_artifact(artifact)

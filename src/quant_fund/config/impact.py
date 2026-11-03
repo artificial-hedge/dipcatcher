@@ -17,6 +17,7 @@ and pins don't depend on spread assumptions).
 ``invalidation_report(diff, receipts_dir)`` then names every committed
 receipt the change touches. Unknown kinds fail *conservative* — an
 unmapped market-data receipt is treated as consuming ``market_data``.
+A receipt that cannot be read is not skipped: the report is not ok.
 """
 
 from __future__ import annotations
@@ -223,10 +224,13 @@ def invalidation_report(diff: list[dict[str, Any]], receipts_dir: Path | str) ->
     for change in diff:
         touched.update(change["domains"])
     hits: list[dict[str, Any]] = []
+    unreadable: list[str] = []
     for f in sorted(Path(receipts_dir).glob("*.json")):
         try:
             rec = json.loads(f.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeError):
+            # A skipped file would let a config change look clean.
+            unreadable.append(f.name)
             continue
         kind = str(rec.get("kind", f.stem))
         kd = kind_domains(kind, rec.get("data_label"))
@@ -237,7 +241,8 @@ def invalidation_report(diff: list[dict[str, Any]], receipts_dir: Path | str) ->
         "touched_domains": sorted(touched),
         "n_invalidated": len(hits),
         "invalidated": hits,
-        "ok": len(hits) == 0 or len(diff) == 0,
+        "unreadable": unreadable,
+        "ok": not unreadable and (len(hits) == 0 or len(diff) == 0),
     }
 
 

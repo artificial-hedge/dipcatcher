@@ -12,11 +12,18 @@ import functools
 from collections.abc import Callable
 from typing import Any
 
-from quant_fund.observe.flags import metrics_host, metrics_port, observe_enabled
+from quant_fund.observe.flags import (
+    metrics_host,
+    metrics_key_env,
+    metrics_loopback_scrape,
+    metrics_port,
+    observe_enabled,
+)
 from quant_fund.observe.tracing import span
 
 _UNDO: list[tuple[Any, str, Any]] = []
 _INSTALLED = False
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 
 
 def wrap_callable(fn: Callable[..., Any], stage: str) -> Callable[..., Any]:
@@ -55,7 +62,13 @@ def install_passive_hooks() -> int:
     if port is not None:
         from quant_fund.observe.serve import start_metrics_server
 
-        start_metrics_server(port, host=metrics_host())
+        host = metrics_host()
+        start_metrics_server(
+            port,
+            host=host,
+            allow_unauthenticated=metrics_loopback_scrape() and host in _LOOPBACK_HOSTS,
+            key_env=metrics_key_env(),
+        )
     return len(_UNDO)
 
 

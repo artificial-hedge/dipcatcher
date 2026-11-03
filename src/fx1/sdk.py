@@ -48,6 +48,7 @@ from typing import Any
 from fx1 import __version__
 from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
 from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
+from fx1.job_artifacts import read_result_artifact
 from fx1.serve.anthropic_compat import (
     AnthropicBatchCounts,
     AnthropicBatchCreate,
@@ -1643,10 +1644,7 @@ class Fx1Harness:
                 # them; the in-process twin lands them in the same
                 # {job.id}-{name} shape under purpose fine-tune-result.
                 for name, path in outcome.artifacts.items():
-                    try:
-                        content = Path(path).read_bytes()
-                    except OSError:
-                        continue
+                    content = read_result_artifact(name, path)
                     file_id = f"file-{uuid.uuid4().hex}"
                     fobj = {
                         "id": file_id,

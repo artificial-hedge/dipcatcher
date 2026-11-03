@@ -29,11 +29,18 @@ from quant_fund.live.brokers import (
     BrokerFill,
     LiveOrder,
     LoopbackBroker,
+    _rejection_is_definite,
     alpaca_credentials,
     map_broker_status,
 )
-from quant_fund.live.config import LiveConfig, load_gateway_pretrade
-from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.config import LiveConfig, load_gateway_pretrade, resolve_pretrade_path
+from quant_fund.live.errors import (
+    ALPACA_LIVE_REFUSAL,
+    BrokerRejected,
+    BrokerTimeout,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 from quant_fund.live.gateway_arm import (
     arm_session,
     disarm_session,
@@ -43,6 +50,15 @@ from quant_fund.live.gateway_arm import (
 )
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
 from quant_fund.live.risk_memory import export_pretrade, restore_pretrade
+from quant_fund.observe.logging import log_event
+from quant_fund.observe.metrics import (
+    record_live_fill_record,
+    record_live_kill_switch_transition,
+    record_live_order_recovery,
+    record_live_order_result,
+    record_live_order_submit,
+    record_live_pretrade_denial,
+)
 from quant_fund.pretrade.codes import KIND_CANCEL, KIND_ORDER
 from quant_fund.pretrade.config import PretradeConfig
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
@@ -177,6 +193,8 @@ class LiveSession:
         self._now = now_ns
         self.orders: list[dict[str, Any]] = []
         self.marks: dict[str, float] = {}
+        self.mark_ts: dict[str, int] = {}
+        self._quote_ns: dict[str, int] = {}
         self.kill_state: dict[str, Any] = {"latched": False, "actor": "", "reason": ""}
         self.ledger = LiveLedger(
             baseline_cash=float(config.starting_cash),
@@ -192,6 +210,7 @@ class LiveSession:
         self._sids: dict[str, int] = {}
         self._engine_noted: set[str] = set()
         self._pretrade_blob: object = None
+        self._risk_session_initialized = False
         self._model_settled = float(config.starting_cash)
         self._disk_token: str | None = None
         self.engine = PretradeEngine(
@@ -219,6 +238,7 @@ class LiveSession:
             "armed": self._arm is not None,
             "actor": None if self._arm is None else self._arm.get("actor"),
             "kill_latched": bool(self.kill_state["latched"]),
+            "halt_reason": str(self.kill_state["reason"]) if self.kill_state["latched"] else "",
             "credentials_present": _credentials_present(self.broker),
             "orders": len(self.orders),
             "computed_cash": self.ledger.computed_cash,
@@ -261,10 +281,17 @@ class LiveSession:
             who = _actor(actor)
             why = _reason(reason)
             ts = self._clock(at_ns)
+            was_latched = bool(self.kill_state["latched"])
             self.engine.trip(who, why, ts)
             self.kill_state = {"latched": True, "actor": who, "reason": why}
             self._persist()
             self._audit("kill", {"actor": who, "reason": why})
+            from quant_fund.api.admin_audit import note_process_mutation
+
+            note_process_mutation("kill-file", "halted")
+            if not was_latched:
+                log_event("live_kill_switch_changed", venue=self.venue, state="latched")
+                record_live_kill_switch_transition(venue=self.venue, state="latched")
             return {
                 "ok": True,
                 "kill_latched": True,
@@ -277,10 +304,14 @@ class LiveSession:
             who = _actor(actor)
             why = _reason(reason)
             ts = self._clock(at_ns)
+            was_latched = bool(self.kill_state["latched"])
             self.engine.reset(who, why, ts)
             self.kill_state = {"latched": False, "actor": who, "reason": why}
             self._persist()
             self._audit("reset", {"actor": who, "reason": why})
+            if was_latched:
+                log_event("live_kill_switch_changed", venue=self.venue, state="reset")
+                record_live_kill_switch_transition(venue=self.venue, state="reset")
             return {
                 "ok": True,
                 "kill_latched": False,
@@ -288,14 +319,20 @@ class LiveSession:
                 "research_evidence": False,
             }
 
-    def mark(self, *, symbol: str, price: float, actor: str) -> dict[str, Any]:
+    def mark(
+        self, *, symbol: str, price: float, actor: str, at_ns: int | None = None
+    ) -> dict[str, Any]:
         with self._lock():
             self._require_trading()
             _actor(actor)
             cleaned = _symbol(symbol)
             number = _positive(price, "mark")
+            ts = self._clock(at_ns)
+            self._note_mark(cleaned, ts)
             self.marks[cleaned] = number
+            self.mark_ts[cleaned] = self._now()
             self.broker.set_mark(cleaned, number)
+            self._sync_account(ts)
             self._persist()
             return {
                 "ok": True,
@@ -316,9 +353,9 @@ class LiveSession:
         actor: str,
         client_order_id: str | None = None,
         at_ns: int | None = None,
+        quote_ts_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
-            self._recover_inflight()
             return self._submit_locked(
                 symbol=symbol,
                 side=side,
@@ -328,6 +365,7 @@ class LiveSession:
                 actor=actor,
                 client_order_id=client_order_id,
                 at_ns=at_ns,
+                quote_ts_ns=quote_ts_ns,
             )
 
     def cancel(
@@ -347,6 +385,21 @@ class LiveSession:
                 raise LiveGateError("order is not in this session")
             if row["status"] in _TERMINAL:
                 return _public_order(row, venue=self.venue, replayed=True)
+            if self._quote_is_stale(str(row["symbol"]), ts):
+                denied = _denied(
+                    reasons=("stale_data",),
+                    symbol=str(row["symbol"]),
+                    side=str(row["side"]),
+                    quantity=float(row["quantity"]),
+                    limit_price=float(row["limit_price"]),
+                    client_order_id=str(row["client_order_id"]),
+                    venue=self.venue,
+                )
+                self._audit(
+                    "deny",
+                    {"client_order_id": row["client_order_id"], "reasons": ["stale_data"]},
+                )
+                return denied
             self._sync_account(ts)
             decision = self.engine.decide(
                 self._view(row, float(row["limit_price"]), ts, KIND_CANCEL),
@@ -362,6 +415,17 @@ class LiveSession:
                     client_order_id=str(row["client_order_id"]),
                     venue=self.venue,
                 )
+                log_event(
+                    "live_pretrade_denied",
+                    venue=self.venue,
+                    kind="cancel",
+                    side=str(row["side"]),
+                    reasons=list(decision.reasons),
+                    primary_reason=decision.reasons[0],
+                )
+                record_live_pretrade_denial(
+                    venue=self.venue, kind="cancel", primary_reason=decision.reasons[0]
+                )
                 self._audit(
                     "deny",
                     {"client_order_id": row["client_order_id"], "reasons": list(decision.reasons)},
@@ -370,9 +434,24 @@ class LiveSession:
             try:
                 ack = self.broker.cancel(str(row["client_order_id"]), str(row["broker_order_id"]))
             except BrokerRejected as exc:
-                row["reason"] = str(exc)
-                self._persist()
-                return _public_order(row, venue=self.venue, replayed=False)
+                try:
+                    recovered, lookup_exc = self._classify_recover(
+                        str(row["client_order_id"]), trigger="cancel_rejected"
+                    )
+                except LiveGateError:
+                    row["reason"] = "broker recovery failed closed"
+                    self._persist()
+                    raise
+                if lookup_exc is not None or recovered is None:
+                    row["reason"] = str(exc)
+                    self._persist()
+                    result = _public_order(row, venue=self.venue, replayed=False)
+                    result["ok"] = False
+                    return result
+                ack = recovered
+            except (BrokerTimeout, TimeoutError):
+                self._note_cancel_timeout(row)
+                raise LiveGateError("cancel unconfirmed after broker timeout") from None
             self._apply_ack(row, ack, ts)
             self._persist()
             self._audit(
@@ -419,24 +498,18 @@ class LiveSession:
         with self._lock():
             self._recover_inflight()
             self._require_trading()
+            self._refuse_book_halt()
             _actor(actor)
+            ts = self._clock(at_ns)
             account = self.broker.account()
             results: list[dict[str, Any]] = []
+            max_age = int(self.pretrade.limits.max_mark_age_ns)
             for symbol, qty in sorted(account.positions.items()):
                 if abs(qty) <= 1e-9:
                     continue
-                mark = self.marks.get(symbol)
+                mark, reason = _flatten_quote(self.marks, self.mark_ts, symbol, ts, max_age)
                 if mark is None:
-                    results.append(
-                        {
-                            "ok": False,
-                            "status": "skipped",
-                            "symbol": symbol,
-                            "reason": "no_mark",
-                            "live_pnl_claim": False,
-                            "research_evidence": False,
-                        }
-                    )
+                    results.append(_skipped_flatten(symbol, reason))
                     continue
                 side = "sell" if qty > 0.0 else "buy"
                 results.append(
@@ -470,10 +543,12 @@ class LiveSession:
         actor: str,
         client_order_id: str | None,
         at_ns: int | None,
+        quote_ts_ns: int | None = None,
     ) -> dict[str, Any]:
         who = _actor(actor)
         ts = self._clock(at_ns)
         self._require_trading()
+        self._refuse_book_halt()
         cleaned = _symbol(symbol)
         order_side = _side(side)
         qty = _positive(quantity, "quantity")
@@ -482,13 +557,45 @@ class LiveSession:
         client = client_order_id or _new_client_id()
         if not _CLIENT.fullmatch(client):
             raise LiveGateError("client_order_id must be 1..48 letters, digits, _ or -")
+        self._refuse_unconfirmed(client)
         existing = self._find(client)
         if existing is not None:
+            _require_same_client(existing, cleaned, order_side, qty, limit)
+            self._recover_inflight()
             return _public_order(existing, venue=self.venue, replayed=True)
-        self._capture_baseline()
+        if self.kill_state["latched"]:
+            return self._deny_killed(who, client, cleaned, order_side, qty, limit)
+        quote_stale = False
+        try:
+            self._gate_quote(cleaned, ts, quote_ts_ns)
+        except LiveGateError as exc:
+            if "stale quote" not in str(exc):
+                raise
+            quote_stale = True
+        if not quote_stale:
+            self._recover_inflight()
+            self._capture_baseline()
+            quote_stale = self._quote_is_stale(cleaned, ts)
+        if quote_stale:
+            denied = _denied(
+                reasons=("stale_data",),
+                symbol=cleaned,
+                side=order_side,
+                quantity=qty,
+                limit_price=limit,
+                client_order_id=client,
+                venue=self.venue,
+            )
+            self._audit(
+                "deny",
+                {"actor": who, "client_order_id": client, "reasons": ["stale_data"]},
+            )
+            self._persist()
+            return denied
         self.marks[cleaned] = reference
+        self.mark_ts[cleaned] = ts
         self.broker.set_mark(cleaned, reference)
-        self._sync_account(ts, reset_session=not self.orders)
+        self._sync_account(ts)
         placeholder = {
             "client_order_id": client,
             "broker_order_id": "",
@@ -513,13 +620,24 @@ class LiveSession:
                 client_order_id=client,
                 venue=self.venue,
             )
+            log_event(
+                "live_pretrade_denied",
+                venue=self.venue,
+                kind="order",
+                side=order_side,
+                reasons=list(decision.reasons),
+                primary_reason=decision.reasons[0],
+            )
+            record_live_pretrade_denial(
+                venue=self.venue, kind="order", primary_reason=decision.reasons[0]
+            )
             self._audit(
                 "deny", {"actor": who, "client_order_id": client, "reasons": list(decision.reasons)}
             )
             self._persist()
             return denied
         self.orders.append(placeholder)
-        self.ledger.note_order(client, expects_fill=False)
+        self.ledger.note_order(client, expects_fill=False, quantity=qty)
         self._persist()
         live_order = LiveOrder(
             client_order_id=client,
@@ -531,16 +649,39 @@ class LiveSession:
         )
         ack = self._send(placeholder, live_order)
         self._apply_ack(placeholder, ack, ts)
+        log_event(
+            "live_order_result",
+            venue=self.venue,
+            side=order_side,
+            status=str(placeholder["status"]),
+        )
+        record_live_order_result(venue=self.venue, status=str(placeholder["status"]))
         self._persist()
         self._audit(
             "submit", {"actor": who, "client_order_id": client, "status": placeholder["status"]}
         )
         return _public_order(placeholder, venue=self.venue, replayed=False)
 
+    def _refuse_unconfirmed(self, client: str) -> None:
+        """A lost submit keeps its id. A new id must not reach the broker."""
+        for row in self.orders:
+            if row["status"] != "inflight":
+                continue
+            if str(row["client_order_id"]) == client:
+                return
+            raise LiveGateError(
+                f"unconfirmed client_order_id {row['client_order_id']} is still open; no order sent"
+            )
+
     def _send(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
+        log_event("live_order_submit", venue=self.venue, side=order.side)
+        record_live_order_submit(venue=self.venue)
         try:
             return self.broker.submit(order)
         except BrokerRejected as exc:
+            recovered = self._recovered_after_reject(row, order, exc)
+            if recovered is not None:
+                return recovered
             return BrokerAck(
                 client_order_id=order.client_order_id,
                 broker_order_id="",
@@ -550,48 +691,230 @@ class LiveSession:
                 fills=(),
                 reason=str(exc),
             )
-        except LiveGateError:
-            row["status"] = "not_acknowledged"
-            row["reason"] = "broker credentials are not set"
-            self._persist()
+        except LiveGateError as exc:
+            self._note_unsent(row, exc)
+            log_event(
+                "live_order_result",
+                venue=self.venue,
+                side=order.side,
+                status="not_acknowledged",
+                error_type=type(exc).__name__,
+            )
+            record_live_order_result(venue=self.venue, status="not_acknowledged")
             raise
-        except Exception:
-            recovered = self._safe_recover(order.client_order_id)
+        except Exception as submit_exc:
+            try:
+                recovered, lookup_exc = self._classify_recover(
+                    order.client_order_id, trigger="submit_error"
+                )
+            except LiveGateError:
+                # A programming or payload error is not "the broker has no
+                # record". Keep the order inflight and surface the cause.
+                row["status"] = "inflight"
+                row["reason"] = "broker recovery failed closed"
+                self._persist()
+                raise
             if recovered is not None:
                 return recovered
             # A lost response is not proof the broker rejected the order.
-            # Leave it inflight so a later open can find it and cancel it.
+            # None means the broker has no record. An OSError means the
+            # lookup itself failed. Either way a later open can retry.
             row["status"] = "inflight"
             row["reason"] = "broker response lost; order remains recoverable"
             self._persist()
+            cause = lookup_exc if lookup_exc is not None else submit_exc
+            log_event(
+                "live_order_result",
+                venue=self.venue,
+                side=order.side,
+                status="response_lost",
+                error_type=type(cause).__name__,
+            )
+            record_live_order_result(venue=self.venue, status="response_lost")
             raise LiveGateError(
                 "broker response lost; the order stays inflight until recovery succeeds"
-            ) from None
+            ) from cause
 
-    def _safe_recover(self, client_order_id: str) -> BrokerAck | None:
+    def _recovered_after_reject(
+        self, row: dict[str, Any], order: LiveOrder, exc: BrokerRejected
+    ) -> BrokerAck | None:
+        """Confirm a broker rejection. An ambiguous or unconfirmed one stays inflight."""
         try:
-            return self.broker.recover(client_order_id)
-        except Exception:
-            return None
+            recovered, lookup_exc = self._classify_recover(
+                order.client_order_id, trigger="submit_rejected"
+            )
+        except LiveGateError:
+            row["status"] = "inflight"
+            row["reason"] = "broker recovery failed closed"
+            self._persist()
+            raise
+        if recovered is not None:
+            return recovered
+        if lookup_exc is not None or not _rejection_is_definite(exc):
+            row["status"] = "inflight"
+            row["reason"] = "broker response lost; order remains recoverable"
+            self._persist()
+            cause = lookup_exc if lookup_exc is not None else exc
+            raise LiveGateError(
+                "broker response lost; the order stays inflight until recovery succeeds"
+            ) from cause
+        return None
+
+    def _classify_recover(
+        self, client_order_id: str, *, trigger: str
+    ) -> tuple[BrokerAck | None, BaseException | None]:
+        """Return ``(ack, transport_error)``.
+
+        ``(None, None)`` means the broker has no record. ``OSError`` (including
+        ``TimeoutError``) stays on the second element so the order can be
+        retried. Any other exception is re-raised as ``LiveGateError``.
+        """
+        try:
+            ack = self.broker.recover(client_order_id)
+        except OSError as exc:
+            self._note_recovery("error", trigger, error_type=type(exc).__name__)
+            return None, exc
+        except LiveGateError as exc:
+            self._note_recovery("error", trigger, error_type=type(exc).__name__)
+            raise
+        except Exception as exc:
+            self._note_recovery("error", trigger, error_type=type(exc).__name__)
+            raise LiveGateError("broker recovery failed closed; the order stays inflight") from exc
+        if ack is None:
+            self._note_recovery("not_found", trigger)
+            return None, None
+        self._note_recovery("recovered", trigger, status=map_broker_status(ack.status))
+        return ack, None
+
+    def _note_recovery(self, outcome: str, trigger: str, **fields: str) -> None:
+        log_event(
+            "live_order_recovery",
+            venue=self.venue,
+            outcome=outcome,
+            trigger=trigger,
+            **fields,
+        )
+        record_live_order_recovery(venue=self.venue, outcome=outcome)
+
+    def _deny_killed(
+        self,
+        actor: str,
+        client: str,
+        symbol: str,
+        side: str,
+        quantity: float,
+        limit_price: float,
+    ) -> dict[str, Any]:
+        denied = _denied(
+            reasons=("kill_switch",),
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            limit_price=limit_price,
+            client_order_id=client,
+            venue=self.venue,
+        )
+        log_event(
+            "live_pretrade_denied",
+            venue=self.venue,
+            kind="order",
+            side=side,
+            reasons=["kill_switch"],
+            primary_reason="kill_switch",
+        )
+        record_live_pretrade_denial(venue=self.venue, kind="order", primary_reason="kill_switch")
+        self._audit("deny", {"actor": actor, "client_order_id": client, "reasons": ["kill_switch"]})
+        self._persist()
+        return denied
+
+    def _note_unsent(self, row: dict[str, Any], exc: LiveGateError) -> None:
+        row["status"] = "not_acknowledged"
+        if isinstance(exc, LiveBrokerRefused):
+            row["reason"] = "alpaca-live is refused"
+        else:
+            row["reason"] = "broker credentials are not set"
+        self._persist()
+
+    def _note_cancel_timeout(self, row: dict[str, Any]) -> None:
+        if row["status"] in _WORKING:
+            row["status"] = "pending_cancel"
+        row["reason"] = "cancel unconfirmed after broker timeout"
+        self._persist()
+
+    def _validated_ack_filled(self, row: dict[str, Any], ack: BrokerAck) -> float:
+        client = str(row["client_order_id"])
+        if ack.client_order_id != client:
+            raise LiveGateError("ack client identity does not match the order")
+        prior_broker_id = str(row["broker_order_id"])
+        if prior_broker_id and ack.broker_order_id and ack.broker_order_id != prior_broker_id:
+            raise LiveGateError("ack broker identity does not match the order")
+        _refuse_ack_mismatch(row, ack)
+        try:
+            filled = float(ack.filled_quantity)
+        except (TypeError, ValueError):
+            raise LiveGateError("ack filled quantity is not a number") from None
+        if not math.isfinite(filled) or filled < 0.0:
+            raise LiveGateError("ack filled quantity must be finite and non-negative")
+        for fill in ack.fills:
+            if fill.client_order_id != client:
+                raise LiveGateError("ack fill client identity does not match the order")
+            self._validate_fill_order(fill)
+        return min(filled, float(row["quantity"]))
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
-        row["broker_order_id"] = ack.broker_order_id
-        status = map_broker_status(ack.status)
-        row["status"] = status
-        row["filled_quantity"] = float(ack.filled_quantity)
-        row["fill_price"] = ack.fill_price
-        row["reason"] = ack.reason
-        if status == "unmapped" and not row["reason"]:
-            row["reason"] = f"unmapped broker status {ack.status}"
-        expects = ack.status in {"filled", "partially_filled"}
-        row["expects_fill"] = expects
-        self.ledger.set_expects_fill(str(row["client_order_id"]), expects)
+        client = str(row["client_order_id"])
+        prior_broker_id = str(row["broker_order_id"])
+        filled = self._validated_ack_filled(row, ack)
         for fill in ack.fills:
             self._record_fill(fill, ts)
+        if not prior_broker_id:
+            row["broker_order_id"] = ack.broker_order_id
+        previous_status = str(row["status"])
+        status = self._ack_status(previous_status, ack.status)
+        row["status"] = status
+        prior_filled = float(row["filled_quantity"])
+        if filled > prior_filled:
+            row["filled_quantity"] = filled
+            row["fill_price"] = ack.fill_price
+        elif filled == prior_filled and filled > 0.0 and row["fill_price"] is None:
+            row["fill_price"] = ack.fill_price
+        if status != previous_status or not row["reason"]:
+            row["reason"] = ack.reason
+        if status == "unmapped" and not row["reason"]:
+            row["reason"] = f"unmapped broker status {ack.status}"
+        expects = (
+            bool(row["expects_fill"])
+            or status in {"filled", "partially_filled"}
+            or max(prior_filled, filled) > 0.0
+            or bool(ack.fills)
+        )
+        row["expects_fill"] = expects
+        self.ledger.set_expects_fill(client, expects)
+        self._project_fills_onto_orders()
 
-    def _record_fill(self, fill: BrokerFill, ts: int) -> str:
+    @staticmethod
+    def _ack_status(previous_status: str, broker_status: str) -> str:
+        status = map_broker_status(broker_status)
+        if previous_status in _TERMINAL or (
+            previous_status == "partially_filled" and status in {"accepted", "inflight", "unmapped"}
+        ):
+            return previous_status
+        return status
+
+    def _validate_fill_order(self, fill: BrokerFill) -> None:
         if fill.side not in {"buy", "sell"}:
             raise LiveGateError("broker fill side is not buy or sell")
+        row = self._find(fill.client_order_id)
+        if row is not None and (fill.symbol != row["symbol"] or fill.side != row["side"]):
+            raise LiveGateError("broker fill identity does not match the order")
+
+    def _record_fill(self, fill: BrokerFill, ts: int) -> str:
+        self._validate_fill_order(fill)
+        if not self.ledger.has_fill(fill.fill_id):
+            row = self._find(fill.client_order_id)
+            if row is not None and str(row["status"]) in _TERMINAL:
+                self._latch_broker_fault("fill_after_terminal", fill.fill_id, ts)
+                return "fill_after_terminal"
         ledger_fill = LedgerFill(
             fill_id=fill.fill_id,
             client_order_id=fill.client_order_id,
@@ -602,14 +925,51 @@ class LiveSession:
             fill_time_ns=fill.fill_time_ns if fill.fill_time_ns > 0 else ts,
         )
         verdict = self.ledger.record_fill(ledger_fill)
-        if verdict in {"duplicate_fill", "orphan_fill"}:
+        if verdict in {"accepted", "out_of_order_fill", "replaced_provisional", "orphan_fill"}:
+            log_event(
+                "live_order_fill_recorded",
+                level="warning" if verdict in {"orphan_fill", "out_of_order_fill"} else "info",
+                venue=self.venue,
+                side=fill.side,
+                verdict=verdict,
+            )
+            record_live_fill_record(venue=self.venue, verdict=verdict)
+        if verdict in {"orphan_fill", "overfill"}:
+            self._latch_broker_fault(verdict, fill.fill_id, ts)
             return verdict
-        if fill.client_order_id in self._engine_noted or verdict == "replaced_provisional":
-            self._sync_account(ts)
+        if verdict in {"duplicate_fill", "conflicting_fill"}:
+            return verdict
+        if verdict == "replaced_provisional":
+            self._rebuild_engine_accounting()
         else:
             self._engine_from_fill(fill, ts)
-            self._engine_noted.add(fill.client_order_id)
         return verdict
+
+    def _latch_broker_fault(self, verdict: str, fill_id: str, ts: int) -> None:
+        """Stop new orders when broker truth is an unknown, excess, or late fill."""
+        if self.kill_state["latched"]:
+            return
+        reason = f"{verdict} {fill_id}"
+        self.engine.trip("broker", reason, ts)
+        self.kill_state = {"latched": True, "actor": "broker", "reason": reason}
+
+    def _quote_is_stale(self, symbol: str, ts: int) -> bool:
+        """True when the stored quote is older than ``ts`` allows. Does not refresh it.
+
+        A timestamp inside the current window, including a loopback ``--at``
+        earlier than the wall clock, still refreshes on submit. Only an aged
+        quote is refused, so submit cannot launder it by rewriting the mark.
+        """
+        book = self.engine.book
+        if int(book.mark_ts) != 0 and ts > int(book.mark_deadline):
+            return True
+        sid = self._sids.get(symbol)
+        if sid is None:
+            return False
+        sym = self.engine.book.syms[sid]
+        if not sym.ref_ok:
+            return False
+        return ts > int(sym.deadline)
 
     def _engine_from_fill(self, fill: BrokerFill, ts: int) -> None:
         account = self.broker.account()
@@ -632,7 +992,7 @@ class LiveSession:
         self._model_settled = float(self.engine.book.settled)
         self.engine.set_symbol(sid, pos=pos_after, ref_px=mark, ref_ts_ns=ts, bid=mark)
 
-    def _sync_account(self, ts: int, *, reset_session: bool = False) -> None:
+    def _sync_account(self, ts: int) -> None:
         account = self.broker.account()
         if not math.isfinite(account.cash) or account.cash < 0.0:
             raise LiveGateError("broker cash is not usable")
@@ -641,6 +1001,7 @@ class LiveSession:
         self._absorb_broker_marks(account)
         reserved_qty, reserved_cash = self._working_exposure()
         self._require_marks(account.positions, reserved_qty)
+        reset_session = not self._risk_session_initialized
         self.engine.update_account(
             nav=account.equity,
             mark_ts_ns=ts,
@@ -656,6 +1017,7 @@ class LiveSession:
                 continue
             qty = float(account.positions.get(symbol, 0.0)) + float(reserved_qty.get(symbol, 0.0))
             self._install(symbol, qty, mark, ts)
+        self._risk_session_initialized = True
 
     def _absorb_broker_marks(self, account: BrokerAccount) -> None:
         for symbol, price in account.marks.items():
@@ -694,28 +1056,39 @@ class LiveSession:
         return qty, cash
 
     def _project_fills_onto_orders(self) -> None:
-        """Copy reconciled fills onto the order row so cancel sees a filled order."""
+        """Project execution facts without reopening terminal orders or hiding overfills."""
         grouped: dict[str, list[LedgerFill]] = {}
         for fill in self.ledger.fills():
+            if not self.ledger.was_applied(fill.fill_id):
+                continue
             grouped.setdefault(fill.client_order_id, []).append(fill)
         for row in self.orders:
-            fills = grouped.get(str(row["client_order_id"]))
-            if not fills:
-                continue
-            qty = sum(fill.quantity for fill in fills)
-            cost = sum(fill.quantity * fill.price for fill in fills)
-            row["filled_quantity"] = qty
-            if qty > 0.0:
-                row["fill_price"] = cost / qty
-            if qty + 1e-9 >= float(row["quantity"]):
-                row["status"] = "filled"
-                row["expects_fill"] = True
-            elif qty > 1e-9 and row["status"] not in _TERMINAL:
-                row["status"] = "partially_filled"
-                row["expects_fill"] = True
             client = str(row["client_order_id"])
-            if client in self.ledger._expects:
-                self.ledger.set_expects_fill(client, bool(row["expects_fill"]))
+            fills = grouped.get(client)
+            if fills and sum(fill.quantity for fill in fills) > float(row["quantity"]) + 1e-9:
+                raise LiveGateError(f"reconciled fills exceed order quantity for {client}")
+        for row in self.orders:
+            self._project_row_fills(row, grouped.get(str(row["client_order_id"])))
+
+    def _project_row_fills(self, row: dict[str, Any], fills: list[LedgerFill] | None) -> None:
+        if not fills:
+            return
+        client = str(row["client_order_id"])
+        ledger_qty = sum(fill.quantity for fill in fills)
+        cost = sum(fill.quantity * fill.price for fill in fills)
+        order_qty = float(row["quantity"])
+        prior_qty = float(row["filled_quantity"])
+        qty = max(prior_qty, min(ledger_qty, order_qty))
+        row["filled_quantity"] = qty
+        if ledger_qty >= prior_qty and ledger_qty > 0.0:
+            row["fill_price"] = cost / ledger_qty
+        if row["status"] not in _TERMINAL:
+            if qty + 1e-9 >= order_qty:
+                row["status"] = "filled"
+            elif qty > 1e-9:
+                row["status"] = "partially_filled"
+        row["expects_fill"] = bool(row["expects_fill"]) or qty > 1e-9
+        self.ledger.set_expects_fill(client, bool(row["expects_fill"]))
 
     def _install(
         self, symbol: str, qty: float, mark: float, ts: int, *, seed_lots: bool = True
@@ -759,33 +1132,131 @@ class LiveSession:
         if self.orders or self.ledger.fills():
             return
         account = self.broker.account()
-        self.ledger = LiveLedger(
-            baseline_cash=account.cash,
-            baseline_positions=dict(account.positions),
-            cash_tolerance=self.config.cash_tolerance,
-            position_tolerance=self.config.position_tolerance,
-        )
+        try:
+            self.ledger = LiveLedger(
+                baseline_cash=account.cash,
+                baseline_positions=dict(account.positions),
+                cash_tolerance=self.config.cash_tolerance,
+                position_tolerance=self.config.position_tolerance,
+            )
+        except ValueError as exc:
+            raise LiveGateError(f"broker account snapshot is not usable: {exc}") from exc
         self._baseline_from_broker = True
 
     def _recover_inflight(self) -> None:
         ts = self._now()
         changed = False
         for row in self.orders:
-            if row["status"] != "inflight":
+            if row["status"] not in _WORKING:
                 continue
-            ack = self._safe_recover(str(row["client_order_id"]))
-            if ack is None:
+            ack, lookup_exc = self._classify_recover(
+                str(row["client_order_id"]), trigger="inflight"
+            )
+            if lookup_exc is not None or ack is None:
                 continue
             changed = True
             self._apply_ack(row, ack, ts)
         if changed:
             self._persist()
 
+    def _awaiting_broker_baseline(self) -> bool:
+        """True before the first order adopts the broker book as the ledger baseline."""
+        return not self._baseline_from_broker and not self.orders and not self.ledger.fills()
+
+    def _require_broker_book(self) -> bool:
+        """Latch when the broker book is missing or disagrees. True means halt.
+
+        A session that has not adopted a broker baseline yet still refuses a
+        missing or non-finite snapshot. A finite book is the baseline the
+        first order captures, so that difference is not a conflict.
+        """
+        if self.venue == "alpaca-live":
+            return False
+        try:
+            account = self.broker.account()
+        except (OSError, LiveGateError, ValueError):
+            self._latch_book("broker account snapshot could not be fetched; no new orders")
+            return True
+        if self._awaiting_broker_baseline():
+            if not math.isfinite(account.cash) or not math.isfinite(account.equity):
+                self._latch_book("broker account snapshot is not usable; no new orders")
+                return True
+            return False
+        conflict = _book_conflict(
+            account,
+            self.ledger,
+            cash_tolerance=self.config.cash_tolerance,
+            position_tolerance=self.config.position_tolerance,
+        )
+        if conflict is None:
+            return False
+        self._latch_book(conflict)
+        return True
+
+    def _latch_book(self, reason: str) -> None:
+        if self.kill_state["latched"]:
+            return
+        self.kill_state = {"latched": True, "actor": "startup", "reason": reason}
+        self._persist()
+
+    def _refuse_book_halt(self) -> None:
+        if not self.kill_state["latched"]:
+            return
+        reason = str(self.kill_state["reason"])
+        if reason.startswith("broker ") and "no new orders" in reason:
+            raise LiveGateError(reason)
+
+    def _sync_loopback_if_clear(self, book_halted: bool) -> None:
+        if self.venue == "loopback" and not book_halted:
+            self._sync_account(self._now())
+
     def _require_trading(self) -> None:
         if self._arm is None:
             raise LiveGateError("session is not armed; run live arm")
         if not _credentials_present(self.broker) and self.venue != "loopback":
             raise LiveGateError("broker credentials are not set")
+        if self.venue == "alpaca-live":
+            raise LiveBrokerRefused(ALPACA_LIVE_REFUSAL)
+
+    def _note_mark(self, symbol: str, now_ns: int) -> None:
+        from quant_fund.execution.quote_gate import QuoteHalt, note_quote
+
+        try:
+            note_quote(
+                symbol=symbol,
+                quote_ns=now_ns,
+                now_ns=now_ns,
+                max_age_ns=int(self.engine._max_ref_age),
+                previous_ns=self._quote_ns.get(symbol),
+            )
+        except QuoteHalt as exc:
+            raise LiveGateError(str(exc)) from exc
+        self._quote_ns[symbol] = now_ns
+
+    def _gate_quote(self, symbol: str, now_ns: int, quote_ts_ns: int | None) -> None:
+        from quant_fund.execution.quote_gate import QuoteHalt, note_quote, require_fresh_quote
+
+        max_age = int(self.engine._max_ref_age)
+        stored = self._quote_ns.get(symbol)
+        try:
+            if quote_ts_ns is None:
+                if stored is not None:
+                    require_fresh_quote(
+                        symbol=symbol, quote_ns=stored, now_ns=now_ns, max_age_ns=max_age
+                    )
+                else:
+                    self._quote_ns[symbol] = now_ns
+                return
+            note_quote(
+                symbol=symbol,
+                quote_ns=quote_ts_ns,
+                now_ns=now_ns,
+                max_age_ns=max_age,
+                previous_ns=stored,
+            )
+            self._quote_ns[symbol] = quote_ts_ns
+        except QuoteHalt as exc:
+            raise LiveGateError(str(exc)) from exc
 
     def _clock(self, at_ns: int | None) -> int:
         if at_ns is None:
@@ -824,7 +1295,10 @@ class LiveSession:
     def _load_fresh(self) -> None:
         self.orders = []
         self.marks = {}
+        self.mark_ts = {}
+        self._quote_ns = {}
         self.kill_state = {"latched": False, "actor": "", "reason": ""}
+        _refuse_broker_venue(self.venue, self.broker)
         self._pretrade_blob = None
         self._baseline_from_broker = self.venue == "loopback"
         self.ledger = self._new_ledger(float(self.config.starting_cash), {})
@@ -840,7 +1314,10 @@ class LiveSession:
         self.marks = {
             str(symbol): _positive(float(price), "stored mark") for symbol, price in marks.items()
         }
+        self.mark_ts = _stored_mark_times(stored.get("mark_ts"))
+        self._quote_ns = _quote_times(stored)
         self.kill_state = _kill_from_state(kill)
+        _refuse_broker_venue(self.venue, self.broker)
         self._pretrade_blob = stored.get("pretrade")
         baseline_positions = stored.get("baseline_positions") or {}
         if not isinstance(baseline_positions, dict):
@@ -868,7 +1345,9 @@ class LiveSession:
     def _replay(self, fills: list[Any]) -> None:
         for row in self.orders:
             self.ledger.note_order(
-                str(row["client_order_id"]), expects_fill=bool(row["expects_fill"])
+                str(row["client_order_id"]),
+                expects_fill=bool(row["expects_fill"]),
+                quantity=float(row["quantity"]),
             )
         for item in fills:
             if not isinstance(item, dict):
@@ -883,6 +1362,8 @@ class LiveSession:
             "baseline_positions": self.ledger.baseline_positions,
             "baseline_from_broker": self._baseline_from_broker,
             "marks": dict(self.marks),
+            "mark_ts": dict(self.mark_ts),
+            "quote_ns": dict(self._quote_ns),
             "orders": list(self.orders),
             "fills": [fill.as_dict() for fill in self.ledger.fills()],
             "kill": dict(self.kill_state),
@@ -927,13 +1408,19 @@ class LiveSession:
                 handle.flush()
             os.chmod(path, 0o600)
             _acquire(handle)
+            entered = False
             try:
                 token = self._file_token()
                 if token != self._disk_token:
                     self._reload_locked()
+                entered = True
                 yield
-                self._disk_token = self._file_token()
             finally:
+                if entered:
+                    # A persist that then raises still changed the files. Leave
+                    # the token current so the next call does not treat that
+                    # write as someone else's update.
+                    self._disk_token = self._file_token()
                 _release(handle)
         finally:
             handle.close()
@@ -956,13 +1443,14 @@ class LiveSession:
         self._build_engine()
         for symbol, price in self.marks.items():
             self.broker.set_mark(symbol, price)
-        if self.venue == "loopback":
-            self._sync_account(self._now())
+        # Adopt inflight executions before judging the book. A fill the broker
+        # already holds is not cash drift until recovery has had a chance.
+        self._recover_inflight()
+        self._sync_loopback_if_clear(self._require_broker_book())
         if self.kill_state["latched"]:
             self.engine.trip(
                 str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
             )
-        self._recover_inflight()
 
     def _build_engine(self) -> None:
         """New engine, then the persisted rings and a fill replay for settlement."""
@@ -983,10 +1471,25 @@ class LiveSession:
         if self._pretrade_blob is not None:
             restore_pretrade(self.engine, self._pretrade_blob)
         self._replay_fills_into_engine(self._now())
+        self._risk_session_initialized = (
+            self._pretrade_blob is not None and self._baseline_from_broker
+        )
+
+    def _rebuild_engine_accounting(self) -> None:
+        self._pretrade_blob = export_pretrade(self.engine)
+        self._build_engine()
+        if self.kill_state["latched"]:
+            self.engine.trip(
+                str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
+            )
 
     def _replay_fills_into_engine(self, ts: int) -> None:
         positions: dict[str, float] = {}
+        known_orders = {str(row["client_order_id"]) for row in self.orders}
         for fill in self.ledger.fills():
+            known = fill.client_order_id in known_orders
+            if not known or not self.ledger.was_applied(fill.fill_id):
+                continue
             signed = fill.quantity if fill.side == "buy" else -fill.quantity
             before = positions.get(fill.symbol, 0.0)
             after = before + signed
@@ -1018,6 +1521,8 @@ def open_session(
     transport: Any = None,
 ) -> LiveSession:
     """Open or create the session directory for ``config``."""
+    _require_pretrade_file(config, config_path)
+    _refuse_broker_venue(config.venue, broker)
     root = Path(state_dir) if state_dir is not None else Path(config.state_dir)
     root.mkdir(parents=True, exist_ok=True)
     key = load_hmac_key(root / "hmac.key")
@@ -1090,6 +1595,44 @@ def _require_state_identity(stored: dict[str, Any], venue: str) -> None:
         raise LiveGateError("session state must not claim research evidence or live profit")
 
 
+def _quote_times(stored: dict[str, Any]) -> dict[str, int]:
+    from quant_fund.execution.quote_gate import _whole_ns
+
+    raw = stored.get("quote_ns", {})
+    if not isinstance(raw, dict):
+        raise LiveGateError("stored quote times are malformed")
+    parsed: dict[str, int] = {}
+    for symbol, stamp in raw.items():
+        if not _whole_ns(stamp):
+            raise LiveGateError(f"quote clock for {symbol} is not usable; no order sent")
+        parsed[_symbol(str(symbol))] = stamp
+    return parsed
+
+
+def _book_conflict(
+    account: BrokerAccount,
+    ledger: LiveLedger,
+    *,
+    cash_tolerance: float,
+    position_tolerance: float,
+) -> str | None:
+    if not math.isfinite(account.cash) or not math.isfinite(account.equity):
+        return "broker account snapshot is not usable; no new orders"
+    if abs(account.cash - ledger.computed_cash) > cash_tolerance:
+        return "broker positions disagree with the local ledger (cash); no new orders"
+    symbols = set(account.positions) | set(ledger.computed_positions)
+    for symbol in sorted(symbols):
+        broker_qty = float(account.positions.get(symbol, 0.0))
+        ledger_qty = float(ledger.computed_positions.get(symbol, 0.0))
+        if (
+            not math.isfinite(broker_qty)
+            or not math.isfinite(ledger_qty)
+            or abs(broker_qty - ledger_qty) > position_tolerance
+        ):
+            return f"broker positions disagree with the local ledger ({symbol}); no new orders"
+    return None
+
+
 def _state_collections(
     stored: dict[str, Any],
 ) -> tuple[list[Any], list[Any], dict[str, Any], dict[str, Any]]:
@@ -1133,6 +1676,91 @@ def _order_row(raw: object) -> dict[str, Any]:
         "expects_fill": bool(raw.get("expects_fill")),
         "reason": str(raw.get("reason") or ""),
     }
+
+
+def _require_pretrade_file(config: LiveConfig, config_path: str | Path) -> None:
+    path = resolve_pretrade_path(config, config_path)
+    if not path.is_file():
+        raise LiveGateError("pretrade config is missing")
+
+
+def _refuse_broker_venue(venue: str, broker: Broker | None) -> None:
+    if isinstance(broker, AlpacaBroker) and broker.venue != venue:
+        raise LiveGateError("broker venue does not match the live config")
+
+
+def _require_same_client(
+    existing: dict[str, Any],
+    symbol: str,
+    side: str,
+    quantity: float,
+    limit_price: float,
+) -> None:
+    same = (
+        existing["symbol"] == symbol
+        and existing["side"] == side
+        and abs(float(existing["quantity"]) - quantity) <= 1e-9
+        and abs(float(existing["limit_price"]) - limit_price) <= 1e-9
+    )
+    if not same:
+        raise LiveGateError("client_order_id conflicts with a different order")
+
+
+def _refuse_ack_mismatch(row: dict[str, Any], ack: BrokerAck) -> None:
+    if float(ack.filled_quantity) > float(row["quantity"]) + 1e-9:
+        raise LiveGateError("broker fill exceeds the order quantity")
+    if _ack_identity_conflict(row, ack):
+        raise LiveGateError("broker ack does not match the order")
+
+
+def _ack_identity_conflict(row: dict[str, Any], ack: BrokerAck) -> bool:
+    if not ack.symbol and not ack.side and ack.quantity == 0.0:
+        return False
+    if ack.symbol and ack.symbol != row["symbol"]:
+        return True
+    if ack.side and ack.side != row["side"]:
+        return True
+    return ack.quantity != 0.0 and abs(ack.quantity - float(row["quantity"])) > 1e-9
+
+
+def _flatten_quote(
+    marks: dict[str, float],
+    mark_ts: dict[str, int],
+    symbol: str,
+    ts: int,
+    max_age: int,
+) -> tuple[float | None, str]:
+    mark = marks.get(symbol)
+    if mark is None or mark <= 0.0:
+        return None, "no_mark"
+    seen = mark_ts.get(symbol)
+    if seen is None or ts - int(seen) > max_age:
+        return None, "stale_data"
+    return float(mark), ""
+
+
+def _skipped_flatten(symbol: str, reason: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "status": "skipped",
+        "symbol": symbol,
+        "reason": reason,
+        "live_pnl_claim": False,
+        "research_evidence": False,
+    }
+
+
+def _stored_mark_times(raw: object) -> dict[str, int]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise LiveGateError("stored mark times are malformed")
+    times: dict[str, int] = {}
+    for symbol, stamp in raw.items():
+        if isinstance(stamp, bool) or not isinstance(stamp, int) or stamp < 0:
+            raise LiveGateError("stored mark time is malformed")
+        times[str(symbol)] = stamp
+    return times
 
 
 def _public_order(row: dict[str, Any], *, venue: str, replayed: bool) -> dict[str, Any]:
@@ -1199,13 +1827,48 @@ def _windows_lock(handle: Any, operation: str) -> None:
     attrgetter("locking")(runtime)(handle.fileno(), attrgetter(operation)(runtime), 1)
 
 
-def _acquire(handle: Any) -> None:
+# A peer that never drops the session file must not stall this process.
+_SESSION_LOCK_WAIT_S = 30.0
+
+
+def _lock_wait(timeout: float) -> float:
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+        raise LiveGateError("session lock timeout must be a positive finite number of seconds")
+    if not math.isfinite(float(timeout)) or float(timeout) <= 0.0:
+        raise LiveGateError("session lock timeout must be a positive finite number of seconds")
+    return float(timeout)
+
+
+def _try_lock(handle: Any) -> bool:
+    """Take a non-blocking exclusive lock. False means another holder has it."""
     if os.name == "nt":
-        _windows_lock(handle, "LK_LOCK")
-        return
+        import importlib
+        from operator import attrgetter
+
+        runtime = importlib.import_module("msvcrt")
+        handle.seek(0)
+        try:
+            attrgetter("locking")(runtime)(handle.fileno(), attrgetter("LK_NBLCK")(runtime), 1)
+        except OSError:
+            return False
+        return True
     import fcntl
 
-    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return False
+    return True
+
+
+def _acquire(handle: Any, *, timeout: float = _SESSION_LOCK_WAIT_S) -> None:
+    deadline = time.monotonic() + _lock_wait(timeout)
+    while True:
+        if _try_lock(handle):
+            return
+        if time.monotonic() >= deadline:
+            raise LiveGateError("session lock timed out")
+        time.sleep(0.01)
 
 
 def _release(handle: Any) -> None:

@@ -56,9 +56,13 @@ def max_sharpe_weights(mu: Array, cov: Array, long_only: bool = True) -> Array:
 
     def neg_sharpe(w: Array) -> float:
         var = float(w @ c @ w)
-        if var <= 0.0:
-            return 0.0
-        return float(-float(w @ m) / np.sqrt(var))
+        # A zero-variance book is not a better objective than a negative Sharpe.
+        if not np.isfinite(var) or var <= 0.0:
+            return 1e6
+        excess = float(w @ m)
+        if not np.isfinite(excess):
+            return 1e6
+        return float(-excess / np.sqrt(var))
 
     res = minimize(neg_sharpe, x0, method="SLSQP", bounds=_bounds(n, long_only), constraints=cons)
     if not res.success:
@@ -67,7 +71,11 @@ def max_sharpe_weights(mu: Array, cov: Array, long_only: bool = True) -> Array:
     total = float(w.sum())
     if not np.isfinite(total) or abs(total) < 1e-12:
         raise ValueError("max-Sharpe optimization returned a degenerate weight vector")
-    return np.asarray(w / total, dtype=float)
+    solved = np.asarray(w / total, dtype=float)
+    variance = float(solved @ c @ solved)
+    if not np.isfinite(variance) or variance <= 0.0:
+        raise ValueError("max-Sharpe solution has non-positive variance")
+    return solved
 
 
 def min_variance_weights(cov: Array, long_only: bool = True) -> Array:
@@ -119,4 +127,7 @@ def resampled_weights(
         else:
             acc += min_variance_weights(cov_s, long_only)
     w = acc / n_sims
-    return {"weights": w / w.sum(), "n_sims": np.array([n_sims], dtype=float)}
+    total = float(np.sum(w))
+    if not np.isfinite(total) or abs(total) < 1e-12:
+        raise ValueError("resampled weights summed to zero")
+    return {"weights": w / total, "n_sims": np.array([n_sims], dtype=float)}

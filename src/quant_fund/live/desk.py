@@ -54,7 +54,24 @@ _VISIBLE = {
 
 
 class LiveDeskError(ValueError):
-    """The desk refused the call before a risk decision existed."""
+    """The desk refused the command. No new ticket was sent."""
+
+
+def _fresh_mark(
+    marks: dict[str, float],
+    mark_ts: dict[str, int],
+    symbol: str,
+    ts_ns: int,
+    max_age: int,
+) -> float | None:
+    """Last mark that is still inside the pre-trade age window."""
+    mark = marks.get(symbol)
+    if mark is None or mark <= 0.0:
+        return None
+    seen = mark_ts.get(symbol)
+    if seen is None or ts_ns - int(seen) > max_age:
+        return None
+    return float(mark)
 
 
 @dataclass
@@ -137,6 +154,7 @@ class LiveDesk:
     _drop: DropBridge | None = None
     _by_client: dict[str, str] = field(default_factory=dict)
     _lock_path: Path | None = None
+    _lock_fd: int | None = None
     _closed: bool = False
     _integrity_frozen: bool = False
     _settled_before: float = 0.0
@@ -198,10 +216,16 @@ class LiveDesk:
 
     def close(self) -> None:
         self._closed = True
+        fd = self._lock_fd
         path = self._lock_path
+        self._lock_fd = None
         self._lock_path = None
-        if path is not None and path.exists():
-            path.unlink()
+        if fd is None:
+            return
+        try:
+            _release_desk_lock(fd, path)
+        finally:
+            os.close(fd)
 
     def __enter__(self) -> LiveDesk:
         return self
@@ -247,6 +271,9 @@ class LiveDesk:
         self.halt_reason = reason
         self._journal("kill", {"actor": actor, "reason": reason})
         self._save()
+        from quant_fund.api.admin_audit import note_process_mutation
+
+        note_process_mutation("kill-file", "halted")
         return self._envelope(accepted=True, status="halted")
 
     def reset(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
@@ -270,6 +297,7 @@ class LiveDesk:
         self._clock(ts_ns)
         symbol = _symbol(symbol)
         _price(px)
+        self._gate_quote(symbol, ts_ns, new_tick=True)
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -277,6 +305,26 @@ class LiveDesk:
         self._journal("mark", {"symbol": symbol, "px": px, "ts_ns": ts_ns})
         self._save()
         return self._envelope(accepted=True, status="marked")
+
+    def _stale_quote_denial(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+        ts_ns: int,
+        client: str,
+    ) -> dict[str, object] | None:
+        """Return a stale-data denial. Other quote-gate errors still raise."""
+        try:
+            self._gate_quote(symbol, ts_ns, new_tick=False)
+        except LiveDeskError as exc:
+            if "stale quote" not in str(exc):
+                raise
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        if self._mark_is_stale(symbol, ts_ns):
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        return None
 
     def submit(
         self,
@@ -300,16 +348,13 @@ class LiveDesk:
         _client(client)
         prior = self._by_client.get(client)
         if prior is not None:
-            order = self.orders[prior]
-            return self._envelope(
-                accepted=order.status not in {"denied", "rejected"},
-                status=order.status,
-                transmitted=order.transmitted,
-                idempotent=True,
-                order=order.as_dict(),
-            )
+            return self._idempotent_order(prior, symbol, side, qty, px)
+        self._refuse_unconfirmed()
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
+        stale = self._stale_quote_denial(symbol, side, qty, px, ts_ns, client)
+        if stale is not None:
+            return stale
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -359,8 +404,13 @@ class LiveDesk:
         self._reserve(symbol, side, qty, px)
         self._step({"op": "submit", "order_id": order.order_id, "qty": qty})
         self._sync_order(order)
-        order.transmitted = True
+        order.status = "unconfirmed"
+        order.transmitted = False
+        self._journal("intent", order.as_dict())
+        self._save()
         self._send(_ticket(order))
+        order.transmitted = True
+        self._sync_order(order)
         self._journal("transmit", order.as_dict())
         self._save()
         if self.arming.venue == "loopback":
@@ -441,8 +491,14 @@ class LiveDesk:
         for symbol, qty in list(self.positions.items()):
             if abs(qty) <= _EPS:
                 continue
-            mark = self.marks.get(symbol)
-            if mark is None or mark <= 0.0:
+            mark = _fresh_mark(
+                self.marks,
+                self.mark_ts,
+                symbol,
+                ts_ns,
+                int(self.config.limits.max_mark_age_ns),
+            )
+            if mark is None:
                 reports.append({"symbol": symbol, "accepted": False, "reasons": ["stale_data"]})
                 continue
             side = "SELL" if qty > 0.0 else "BUY"
@@ -656,10 +712,59 @@ class LiveDesk:
         order.filled_qty = float(state.filled)
         order.status = _VISIBLE.get(state.status, state.status)
 
+    def _replay(self, order_id: str) -> dict[str, object]:
+        order = self.orders[order_id]
+        if order.status == "unconfirmed":
+            raise LiveDeskError(
+                f"client_order_id {order.client_order_id} is unconfirmed; no order sent"
+            )
+        return self._envelope(
+            accepted=order.status not in {"denied", "rejected"},
+            status=order.status,
+            transmitted=order.transmitted,
+            idempotent=True,
+            order=order.as_dict(),
+        )
+
+    def _refuse_unconfirmed(self) -> None:
+        for order in self.orders.values():
+            if order.status == "unconfirmed":
+                raise LiveDeskError(
+                    f"client_order_id {order.client_order_id} is unconfirmed; no order sent"
+                )
+
     def _store(self, order: DeskOrder) -> None:
         self.orders[order.order_id] = order
         self.order_ids.append(order.order_id)
         self._by_client[order.client_order_id] = order.order_id
+
+    def _idempotent_order(
+        self,
+        order_id: str,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+    ) -> dict[str, object]:
+        order = self.orders[order_id]
+        if (
+            order.symbol != symbol
+            or order.side != side
+            or abs(order.qty - qty) > 1e-8
+            or abs(order.px - px) > 1e-8
+        ):
+            raise LiveDeskError("client_order_id conflicts with a different order")
+        if order.status == "unconfirmed":
+            raise LiveDeskError(
+                f"client_order_id {order.client_order_id} is unconfirmed; no order sent"
+            )
+        return self._envelope(
+            accepted=order.status not in {"denied", "rejected"},
+            status=order.status,
+            transmitted=order.transmitted,
+            idempotent=True,
+            order=order.as_dict(),
+        )
 
     def _deny(
         self,
@@ -756,6 +861,33 @@ class LiveDesk:
                 return True
         count = sum(1 for stamp in self.rate_message_ts if ts_ns - stamp <= window)
         return count >= int(self.config.limits.max_messages_per_window)
+
+    def _gate_quote(self, symbol: str, ts_ns: int, *, new_tick: bool) -> None:
+        from quant_fund.execution.quote_gate import QuoteHalt, note_quote, require_fresh_quote
+
+        max_age = int(self.config.limits.max_reference_age_ns)
+        previous = self.mark_ts.get(symbol)
+        try:
+            if new_tick:
+                note_quote(
+                    symbol=symbol,
+                    quote_ns=ts_ns,
+                    now_ns=ts_ns,
+                    max_age_ns=max_age,
+                    previous_ns=previous,
+                )
+            elif previous is not None:
+                require_fresh_quote(
+                    symbol=symbol, quote_ns=previous, now_ns=ts_ns, max_age_ns=max_age
+                )
+        except QuoteHalt as exc:
+            raise LiveDeskError(str(exc)) from exc
+
+    def _mark_is_stale(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        if prior is None:
+            return False
+        return ts_ns > prior + int(self.config.limits.max_mark_age_ns)
 
     def _going_backwards(self, ts_ns: int) -> bool:
         last = int(self.engine.book.last_ts)
@@ -1089,22 +1221,8 @@ class LiveDesk:
 
     def _acquire(self) -> None:
         path = self.root / ".lock"
-        for _ in range(2):
-            try:
-                fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            except FileExistsError:
-                if _lock_alive(path):
-                    raise LiveDeskError(f"desk is locked: {path}") from None
-                try:
-                    path.unlink()
-                except OSError as exc:
-                    raise LiveDeskError(f"desk is locked: {path}") from exc
-                continue
-            os.write(fd, str(os.getpid()).encode())
-            os.close(fd)
-            self._lock_path = path
-            return
-        raise LiveDeskError(f"desk is locked: {path}")
+        self._lock_fd = _claim_desk_lock(path)
+        self._lock_path = path
 
 
 def _positive(value: float | None, default: float | None) -> float:
@@ -1282,20 +1400,102 @@ def _dump_opened(engine: PretradeEngine) -> dict[str, int]:
     return opened
 
 
-def _lock_alive(path: Path) -> bool:
+def _windows_lock(fd: int, operation: str) -> None:
+    """Byte-range lock via the Windows C runtime."""
+    import importlib
+    from operator import attrgetter
+
+    runtime = importlib.import_module("msvcrt")
+    os.lseek(fd, 0, os.SEEK_SET)
+    attrgetter("locking")(runtime)(fd, attrgetter(operation)(runtime), 1)
+
+
+def _lock_fd_exclusive(fd: int, path: Path) -> None:
+    """Non-blocking exclusive lock. A busy lock fails closed."""
+    if os.name == "nt":
+        try:
+            _windows_lock(fd, "LK_NBLCK")
+        except OSError as exc:
+            raise LiveDeskError(f"desk is locked: {path}") from exc
+        return
+    import fcntl
+
     try:
-        raw = path.read_text(encoding="utf-8").strip()
-        pid = int(raw)
-    except (OSError, ValueError):
-        return True
-    if pid <= 0:
-        return False
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        raise LiveDeskError(f"desk is locked: {path}") from exc
+
+
+def _unlock_fd(fd: int) -> None:
+    if os.name == "nt":
+        try:
+            _windows_lock(fd, "LK_UNLCK")
+        except OSError:
+            return
+        return
+    import fcntl
+
+    fcntl.flock(fd, fcntl.LOCK_UN)
+
+
+def _ensure_lock_byte(fd: int) -> None:
+    if os.fstat(fd).st_size == 0:
+        os.write(fd, b"\0")
+    os.lseek(fd, 0, os.SEEK_SET)
+
+
+def _require_same_file(fd: int, path: Path) -> None:
+    """Refuse a lock whose directory entry was replaced after we opened it."""
     try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
+        current = path.stat()
+    except OSError as exc:
+        raise LiveDeskError(f"desk is locked: {path}") from exc
+    owned = os.fstat(fd)
+    if owned.st_ino != 0 and owned.st_ino != current.st_ino:
+        raise LiveDeskError(f"desk is locked: {path}")
+
+
+def _write_owner(fd: int) -> None:
+    os.lseek(fd, 0, os.SEEK_SET)
+    if os.name != "nt":
+        os.ftruncate(fd, 0)
+    os.write(fd, str(os.getpid()).encode("ascii"))
+    os.fsync(fd)
+
+
+def _finish_claim(fd: int, path: Path) -> int:
+    if os.name == "nt":
+        _ensure_lock_byte(fd)
+    _lock_fd_exclusive(fd, path)
+    _require_same_file(fd, path)
+    if hasattr(os, "fchmod"):
+        os.fchmod(fd, 0o600)
+    _write_owner(fd)
+    return fd
+
+
+def _claim_desk_lock(path: Path) -> int:
+    """Own ``path`` until the returned fd is released.
+
+    The kernel drops the lock when this process exits, so a crashed desk
+    can be reclaimed without unlinking a file another process just created.
+    """
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        return _finish_claim(fd, path)
+    except BaseException:
+        _unlock_fd(fd)
+        os.close(fd)
+        raise
+
+
+def _release_desk_lock(fd: int, path: Path | None) -> None:
+    try:
+        if path is not None and path.exists():
+            current = path.stat()
+            owned = os.fstat(fd)
+            if owned.st_ino == 0 or owned.st_ino == current.st_ino:
+                path.unlink()
     except OSError:
-        return False
-    return True
+        pass
+    _unlock_fd(fd)

@@ -21,6 +21,10 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import urljoin, urlsplit
 
+from quant_fund.utils.net_timeout import require_retries, require_timeout
+from quant_fund.utils.outbound import OutboundRefused, pinned_connection, public_addresses
+from quant_fund.utils.secrets import redact_text
+
 _CHUNK = 1024 * 1024
 
 
@@ -131,8 +135,7 @@ def call_with_retry[R](
     Backoff is exponential. With ``jitter``, each wait is uniform in
     ``[0, min(max_backoff_s, backoff_s * 2**attempt)]``.
     """
-    if retries < 0:
-        raise ValueError("retries must be non-negative")
+    retries = require_retries(retries)
     if backoff_s < 0 or max_backoff_s < 0:
         raise ValueError("backoff must be non-negative")
     sleep = _default_sleep if sleeper is None else sleeper
@@ -283,8 +286,7 @@ async def amap_ordered[T, R](
         return []
     if max_in_flight < 1:
         raise ValueError("max_in_flight must be >= 1")
-    if retries < 0:
-        raise ValueError("retries must be non-negative")
+    retries = require_retries(retries)
     sem = asyncio.Semaphore(max_in_flight)
     limiter = AsyncRateLimiter(min_interval_s)
 
@@ -318,6 +320,24 @@ async def amap_ordered[T, R](
     return cast(list[R], raw)
 
 
+def _new_connection(
+    scheme: str,
+    host: str,
+    port: int,
+    timeout: float,
+    address: str | None,
+) -> http.client.HTTPConnection:
+    if scheme not in {"http", "https"}:
+        raise IoError(f"unsupported URL scheme: {scheme}")
+    dial = address
+    if dial is None:
+        try:
+            dial = public_addresses(host, port, allow_loopback=True)[0]
+        except OutboundRefused as exc:
+            raise IoError(str(exc)) from exc
+    return pinned_connection(scheme, host, port, dial, timeout)
+
+
 class ConnectionPool:
     """Small keep-alive pool keyed by scheme, host, and port.
 
@@ -329,29 +349,35 @@ class ConnectionPool:
         if max_per_host < 1:
             raise ValueError("max_per_host must be >= 1")
         self.max_per_host = int(max_per_host)
-        self._idle: dict[tuple[str, str, int], list[http.client.HTTPConnection]] = {}
+        self._idle: dict[tuple[str, str, int, str], list[http.client.HTTPConnection]] = {}
         self._lock = threading.Lock()
 
     def checkout(
-        self, scheme: str, host: str, port: int, timeout: float
+        self,
+        scheme: str,
+        host: str,
+        port: int,
+        timeout: float,
+        address: str | None = None,
     ) -> http.client.HTTPConnection:
-        key = (scheme, host, port)
+        key = (scheme, host, port, address or "")
         with self._lock:
             bucket = self._idle.get(key)
             while bucket:
                 conn = bucket.pop()
                 conn.timeout = timeout
                 return conn
-        if scheme == "https":
-            conn = http.client.HTTPSConnection(host, port, timeout=timeout)
-        elif scheme == "http":
-            conn = http.client.HTTPConnection(host, port, timeout=timeout)
-        else:
-            raise IoError(f"unsupported URL scheme: {scheme}")
-        return conn
+        return _new_connection(scheme, host, port, timeout, address)
 
-    def release(self, scheme: str, host: str, port: int, conn: http.client.HTTPConnection) -> None:
-        key = (scheme, host, port)
+    def release(
+        self,
+        scheme: str,
+        host: str,
+        port: int,
+        conn: http.client.HTTPConnection,
+        address: str | None = None,
+    ) -> None:
+        key = (scheme, host, port, address or "")
         with self._lock:
             bucket = self._idle.setdefault(key, [])
             if len(bucket) < self.max_per_host:
@@ -361,6 +387,21 @@ class ConnectionPool:
 
     def discard(self, conn: http.client.HTTPConnection) -> None:
         conn.close()
+
+    def close(self) -> None:
+        """Close every idle connection. Callers still own in-use sockets."""
+        with self._lock:
+            idle = list(self._idle.values())
+            self._idle.clear()
+        for bucket in idle:
+            for conn in bucket:
+                conn.close()
+
+    def __enter__(self) -> ConnectionPool:
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
 
 
 _POOL_LOCK = threading.Lock()
@@ -375,11 +416,21 @@ def default_pool() -> ConnectionPool:
         return _DEFAULT_POOL
 
 
+def _validated_hop(url: str) -> tuple[str, str, int, str, str]:
+    """Split ``url`` and pin it to one allowed address. Loopback literals are ok."""
+    scheme, host, port, path = _split(url)
+    try:
+        addresses = public_addresses(host, port, allow_loopback=True)
+    except OutboundRefused as exc:
+        raise IoError(str(exc)) from exc
+    return scheme, host, port, path, addresses[0]
+
+
 def _split(url: str) -> tuple[str, str, int, str]:
     parts = urlsplit(url)
     scheme = parts.scheme.lower()
     if scheme not in {"http", "https"} or not parts.hostname:
-        raise IoError(f"unsupported URL: {url}")
+        raise IoError(f"unsupported URL: {redact_text(url)}")
     port = parts.port or (443 if scheme == "https" else 80)
     path = urljoin("/", parts.path or "/")
     if parts.query:
@@ -400,6 +451,38 @@ def _read_capped(response: http.client.HTTPResponse, max_bytes: int) -> tuple[by
         chunks.append(block)
 
 
+def _exchange(
+    pool: ConnectionPool,
+    method: str,
+    url: str,
+    *,
+    headers: Mapping[str, str] | None,
+    timeout: float,
+    max_bytes: int,
+) -> tuple[int, bytes, str | None]:
+    """One pooled exchange. The socket is released or closed before return."""
+    scheme, host, port, path, address = _validated_hop(url)
+    conn = pool.checkout(scheme, host, port, timeout, address)
+    handed_off = False
+    try:
+        conn.request(method, path, headers=dict(headers or {}))
+        response = conn.getresponse()
+        status = int(response.status)
+        location = response.getheader("Location")
+        body, too_big = _read_capped(response, max_bytes)
+        if too_big:
+            raise IoError(f"response exceeded {max_bytes} bytes: {redact_text(url)}")
+        if response.will_close:
+            pool.discard(conn)
+        else:
+            pool.release(scheme, host, port, conn, address)
+        handed_off = True
+        return status, body, location
+    finally:
+        if not handed_off:
+            pool.discard(conn)
+
+
 def pooled_request(
     method: str,
     url: str,
@@ -413,10 +496,10 @@ def pooled_request(
     """GET/HEAD (or other methods without a body) through the connection pool.
 
     Redirects are followed for GET and HEAD. Responses over ``max_bytes``
-    raise :class:`IoError` and the connection is not reused.
+    raise :class:`IoError` and the connection is not reused. Any failure
+    closes the socket instead of leaving it checked out.
     """
-    if timeout <= 0:
-        raise ValueError("timeout must be positive")
+    timeout = require_timeout(timeout)
     if max_bytes < 1:
         raise ValueError("max_bytes must be positive")
     if max_redirects < 0:
@@ -425,33 +508,17 @@ def pooled_request(
     current = url
     redirects = 0
     while True:
-        scheme, host, port, path = _split(current)
-        conn = pool.checkout(scheme, host, port, timeout)
-        try:
-            conn.request(method, path, headers=dict(headers or {}))
-            response = conn.getresponse()
-            status = int(response.status)
-            location = response.getheader("Location")
-            body, too_big = _read_capped(response, max_bytes)
-            reusable = (not too_big) and (not response.will_close)
-            if too_big:
-                pool.discard(conn)
-                raise IoError(f"response exceeded {max_bytes} bytes: {current}")
-            if reusable:
-                pool.release(scheme, host, port, conn)
-            else:
-                pool.discard(conn)
-        except IoError:
-            raise
-        except (OSError, http.client.HTTPException, ValueError, TypeError):
-            # Narrowed from `except Exception` (quality ratchet): request/response
-            # faults are socket/HTTP-protocol errors plus int()/header conversion
-            # failures; exotic errors propagate. Connection is still discarded.
-            pool.discard(conn)
-            raise
+        status, body, location = _exchange(
+            pool,
+            method,
+            current,
+            headers=headers,
+            timeout=timeout,
+            max_bytes=max_bytes,
+        )
         if status in {301, 302, 303, 307, 308} and method.upper() in {"GET", "HEAD"} and location:
             if redirects >= max_redirects:
-                raise IoError(f"too many redirects: {url}")
+                raise IoError(f"too many redirects: {redact_text(url)}")
             redirects += 1
             current = urljoin(current, location)
             if status == 303:
@@ -467,11 +534,12 @@ def _release_response(
     port: int,
     conn: http.client.HTTPConnection,
     response: http.client.HTTPResponse,
+    address: str,
 ) -> None:
     if response.will_close:
         pool.discard(conn)
     else:
-        pool.release(scheme, host, port, conn)
+        pool.release(scheme, host, port, conn, address)
 
 
 def _release_redirect_conn(
@@ -482,12 +550,13 @@ def _release_redirect_conn(
     conn: http.client.HTTPConnection,
     response: http.client.HTTPResponse,
     too_big: bool,
+    address: str,
 ) -> None:
     """Hand off the pooled connection when a redirect hop is complete."""
     if too_big or response.will_close:
         pool.discard(conn)
     else:
-        pool.release(scheme, host, port, conn)
+        pool.release(scheme, host, port, conn, address)
 
 
 def pooled_stream(
@@ -506,8 +575,7 @@ def pooled_stream(
     response is written.
     """
     path = Path(dest)
-    if timeout <= 0:
-        raise ValueError("timeout must be positive")
+    timeout = require_timeout(timeout)
     if max_bytes < 1:
         raise ValueError("max_bytes must be positive")
     if max_redirects < 0:
@@ -517,8 +585,8 @@ def pooled_stream(
     current = url
     redirects = 0
     while True:
-        scheme, host, port, request_path = _split(current)
-        conn = pool.checkout(scheme, host, port, timeout)
+        scheme, host, port, request_path, address = _validated_hop(current)
+        conn = pool.checkout(scheme, host, port, timeout, address)
         handed_off = False
         try:
             conn.request("GET", request_path, headers=dict(headers or {}))
@@ -527,12 +595,12 @@ def pooled_stream(
             location = response.getheader("Location")
             if status in {301, 302, 303, 307, 308} and location:
                 too_big = _read_capped(response, max_bytes)[1]
-                _release_redirect_conn(pool, scheme, host, port, conn, response, too_big)
+                _release_redirect_conn(pool, scheme, host, port, conn, response, too_big, address)
                 handed_off = True
                 if too_big:
-                    raise IoError(f"response exceeded {max_bytes} bytes: {current}")
+                    raise IoError(f"response exceeded {max_bytes} bytes: {redact_text(current)}")
                 if redirects >= max_redirects:
-                    raise IoError(f"too many redirects: {url}")
+                    raise IoError(f"too many redirects: {redact_text(url)}")
                 redirects += 1
                 current = urljoin(current, location)
                 continue
@@ -552,13 +620,15 @@ def pooled_stream(
                         if total > max_bytes:
                             pool.discard(conn)
                             handed_off = True
-                            raise IoError(f"response exceeded {max_bytes} bytes: {current}")
+                            raise IoError(
+                                f"response exceeded {max_bytes} bytes: {redact_text(current)}"
+                            )
                         handle.write(block)
             except BaseException:
                 tmp_path.unlink(missing_ok=True)
                 path.unlink(missing_ok=True)
                 raise
-            _release_response(pool, scheme, host, port, conn, response)
+            _release_response(pool, scheme, host, port, conn, response, address)
             handed_off = True
             if status >= 400 or total < 1:
                 tmp_path.unlink(missing_ok=True)

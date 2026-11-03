@@ -51,8 +51,12 @@ concurrency:
 permissions:
   contents: read
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   reproduce-native-merge:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
@@ -65,21 +69,21 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --locked --all-groups --no-build
       - name: Recompute native merges
         run: |
-          uv run python scripts/sota_eval_native.py \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/sota_eval_native.py \
             --merge-parts .dsh-24x7/native/nd_*.paths.npz \
             --merge-out "$RUNNER_TEMP/merged_d1.json"
-          uv run python scripts/sota_eval_native.py \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/sota_eval_native.py \
             --merge-parts .dsh-24x7/native/nh_*.paths.npz \
             --merge-out "$RUNNER_TEMP/merged_h4.json"
       - name: Verify bit-exact reproduction
         run: |
-          uv run python scripts/check_sota_reproduction.py \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/check_sota_reproduction.py \
             --recomputed "$RUNNER_TEMP/merged_d1.json" \
             --reference .dsh-24x7/native/MERGED_d1_native.json
-          uv run python scripts/check_sota_reproduction.py \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/check_sota_reproduction.py \
             --recomputed "$RUNNER_TEMP/merged_h4.json" \
             --reference .dsh-24x7/native/MERGED_h4_native.json
 
@@ -90,6 +94,7 @@ jobs:
   # be reproduced without them. Enable by committing the bars or setting
   # SOTA_ARTIFACT_URI to an s3:// prefix that mirrors data/raw/sources/.
   reproduce-kronos-merge:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 15
     steps:
@@ -102,12 +107,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --locked --all-groups --no-build
       - name: Fetch bar parquets from artifact store
         if: vars.SOTA_ARTIFACT_URI != ''
+        env:
+          SOTA_ARTIFACT_URI: ${{ vars.SOTA_ARTIFACT_URI }}
         run: |
           set -euo pipefail
-          uri="${{ vars.SOTA_ARTIFACT_URI }}"
+          uri="$SOTA_ARTIFACT_URI"
           case "$uri" in
             s3://*) aws s3 sync "$uri" data/raw/sources/ ;;
             *) echo "::error::unsupported SOTA_ARTIFACT_URI scheme (s3:// only)"; exit 1 ;;
@@ -129,7 +136,7 @@ jobs:
       - name: Recompute mega-arena d1 merge
         if: steps.gate.outputs.available == 'true'
         run: |
-          uv run python scripts/sota_eval_kronos.py \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/sota_eval_kronos.py \
             --merge-parts .dsh-24x7/mega-arena/spliced/d1_*.mega.npz \
             --bars-root data/raw/sources \
             --merge-out "$RUNNER_TEMP/merged_arena_d1.json" \
@@ -137,7 +144,7 @@ jobs:
       - name: Verify reproduction (cross-platform float tolerance)
         if: steps.gate.outputs.available == 'true'
         run: |
-          uv run python scripts/check_sota_reproduction.py \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/check_sota_reproduction.py \
             --recomputed "$RUNNER_TEMP/merged_arena_d1.json" \
             --reference .dsh-24x7/mega-arena/merge_d1.json \
             --float-rel-tol 1e-9

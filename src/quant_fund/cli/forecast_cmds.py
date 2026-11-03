@@ -158,6 +158,12 @@ def backtest(
     feat = feat.filter(pl.col("event_time").is_in(dates))
     # Causal: optimize_asof(asof=d) per date — no end-of-sample weight broadcast
     weights = build_causal_weight_panel(cfg, dates)
+    from quant_fund.backtest.listing_exit import ListingExitError, apply_published_listing_exits
+
+    try:
+        weights = apply_published_listing_exits(weights, feat, Path(cfg.data.root))
+    except ListingExitError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     run = run_backtest_fast if engine == "fast" else run_backtest
     result = run(feat, weights, cfg)
     if result.source_note == "SYNTHETIC":

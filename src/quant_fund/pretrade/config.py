@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
@@ -124,8 +123,10 @@ def load_pretrade_config(path: str | Path, *, hmac_key: bytes) -> tuple[Pretrade
     Fails closed: unsafe YAML constructors are not used, extra keys are
     rejected, and a short HMAC key is rejected.
     """
+    from quant_fund.config.yaml_safe import load_yaml_document
+
     text = Path(path).read_text(encoding="utf-8")
-    raw = yaml.safe_load(text)
+    raw = load_yaml_document(text)
     if not isinstance(raw, dict):
         raise ValueError("pretrade config must be a YAML mapping")
     config = PretradeConfig.model_validate(raw)

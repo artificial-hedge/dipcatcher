@@ -37,10 +37,9 @@ product defect, not a transport detail.
   SDK's exception classes (KeyError/ValueError/BackendNotConfiguredError/
   NotImplementedError/Fx1HonestyError), auth faults are
   ``HarnessAuthError``, transport faults ``HarnessTransportError``.
-- *In-flight cap* — ``max_inflight`` (env ``FX1_API_MAX_INFLIGHT``, default
-  16) bounds concurrent heavy requests: saturation is an honest 503 with
-  ``Retry-After``, cheap routes stay responsive, the slot releases
-  cleanly, ``max_inflight<1`` fails app construction.
+- *In-flight cap* — ``max_inflight`` (``FX1_API_MAX_INFLIGHT``, default 16)
+  bounds concurrent heavy requests with an honest 503 and ``Retry-After``.
+  Cheap routes stay responsive, the slot releases, and ``max_inflight<1`` fails.
 
 Sealed ``parity_audit.v1`` (fx1-side receipt).
 """
@@ -57,6 +56,7 @@ import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -362,7 +362,7 @@ def _start_hook_sink() -> tuple[str, list[tuple[dict[str, str], bytes]], Any]:
             pass
 
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _Sink)
-    _threading.Thread(target=srv.serve_forever, daemon=True).start()
+    _threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
     return f"http://127.0.0.1:{srv.server_address[1]}", hits, srv
 
 
@@ -402,14 +402,14 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             *_BYOK_ENVS,
             *_LOCAL_ENVS,
             "MOONSHOT_API_KEY",
-            "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+            "FX1_PRIVATE_ALLOW_CIDRS",
         )
     }
     try:
         os.environ.pop(_API_KEY_ENV, None)
         # The webhook probes deliver to a loopback sink; production
         # callbacks stay public-network-only unless opted in.
-        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+        os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
 
         sdk, client = _surfaces(_ParityBackend)
         msg = [{"role": "user", "content": "ping"}]
@@ -2972,7 +2972,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     out["client_submit_callback_url"] = (
         jid_cb == "cb1"
         and cb_seen[0].get("callback_url") == "https://hooks.test/x"
-        and cb_seen[0].get("callback_secret") == "whsec-t"
+        and secrets_equal(cb_seen[0].get("callback_secret"), "whsec-t")
     )
 
     # --- job SSE stream: client parses event frames --------------------------
@@ -3103,8 +3103,8 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     _bw, _bw_hits, _bw_srv = _start_hook_sink()
     # The webhook probes deliver to a loopback sink; the outer env save/set
     # above already restored ambient state, so scope the SSRF opt-in here.
-    _bw_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    _bw_hook_prev = os.environ.get("FX1_PRIVATE_ALLOW_CIDRS")
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     try:
         up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
         bwsub = c_b.create_batch(
@@ -3150,9 +3150,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             # Never leak the private-network callback opt-in if server
             # cleanup raises while unwinding the probe.
             if _bw_hook_prev is None:
-                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+                os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
             else:
-                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bw_hook_prev
+                os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = _bw_hook_prev
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])

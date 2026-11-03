@@ -16,6 +16,7 @@ from quant_fund.models.itransformer import bench_itransformer
 from quant_fund.models.mambats import bench_mambats
 from quant_fund.models.nbeats_deep import bench_nbeats_deep
 from quant_fund.models.tcn_forecaster import bench_tcn_forecaster
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -49,7 +50,9 @@ def _floats(out: dict[str, float]) -> dict[str, float]:
 
 def bench_itransformer_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("itransformer", bench_itransformer(seed=_SEED + 762)))
+        return _floats(
+            _finite_blob("itransformer", call_bench(bench_itransformer, seed=_SEED + 762))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -58,7 +61,9 @@ def bench_itransformer_family() -> dict[str, float]:
 
 def bench_tcn_forecaster_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("tcn_forecaster", bench_tcn_forecaster(seed=_SEED + 763)))
+        return _floats(
+            _finite_blob("tcn_forecaster", call_bench(bench_tcn_forecaster, seed=_SEED + 763))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -67,7 +72,9 @@ def bench_tcn_forecaster_family() -> dict[str, float]:
 
 def bench_ft_transformer_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("ft_transformer", bench_ft_transformer(seed=_SEED + 764)))
+        return _floats(
+            _finite_blob("ft_transformer", call_bench(bench_ft_transformer, seed=_SEED + 764))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -85,7 +92,7 @@ def bench_nbeats_deep_family() -> dict[str, float]:
 
 def bench_mambats_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("mambats", bench_mambats(seed=_SEED + 766)))
+        return _floats(_finite_blob("mambats", call_bench(bench_mambats, seed=_SEED + 766)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:
@@ -94,7 +101,7 @@ def bench_mambats_family() -> dict[str, float]:
 
 def bench_crossformer_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("crossformer", bench_crossformer(seed=_SEED + 767)))
+        return _floats(_finite_blob("crossformer", call_bench(bench_crossformer, seed=_SEED + 767)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:

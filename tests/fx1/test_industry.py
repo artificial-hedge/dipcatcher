@@ -2,6 +2,7 @@
 statistical comparison, cluster specs, and the staged pipeline."""
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,7 @@ from fx1.train import (
     issue_receipt,
     verify_training_receipt,
 )
+from fx1.train import receipts as training_receipts
 
 
 def _ex(text: str) -> dict:
@@ -147,6 +149,30 @@ def test_training_receipt_issue_and_verify(tmp_path: Path):
         split_manifest_path=files["split"],
         eval_base_path=files["eval"],
     )
+
+
+def test_training_receipt_git_timeout_is_unknown_and_dirty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert kwargs.get("timeout") == training_receipts._GIT_TIMEOUT_S
+        raise subprocess.TimeoutExpired(cmd="git", timeout=training_receipts._GIT_TIMEOUT_S)
+
+    monkeypatch.setattr(training_receipts.subprocess, "run", fake_run)
+    for name in ("config", "corpus", "split", "eval"):
+        (tmp_path / f"{name}.json").write_text("{}", encoding="utf-8")
+    receipt = issue_receipt(
+        run_name="fx-1.v0.1",
+        repo_root=tmp_path,
+        config_path=tmp_path / "config.json",
+        corpus_path=tmp_path / "corpus.json",
+        split_manifest_path=tmp_path / "split.json",
+        eval_base_path=tmp_path / "eval.json",
+        seed=17,
+        out_path=tmp_path / "receipt.json",
+    )
+    assert receipt.git_revision == "unknown"
+    assert receipt.dirty_worktree is True
 
 
 # --- statistical comparison ---------------------------------------------------

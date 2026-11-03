@@ -80,6 +80,18 @@ class GateResult:
         }
 
 
+def _require_vol_target(target: float) -> float:
+    if not np.isfinite(target) or target <= 0:
+        raise ValueError("vol target must be finite and positive")
+    return float(target)
+
+
+def _require_positive(name: str, value: float) -> float:
+    if not np.isfinite(value) or value <= 0:
+        raise ValueError(f"{name} must be finite and positive")
+    return float(value)
+
+
 def vol_target(
     returns: Array,
     *,
@@ -89,17 +101,22 @@ def vol_target(
     periods_per_year: float = 252.0,
 ) -> Array:
     """Causal next-bar leverage: target / trailing realized vol. Delay 1."""
+    target = _require_vol_target(target)
+    cap = _require_positive("vol cap", cap)
+    periods_per_year = _require_positive("periods_per_year", periods_per_year)
     r = np.asarray(returns, dtype=float).reshape(-1)
     out = np.zeros_like(r)
     lb = max(int(lookback), 2)
-    if not np.isfinite(target) or target <= 0:
-        raise ValueError("vol target must be finite and positive")
     for i in range(lb, len(r) - 1):
         window = r[i - lb + 1 : i + 1]
-        sig = float(np.std(window, ddof=1)) * np.sqrt(float(periods_per_year))
+        nxt = r[i + 1]
+        if not np.all(np.isfinite(window)) or not np.isfinite(nxt):
+            continue
+        sig = float(np.std(window, ddof=1)) * np.sqrt(periods_per_year)
+        # Strict ``<``: a window whose sigma lands exactly on ``_EPS`` is scaled.
         if not np.isfinite(sig) or sig < _EPS:
             continue
-        out[i + 1] = r[i + 1] * float(np.clip(target / sig, 0.0, float(cap)))
+        out[i + 1] = nxt * float(np.clip(target / sig, 0.0, cap))
     return out
 
 
@@ -112,23 +129,33 @@ def vol_target_leverage(
     periods_per_year: float = 252.0,
 ) -> Array:
     """Leverage known at t (data through t) for the *next* bar."""
+    target = _require_vol_target(target)
+    cap = _require_positive("vol cap", cap)
+    periods_per_year = _require_positive("periods_per_year", periods_per_year)
     r = np.asarray(returns, dtype=float).reshape(-1)
     lev = np.ones_like(r)
     lb = max(int(lookback), 2)
-    prior = min(1.0, float(target) / 0.20)
+    prior = min(1.0, target / 0.20)
     lev[:] = prior
     for i in range(lb - 1, len(r)):
         window = r[i - lb + 1 : i + 1]
-        sig = float(np.std(window, ddof=1)) * np.sqrt(float(periods_per_year))
+        # A non-finite print makes realized vol unmeasurable. Do not fall
+        # back to the warm-up prior — that prior can be full size.
+        if not np.all(np.isfinite(window)):
+            lev[i] = 0.0
+            continue
+        sig = float(np.std(window, ddof=1)) * np.sqrt(periods_per_year)
+        # Strict ``<``: sigma exactly equal to ``_EPS`` is a real scale, not the prior.
         if not np.isfinite(sig) or sig < _EPS:
             lev[i] = prior
             continue
-        lev[i] = float(np.clip(target / sig, 0.0, float(cap)))
+        lev[i] = float(np.clip(target / sig, 0.0, cap))
     return lev
 
 
 def dd_halt(returns: Array, *, limit: float = 0.05) -> Array:
     """Causal flatten after equity hits -limit from peak. Stays cash."""
+    limit = _require_positive("drawdown limit", abs(float(limit)) if np.isfinite(limit) else limit)
     r = np.asarray(returns, dtype=float).reshape(-1)
     eq = 1.0
     peak = 1.0
@@ -137,11 +164,21 @@ def dd_halt(returns: Array, *, limit: float = 0.05) -> Array:
     for i, x in enumerate(r):
         if halted:
             continue
+        if not np.isfinite(x):
+            # A non-finite print is not a return. Flatten this bar and stay cash.
+            halted = True
+            continue
         eq *= 1.0 + float(x)
+        if not np.isfinite(eq):
+            halted = True
+            continue
         peak = max(peak, eq)
+        if peak <= 0.0:
+            halted = True
+            continue
         dd = eq / peak - 1.0
         out[i] = float(x)
-        if dd <= -abs(float(limit)):
+        if dd <= -limit:
             halted = True
     return out
 
@@ -153,18 +190,26 @@ def dd_remaining_leverage(
     cushion: float = 0.005,
 ) -> Array:
     """Remaining-drawdown scale known at t for the next bar."""
+    limit = _require_positive("drawdown limit", limit)
+    cushion_f = float(cushion)
+    if not np.isfinite(cushion_f) or cushion_f < 0.0:
+        raise ValueError("drawdown cushion must be finite and non-negative")
     r = np.asarray(returns, dtype=float).reshape(-1)
     lev = np.ones_like(r)
     eq = 1.0
     peak = 1.0
     for i, x in enumerate(r):
-        eq *= 1.0 + float(x) if np.isfinite(x) else 1.0
+        if not np.isfinite(x):
+            lev[i:] = 0.0
+            return lev
+        eq *= 1.0 + float(x)
+        if not np.isfinite(eq) or eq <= 0.0:
+            lev[i:] = 0.0
+            return lev
         peak = max(peak, eq)
-        dd = max(0.0, 1.0 - eq / peak) if peak > 0 else 1.0
-        remaining = float(limit) - dd
-        lev[i] = (
-            0.0 if remaining <= float(cushion) else min(1.0, remaining / max(float(limit), _EPS))
-        )
+        dd = max(0.0, 1.0 - eq / peak)
+        remaining = limit - dd
+        lev[i] = 0.0 if remaining <= cushion_f else min(1.0, remaining / max(limit, _EPS))
     return lev
 
 
@@ -268,10 +313,19 @@ def crash_leverage(
     crash_return: float = -0.2,
 ) -> Array:
     """Nautica-style crash: trailing lookback total return ≤ crash_return → 0."""
+    if not np.isfinite(crash_return):
+        raise ValueError("crash_return must be finite")
     r = np.asarray(returns, dtype=float).reshape(-1)
     lev = np.ones_like(r)
+    bad = np.flatnonzero(~np.isfinite(r))
+    if bad.size:
+        # A hole in the return path makes every later wealth ratio undefined.
+        lev[int(bad[0]) :] = 0.0
+        r = r[: int(bad[0])]
     lb = max(int(lookback), 1)
-    wealth = np.cumprod(1.0 + np.where(np.isfinite(r), r, 0.0))
+    if r.size <= lb:
+        return lev
+    wealth = np.cumprod(1.0 + r)
     for i in range(lb, len(r)):
         base = wealth[i - lb]
         last = wealth[i]

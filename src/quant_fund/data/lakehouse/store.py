@@ -140,7 +140,7 @@ def load_snapshot(root: Path, snapshot_id: str) -> Snapshot:
         raise DataContractError(f"snapshot not found: {digest}")
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
+    except (UnicodeError, json.JSONDecodeError) as exc:
         raise DataContractError(f"snapshot {digest} is malformed") from exc
     if not isinstance(raw, dict) or raw.get("schema") != SNAPSHOT_SCHEMA:
         raise DataContractError(f"snapshot {digest} has an unsupported schema")
@@ -205,14 +205,13 @@ def write_partitioned_bars(root: Path, frame: pl.DataFrame, *, dataset: str) -> 
     Each part is stored once under its content hash. This path creates new
     bytes; byte-preserving import of an existing file is :func:`import_files`.
     """
+    frame = _require_bars_frame(frame)
     symbol_col = _symbol_column(frame)
     missing = [
         name for name in ("source", "event_time", *_BAR_COLUMNS) if name not in frame.columns
     ]
     if missing:
         raise DataContractError(f"partitioned bars missing columns: {missing}")
-    if frame.is_empty():
-        return commit_snapshot(root, dataset, [])
     _require_utc_datetime(frame, "event_time")
     dated = frame.with_columns(pl.col("event_time").dt.date().alias("_lake_date"))
     grouped = cast(
@@ -282,7 +281,9 @@ def _write_part(
     lake = Path(root)
     staging = lake / "tmp"
     staging.mkdir(parents=True, exist_ok=True)
-    temporary = staging / f"{os.getpid()}-{hash_bytes(logical_path.encode())}.parquet"
+    fd, temporary_name = tempfile.mkstemp(dir=staging, prefix="part-", suffix=".parquet")
+    os.close(fd)
+    temporary = Path(temporary_name)
     try:
         frame.write_parquet(temporary)
         destination, address = put_file(lake, temporary)
@@ -353,6 +354,14 @@ def _date_text(value: object) -> str:
     if isinstance(value, date):
         return value.isoformat()
     raise DataContractError(f"partition date is not a date: {value!r}")
+
+
+def _require_bars_frame(frame: pl.DataFrame) -> pl.DataFrame:
+    if not isinstance(frame, pl.DataFrame):
+        raise DataContractError("partitioned bars require a polars DataFrame")
+    if frame.is_empty():
+        raise DataContractError("partitioned bars require a non-empty frame")
+    return frame
 
 
 def _require_dataset(value: str) -> str:

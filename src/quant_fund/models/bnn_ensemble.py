@@ -57,20 +57,32 @@ def _member(torch: Any, seed: int) -> Any:
     )
 
 
-def bench_bnn_ensemble(seed: int = 77) -> dict[str, float]:
+def bench_bnn_ensemble(
+    seed: int = 77,
+    *,
+    n: int = 4000,
+    steps: int = 300,
+    members: int = 5,
+) -> dict[str, float]:
+    """Deep ensemble on synthetic heteroscedastic data.
+
+    Defaults are the research fixture. The pytest scorecard passes a smaller
+    ``n`` / ``steps`` / ``members`` through ``call_bench``; the directional
+    unit test keeps these defaults.
+    """
     rng = np.random.default_rng(seed)
     torch = _torch()
     torch.manual_seed(seed)
-    n, tr, M = 4000, 3000, 5
+    tr = 3 * n // 4
     x, y, sigma_true = synth_hetero(n, rng)
     xs = torch.tensor(x, dtype=torch.float32)
     ys = torch.tensor(y, dtype=torch.float32)
 
-    members = [_member(torch, seed + m) for m in range(M)]
-    for net in members:
+    nets = [_member(torch, seed + m) for m in range(members)]
+    for net in nets:
         opt = torch.optim.Adam(net.parameters(), lr=5e-3)
-        bs = np.asarray(rng.integers(0, tr, 3000))  # bootstrap resample
-        for _ in range(300):
+        bs = np.asarray(rng.integers(0, tr, tr))  # bootstrap resample
+        for _ in range(steps):
             idx = np.asarray(bs[np.asarray(rng.integers(0, len(bs), 256))])
             out = net(xs[idx])
             mu, logv = out[:, 0], out[:, 1].clamp(-6, 4)
@@ -80,7 +92,7 @@ def bench_bnn_ensemble(seed: int = 77) -> dict[str, float]:
             opt.step()
 
     with torch.no_grad():
-        outs = torch.stack([net(xs[tr:]) for net in members])  # (M,T,2)
+        outs = torch.stack([net(xs[tr:]) for net in nets])  # (M,T,2)
         mus, logv = outs[:, :, 0], outs[:, :, 1]
         alea = float(torch.mean(torch.exp(logv)))
         epi = float(torch.var(mus, dim=0).mean())
@@ -91,7 +103,7 @@ def bench_bnn_ensemble(seed: int = 77) -> dict[str, float]:
         mae = float(np.mean(np.abs(yt - mu_hat)))
         # OOD epistemic: shifted inputs x in [5,8]
         xo = torch.tensor(rng.uniform(5, 8, 500)[:, None], dtype=torch.float32)
-        outs_o = torch.stack([net(xo) for net in members])
+        outs_o = torch.stack([net(xo) for net in nets])
         epi_ood = float(torch.var(outs_o[:, :, 0], dim=0).mean())
         # aleatoric calibration: mean predicted sd vs true sigma on test
         sd_corr = float(

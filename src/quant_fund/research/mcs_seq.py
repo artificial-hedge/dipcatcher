@@ -272,9 +272,32 @@ def write_mcs_receipt(
     return path
 
 
+def _validated_loss_streams(streams: Mapping[str, list[Any]]) -> dict[str, list[float]]:
+    if len(streams) < 2:
+        raise ValueError("loss streams require at least two heads")
+    out: dict[str, list[float]] = {}
+    n_obs: int | None = None
+    for head, values in streams.items():
+        if not isinstance(values, list) or not values:
+            raise ValueError(f"stream {head!r} must be a non-empty list of finite numbers")
+        converted: list[float] = []
+        for value in values:
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"stream {head!r} contains a non-numeric loss")
+            number = float(value)
+            if not np.isfinite(number):
+                raise ValueError(f"stream {head!r} contains a non-finite loss")
+            converted.append(number)
+        if n_obs is None:
+            n_obs = len(converted)
+        elif len(converted) != n_obs:
+            raise ValueError("all loss streams must have equal length")
+        out[str(head)] = converted
+    return out
+
+
 def load_loss_streams(path: Path | str) -> dict[str, list[float]]:
-    """Load per-origin loss streams: JSON ``{head: [losses]}`` or a
-    parquet/csv frame whose numeric columns are the heads."""
+    """Load finite, non-empty, aligned per-origin loss streams from JSON/parquet/CSV."""
     p = Path(path)
     if not p.is_file():
         raise FileNotFoundError(p)
@@ -282,7 +305,7 @@ def load_loss_streams(path: Path | str) -> dict[str, list[float]]:
         data = json.loads(p.read_text())
         if not isinstance(data, dict) or not data:
             raise ValueError("loss-stream JSON must be a nonempty {head: [losses]} map")
-        return {str(h): [float(x) for x in v] for h, v in data.items()}
+        return _validated_loss_streams(data)
     if p.suffix in (".parquet", ".csv"):
         import polars as pl
 
@@ -292,5 +315,5 @@ def load_loss_streams(path: Path | str) -> dict[str, list[float]]:
         cols = frame.select(cs.numeric()).columns
         if len(cols) < 2:
             raise ValueError("need >=2 numeric loss-stream columns")
-        return {c: frame.get_column(c).to_list() for c in cols}
+        return _validated_loss_streams({c: frame.get_column(c).to_list() for c in cols})
     raise ValueError(f"unsupported loss-stream format: {p.suffix}")

@@ -11,6 +11,41 @@ import yaml
 from quant_fund.config.models import AppConfig
 
 
+class _ConfigLoader(yaml.SafeLoader):
+    def __init__(self, stream: str, path: Path) -> None:
+        super().__init__(stream)
+        self.config_path = path
+
+
+def _construct_unique_mapping(
+    loader: _ConfigLoader, node: yaml.MappingNode, deep: bool = False
+) -> dict[Any, Any]:
+    seen: set[Any] = set()
+    for key_node, _ in node.value:
+        key = (
+            key_node.value
+            if key_node.tag == "tag:yaml.org,2002:merge"
+            else loader.construct_object(key_node, deep=deep)
+        )
+        try:
+            hash(key)
+        except TypeError:
+            continue
+        if key in seen:
+            raise ValueError(
+                f"Config {loader.config_path}: duplicate mapping key "
+                f"{key!r} at line {key_node.start_mark.line + 1}"
+            )
+        seen.add(key)
+    return yaml.SafeLoader.construct_mapping(loader, node, deep=deep)
+
+
+_ConfigLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_unique_mapping,
+)
+
+
 def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
     """Recursively merge overlay onto base. Overlay wins on conflicts."""
     out = dict(base)
@@ -23,7 +58,19 @@ def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    raw = yaml.safe_load(path.read_text()) or {}
+    text = path.read_text()
+    if len(text.encode("utf-8")) > 1_048_576:
+        raise ValueError(f"Config {path} is not valid YAML")
+    loader = _ConfigLoader(text, path)
+    try:
+        try:
+            raw = loader.get_single_data()
+        except (RecursionError, yaml.YAMLError) as exc:
+            raise ValueError(f"Config {path} is not valid YAML") from exc
+    finally:
+        loader.dispose()
+    if raw is None:
+        raw = {}
     if not isinstance(raw, dict):
         raise ValueError(f"Config {path} must be a mapping")
     return raw
@@ -47,8 +94,10 @@ def load_config(
         raise ValueError(f"Config inheritance cycle at {path}")
     data = _read_yaml(path)
     inherit = data.pop("inherit", None)
-    if inherit:
-        parent_path = (path.parent / inherit).resolve()
+    if inherit is not None:
+        if not isinstance(inherit, str) or not inherit.strip():
+            raise ValueError(f"Config {path}: inherit must be null or a non-empty string")
+        parent_path = (path.parent / inherit.strip()).resolve()
         parent = load_config(parent_path, _seen=seen | {path}, _root=root)
         merged = deep_merge(parent.model_dump(mode="python"), data)
         return AppConfig.model_validate(merged)
@@ -60,3 +109,6 @@ def dump_resolved(config: AppConfig, dest: Path) -> None:
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(dest, json.dumps(config.dump(), indent=2, sort_keys=True))
+    from quant_fund.api.admin_audit import note_process_mutation
+
+    note_process_mutation("config", "written")

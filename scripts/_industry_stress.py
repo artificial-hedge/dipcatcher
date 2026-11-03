@@ -40,7 +40,7 @@ def _bench_cfg() -> AppConfig:
     """Permissive config identical to scripts/incumbent_bench_vectorbt.py — lets
     the panel trade so the run exercises the full fill path (risk gate enabled
     but wide)."""
-    return AppConfig(
+    cfg = AppConfig(
         costs=CostConfig(
             commission_bps=10.0,
             half_spread_bps=0.0,
@@ -62,6 +62,8 @@ def _bench_cfg() -> AppConfig:
             stale_model_hours=1e9,
         ),
     )
+    cfg.kill_switch.state = "ENABLED"
+    return cfg
 
 
 def _panel(bars: pl.DataFrame, n_dates_per_asset: int = 20) -> pl.DataFrame:

@@ -12,6 +12,20 @@ from typing import Any
 from quant_fund.utils.atomicio import atomic_write_text
 
 
+def _normalise_section(section: Any) -> tuple[dict[str, Any], bool]:
+    """Normalise one evidence-report section.
+
+    Returns ``(mapping, malformed)``. An absent or empty section maps to an
+    empty mapping; a section that is present but not a mapping is
+    *malformed* — a defect in the evidence, not an absent section.
+    """
+    if not section:
+        return {}, False
+    if not isinstance(section, dict):
+        return {}, True
+    return section, False
+
+
 def build_evidence_report(
     *,
     candidates: dict[str, Any],
@@ -23,34 +37,48 @@ def build_evidence_report(
 
     Missing sections are recorded as warnings; the function never infers
     readiness from absent metrics and never changes promotion state.
+
+    A section that is present but *malformed* (not a mapping) is a defect in
+    the evidence, not an absent section: it is flagged separately so a
+    garbage promotion receipt can never pass as an approved one.
     """
+    provenance_map, provenance_malformed = _normalise_section(provenance)
+    health_map, health_malformed = _normalise_section(health)
+    promotion_map, promotion_malformed = _normalise_section(promotion)
+
     warnings: list[str] = []
     if not candidates:
         warnings.append("candidate_metrics_missing")
-    if not provenance:
-        warnings.append("provenance_missing")
-    if not health:
-        warnings.append("health_report_missing")
-    if not promotion:
-        warnings.append("promotion_receipt_missing")
-    artifact_hash = (provenance or {}).get("artifact_sha256")
+    for name, section, missing_warning, malformed in (
+        ("provenance", provenance, "provenance_missing", provenance_malformed),
+        ("health", health, "health_report_missing", health_malformed),
+        ("promotion", promotion, "promotion_receipt_missing", promotion_malformed),
+    ):
+        if not section:
+            warnings.append(missing_warning)
+        elif malformed:
+            warnings.append(f"{name}_section_malformed")
+
+    artifact_hash = provenance_map.get("artifact_sha256")
     if not isinstance(artifact_hash, str) or len(artifact_hash) != 64:
         warnings.append("artifact_hash_missing_or_invalid")
-    if (provenance or {}).get("manifest_valid") is not True:
+    if provenance_malformed or provenance_map.get("manifest_valid") is not True:
         warnings.append("artifact_manifest_not_verified")
-    if isinstance(promotion, dict) and promotion.get("promote") is not True:
+    if promotion_malformed or (promotion is not None and promotion_map.get("promote") is not True):
         warnings.append("promotion_not_approved")
-    if isinstance(health, dict) and health.get("status") != "ok":
+    if health_malformed or (health is not None and health_map.get("status") != "ok"):
         warnings.append("health_not_ok")
-    synthetic = str((provenance or {}).get("data_source", "")).upper() == "SYNTHETIC"
+    synthetic = str(provenance_map.get("data_source", "")).upper() == "SYNTHETIC"
     if synthetic:
         warnings.append("synthetic_evidence_not_promotable")
     return {
         "schema": "evidence_report.v1",
         "candidates": candidates,
-        "provenance": provenance or {},
-        "health": health or {},
-        "promotion": promotion or {},
+        # A malformed section is normalised to an empty mapping so the report
+        # keeps its documented shape; the warning is what records the defect.
+        "provenance": provenance_map,
+        "health": health_map,
+        "promotion": promotion_map,
         "warnings": sorted(set(warnings)),
         "status": "insufficient_evidence" if warnings else "complete",
         "research_only": True,
@@ -132,7 +160,7 @@ def write_report_text(report: dict[str, Any]) -> str:
     for section in ("candidates", "provenance", "health", "promotion"):
         lines.append(f"## {section.title()}")
         lines.append("```json")
-        lines.append(json.dumps(report.get(section, {}), indent=2, sort_keys=True, default=str))
+        lines.append(json.dumps(report[section], indent=2, sort_keys=True, default=str))
         lines.extend(["```", ""])
     return "\n".join(lines)
 

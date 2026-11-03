@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sqlite3
+import tempfile
 from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
@@ -23,9 +25,78 @@ def digest(value: Any) -> str:
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
+SHADOW_JOURNAL_SCHEMA_VERSION = 1
+
+_DDL = """
+    CREATE TABLE events(seq INTEGER PRIMARY KEY, event_key TEXT UNIQUE NOT NULL,
+                        body TEXT NOT NULL, hash TEXT NOT NULL);
+    CREATE TABLE projection(id INTEGER PRIMARY KEY CHECK(id=1), head TEXT, state TEXT);
+    CREATE TRIGGER no_event_update BEFORE UPDATE ON events BEGIN
+        SELECT RAISE(ABORT, 'events are immutable'); END;
+    CREATE TRIGGER no_event_delete BEFORE DELETE ON events BEGIN
+        SELECT RAISE(ABORT, 'events are immutable'); END;
+"""
+
+_EXPECTED_LAYOUT = {
+    "events": {
+        "seq": ("INTEGER", False, True),
+        "event_key": ("TEXT", True, False),
+        "body": ("TEXT", True, False),
+        "hash": ("TEXT", True, False),
+    },
+    "projection": {
+        "id": ("INTEGER", False, True),
+        "head": ("TEXT", False, False),
+        "state": ("TEXT", False, False),
+    },
+}
+
+
+def _quoted_identifier(value: str) -> str:
+    return '"' + value.replace('"', '""') + '"'
+
+
+def _validate_layout(connection: sqlite3.Connection) -> None:
+    for table, expected in _EXPECTED_LAYOUT.items():
+        rows = connection.execute(f"PRAGMA table_info({_quoted_identifier(table)})").fetchall()
+        actual = {str(row[1]): (str(row[2]).upper(), bool(row[3]), bool(row[5])) for row in rows}
+        if actual != expected:
+            raise ValueError(f"incompatible shadow journal schema: {table}")
+    unique_event_key = False
+    for index in connection.execute("PRAGMA index_list(events)").fetchall():
+        columns = connection.execute(
+            f"PRAGMA index_info({_quoted_identifier(str(index[1]))})"
+        ).fetchall()
+        if bool(index[2]) and [row[2] for row in columns] == ["event_key"]:
+            unique_event_key = True
+    if not unique_event_key:
+        raise ValueError("incompatible shadow journal schema: event_key uniqueness")
+    triggers = {
+        str(row[0])
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='events'"
+        ).fetchall()
+    }
+    if not {"no_event_update", "no_event_delete"} <= triggers:
+        raise ValueError("incompatible shadow journal schema: event immutability triggers")
+
+
+def _validate_schema(connection: sqlite3.Connection) -> None:
+    row = connection.execute("PRAGMA user_version").fetchone()
+    version = 0 if row is None else int(row[0])
+    if version not in {0, SHADOW_JOURNAL_SCHEMA_VERSION}:
+        raise ValueError(f"unsupported shadow journal schema version: {version}")
+    _validate_layout(connection)
+
+
 def connect(path: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(path.resolve().as_uri() + "?mode=rw", uri=True, timeout=30)
-    connection.execute("PRAGMA synchronous=FULL")
+    try:
+        connection.execute("PRAGMA synchronous=FULL")
+        _validate_schema(connection)
+    except Exception:
+        connection.close()
+        raise
     return connection
 
 
@@ -85,21 +156,19 @@ def _save_state(connection: sqlite3.Connection, head: str, state: dict[str, Any]
 
 def create(path: Path, manifest: dict[str, Any], state: dict[str, Any], timestamp: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive reservation: never overwrite another experiment, even after a failed freeze.
-    with path.open("xb"):
-        pass
-    with closing(connect(path)) as connection, connection:
-        connection.executescript("""
-            CREATE TABLE events(seq INTEGER PRIMARY KEY, event_key TEXT UNIQUE NOT NULL,
-                                body TEXT NOT NULL, hash TEXT NOT NULL);
-            CREATE TABLE projection(id INTEGER PRIMARY KEY CHECK(id=1), head TEXT, state TEXT);
-            CREATE TRIGGER no_event_update BEFORE UPDATE ON events BEGIN
-                SELECT RAISE(ABORT, 'events are immutable'); END;
-            CREATE TRIGGER no_event_delete BEFORE DELETE ON events BEGIN
-                SELECT RAISE(ABORT, 'events are immutable'); END;
-        """)
-        event = _append(connection, [], "freeze", "freeze", manifest, timestamp)
-        _save_state(connection, event["hash"], state)
+    fd, temporary_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    os.close(fd)
+    temporary = Path(temporary_name)
+    try:
+        with closing(sqlite3.connect(temporary)) as connection, connection:
+            connection.execute("PRAGMA synchronous=FULL")
+            connection.executescript(_DDL)
+            connection.execute(f"PRAGMA user_version={SHADOW_JOURNAL_SCHEMA_VERSION}")
+            event = _append(connection, [], "freeze", "freeze", manifest, timestamp)
+            _save_state(connection, event["hash"], state)
+        os.link(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 Reducer = Callable[[list[dict[str, Any]]], dict[str, Any]]
@@ -157,5 +226,14 @@ def reconcile(
         if projection != (events[-1]["hash"], canonical(state)):
             if not repair:
                 raise ValueError("shadow projection mismatch; run reconcile --repair")
+            if (
+                expected_head is None
+                and projection is not None
+                and projection[0] is not None
+                and projection[0] != events[-1]["hash"]
+            ):
+                raise ValueError(
+                    "projection head differs from journal; retained external head required for repair"
+                )
             _save_state(connection, events[-1]["hash"], state)
         return events, state

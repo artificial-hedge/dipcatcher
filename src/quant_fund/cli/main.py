@@ -274,11 +274,15 @@ __all__ = [
 
 def _maybe_install_observation_hooks() -> None:
     """Wrap pipeline entry points only when the operator opted in."""
+    from quant_fund.observe.flags import observe_enabled
+
+    if not observe_enabled():
+        return
+    # smoke-up installs hooks at import, before serve_lab names the credential.
+    # The research process sets this itself before its own install.
     import os
 
-    flag = os.environ.get("DIPCATCHER_OBSERVE", "").strip().lower()
-    if flag not in {"1", "true", "yes", "on"}:
-        return
+    os.environ.setdefault("DIPCATCHER_METRICS_KEY_ENV", "QUANT_API_KEY")
     from quant_fund.observe.install import install_passive_hooks
 
     install_passive_hooks()

@@ -70,6 +70,20 @@ def test_modelcard_roundtrip_and_ship_gate(tmp_path: Path):
     assert loaded.eval_delta.ship_eligible
 
 
+def test_modelcard_save_preserves_prior_file_on_crash(tmp_path: Path, monkeypatch):
+    path = tmp_path / "modelcard.json"
+    path.write_bytes(b"prior-good")
+
+    def crash(_fd, _mode):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("quant_fund.utils.atomicio.os.fdopen", crash)
+    with pytest.raises(KeyboardInterrupt):
+        _card().save(path)
+    assert path.read_bytes() == b"prior-good"
+    assert list(tmp_path.iterdir()) == [path]
+
+
 def test_ship_gate_blocks_regression_and_dishonesty():
     assert not _delta(general_pass_rate_candidate=0.8).ship_eligible
     assert not _delta(honesty_gate_candidate=False).ship_eligible
@@ -95,6 +109,21 @@ def test_local_backend_fail_closed(tmp_path: Path):
     _card(eval_delta=_delta(honesty_gate_candidate=False)).save(tmp_path / "modelcard.json")
     with pytest.raises(RuntimeError, match="ship gate"):
         LocalFx1Backend(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "SYNTHETIC-local-url-secret",
+        "https://user:SYNTHETIC-local-url-secret@example.test/v1",
+        "https://example.test/v1?api_key=SYNTHETIC-local-url-secret",
+    ],
+)
+def test_local_backend_url_errors_do_not_echo_secrets(tmp_path: Path, url: str):
+    _card().save(tmp_path / "modelcard.json")
+    with pytest.raises(RuntimeError, match="FX1_LOCAL_SERVE_URL") as caught:
+        LocalFx1Backend(tmp_path, serve_url=url)
+    assert "SYNTHETIC-local-url-secret" not in str(caught.value)
 
 
 def test_backend_factory_fail_closed(tmp_path: Path):

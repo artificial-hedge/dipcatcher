@@ -11,14 +11,18 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   adversarial-ci:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
@@ -31,19 +35,19 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups --all-extras
+        run: uv sync --locked --all-groups --all-extras --no-build
       - name: Hypothesis adversarial suite (bounded CI profile)
         env:
           HYPOTHESIS_PROFILE: ci
           MLFLOW_DISABLE_AGENT_HINT: "1"
         run: |
           set -o pipefail
-          start=$(uv run python -c 'import time; print(time.time())')
-          uv run pytest -q --durations=20 -p no:cacheprovider \
+          start=$(uv run --locked --no-build --no-binary-package fx-1 python -c 'import time; print(time.time())')
+          uv run --locked --no-build --no-binary-package fx-1 pytest -q --durations=20 -p no:cacheprovider \
             tests/property/test_adversarial_costs.py \
             tests/property/test_adversarial_returns_and_sizing.py \
             tests/property/test_adversarial_backtest.py \
             tests/property/test_adversarial_lookahead.py \
             tests/property/test_adversarial_resample_and_sources.py \
             tests/property/test_adversarial_receipts.py
-          uv run python -c "import time; print('ELAPSED_SEC {:.3f}'.format(time.time() - float('${start}')))"
+          uv run --locked --no-build --no-binary-package fx-1 python -c "import time; print('ELAPSED_SEC {:.3f}'.format(time.time() - float('${start}')))"

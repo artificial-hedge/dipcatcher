@@ -16,6 +16,7 @@ from quant_fund.models.nf_vi import bench_nf_vi
 from quant_fund.models.sparse_gp_sv import bench_sparse_gp_sv
 from quant_fund.models.structured_vi import bench_structured_vi
 from quant_fund.models.vrnn_seq import bench_vrnn_seq
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -94,7 +95,7 @@ def bench_structured_vi_family() -> dict[str, float]:
 
 def bench_vrnn_seq_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("vrnn_seq", bench_vrnn_seq(seed=_SEED + 965)))
+        return _floats(_finite_blob("vrnn_seq", call_bench(bench_vrnn_seq, seed=_SEED + 965)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:

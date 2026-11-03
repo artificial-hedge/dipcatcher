@@ -1,0 +1,34 @@
+name: Security gate
+
+# Executes the security gate on pull_request and workflow_dispatch.
+# The token is contents: read. cursor-ci.yml stays the Cursor agent launcher.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  security-gate:
+    runs-on: instabox-large
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Security gate
+        env:
+          SECURITY_GATE_BASE: ${{ github.event.pull_request.base.sha }}
+        run: make -f deploy/security.mk security-gate

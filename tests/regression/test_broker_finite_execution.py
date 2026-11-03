@@ -9,6 +9,12 @@ from quant_fund.execution.simulated_broker import SimulatedBroker
 from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
 
 
+def _trading_cfg(**kwargs: object) -> AppConfig:
+    cfg = AppConfig(**kwargs)  # type: ignore[arg-type]
+    cfg.kill_switch.state = "ENABLED"
+    return cfg
+
+
 def _order(side=OrderSide.BUY, quantity=10.0, limit_price=None):
     t = datetime(2024, 1, 2, tzinfo=UTC)
     return Order(
@@ -28,19 +34,19 @@ def _order(side=OrderSide.BUY, quantity=10.0, limit_price=None):
 @pytest.mark.parametrize("allow_capital", [True, False])
 def test_initial_cash_must_be_finite_and_nonnegative(cash, allow_capital):
     with pytest.raises(ValueError, match="initial cash must be finite and non-negative"):
-        SimulatedBroker(AppConfig(), initial_cash=cash, allow_capital=allow_capital)
+        SimulatedBroker(_trading_cfg(), initial_cash=cash, allow_capital=allow_capital)
 
 
 @pytest.mark.parametrize("allow_capital", [True, False])
 def test_zero_initial_cash_remains_valid(allow_capital):
-    broker = SimulatedBroker(AppConfig(), initial_cash=0.0, allow_capital=allow_capital)
+    broker = SimulatedBroker(_trading_cfg(), initial_cash=0.0, allow_capital=allow_capital)
     assert broker.cash == 0.0
 
 
 @pytest.mark.parametrize("cash", [float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("side", [OrderSide.BUY, OrderSide.SELL])
 def test_explicit_nav_cannot_hide_nonfinite_cash(cash, side):
-    broker = SimulatedBroker(AppConfig())
+    broker = SimulatedBroker(_trading_cfg())
     broker.cash = cash
     with pytest.raises(ValueError, match="broker cash must be finite"):
         broker.submit(_order(side), price=100.0, nav=1e6, adv_dollars=1e9)
@@ -52,7 +58,7 @@ def test_explicit_nav_cannot_hide_nonfinite_cash(cash, side):
     "cost", ["commission_bps", "half_spread_bps", "impact_y", "bps_per_turnover"]
 )
 def test_finite_cost_inputs_that_overflow_leave_book_unchanged(cost, side):
-    broker = SimulatedBroker(AppConfig(costs=CostConfig(**{cost: 1e308})))
+    broker = SimulatedBroker(_trading_cfg(costs=CostConfig(**{cost: 1e308})))
     before = broker.to_dict()
     with pytest.raises(ValueError, match="execution costs must be finite"):
         broker.submit(_order(side), price=100.0, nav=1e6, adv_dollars=1e9)
@@ -61,7 +67,7 @@ def test_finite_cost_inputs_that_overflow_leave_book_unchanged(cost, side):
 
 
 def test_resting_sell_cost_overflow_preserves_working_order():
-    cfg = AppConfig(costs=CostConfig(commission_bps=1e308))
+    cfg = _trading_cfg(costs=CostConfig(commission_bps=1e308))
     broker = SimulatedBroker(cfg)
     broker.submit(_order(OrderSide.SELL, limit_price=100.0), price=100.0, adv_dollars=1e9)
     before = broker.to_dict()
@@ -72,7 +78,7 @@ def test_resting_sell_cost_overflow_preserves_working_order():
 
 
 def test_finite_sell_proceeds_cannot_overflow_cash():
-    cfg = AppConfig(
+    cfg = _trading_cfg(
         costs=CostConfig(frictionless=True),
         risk_gate=RiskGateConfig(max_order_notional=1e308, max_name=0.1, max_participation=0.1),
     )
@@ -85,7 +91,7 @@ def test_finite_sell_proceeds_cannot_overflow_cash():
 
 
 def test_finite_decision_price_overflow_does_not_mutate_book():
-    broker = SimulatedBroker(AppConfig())
+    broker = SimulatedBroker(_trading_cfg())
     before = broker.to_dict()
     with pytest.raises(ValueError, match="fill costs must be finite"):
         broker.submit(_order(OrderSide.SELL), price=100.0, adv_dollars=1e9, decision_price=1e308)
@@ -95,7 +101,7 @@ def test_finite_decision_price_overflow_does_not_mutate_book():
 
 @pytest.mark.parametrize("side", [OrderSide.BUY, OrderSide.SELL])
 def test_finite_execution_preserves_cash_and_fill_identity(side):
-    broker = SimulatedBroker(AppConfig())
+    broker = SimulatedBroker(_trading_cfg())
     rec = broker.submit(_order(side), price=100.0, adv_dollars=1e9, decision_price=99.0)
     assert rec.order.status is OrderStatus.FILLED
     fill = rec.fill
@@ -111,7 +117,7 @@ def test_fill_id_failure_does_not_mutate_book():
     def fail_id(kind):
         raise ValueError(f"cannot mint {kind} id")
 
-    broker = SimulatedBroker(AppConfig(), id_factory=fail_id)
+    broker = SimulatedBroker(_trading_cfg(), id_factory=fail_id)
     before = broker.to_dict()
     with pytest.raises(ValueError, match="cannot mint fill id"):
         broker.submit(_order(), price=100.0, adv_dollars=1e9)
@@ -120,7 +126,7 @@ def test_fill_id_failure_does_not_mutate_book():
 
 
 def test_restored_finite_negative_cash_can_be_repaid_by_sale():
-    cfg = AppConfig()
+    cfg = _trading_cfg()
     state = SimulatedBroker(cfg).to_dict()
     state.update(cash=-100.0, shares={"A": 10.0}, last_marks={"A": 100.0})
     broker = SimulatedBroker.from_state(cfg, state)

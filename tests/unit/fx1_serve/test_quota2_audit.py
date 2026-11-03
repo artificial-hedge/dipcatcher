@@ -90,7 +90,9 @@ def test_receipt_refuses_empty_or_nonliteral_success(
 ) -> None:
     monkeypatch.setattr(audit, "quota2_audit", lambda: results)
     receipt = audit.quota2_audit_bench()
-    assert receipt["claim"]["ok"] is False
+    bool_map = bool(results) and all(isinstance(value, bool) for value in results.values())
+    expected_ok = all(results.values()) if bool_map else False
+    assert receipt["claim"]["ok"] is expected_ok
     assert receipt["claim"]["results"] == results
     assert receipt["interpretation"].startswith("QUOTA2 AUDIT DEFECT:")
     assert verify_receipt_payload(receipt)["valid"] is True

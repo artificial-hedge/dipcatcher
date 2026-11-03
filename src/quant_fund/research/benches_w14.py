@@ -174,7 +174,7 @@ def bench_martingale_ot() -> dict[str, float]:
             "mot_butterfly_lower": float(res.lower_bound),
             "mot_butterfly_upper": float(res.upper_bound),
         }
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -367,7 +367,7 @@ def bench_vine_copula() -> dict[str, float]:
             "vine_clayton_lower_tail": lo_cl,
             "vine_gaussian_lower_tail": lo_g,
         }
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, ArithmeticError):
+    except (ValueError, RuntimeError, FloatingPointError, ArithmeticError):
         return {}
 
 
@@ -494,7 +494,7 @@ def bench_xva() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -527,7 +527,7 @@ def bench_american_lsm() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -662,7 +662,7 @@ def bench_local_stoch_vol() -> dict[str, float]:
             "slv_final_iv_max_abs_volpts": final_iv_volpts,
             "slv_xi0_leverage_deviation": xi0_dev,
         }
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -704,7 +704,7 @@ def bench_deep_bsde() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -751,7 +751,7 @@ def bench_deep_regime_mixture() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -798,7 +798,7 @@ def bench_odd_residual_flows() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -861,7 +861,7 @@ def bench_deep_kernel_hedging() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -941,7 +941,7 @@ def bench_zi_lob() -> dict[str, float]:
             "zlob_stat_max_abs_inventory": float(stat["max_abs_inventory"]),
             "zlob_regime_max_abs_inventory": float(reg["max_abs_inventory"]),
         }
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -1003,5 +1003,5 @@ def bench_cash_constrained_oe() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

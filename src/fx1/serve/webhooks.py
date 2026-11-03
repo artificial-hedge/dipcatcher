@@ -10,6 +10,9 @@ arrives with two headers:
 
 Receivers authenticate a delivery with :func:`verify_webhook` over the
 *raw* request body (no re-serialization — signature bytes are exact).
+Signing and verification both reject timestamps outside the tolerance
+window. The signature is the nonce: a process-local cache refuses to
+mint it twice and refuses to accept it twice.
 """
 
 from __future__ import annotations
@@ -20,9 +23,23 @@ import http.client
 import ipaddress
 import math
 import os
+import random
 import socket
 import ssl
+import threading
 import urllib.parse
+from collections import OrderedDict
+from typing import Any, NoReturn, cast
+
+from quant_fund.utils.net_timeout import bounded_getaddrinfo, require_attempts, require_timeout
+from quant_fund.utils.outbound import (
+    PRIVATE_ALLOW_CIDRS_ENV,
+    OutboundRefused,
+    literal_connect_address,
+    parse_allow_cidrs,
+    vetted_addresses,
+)
+from quant_fund.utils.secrets import redact_text
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -31,8 +48,10 @@ __all__ = [
     "WEBHOOK_TIMESTAMP_HEADER",
     "check_callback_url",
     "deliver_signed",
+    "reset_webhook_replay_cache",
     "sign_webhook",
     "verify_webhook",
+    "webhook_signature",
 ]
 
 WEBHOOK_TIMESTAMP_HEADER = "X-Fx1-Webhook-Timestamp"
@@ -41,66 +60,51 @@ WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
-_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
+_MAX_NONCES = 1024
 
 
-def _private_networks_allowed() -> bool:
-    """Return whether this process explicitly permits private callbacks."""
-    return os.environ.get(_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-    }
+def _webhook_networks() -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+    return parse_allow_cidrs(os.environ.get(PRIVATE_ALLOW_CIDRS_ENV, ""))
 
 
-def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Classify an address conservatively for an outbound callback."""
-    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
-        address = address.ipv4_mapped
-    return address.is_global and not (
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_multicast
-        or address.is_reserved
-        or address.is_unspecified
-    )
+def _raise_webhook_resolution(host: str, exc: OutboundRefused) -> NoReturn:
+    if str(exc) == "allowlist CIDR is invalid":
+        raise exc
+    cause = exc.__cause__
+    if isinstance(cause, TimeoutError):
+        raise TimeoutError(str(cause)) from exc
+    if isinstance(cause, OSError) or str(exc) in {
+        "cannot resolve host",
+        "destination host did not resolve to an IP address",
+    }:
+        raise OSError(f"callback_url host {host!r} did not resolve to an IP address") from exc
+    raise ValueError(f"callback_url resolved to a private or special-use address: {exc}") from exc
 
 
 def _validate_literal_host(host: str) -> None:
     """Reject a special-use IP literal without performing DNS at submit time."""
-    candidate = host.split("%", 1)[0]
     try:
-        address = ipaddress.ip_address(candidate)
-    except ValueError:
-        return
-    if not _private_networks_allowed() and not _is_public_unicast(address):
-        raise ValueError("callback_url must not target a private or special-use address")
+        literal_connect_address(host, _webhook_networks())
+    except OutboundRefused as exc:
+        raise ValueError("callback_url must not target a private or special-use address") from exc
 
 
-def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
-    """Resolve a host and return only validated, distinct numeric addresses."""
-    addresses: list[str] = []
-    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
-        host,
-        port,
-        type=socket.SOCK_STREAM,
-    ):
-        if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
-            continue
-        raw = str(sockaddr[0])
-        candidate = raw.split("%", 1)[0]
-        address = ipaddress.ip_address(candidate)
-        if not _private_networks_allowed() and not _is_public_unicast(address):
-            raise ValueError(
-                f"callback_url resolved to a private or special-use address: {address}"
-            )
-        normalized = str(address)
-        if normalized not in addresses:
-            addresses.append(normalized)
-    if not addresses:
-        raise OSError(f"callback_url host {host!r} did not resolve to an IP address")
-    return tuple(addresses)
+def _resolved_addresses(host: str, port: int, timeout: float = 10.0) -> tuple[str, ...]:
+    """Classify a literal before DNS and return numeric addresses to dial."""
+
+    def resolve(name: str, number: int) -> list[tuple[Any, ...]]:
+        return bounded_getaddrinfo(
+            name,
+            number,
+            timeout,
+            type=socket.SOCK_STREAM,
+            lookup=socket.getaddrinfo,
+        )
+
+    try:
+        return vetted_addresses(host, port, _webhook_networks(), resolve_fn=resolve)
+    except OutboundRefused as exc:
+        _raise_webhook_resolution(host, exc)
 
 
 class _PinnedHTTPConnection(http.client.HTTPConnection):
@@ -178,12 +182,156 @@ def _signed_payload(timestamp: str, body: bytes) -> bytes:
     return timestamp.encode("ascii") + b"." + body
 
 
-def sign_webhook(secret: str, timestamp: str, body: bytes) -> str:
-    """Return ``sha256=<hex>`` — the signature header value."""
-    sig = hmac.new(
+class _NonceCache:
+    """Bounded set of signatures already minted or already accepted."""
+
+    def __init__(self) -> None:
+        self._seen: OrderedDict[str, float] = OrderedDict()
+        self._lock = threading.Lock()
+
+    def remember(self, nonce: str, *, expiry: float, now: float) -> bool:
+        """Return true when ``nonce`` was not already present."""
+        with self._lock:
+            self._prune(now)
+            if nonce in self._seen:
+                return False
+            self._seen[nonce] = expiry
+            self._seen.move_to_end(nonce)
+            while len(self._seen) > _MAX_NONCES:
+                self._seen.popitem(last=False)
+            return True
+
+    def _prune(self, now: float) -> None:
+        if not math.isfinite(now):
+            return
+        stale = [key for key, until in self._seen.items() if math.isfinite(until) and until < now]
+        for key in stale:
+            del self._seen[key]
+
+    def clear(self) -> None:
+        with self._lock:
+            self._seen.clear()
+
+
+_ISSUED = _NonceCache()
+_ACCEPTED = _NonceCache()
+
+
+def reset_webhook_replay_cache() -> None:
+    """Drop minted and accepted webhook nonces. Tests use this between cases."""
+    _ISSUED.clear()
+    _ACCEPTED.clear()
+
+
+def webhook_signature(secret: str, timestamp: str, body: bytes) -> str:
+    """Return ``sha256=<hex>`` over ``<timestamp>.<body>`` without touching the nonce cache."""
+    digest = hmac.new(
         secret.encode("utf-8"), _signed_payload(timestamp, body), hashlib.sha256
     ).hexdigest()
-    return f"sha256={sig}"
+    return f"sha256={digest}"
+
+
+def _reference_time(now: float | None) -> float:
+    import time  # noqa: PLC0415 — local import keeps the module leaf
+
+    if now is None:
+        return time.time()
+    return now
+
+
+def _timestamp_within_tolerance(timestamp: str, tolerance_s: float, now: float | None) -> bool:
+    ts = float(timestamp)
+    if not math.isfinite(ts) or not math.isfinite(tolerance_s):
+        return False
+    if tolerance_s < 0:
+        return True
+    ref = _reference_time(now)
+    if not math.isfinite(ref):
+        return False
+    return abs(ref - ts) <= tolerance_s
+
+
+def _nonce_expiry(timestamp: str, tolerance_s: float) -> float:
+    if tolerance_s < 0:
+        return math.inf
+    return float(timestamp) + tolerance_s
+
+
+def _validate_sign_inputs(secret: str, timestamp: str, body: bytes) -> None:
+    if not isinstance(secret, str) or not secret:
+        raise ValueError("webhook secret is missing")
+    if not isinstance(body, bytes):
+        raise ValueError("webhook body must be bytes")
+    if not isinstance(timestamp, str) or not timestamp or not timestamp.isascii():
+        raise ValueError("webhook timestamp is malformed")
+
+
+def _require_fresh_timestamp(timestamp: str, tolerance_s: float, now: float | None) -> None:
+    try:
+        fresh = _timestamp_within_tolerance(timestamp, tolerance_s, now)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("webhook timestamp is malformed") from exc
+    if not fresh:
+        raise ValueError("webhook timestamp is outside the tolerance window")
+
+
+def sign_webhook(
+    secret: str,
+    timestamp: str,
+    body: bytes,
+    *,
+    tolerance_s: float = _DEFAULT_TOLERANCE_S,
+    now: float | None = None,
+) -> str:
+    """Mint ``sha256=<hex>`` for one delivery.
+
+    ``timestamp`` must be finite and, unless ``tolerance_s`` is negative,
+    inside the tolerance window around ``now`` (default: the current
+    clock). The signature is remembered as a nonce; minting it again
+    raises ``ValueError`` until it ages out of the window or the bounded
+    cache evicts it. The error text never includes the secret.
+    """
+    _validate_sign_inputs(secret, timestamp, body)
+    _require_fresh_timestamp(timestamp, tolerance_s, now)
+    signature = webhook_signature(secret, timestamp, body)
+    expiry = _nonce_expiry(timestamp, tolerance_s)
+    if not _ISSUED.remember(signature, expiry=expiry, now=_reference_time(now)):
+        raise ValueError("webhook nonce already issued")
+    return signature
+
+
+def _verify_material(
+    secret: str,
+    timestamp: str | None,
+    signature: str | None,
+    body: bytes,
+) -> bool:
+    if not isinstance(secret, str) or not secret:
+        return False
+    if not isinstance(timestamp, str) or not timestamp or not timestamp.isascii():
+        return False
+    if not isinstance(signature, str) or not signature.isascii():
+        return False
+    if not signature.startswith("sha256="):
+        return False
+    return isinstance(body, bytes)
+
+
+def _authenticated(
+    secret: str,
+    timestamp: str,
+    signature: str,
+    body: bytes,
+    tolerance_s: float,
+    now: float | None,
+) -> bool:
+    if not _timestamp_within_tolerance(timestamp, tolerance_s, now):
+        return False
+    expected = webhook_signature(secret, timestamp, body)
+    if not hmac.compare_digest(expected, signature):
+        return False
+    expiry = _nonce_expiry(timestamp, tolerance_s)
+    return _ACCEPTED.remember(signature, expiry=expiry, now=_reference_time(now))
 
 
 def verify_webhook(
@@ -200,28 +348,20 @@ def verify_webhook(
     Timestamps and tolerances must be finite. Nonnegative ``tolerance_s``
     allows at most that many seconds of past or future clock skew (inclusive);
     a finite negative tolerance explicitly disables the freshness check.
-    Any malformed input is a plain ``False`` — never an exception.
+    A signature that has already been accepted is a replay and returns
+    ``False``. Any malformed input is a plain ``False`` — never an exception.
     """
-    if not isinstance(secret, str) or not secret:
-        return False
-    if not isinstance(timestamp, str) or not timestamp or not timestamp.isascii():
-        return False
-    if not isinstance(signature, str) or not signature.isascii():
-        return False
-    if not signature.startswith("sha256="):
+    if not _verify_material(secret, timestamp, signature, body):
         return False
     try:
-        ts = float(timestamp)
-        if not math.isfinite(ts) or not math.isfinite(tolerance_s):
-            return False
-        if tolerance_s >= 0:
-            import time  # noqa: PLC0415 — local import keeps the module leaf
-
-            ref = time.time() if now is None else now
-            if not math.isfinite(ref) or abs(ref - ts) > tolerance_s:
-                return False
-        expected = sign_webhook(secret, timestamp, body)
-        return hmac.compare_digest(expected, signature)
+        return _authenticated(
+            secret,
+            cast(str, timestamp),
+            cast(str, signature),
+            body,
+            tolerance_s,
+            now,
+        )
     except (TypeError, ValueError, OverflowError):
         # Includes encoding failures (UnicodeError is a ValueError subclass).
         return False
@@ -242,16 +382,52 @@ def check_callback_url(url: str | None) -> str | None:
         or parsed.password is not None
     ):
         raise ValueError(
-            f"callback_url must be an http(s) URL with a host and no "
-            f"userinfo credentials, got {url!r}"
+            "callback_url must be an http(s) URL with a host and no userinfo credentials"
         )
     try:
         if parsed.port == 0:
             raise ValueError("port zero is not a callback destination")
     except ValueError as exc:
-        raise ValueError(f"callback_url has an invalid port, got {url!r}") from exc
+        raise ValueError("callback_url has an invalid port") from exc
     _validate_literal_host(parsed.hostname)
     return url
+
+
+def _delivery_arg_error(max_attempts: int, backoff_s: float, timeout_s: float) -> str | None:
+    if max_attempts < 1:
+        return "ValueError: max_attempts must be positive"
+    if not math.isfinite(backoff_s) or backoff_s < 0:
+        return "ValueError: backoff_s must be finite and non-negative"
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        return "ValueError: timeout_s must be finite and positive"
+    return None
+
+
+def _callback_endpoint(url: str) -> tuple[urllib.parse.ParseResult, str, int]:
+    check_callback_url(url)
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname
+    if host is None:
+        raise ValueError("callback_url has no host")
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+    return parsed, host, port
+
+
+def _retry_delay(
+    attempt: int,
+    backoff_s: float,
+    *,
+    jitter: bool,
+    rng: random.Random | None,
+) -> float:
+    """Capped exponential backoff. Jitter is drawn from ``[0, cap]``."""
+    delay = min(30.0, backoff_s * (1 << (attempt - 1)))
+    if jitter and delay > 0:
+        uniform = rng.uniform if rng is not None else random.uniform
+        return uniform(0.0, delay)
+    return delay
 
 
 def deliver_signed(
@@ -262,39 +438,40 @@ def deliver_signed(
     max_attempts: int = WEBHOOK_MAX_ATTEMPTS,
     backoff_s: float = WEBHOOK_BACKOFF_S,
     timeout_s: float = 10.0,
+    jitter: bool = True,
+    rng: random.Random | None = None,
 ) -> tuple[bool, str | None, int]:
     """POST ``body`` to a webhook ``url`` — HMAC-signed when ``secret`` is
     set. Returns ``(delivered, error, attempts)``.
 
     Transient faults (network errors, 5xx) retry ``max_attempts`` times
-    with capped exponential backoff; a 4xx is a definitive rejection and
-    is never retried. Delivery faults return as the error string — this
-    helper never raises into its caller's worker."""
+    with bounded exponential backoff and jitter; a 4xx is a definitive
+    rejection and is never retried. Delivery faults return as the error
+    string — this helper never raises into its caller's worker."""
     import time  # noqa: PLC0415 — local import keeps the module leaf
+
+    arg_error = _delivery_arg_error(max_attempts, backoff_s, timeout_s)
+    if arg_error is not None:
+        return False, arg_error, 0
 
     error: str | None = None
     try:
-        check_callback_url(url)
-        parsed = urllib.parse.urlparse(url)
-        host = parsed.hostname
-        if host is None:
-            raise ValueError("callback_url has no host")
-        port = parsed.port
-        if port is None:
-            port = 443 if parsed.scheme == "https" else 80
+        timeout_s = require_timeout(timeout_s, name="timeout_s")
+        max_attempts = require_attempts(max_attempts)
+        parsed, host, port = _callback_endpoint(url)
     except Exception as exc:  # noqa: BLE001 — invalid targets are delivery data
-        return False, f"{type(exc).__name__}: {exc}", 0
+        return False, redact_text(f"{type(exc).__name__}: {exc}"), 0
 
     for attempt in range(max_attempts):
         if attempt:
-            time.sleep(backoff_s * (1 << (attempt - 1)))
+            time.sleep(_retry_delay(attempt, backoff_s, jitter=jitter, rng=rng))
         try:
             headers = {"Content-Type": "application/json"}
             if secret:
-                ts = str(int(time.time()))
+                ts = str(int(time.time()) + attempt)
                 headers[WEBHOOK_TIMESTAMP_HEADER] = ts
                 headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(secret, ts, body)
-            addresses = _resolved_addresses(host, port)
+            addresses = _resolved_addresses(host, port, timeout_s)
             last_exception: Exception | None = None
             for address in addresses:
                 try:
@@ -312,5 +489,5 @@ def deliver_signed(
                 if last_exception is not None:
                     raise last_exception
         except Exception as exc:  # noqa: BLE001 — delivery faults are data, never raised
-            error = f"{type(exc).__name__}: {exc}"
+            error = redact_text(f"{type(exc).__name__}: {exc}")
     return False, error, max_attempts

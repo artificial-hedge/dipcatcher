@@ -1244,7 +1244,12 @@ def quota2_audit() -> dict[str, Any]:
 def quota2_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under quota2_audit.v1."""
     r = quota2_audit()
-    ok = len(r) == 107 and all(v is True for v in r.values())
+    bool_map = isinstance(r, dict) and bool(r) and all(isinstance(v, bool) for v in r.values())
+    # The receipt contract re-derives ``ok`` as all(bool probes). Completeness
+    # (exactly 107 probes) stays in the interpretation, not in a contradictory ok.
+    probes_pass = all(r.values()) if bool_map else False
+    complete = len(r) == 107 and probes_pass
+    ok = probes_pass if bool_map else False
     out: dict[str, Any] = {
         "kind": "quota2_audit",
         "schema": "quota2_audit.v1",
@@ -1288,7 +1293,7 @@ def quota2_audit_bench() -> dict[str, Any]:
             "window and the served ring stay honestly process-local. Refusals "
             "bill nothing, post-auth failures bill the use but never "
             "tokens, and every refusal lands enveloped on both grammars."
-            if ok
+            if complete
             else f"QUOTA2 AUDIT DEFECT: {r}"
         ),
     }

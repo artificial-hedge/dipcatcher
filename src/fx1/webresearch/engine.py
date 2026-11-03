@@ -19,6 +19,7 @@ sealed lab receipt and must never be presented as one.
 
 from __future__ import annotations
 
+import math
 import re
 import threading
 import time
@@ -137,6 +138,35 @@ class ResearchBudget:
     max_depth: int = 1
     max_results_per_search: int = DEFAULT_MAX_RESULTS
     search_pause_s: float = 0.6
+
+    def __post_init__(self) -> None:
+        for name in (
+            "max_searches",
+            "max_sources",
+            "max_bytes_per_source",
+            "max_results_per_search",
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+                raise ValueError(f"{name} must be a positive integer")
+        if (
+            isinstance(self.max_depth, bool)
+            or not isinstance(self.max_depth, int)
+            or self.max_depth < 0
+        ):
+            raise ValueError("max_depth must be a nonnegative integer")
+        for name in ("max_duration_s", "search_pause_s"):
+            value = getattr(self, name)
+            try:
+                finite = math.isfinite(value)
+                lower_bound = value > 0 if name == "max_duration_s" else value >= 0
+            except TypeError:
+                finite = False
+                lower_bound = False
+            if isinstance(value, bool) or not finite or not lower_bound:
+                raise ValueError(
+                    f"{name} must be finite and {'>' if name == 'max_duration_s' else '>='} 0"
+                )
 
 
 @dataclass

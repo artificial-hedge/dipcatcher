@@ -23,10 +23,10 @@ class TestByokTLS(unittest.TestCase):
         )
         original = {name: getattr(context, name) for name in settings}
         with (
-            patch("fx1.serve.backends.ssl.create_default_context", return_value=context) as create,
+            patch("fx1.serve.byok_pin.ssl.create_default_context", return_value=context) as create,
             patch.object(context, "set_alpn_protocols", wraps=context.set_alpn_protocols) as alpn,
             patch(
-                "fx1.serve.backends.socket.create_connection",
+                "fx1.serve.byok_pin.socket.create_connection",
                 side_effect=AssertionError("constructing a connection must not open a socket"),
             ) as connect,
         ):
@@ -47,9 +47,9 @@ class TestByokTLS(unittest.TestCase):
                 raw_socket = Mock()
                 tls_socket = Mock()
                 with (
-                    patch("fx1.serve.backends.ssl.create_default_context", return_value=context),
+                    patch("fx1.serve.byok_pin.ssl.create_default_context", return_value=context),
                     patch(
-                        "fx1.serve.backends.socket.create_connection", return_value=raw_socket
+                        "fx1.serve.byok_pin.socket.create_connection", return_value=raw_socket
                     ) as connect,
                     patch.object(context, "wrap_socket", return_value=tls_socket) as wrap,
                 ):
@@ -68,9 +68,9 @@ class TestByokTLS(unittest.TestCase):
         raw_socket = Mock()
         failure = ssl.SSLCertVerificationError("synthetic certificate rejection")
         with (
-            patch("fx1.serve.backends.ssl.create_default_context", return_value=context),
+            patch("fx1.serve.byok_pin.ssl.create_default_context", return_value=context),
             patch(
-                "fx1.serve.backends.socket.create_connection", return_value=raw_socket
+                "fx1.serve.byok_pin.socket.create_connection", return_value=raw_socket
             ) as connect,
             patch.object(context, "wrap_socket", side_effect=failure) as wrap,
         ):

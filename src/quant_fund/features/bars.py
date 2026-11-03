@@ -16,6 +16,8 @@ References:
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -79,13 +81,22 @@ def tick_bars(prices: Array, sizes: Array, ticks_per_bar: int = 10) -> dict[str,
     return _ohlcv(p, s, bounds)
 
 
+def _require_positive_finite(name: str, value: object) -> float:
+    """Refuse bools, non-numbers, NaN, inf, and non-positive thresholds."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be positive and finite, got {value!r}")
+    number = float(value)
+    if not math.isfinite(number) or number <= 0.0:
+        raise ValueError(f"{name} must be positive and finite, got {value!r}")
+    return number
+
+
 def volume_bars(prices: Array, sizes: Array, volume_per_bar: float) -> dict[str, Array]:
     """Volume bars: close a bar when cumulative volume crosses the threshold."""
     p, s = _as_ticks(prices, sizes)
-    if not np.isfinite(volume_per_bar) or volume_per_bar <= 0.0:
-        raise ValueError("volume_per_bar must be positive and finite")
+    threshold = _require_positive_finite("volume_per_bar", volume_per_bar)
     bounds = _bounds_or_raise(
-        reset_bounds(np.ascontiguousarray(s, dtype=np.float64), float(volume_per_bar)),
+        reset_bounds(np.ascontiguousarray(s, dtype=np.float64), threshold),
         "no complete volume bars",
     )
     return _ohlcv(p, s, bounds)
@@ -94,11 +105,10 @@ def volume_bars(prices: Array, sizes: Array, volume_per_bar: float) -> dict[str,
 def dollar_bars(prices: Array, sizes: Array, dollar_per_bar: float) -> dict[str, Array]:
     """Dollar bars: close a bar when ``sum(price * size)`` crosses the threshold."""
     p, s = _as_ticks(prices, sizes)
-    if not np.isfinite(dollar_per_bar) or dollar_per_bar <= 0.0:
-        raise ValueError("dollar_per_bar must be positive and finite")
+    threshold = _require_positive_finite("dollar_per_bar", dollar_per_bar)
     weights = np.ascontiguousarray(p * s, dtype=np.float64)
     bounds = _bounds_or_raise(
-        reset_bounds(weights, float(dollar_per_bar)),
+        reset_bounds(weights, threshold),
         "no complete dollar bars",
     )
     return _ohlcv(p, s, bounds)
@@ -123,8 +133,17 @@ def _tick_signs(p: Array) -> Array:
 
 
 def _expect_ewma(expected_ticks: int, alpha_ewma: float) -> float:
-    if expected_ticks < 2 or not np.isfinite(alpha_ewma) or not (0.0 < alpha_ewma <= 1.0):
-        raise ValueError("expected_ticks >= 2 and alpha_ewma in (0,1] required")
+    if (
+        isinstance(expected_ticks, bool)
+        or not isinstance(expected_ticks, int)
+        or expected_ticks < 2
+    ):
+        raise ValueError(f"expected_ticks >= 2, got {expected_ticks!r}")
+    if isinstance(alpha_ewma, bool) or not isinstance(alpha_ewma, (int, float)):
+        raise ValueError(f"alpha_ewma in (0,1], got {alpha_ewma!r}")
+    alpha = float(alpha_ewma)
+    if not math.isfinite(alpha) or not (0.0 < alpha <= 1.0):
+        raise ValueError(f"alpha_ewma in (0,1], got {alpha_ewma!r}")
     return float(expected_ticks)
 
 

@@ -1,0 +1,5 @@
+# Hourly log retention. Install:
+#   sudo cp deploy/cron/dipcatcher-log-retain /etc/cron.d/dipcatcher-log-retain
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 * * * * root /opt/dipcatcher/.venv/bin/python /opt/dipcatcher/scripts/log_retain.py --root /var/log/dipcatcher --docker-project dipcatcher-ops7

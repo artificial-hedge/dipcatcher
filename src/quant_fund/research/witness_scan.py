@@ -26,6 +26,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from quant_fund.utils.net_timeout import DEFAULT_MAX_BODY, read_pinned
+
 DEFAULT_REKOR_URL = "https://rekor.sigstore.dev"
 WITNESS_PUBKEY_PATH = Path("quality/witness_signing.pub")
 # Ceiling on entries fetched per scan — Rekor index can return thousands for
@@ -40,8 +42,7 @@ def _http(url: str, timeout: float, data: bytes | None = None) -> bytes:
         headers={"Content-Type": "application/json"} if data else {},
         method="POST" if data else "GET",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        return bytes(resp.read())
+    return read_pinned(req, timeout=timeout, max_bytes=DEFAULT_MAX_BODY)
 
 
 def _entry_uuids(pubkey_pem: bytes, rekor_url: str, timeout: float) -> list[str]:
@@ -162,7 +163,7 @@ def scan_witness_log(
         uuids = _entry_uuids(pub_file.read_bytes(), rekor_url, timeout)
     except Exception as exc:  # noqa: BLE001 — online lane reports, not raises
         return {
-            "ok": True,
+            "ok": False,
             "online": False,
             "scanned": 0,
             "foreign": [],

@@ -46,7 +46,7 @@ src/fx1/operations/resolve_security_identity.py:execute 15
 src/fx1/operations/select_universe_membership.py:execute 13
 src/fx1/rt_audit.py:rt_audit 12
 src/fx1/sdk.py:Fx1Harness.complete 12
-src/fx1/sdk.py:Fx1Harness.create_finetune_job 14
+src/fx1/sdk.py:Fx1Harness.create_finetune_job 13
 src/fx1/sdk.py:Fx1Harness.key_update 10
 src/fx1/sdk.py:Fx1Harness.openai_batch 18
 src/fx1/sdk.py:Fx1Harness.openai_response 11
@@ -87,7 +87,7 @@ src/fx1/serve/api.py:create_app._resolve_request_backend 11
 src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
 src/fx1/serve/api_audit.py:_probe_finetune 46
-src/fx1/serve/backends.py:LocalFx1Backend.__init__ 12
+src/fx1/serve/backends.py:LocalFx1Backend.__init__ 10
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
 src/fx1/serve/backends.py:_openai_chat_complete 10
 src/fx1/serve/backends.py:_openai_chat_complete_tools 19
@@ -132,7 +132,7 @@ src/fx1/serve/vectorstores.py:VectorStoreStore.file_batch_create 10
 src/fx1/serve/vectorstores.py:VectorStoreStore.search 17
 src/fx1/serve/vectorstores.py:_filters_match 14
 src/fx1/serve/vectorstores.py:validate_filters 14
-src/fx1/serve/webhooks.py:deliver_signed 13
+src/fx1/serve/webhooks.py:deliver_signed 12
 src/fx1/train/pipeline.py:Pipeline.run_eval_candidate 10
 src/fx1/webresearch/engine.py:Researcher._fetch_doc 11
 src/fx1/webresearch/engine.py:Researcher.run 14
@@ -142,7 +142,6 @@ src/quant_fund/api/app.py:api_auth_middleware 11
 src/quant_fund/api/app.py:drift 13
 src/quant_fund/api/app.py:get_backtest 15
 src/quant_fund/api/app.py:risk_portfolio 20
-src/quant_fund/api/error_shape.py:error_shape_audit 10
 src/quant_fund/api/param_fuzz.py:fuzz_app 12
 src/quant_fund/api/surface_pin.py:_route_entry 10
 src/quant_fund/audit/canonical.py:json_safe 10
@@ -177,7 +176,6 @@ src/quant_fund/cli/micro_cmds.py:candle_book 11
 src/quant_fund/cli/micro_cmds.py:kyle_ofi 11
 src/quant_fund/cli/ops_cmds.py:monitor 10
 src/quant_fund/cli/ops_cmds.py:paper 23
-src/quant_fund/cli/ops_cmds.py:sim_live 10
 src/quant_fund/cli/research_cmds.py:basis_carry_cmd 26
 src/quant_fund/cli/research_cmds.py:corpus_absence_cmd 19
 src/quant_fund/cli/research_cmds.py:corpus_epoch 24
@@ -197,10 +195,9 @@ src/quant_fund/data/adapters/dolthub_stocks.py:load_ohlcv 10
 src/quant_fund/data/adapters/dolthub_stocks.py:load_ohlcv_on_dates 11
 src/quant_fund/data/adapters/hf_ohlcv_1m.py:stream_https 12
 src/quant_fund/data/adapters/parquet.py:ParquetMarketProvider.get_corporate_actions 16
-src/quant_fund/data/concurrent_io.py:amap_ordered 11
+src/quant_fund/data/concurrent_io.py:amap_ordered 10
 src/quant_fund/data/concurrent_io.py:map_ordered 14
-src/quant_fund/data/concurrent_io.py:pooled_request 12
-src/quant_fund/data/concurrent_io.py:pooled_stream 15
+src/quant_fund/data/concurrent_io.py:pooled_stream 14
 src/quant_fund/data/lakehouse/lineage.py:_verify_dataset 20
 src/quant_fund/data/quality/checks.py:check_missing_bars 12
 src/quant_fund/data/sources/adapters.py:BinanceDeliveryUniverseSource.fetch 12
@@ -225,8 +222,7 @@ src/quant_fund/execution/implementation_shortfall.py:shortfall_frame 10
 src/quant_fund/execution/langevin_impact.py:simulate_paths 19
 src/quant_fund/execution/langevin_impact.py:sqrt_band 11
 src/quant_fund/execution/simulated_broker.py:SimulatedBroker._attempt_fill 10
-src/quant_fund/execution/simulated_broker.py:SimulatedBroker.from_state 20
-src/quant_fund/execution/simulated_broker.py:SimulatedBroker.submit 10
+src/quant_fund/execution/simulated_broker.py:SimulatedBroker.from_state 19
 src/quant_fund/execution/varswap_stopping.py:entry_exit_window 22
 src/quant_fund/execution/varswap_stopping.py:solve_entry 13
 src/quant_fund/execution/varswap_stopping.py:solve_exit 12
@@ -247,8 +243,6 @@ src/quant_fund/hmm/discrete.py:DiscreteHMM.__post_init__ 10
 src/quant_fund/labels/barriers.py:triple_barrier 13
 src/quant_fund/labels/engine.py:build_labels 12
 src/quant_fund/leakage/ast_scan.py:_check_lh003 12
-src/quant_fund/leakage/ast_scan.py:_check_lh009 10
-src/quant_fund/leakage/ast_scan.py:_check_lh014 10
 src/quant_fund/leakage/ast_scan.py:_fold_num 12
 src/quant_fund/leakage/cli.py:scan_cmd 10
 src/quant_fund/lightspeed/momentum.py:momentum_target_weights 34
@@ -506,7 +500,7 @@ src/quant_fund/models/glushkov_nfa.py:_build 23
 src/quant_fund/models/glushkov_nfa.py:_build.rec 19
 src/quant_fund/models/gmm_est.py:gmm_2step 11
 src/quant_fund/models/go_explore.py:bench_go_explore 10
-src/quant_fund/models/graded_irt.py:grm_jml 11
+src/quant_fund/models/graded_irt.py:grm_jml 10
 src/quant_fund/models/grammar_fuzz.py:_valid 10
 src/quant_fund/models/graph_components.py:articulation 13
 src/quant_fund/models/graph_components.py:bridges 13
@@ -594,7 +588,7 @@ src/quant_fund/models/pagerank_topology.py:bench_pagerank 10
 src/quant_fund/models/pair_vine_copula.py:_mst_edges 11
 src/quant_fund/models/pair_vine_copula.py:_mst_ordering 15
 src/quant_fund/models/pair_vine_copula.py:_vine_logpdf_rows 17
-src/quant_fund/models/pair_vine_copula.py:gas_copula_fit 13
+src/quant_fund/models/pair_vine_copula.py:gas_copula_fit 10
 src/quant_fund/models/pair_vine_copula.py:vine_fit 24
 src/quant_fund/models/palindromic_tree.py:build_eertree 10
 src/quant_fund/models/pareto_nbd.py:bench_pnbd 12
@@ -609,7 +603,7 @@ src/quant_fund/models/poststrat.py:raking 10
 src/quant_fund/models/power_law.py:pl_fit 12
 src/quant_fund/models/proof_number.py:proof_number_search 18
 src/quant_fund/models/quest.py:_spectral_support 17
-src/quant_fund/models/quest.py:quest_forward 17
+src/quant_fund/models/quest.py:quest_forward 16
 src/quant_fund/models/raft_election.py:run_raft 17
 src/quant_fund/models/rank_aggregation.py:mc3_ranking 11
 src/quant_fund/models/rave_mc.py:rave_mcts 15
@@ -792,7 +786,7 @@ src/quant_fund/research/calibration_eval.py:_score_cell 12
 src/quant_fund/research/calibration_eval.py:calibration_contract_errors 10
 src/quant_fund/research/calibration_eval.py:run_calibration_eval 22
 src/quant_fund/research/capability_value.py:capability_swap_evaluation 15
-src/quant_fund/research/capability_value.py:make_synthetic_trajectory 19
+src/quant_fund/research/capability_value.py:make_synthetic_trajectory 16
 src/quant_fund/research/capacity_overlay.py:capacity_v1_audit_errors 26
 src/quant_fund/research/capacity_overlay.py:vol_target_scales 14
 src/quant_fund/research/catalog/candle.py:candle_all_ic_p_unit_honesty_errors 10
@@ -957,7 +951,6 @@ src/quant_fund/research/fleet_eval.py:fleet_v1_audit_errors 34
 src/quant_fund/research/fleet_eval.py:run_distribution_fleet 21
 src/quant_fund/research/fleet_race.py:fleet_race 26
 src/quant_fund/research/forward_shadow.py:freeze 16
-src/quant_fund/research/forward_shadow.py:rebuild 11
 src/quant_fund/research/forward_shadow.py:record 18
 src/quant_fund/research/forward_shadow.py:record.build 12
 src/quant_fund/research/fuzz_drill.py:_mutations 28
@@ -1026,7 +1019,7 @@ src/quant_fund/research/replay_proof.py:run_replay 31
 src/quant_fund/research/replay_sweep.py:replay_coverage_contract_errors 24
 src/quant_fund/research/replay_sweep.py:run_replay_sweep 10
 src/quant_fund/research/repo_integrity.py:repo_integrity_contract_errors 30
-src/quant_fund/research/repo_integrity.py:verify_repo 35
+src/quant_fund/research/repo_integrity.py:verify_repo 33
 src/quant_fund/research/script_receipts.py:band_search_contract_errors 11
 src/quant_fund/research/script_receipts.py:deps_hygiene_contract_errors 17
 src/quant_fund/research/script_receipts.py:dip_bench_contract_errors 13
@@ -1074,7 +1067,7 @@ src/quant_fund/simtest/session.py:_run_in 18
 src/quant_fund/stress/regimes.py:GaussianRegimeSpec.__post_init__ 12
 src/quant_fund/stress/reverse.py:reverse_stress 17
 src/quant_fund/stress/strategy.py:load_return_panel 18
-src/quant_fund/stress/strategy.py:strategy_from_mapping 13
+src/quant_fund/stress/strategy.py:strategy_from_mapping 12
 src/quant_fund/stress/vendor_cache.py:parse_french_daily_factors 12
 src/quant_fund/utils/hashing.py:_canonicalize 11
 src/quant_fund/utils/reproducibility.py:_parse_lfs_pointer 11

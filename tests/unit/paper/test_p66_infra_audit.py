@@ -2,7 +2,8 @@
 
 Each test names the bug it regresses:
   * sim_live funding window was forward-looking (look-ahead into fund_cut)
-  * sim_live _equity_stats annualized a negative NAV ratio into a complex number
+  * sim_live _equity_stats annualized a negative NAV ratio into a complex number.
+    The sealed stats store null for that undefined ratio, not NaN.
   * recon.reconcile_broker_states never compared last_marks *values*
   * recon.reconcile_equity last_nav_delta was join-order, not chronological
   * ledger.promotion_dry_run let max_l1=NaN emit would_promote_paper=True
@@ -11,7 +12,6 @@ Each test names the bug it regresses:
 
 from __future__ import annotations
 
-import math
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -63,11 +63,11 @@ def test_funding_roll_n_derived_from_interval() -> None:
         assert max(1, int(round(7.0 * bars / 365.25))) == expected
 
 
-def test_equity_stats_negative_nav_ratio_is_nan_not_complex() -> None:
+def test_equity_stats_negative_nav_ratio_is_null_not_complex() -> None:
     eq = pl.DataFrame({"nav": [100.0, -50.0, -25.0]})
     stats = _equity_stats(eq, 365.25)
     assert stats["status"] == "ok"
-    assert math.isnan(stats["ann_return"])
+    assert stats["ann_return"] is None
     assert stats["total_return"] == pytest.approx(-1.25)
 
 

@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from quant_fund.live.errors import LiveGateError
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig, load_pretrade_config
 
 Venue = Literal["loopback", "alpaca-paper", "alpaca-live"]
@@ -23,19 +23,36 @@ class LiveConfig(BaseModel):
     venue: Venue
     starting_cash: float = Field(gt=0.0, allow_inf_nan=False)
     calendar: CalendarName = "us_rth"
-    pretrade_config: str
-    state_dir: str = "data/live/default"
+    pretrade_config: str = Field(min_length=1)
+    state_dir: str = Field(default="data/live/default", min_length=1)
     cash_tolerance: float = Field(default=1e-6, ge=0.0, allow_inf_nan=False)
     position_tolerance: float = Field(default=1e-6, ge=0.0, allow_inf_nan=False)
 
 
 def load_live_config(path: str | Path) -> LiveConfig:
-    """Load YAML and reject unknown keys, versions, and non-finite limits."""
-    text = Path(path).read_text(encoding="utf-8")
-    raw = yaml.safe_load(text)
+    """Load YAML and reject unknown keys, versions, and non-finite limits.
+
+    Missing, unreadable, and invalid files raise ``LiveGateError``. The message
+    does not include the file path or the file body.
+    """
+    from quant_fund.config.yaml_safe import load_yaml_document
+
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise LiveGateError("live config is missing") from None
+    except OSError:
+        raise LiveGateError("live config is unreadable") from None
+    try:
+        raw = load_yaml_document(text)
+    except ValueError:
+        raise LiveGateError("live config is invalid") from None
     if not isinstance(raw, dict):
-        raise ValueError("live config must be a YAML mapping")
-    return LiveConfig.model_validate(raw)
+        raise LiveGateError("live config must be a YAML mapping")
+    try:
+        return LiveConfig.model_validate(raw)
+    except ValidationError:
+        raise LiveGateError("live config is invalid") from None
 
 
 def resolve_pretrade_path(config: LiveConfig, config_path: str | Path) -> Path:
@@ -62,7 +79,14 @@ def load_gateway_pretrade(
     The returned digest is the signed payload the arm file must match.
     """
     path = resolve_pretrade_path(config, config_path)
-    loaded, _, _ = load_pretrade_config(path, hmac_key=hmac_key)
+    if not path.is_file():
+        raise LiveGateError("pretrade config is missing")
+    try:
+        loaded, _, _ = load_pretrade_config(path, hmac_key=hmac_key)
+    except LiveGateError:
+        raise
+    except (OSError, ValueError):
+        raise LiveGateError("pretrade config is invalid") from None
     if config.calendar == "continuous":
         loaded = loaded.model_copy(
             update={

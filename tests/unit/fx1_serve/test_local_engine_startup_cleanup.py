@@ -56,6 +56,8 @@ class _SyntheticProcess:
     def kill(self) -> None:
         assert not self.lock.locked(), "kill must run outside the engine lock"
         self.calls.append(("kill", None))
+        # SIGKILL is not catchable; the following bounded wait must be able to reap.
+        self.stubborn = False
 
 
 class TestLocalEngineStartupCleanup(unittest.TestCase):
@@ -82,7 +84,9 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         # Any unexpected network access fails without opening a socket.
         self.urlopen = self.enterContext(
             patch.object(
-                backends.urllib.request, "urlopen", side_effect=AssertionError("unexpected I/O")
+                backends,
+                "_pinned_models_probe",
+                side_effect=AssertionError("unexpected I/O"),
             )
         )
         self.addCleanup(self.backend.close)
@@ -127,7 +131,7 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         self._assert_cleaned()
         self.assertEqual(
             self.proc.calls,
-            [("terminate", None), ("wait", 5), ("kill", None), ("wait", None)],
+            [("terminate", None), ("wait", 5), ("kill", None), ("wait", 5)],
         )
 
     def test_unexpected_startup_error_reaps_child(self) -> None:
@@ -174,6 +178,28 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         self.assertIsInstance(caught.exception.__cause__, OSError)
         self._assert_cleaned()
         self.assertEqual(self.proc.calls, [])
+
+    def test_startup_errors_do_not_echo_launch_template(self) -> None:
+        secret = "SYNTHETIC-local-startup-secret"
+        self.backend._serve_cmd = f"SYNTHETIC-engine --api-key {secret}"
+
+        self.spawn.side_effect = OSError("SYNTHETIC missing command")
+        with self.assertRaisesRegex(RuntimeError, "failed to spawn") as spawned:
+            self.backend._ensure_engine()
+
+        self.proc.returncode = 17
+        with self.assertRaisesRegex(RuntimeError, "exited during startup") as exited:
+            self.backend._wait_for_engine(self.proc)
+
+        self.proc.returncode = None
+        with (
+            patch.object(backends.time, "monotonic", side_effect=[0.0, 2.0]),
+            self.assertRaisesRegex(RuntimeError, "did not become ready") as timed_out,
+        ):
+            self.backend._wait_for_engine(self.proc)
+
+        for caught in (spawned, exited, timed_out):
+            self.assertNotIn(secret, str(caught.exception))
 
     def test_attach_mismatch_does_not_stop_external_engine(self) -> None:
         self.up.return_value = True

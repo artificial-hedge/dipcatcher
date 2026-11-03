@@ -34,12 +34,64 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize, minimize_scalar
 
+try:
+    from numba import njit
+except ImportError:  # pragma: no cover - numba is a required dependency
+
+    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
+        def _deco(fn: Any) -> Any:
+            return fn
+
+        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+            return _args[0]
+        return _deco
+
+
 Array = NDArray[np.float64]
+
+
+@njit(cache=True)
+def _bisect_imag(
+    tau: np.ndarray,
+    tau2: np.ndarray,
+    xi: np.ndarray,
+    y_hi: np.ndarray,
+    active: np.ndarray,
+    n: float,
+    steps: int,
+) -> np.ndarray:
+    """Same bisection as the vectorized Gamma root, without per-step arrays."""
+    m = xi.shape[0]
+    p = tau.shape[0]
+    lo = np.zeros(m)
+    hi = y_hi.copy()
+    for _ in range(steps):
+        for i in range(m):
+            mid = 0.5 * (lo[i] + hi[i])
+            s = 0.0
+            xii = xi[i]
+            for j in range(p):
+                diff = tau[j] - xii
+                d = diff * diff + mid * mid
+                s += tau2[j] / d
+            if s - n > 0.0:
+                lo[i] = mid
+            else:
+                hi[i] = mid
+    y = np.empty(m)
+    for i in range(m):
+        if active[i]:
+            y[i] = 0.5 * (lo[i] + hi[i])
+        else:
+            y[i] = 0.0
+    return y
+
 
 QUEST_POWER = 4  # exponent ``a`` of the zeta power transform of the abscissa
 QUEST_MIN_GRID = 100  # minimum grid points per support interval before scaling
@@ -272,19 +324,18 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
     zxi_list: list[NDArray[np.complex128]] = []
     for i in range(numint):
         xi = xi_list[i]
-        y = np.zeros(xi.size)
-        gamma0 = _gamma(tau, xi, y, n)
+        y0 = np.zeros(xi.size)
+        gamma0 = _gamma(tau, xi, y0, n)
         y_hi = np.sqrt(np.maximum(np.sum(pwt2) / n - _min_sq_dist(t, xi), 0.0)) + 1.0
-        lo = np.zeros(xi.size)
-        hi = np.asarray(y_hi, dtype=float)
-        active = gamma0 > 0.0
-        for _ in range(QUEST_BISECTION_STEPS):
-            mid = 0.5 * (lo + hi)
-            g = _gamma(tau, xi, mid, n)
-            up = g > 0.0
-            lo = np.where(up, mid, lo)
-            hi = np.where(up, hi, mid)
-        y = np.where(active, 0.5 * (lo + hi), 0.0)
+        y = _bisect_imag(
+            np.ascontiguousarray(tau, dtype=np.float64),
+            np.ascontiguousarray(tau * tau, dtype=np.float64),
+            np.ascontiguousarray(xi, dtype=np.float64),
+            np.ascontiguousarray(y_hi, dtype=np.float64),
+            np.ascontiguousarray(gamma0 > 0.0),
+            float(n),
+            QUEST_BISECTION_STEPS,
+        )
         zxi_list.append(xi.astype(complex) + 1j * y)
 
     # Sample density in x-space via the Silverstein map.

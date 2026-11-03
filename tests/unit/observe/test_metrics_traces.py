@@ -95,6 +95,33 @@ def test_logs_carry_correlation_ids_and_redact_secrets(monkeypatch: pytest.Monke
         set_log_sink(None)
 
 
+def test_log_values_scrub_urls_dsns_and_bearers(monkeypatch: pytest.MonkeyPatch) -> None:
+    _enable(monkeypatch)
+    sink: list[dict[str, object]] = []
+    set_log_sink(sink)
+    hook = "https://user:s3cret-synthetic@hooks.example/hook?token=SECRETKEY"
+    try:
+        log_event(
+            f"delivered {hook}",
+            url=hook,
+            dsn="https://syntheticpublic@o.ingest.sentry.io/1",
+            error="Bearer sk-syntheticabcdefgh",
+            key_id="visible",
+        )
+        record = sink[0]
+        blob = str(record)
+        assert "s3cret-synthetic" not in blob
+        assert "SECRETKEY" not in blob
+        assert "syntheticpublic" not in blob
+        assert "sk-syntheticabcdefgh" not in blob
+        assert record["key_id"] == "visible"
+        assert record["dsn"] == "[redacted]"
+        assert "[redacted]" in str(record["url"])
+        assert "[redacted]" in str(record["event"])
+    finally:
+        set_log_sink(None)
+
+
 def test_nested_spans_share_a_trace(monkeypatch: pytest.MonkeyPatch) -> None:
     _enable(monkeypatch)
     new_correlation_id()
@@ -185,7 +212,7 @@ def test_export_failure_does_not_mask_the_result(monkeypatch: pytest.MonkeyPatch
 def test_metrics_http_serves_text(monkeypatch: pytest.MonkeyPatch) -> None:
     _enable(monkeypatch)
     set_data_freshness(3.5)
-    port = start_metrics_server(0)
+    port = start_metrics_server(0, allow_unauthenticated=True)
     try:
         import http.client
 
@@ -226,7 +253,9 @@ def test_export_protocol_failure_never_reaches_the_caller(
         def close(self) -> None:
             pass
 
-    monkeypatch.setattr(http.client, "HTTPConnection", GarbageConnection)
+    import quant_fund.observe.tracing as tracing
+
+    monkeypatch.setattr(tracing, "pinned_connection", lambda *_args, **_kwargs: GarbageConnection())
 
     def work() -> int:
         with span("decision"):

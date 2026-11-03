@@ -31,6 +31,21 @@ from quant_fund.utils.reproducibility import git_revision
 __all__ = ["schema_drift", "schema_drift_bench"]
 
 _HEX = frozenset("0123456789abcdef")
+_GIT_TIMEOUT_S = 15.0
+
+
+def _git_run(args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run a short git probe. A timeout or spawn error is a failed probe."""
+    try:
+        return subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return subprocess.CompletedProcess(args, 1, stdout="", stderr="timeout")
 
 
 def _claim_keys(payload: dict[str, Any]) -> tuple[str, ...]:
@@ -41,20 +56,17 @@ def _claim_keys(payload: dict[str, Any]) -> tuple[str, ...]:
 
 
 def _is_ancestor(rev: str, repo: Path) -> bool | None:
-    """True/False via merge-base; None when the object does not exist."""
+    """True/False via merge-base; None when ancestry cannot be proven.
+
+    A missing object, a non-commit, a git error, or a lookup that exceeds
+    the deadline is None. Callers treat None as a phantom revision.
+    """
     if not rev or not set(rev) <= _HEX or not (7 <= len(rev) <= 64):
         return None
-    kind = subprocess.run(
-        ["git", "-C", str(repo), "cat-file", "-t", rev],
-        capture_output=True,
-        text=True,
-    )
+    kind = _git_run(["git", "-C", str(repo), "cat-file", "-t", rev])
     if kind.returncode != 0 or kind.stdout.strip() != "commit":
         return None
-    probe = subprocess.run(
-        ["git", "-C", str(repo), "merge-base", "--is-ancestor", rev, "HEAD"],
-        capture_output=True,
-    )
+    probe = _git_run(["git", "-C", str(repo), "merge-base", "--is-ancestor", rev, "HEAD"])
     return probe.returncode == 0
 
 

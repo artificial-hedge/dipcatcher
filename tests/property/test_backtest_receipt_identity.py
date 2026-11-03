@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import io
 import json
-import time
+from typing import Any
 
 import polars as pl
 
@@ -16,13 +16,16 @@ from quant_fund.proof.bundle import canonical_bundle_bytes, sidecar_paths
 from quant_fund.proof.verify import verify_bundle
 from tests.unit.proof_fake_vault import mint_synthetic_bundle
 
+_STAMP_A = "2024-01-02T00:00:00+00:00"
+_STAMP_B = "2024-06-01T12:00:00+00:00"
 
-def _run(tmp_path, *, seed: int = 123):
+
+def _run(tmp_path, *, seed: int = 123, created_utc: str | None = None):
     """Build one synthetic bundle in a fresh directory."""
-    return mint_synthetic_bundle(tmp_path, seed=seed)
+    return mint_synthetic_bundle(tmp_path, seed=seed, created_utc=created_utc)
 
 
-def _canon(path) -> dict:
+def _canon(path: Any) -> Any:
     return json.loads(path.read_bytes())
 
 
@@ -32,16 +35,16 @@ def test_double_run_bundle_identity(tmp_path_factory) -> None:
     Builds the same synthetic inputs twice, with a pinned seed, and compares
     canonical bundle bytes apart from created_utc.
     """
-    bundle_a, dir_a = _run(tmp_path_factory.mktemp("run-a"))
-    time.sleep(0.01)  # force a distinct wall clock; identity must survive it
-    bundle_b, dir_b = _run(tmp_path_factory.mktemp("run-b"))
+    bundle_a, dir_a = _run(tmp_path_factory.mktemp("run-a"), created_utc=_STAMP_A)
+    bundle_b, dir_b = _run(tmp_path_factory.mktemp("run-b"), created_utc=_STAMP_B)
 
     assert bundle_a.bundle_id == bundle_b.bundle_id
     assert bundle_a.metrics_recompute == bundle_b.metrics_recompute
 
     canon_a = _canon(dir_a / "bundles" / f"{bundle_a.bundle_id}.json")
     canon_b = _canon(dir_b / "bundles" / f"{bundle_b.bundle_id}.json")
-    assert canon_a.pop("created_utc") != "" and canon_b.pop("created_utc") != ""
+    assert canon_a.pop("created_utc") == _STAMP_A
+    assert canon_b.pop("created_utc") == _STAMP_B
     assert canon_a == canon_b
     assert canonical_bundle_bytes(bundle_a) != b""  # sanity
 
@@ -146,16 +149,15 @@ def test_double_run_bundle_identity_bundle_level(tmp_path_factory) -> None:
     Covers the A3 #6 identity at the bundle-construction layer even in minimal
     environments where the engine import chain (mlflow) is unavailable.
     """
-    bundle_a, dir_a = mint_synthetic_bundle(tmp_path_factory.mktemp("syn-a"))
-    time.sleep(0.01)
-    bundle_b, dir_b = mint_synthetic_bundle(tmp_path_factory.mktemp("syn-b"))
+    bundle_a, dir_a = mint_synthetic_bundle(tmp_path_factory.mktemp("syn-a"), created_utc=_STAMP_A)
+    bundle_b, dir_b = mint_synthetic_bundle(tmp_path_factory.mktemp("syn-b"), created_utc=_STAMP_B)
 
     assert bundle_a.bundle_id == bundle_b.bundle_id
     assert bundle_a.metrics_recompute == bundle_b.metrics_recompute
     canon_a = _canon(dir_a / "bundles" / f"{bundle_a.bundle_id}.json")
     canon_b = _canon(dir_b / "bundles" / f"{bundle_b.bundle_id}.json")
-    canon_a.pop("created_utc")
-    canon_b.pop("created_utc")
+    assert canon_a.pop("created_utc") == _STAMP_A
+    assert canon_b.pop("created_utc") == _STAMP_B
     assert canon_a == canon_b
     for kind in ("signal_log", "trade_log", "metrics", "config"):
         assert (

@@ -14,6 +14,8 @@ is a config-supply-chain bug class. Sealed ``inherit_audit.v1``.
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -100,16 +102,7 @@ def inherit_audit(scratch: Path) -> dict[str, Any]:
     return results
 
 
-def inherit_audit_bench(tmp_root: Path | str | None = None) -> dict[str, Any]:
-    import shutil
-    import tempfile
-
-    if tmp_root is None:
-        scratch = Path(tempfile.mkdtemp(prefix="inherit_audit_"))
-    else:
-        scratch = Path(tmp_root)
-        shutil.rmtree(scratch, ignore_errors=True)
-        scratch.mkdir(parents=True)
+def _inherit_bench_payload(scratch: Path) -> dict[str, Any]:
     results = inherit_audit(scratch)
     # Contract: cycles and escapes must raise; same-dir works; upward inherit
     # is documented-fail; list overlay replaces (never appends).
@@ -141,3 +134,17 @@ def inherit_audit_bench(tmp_root: Path | str | None = None) -> dict[str, Any]:
     }
     payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))
     return payload
+
+
+def inherit_audit_bench(tmp_root: Path | str | None = None) -> dict[str, Any]:
+    """Run the inherit audit on a private tree and remove a tree this function made."""
+    if tmp_root is None:
+        scratch = Path(tempfile.mkdtemp(prefix="inherit_audit_"))
+        try:
+            return _inherit_bench_payload(scratch)
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+    scratch = Path(tmp_root)
+    shutil.rmtree(scratch, ignore_errors=True)
+    scratch.mkdir(parents=True)
+    return _inherit_bench_payload(scratch)

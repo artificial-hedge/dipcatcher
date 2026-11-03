@@ -32,8 +32,12 @@ env:
   TOKENIZERS_PARALLELISM: 'false'
   HYPOTHESIS_PROFILE: ci
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   python:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 120
     strategy:
@@ -41,29 +45,31 @@ jobs:
       matrix:
         lane: [python-1, python-2, python-3, python-4, fx1, examples, performance, native]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: false
       - name: Frozen environment
         run: make sync
-      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # 2026-09-03
         if: matrix.lane == 'native'
       - name: Build the native extension before measuring wrapper tests
         if: matrix.lane == 'native'
         run: make native
       - name: Execute all selected offline tests, including slow tests
+        env:
+          MATRIX_LANE: ${{ matrix.lane }}
         run: >-
-          uv run --frozen python scripts/full_coverage.py run
-          --lane '${{ matrix.lane }}'
-          --output '${{ runner.temp }}/full-coverage-${{ matrix.lane }}'
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/full_coverage.py run
+          --lane "$MATRIX_LANE"
+          --output "$RUNNER_TEMP/full-coverage-$MATRIX_LANE"
       - name: Preserve results even after a test failure
         if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: full-coverage-${{ matrix.lane }}
           path: ${{ runner.temp }}/full-coverage-${{ matrix.lane }}/
@@ -72,19 +78,19 @@ jobs:
 
   aggregate:
     needs: python
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: false
       - run: make sync
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: full-coverage-*
           path: ${{ runner.temp }}/downloaded-coverage
@@ -97,12 +103,12 @@ jobs:
             name="$(basename "$directory")"
             mv "$directory" "$RUNNER_TEMP/coverage-parts/${name#full-coverage-}"
           done
-          uv run --frozen python scripts/full_coverage.py combine \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/full_coverage.py combine \
             --parts "$RUNNER_TEMP/coverage-parts" \
             --output "$RUNNER_TEMP/full-coverage-report"
       - name: Preserve per-file line and branch reports even below the floor
         if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: full-coverage-report
           path: ${{ runner.temp }}/full-coverage-report/
@@ -110,14 +116,15 @@ jobs:
           if-no-files-found: error
 
   quality:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: false
@@ -134,7 +141,7 @@ jobs:
         run: make fx1-gate
       - name: Strict FX1 types
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
-        run: uv run --frozen mypy --strict src/fx1
+        run: uv run --locked --no-build --no-binary-package fx-1 mypy --strict src/fx1
       - name: Static security analysis
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make security
@@ -146,6 +153,7 @@ jobs:
         run: make docs
 
   javascript:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     strategy:
@@ -156,10 +164,10 @@ jobs:
       run:
         working-directory: ${{ matrix.directory }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
       - id: install
@@ -184,13 +192,14 @@ jobs:
         run: npm run test:e2e
 
   rust:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # 2026-09-03
       - run: cargo test --locked --manifest-path rust/quant_core/Cargo.toml
       - name: Install pinned audit tool
         if: ${{ !cancelled() }}
@@ -200,42 +209,44 @@ jobs:
         run: make audit-rust
 
   kronos:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: false
       - run: make audit-kronos
 
   epoch-candidate:
+    if: "github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false'"
     # Generate with the repository's own writer in a complete checkout, never
     # hand-forge or overwrite an old receipt. Upload for review and integration;
     # this read-only job cannot change the branch or mark evidence checks green.
     runs-on: instabox-large
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: '3.12'
           enable-cache: false
       - run: make sync
       - name: Prepare the required new workflow epoch and pin update
         run: |
-          uv run --frozen dipcatcher corpus-epoch \
+          uv run --locked --no-build --no-binary-package fx-1 dipcatcher corpus-epoch \
             --corpus-dir .github/workflows --glob '*.yml' \
             --out-dir .github/workflows --heads-pin quality/epoch_heads.json
           git add --intent-to-add .github/workflows/corpus_epoch_*.json
           git diff --binary -- .github/workflows quality/epoch_heads.json > "$RUNNER_TEMP/workflow-epoch.patch"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: workflow-epoch-candidate
           path: ${{ runner.temp }}/workflow-epoch.patch
@@ -243,7 +254,7 @@ jobs:
 
   result:
     needs: [python, aggregate, quality, javascript, rust, kronos, epoch-candidate]
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false') }}
     runs-on: instabox-large
     timeout-minutes: 5
     steps:

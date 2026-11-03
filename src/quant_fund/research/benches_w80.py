@@ -56,7 +56,7 @@ def bench_rmst() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RMST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -68,7 +68,7 @@ def bench_ois_curve() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_OIS_CURVE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -82,7 +82,7 @@ def bench_henze_zirkler() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HENZE_ZIRKLER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -96,7 +96,7 @@ def bench_epps_singleton() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EPPS_SINGLETON_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -108,7 +108,7 @@ def bench_watson() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_WATSON_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -120,6 +120,6 @@ def bench_energy_test() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ENERGY_TEST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

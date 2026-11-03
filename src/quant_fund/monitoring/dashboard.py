@@ -39,6 +39,23 @@ def _check(value: float, limit: float, warn_fraction: float = 0.8) -> dict[str, 
     }
 
 
+def _risk_limits(config: AppConfig) -> Any:
+    """Read the risk-gate limits the snapshot needs, or fail loudly.
+
+    A missing limit is a missing *config key*: silently defaulting it (say to
+    zero, meaning "no limit") would turn a mis-configured board into a
+    green one. Name the offending keys instead.
+    """
+    cfg = getattr(config, "risk_gate", None)
+    if cfg is None:
+        raise ValueError("config.risk_gate is required for the ops snapshot")
+    required = ("max_gross", "max_net", "max_name", "stale_price_bars")
+    missing = [name for name in required if getattr(cfg, name, None) is None]
+    if missing:
+        raise ValueError(f"config.risk_gate missing required limits: {', '.join(missing)}")
+    return cfg
+
+
 def ops_snapshot(
     *,
     nav: float,
@@ -63,7 +80,7 @@ def ops_snapshot(
     """
     if not np.isfinite(nav) or nav <= 0:
         raise ValueError("nav must be finite and positive")
-    cfg = config.risk_gate
+    cfg = _risk_limits(config)
     pos_val = {s: q * marks.get(s, np.nan) for s, q in positions.items() if abs(q) > 1e-12}
     gross = sum(abs(v) for v in pos_val.values() if np.isfinite(v))
     net = sum(v for v in pos_val.values() if np.isfinite(v))
@@ -126,14 +143,15 @@ def ops_snapshot(
     }
 
     statuses = [c["status"] for c in checks.values()]
+    # Fail closed on the aggregate too: the board may not read "ok" while any
+    # input was missing. A snapshot that could not observe the kill switch,
+    # the reconciliation, the drift alert, the peak nav, the mark ages or the
+    # open-order count has not established health — it has established
+    # ignorance, and "ok" would be a false all-clear.
     overall = (
         BREACH
         if BREACH in statuses
-        else (
-            WARN
-            if WARN in statuses
-            else (INSUFFICIENT if all(s == INSUFFICIENT for s in statuses) else OK)
-        )
+        else (WARN if WARN in statuses else (INSUFFICIENT if INSUFFICIENT in statuses else OK))
     )
     return {
         "asof": None if asof is None else asof.isoformat(),

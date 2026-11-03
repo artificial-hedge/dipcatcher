@@ -54,7 +54,7 @@ def bench_horvitz_thompson() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HORVITZ_THOMPSON_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -68,7 +68,7 @@ def bench_poststrat() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_POSTSTRAT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -82,7 +82,7 @@ def bench_calibration_survey() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CALIBRATION_SURVEY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -94,7 +94,7 @@ def bench_fay_herriot() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FAY_HERRIOT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -108,7 +108,7 @@ def bench_cluster_sampling() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CLUSTER_SAMPLING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -122,6 +122,6 @@ def bench_design_effects() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DESIGN_EFFECTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

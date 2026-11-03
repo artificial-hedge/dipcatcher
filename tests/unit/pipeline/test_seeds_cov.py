@@ -11,11 +11,31 @@ from __future__ import annotations
 import os
 import random
 import sys
+from collections.abc import Iterator
 
 import numpy as np
 import pytest
 
 from quant_fund.utils.seeds import set_global_seed
+
+
+@pytest.fixture(autouse=True)
+def _restore_process_rng() -> Iterator[None]:
+    """set_global_seed mutates process RNGs; later tests must not see that."""
+    py_state = random.getstate()
+    np_state = np.random.get_state()
+    hashseed = os.environ.get("PYTHONHASHSEED")
+    torch = sys.modules.get("torch")
+    torch_state = torch.get_rng_state() if torch is not None else None
+    yield
+    random.setstate(py_state)
+    np.random.set_state(np_state)
+    if hashseed is None:
+        os.environ.pop("PYTHONHASHSEED", None)
+    else:
+        os.environ["PYTHONHASHSEED"] = hashseed
+    if torch is not None and torch_state is not None:
+        torch.set_rng_state(torch_state)
 
 
 def test_seeds_stdlib_numpy_and_pythonhashseed() -> None:

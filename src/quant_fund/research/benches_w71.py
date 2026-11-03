@@ -52,7 +52,7 @@ def bench_item_response() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ITEM_RESPONSE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -66,7 +66,7 @@ def bench_latent_class() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_LATENT_CLASS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -80,7 +80,7 @@ def bench_manova() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MANOVA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -92,7 +92,7 @@ def bench_procrustes() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PROCRUSTES_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -106,7 +106,7 @@ def bench_isotonic() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ISOTONIC_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -120,6 +120,6 @@ def bench_hrp() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HRP_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

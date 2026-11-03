@@ -14,23 +14,40 @@ from .support import _cfg
 
 
 @app.command()
-def api(host: str = "127.0.0.1", port: int = 8000) -> None:
-    import os
+def api(
+    host: str | None = typer.Option(None, help="Bind host. Overrides DIPCATCHER_BIND_HOST."),
+    port: int | None = typer.Option(None, help="Bind port. Overrides DIPCATCHER_BIND_PORT."),
+) -> None:
+    """Serve the lab API after the environment contract validates."""
+    from quant_fund.api.http_controls import serve_banner_kwargs
+    from quant_fund.api.serve import serve_lab
+    from quant_fund.api.service_config import ServiceConfigError
 
-    import uvicorn
-
-    loopback_hosts = {"127.0.0.1", "::1", "localhost"}
-    if host not in loopback_hosts and not os.environ.get("QUANT_API_KEY"):
-        raise typer.BadParameter(
-            "non-loopback API binding requires QUANT_API_KEY; refusing unauthenticated exposure"
-        )
-    uvicorn.run("quant_fund.api.app:app", host=host, port=port, reload=False)
+    try:
+        serve_lab(host, port, **serve_banner_kwargs())
+    except ServiceConfigError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 def _reject_halt_flags(halt: bool, clear_halt: bool) -> None:
     """Reject the mutually exclusive kill-switch overrides."""
     if halt and clear_halt:
         raise typer.BadParameter("pass only one of --halt / --clear-halt")
+
+
+def _publish_paper_halt(state: str) -> None:
+    """Write the shared kill file when the operator set a path. Otherwise no-op."""
+    import os
+
+    from quant_fund.utils.operator_kill import ENV_PATH, OperatorKillError, write_operator_kill
+
+    raw = os.environ.get(ENV_PATH, "").strip()
+    if not raw:
+        return
+    try:
+        write_operator_kill(Path(raw), state)
+    except OperatorKillError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @app.command()
@@ -189,8 +206,10 @@ def paper(
     _reject_halt_flags(halt, clear_halt)
     if halt:
         cfg.kill_switch.state = "HALT_NEW_ORDERS"
+        _publish_paper_halt("HALT_NEW_ORDERS")
     if clear_halt:
         cfg.kill_switch.state = "ENABLED"
+        _publish_paper_halt("ENABLED")
     bars = ensure_silver(cfg)
     feat = build_features(bars, cfg)
     # Same gold-panel overlap contract as execution-sensitivity/backtest:
@@ -344,6 +363,44 @@ def monitor(
         raise typer.Exit(1)
 
 
+_GIT_SHA_TIMEOUT_S = 15
+
+
+def _probe_git_sha() -> str | None:
+    """Short HEAD, or None when git is missing, fails, or does not finish."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=_GIT_SHA_TIMEOUT_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip() or None
+
+
+def _book_stat_text(value: object, spec: str) -> str:
+    """Format a book stat. Null and non-numeric receipts print as nan."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return "nan"
+    return format(value, spec)
+
+
+def _book_rank(item: tuple[object, object]) -> float:
+    """Sort key. A null total return ranks last."""
+    stats = item[1]
+    value = stats.get("total_return") if isinstance(stats, dict) else None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return float("-inf")
+    return float(value)
+
+
 @app.command("sim-live")
 def sim_live(
     config: Path = typer.Option(Path("configs/sim_live.yaml")),
@@ -427,21 +484,12 @@ def sim_live(
 ) -> None:
     """Simulated-live PnL: proven quantile forecasters trade the paper loop on real bars."""
     import json
-    import subprocess
 
     from quant_fund.paper.quantile_signals import QuantilePolicy
     from quant_fund.paper.sim_live import StrategySlot, run_sim_live
 
     cfg = _cfg(config)
-    try:
-        git_sha = (
-            subprocess.run(
-                ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=False
-            ).stdout.strip()
-            or None
-        )
-    except OSError:
-        git_sha = None
+    git_sha = _probe_git_sha()
     champion_policy = QuantilePolicy(
         mode=mode,
         kappa=kappa,
@@ -547,17 +595,14 @@ def sim_live(
     typer.echo(json.dumps(result.receipt["loop_metrics"], indent=2, default=str))
     if result.receipt.get("book_stats"):
         typer.echo("book leaderboard (same bars/costs/gates, simulated):")
-        rows = sorted(
-            result.receipt["book_stats"].items(),
-            key=lambda kv: kv[1].get("total_return", float("-inf")),
-            reverse=True,
-        )
+        rows = sorted(result.receipt["book_stats"].items(), key=_book_rank, reverse=True)
         for name, st in rows:
             if st.get("status") == "ok":
                 typer.echo(
-                    f"  {name:<18} ret={st['total_return']:+.4%} "
-                    f"sharpe={st['sharpe_simulated']:+.3f} maxDD={st['max_drawdown']:+.3%} "
-                    f"vol={st['ann_vol']:.3%} fills={st.get('n_fills')}"
+                    f"  {name:<18} ret={_book_stat_text(st.get('total_return'), '+.4%')} "
+                    f"sharpe={_book_stat_text(st.get('sharpe_simulated'), '+.3f')} "
+                    f"maxDD={_book_stat_text(st.get('max_drawdown'), '+.3%')} "
+                    f"vol={_book_stat_text(st.get('ann_vol'), '.3%')} fills={st.get('n_fills')}"
                 )
             else:
                 typer.echo(f"  {name:<18} {st.get('status', 'failed')}")

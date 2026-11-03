@@ -7,6 +7,7 @@ URLs, audit lines, or exception text.
 
 from __future__ import annotations
 
+import http.client
 import json
 import math
 import os
@@ -19,13 +20,23 @@ from typing import Any, Protocol, cast
 from urllib.parse import quote, urlencode
 
 from quant_fund.live.config import Venue
-from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import (
+    ALPACA_LIVE_REFUSAL,
+    BrokerRejected,
+    BrokerTimeout,
+    BrokerUnconfirmed,
+    LiveBrokerRefused,
+    LiveGateError,
+)
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
     "alpaca-live": "https://api.alpaca.markets",
 }
 _PAGE = 100
+# These HTTP statuses can mean the order landed even though the body is an error.
+_AMBIGUOUS_HTTP = frozenset({"408", "409", "429", "500", "502", "503", "504"})
 # Alpaca's documented lifecycle. Unknown values stay ``unmapped`` so an expired
 # or suspended order is not stored as a working accept.
 _STATUS_MAP: dict[str, str] = {
@@ -79,6 +90,9 @@ class BrokerAck:
     fill_price: float | None
     fills: tuple[BrokerFill, ...]
     reason: str
+    symbol: str = ""
+    side: str = ""
+    quantity: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -141,30 +155,23 @@ def urllib_transport(
     body: bytes | None,
     timeout: float,
 ) -> tuple[int, bytes]:
-    """HTTP/1.1 request that refuses redirects so the credential header cannot leave the host."""
+    """HTTP/1.1 request pinned to a vetted address. Redirects are not followed."""
     request = urllib.request.Request(url, data=body, headers=headers, method=method)
-    opener = urllib.request.build_opener(_RefuseRedirect)
     try:
-        with opener.open(request, timeout=timeout) as response:
-            status = int(response.status)
-            payload = response.read()
-    except urllib.error.HTTPError as exc:
-        status = int(exc.code)
-        payload = exc.read()
-    return status, payload
-
-
-class _RefuseRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: Any,
-        code: int,
-        msg: str,
-        headers: Any,
-        newurl: str,
-    ) -> urllib.request.Request | None:
-        return None
+        with open_pinned(request, timeout=timeout) as handle:
+            status = int(handle.status)
+            payload = handle.read()
+            if 300 <= status < 400:
+                raise urllib.error.URLError("redirects are not followed")
+            return status, payload
+    except OutboundRefused as exc:
+        raise urllib.error.URLError(exc) from exc
+    except urllib.error.URLError as exc:
+        if isinstance(exc.reason, TimeoutError):
+            raise BrokerTimeout("broker request timed out") from exc
+        raise
+    except TimeoutError as exc:
+        raise BrokerTimeout("broker request timed out") from exc
 
 
 def _redact(text: str, secrets: tuple[str, ...]) -> str:
@@ -248,6 +255,7 @@ class LoopbackBroker:
     def submit(self, order: LiveOrder) -> BrokerAck:
         prior = self._orders.get(order.client_order_id)
         if prior is not None:
+            _require_same_ack(order, prior)
             return prior
         if order.side not in {"buy", "sell"}:
             raise BrokerRejected("side must be buy or sell")
@@ -325,7 +333,30 @@ class LoopbackBroker:
             fill_price=price,
             fills=fills,
             reason=reason,
+            symbol=order.symbol,
+            side=order.side,
+            quantity=order.quantity,
         )
+
+
+def _ack_execution(payload: dict[str, Any]) -> tuple[float, float | None]:
+    filled = _money(payload.get("filled_qty") or 0, "filled quantity")
+    if filled < 0.0:
+        raise BrokerRejected("broker filled quantity was negative")
+    raw_quantity = payload.get("qty")
+    if raw_quantity not in (None, ""):
+        quantity = _money(raw_quantity, "order quantity")
+        if quantity <= 0.0:
+            raise BrokerRejected("broker order quantity was not positive")
+        if filled > quantity:
+            raise BrokerRejected("broker filled quantity exceeded order quantity")
+    raw_price = payload.get("filled_avg_price")
+    fill_price = None if raw_price in (None, "") else _money(raw_price, "average price")
+    if fill_price is not None and fill_price <= 0.0:
+        raise BrokerRejected("broker average price was not positive")
+    if filled > 0.0 and fill_price is None:
+        raise BrokerRejected("broker filled order had no average price")
+    return filled, fill_price
 
 
 class AlpacaBroker:
@@ -341,12 +372,21 @@ class AlpacaBroker:
     ) -> None:
         if venue not in _HOSTS:
             raise LiveGateError("Alpaca venue must be alpaca-paper or alpaca-live")
+        timeout_s = float(timeout)
+        if not math.isfinite(timeout_s) or timeout_s <= 0.0:
+            raise LiveGateError("timeout must be finite and positive")
         self.venue = venue
         self.base = _HOSTS[venue]
         self._credentials = credentials
         self._transport = transport or urllib_transport
-        self._timeout = float(timeout)
+        self._timeout = timeout_s
         self._marks: dict[str, float] = {}
+        # Client ids whose POST was attempted. A later submit reconciles; it does not POST.
+        self._sent: set[str] = set()
+
+    def __repr__(self) -> str:
+        state = "set" if self._credentials else "unset"
+        return f"AlpacaBroker(venue={self.venue!r}, credential={state})"
 
     @property
     def credentials_present(self) -> bool:
@@ -365,18 +405,24 @@ class AlpacaBroker:
             "limit_price": _decimal(order.limit_price),
             "client_order_id": order.client_order_id,
         }
+        if order.client_order_id in self._sent:
+            return self._reconcile_submitted(order, "a retry")
+        self._sent.add(order.client_order_id)
         try:
             payload = self._request("POST", "/v2/orders", body)
         except BrokerRejected as exc:
-            if "client_order_id" not in str(exc):
+            if _rejection_is_definite(exc):
+                self._sent.discard(order.client_order_id)
                 raise
-            recovered = self.recover(order.client_order_id)
-            if recovered is None:
-                raise
-            return recovered
-        if not isinstance(payload, dict):
-            raise BrokerRejected("broker order response was not an object")
-        return self._ack(payload)
+            return self._reconcile_submitted(order, "an ambiguous rejection", cause=exc)
+        except LiveGateError:
+            self._sent.discard(order.client_order_id)
+            raise
+        except (BrokerTimeout, OSError, http.client.HTTPException) as exc:
+            return self._reconcile_submitted(order, "a transport failure", cause=exc)
+        if _order_payload_is_complete(payload, order.client_order_id):
+            return self._ack(payload)
+        return self._reconcile_submitted(order, "an incomplete acknowledgement")
 
     def cancel(self, client_order_id: str, broker_order_id: str) -> BrokerAck:
         target = broker_order_id or ""
@@ -393,11 +439,14 @@ class AlpacaBroker:
             return BrokerAck(
                 client_order_id=client_order_id,
                 broker_order_id=target,
-                status="canceled",
+                status="pending_cancel",
                 filled_quantity=0.0,
                 fill_price=None,
                 fills=(),
-                reason="",
+                reason=(
+                    "cancel acknowledged but order lookup returned 404; "
+                    "cancellation and execution state are unconfirmed"
+                ),
             )
         if not isinstance(payload, dict):
             raise BrokerRejected("broker cancel response was not an object")
@@ -411,9 +460,32 @@ class AlpacaBroker:
         payload, missing = self._request_optional(path)
         if missing:
             return None
-        if not isinstance(payload, dict):
-            raise BrokerRejected("broker order lookup was not an object")
+        if not _order_payload_is_complete(payload, client_order_id):
+            raise BrokerRejected("broker order lookup was incomplete")
         return self._ack(payload)
+
+    def _reconcile_submitted(
+        self,
+        order: LiveOrder,
+        why: str,
+        *,
+        cause: BaseException | None = None,
+    ) -> BrokerAck:
+        """Look the order up. A miss or a failed lookup halts; it does not POST."""
+        try:
+            found = self.recover(order.client_order_id)
+        except (BrokerRejected, BrokerTimeout, OSError, http.client.HTTPException) as exc:
+            raise BrokerUnconfirmed(_unconfirmed_message(order.client_order_id, why)) from exc
+        if found is None:
+            if (
+                isinstance(cause, BrokerRejected)
+                and "HTTP 422" in str(cause)
+                and "client_order_id" in str(cause)
+            ):
+                raise cause
+            raise BrokerUnconfirmed(_unconfirmed_message(order.client_order_id, why)) from cause
+        _require_same_ack(order, found)
+        return found
 
     def account(self) -> BrokerAccount:
         payload = self._request("GET", "/v2/account", None)
@@ -440,54 +512,51 @@ class AlpacaBroker:
         )
 
     def fills(self, *, broker_to_client: dict[str, str]) -> FillPage:
-        payload = self._request(
-            "GET",
-            f"/v2/account/activities/FILL?page_size={_PAGE}&direction=desc",
-            None,
-        )
-        if not isinstance(payload, list):
-            raise BrokerRejected("broker fill list was not a list")
         fills: list[BrokerFill] = []
-        for row in payload:
-            if not isinstance(row, dict):
-                continue
-            broker_order_id = str(row.get("order_id") or "")
-            side = str(row.get("side") or "")
-            if side not in {"buy", "sell"}:
-                continue
-            client = broker_to_client.get(broker_order_id, "")
-            if not client and not broker_order_id:
-                continue
-            when = row.get("transaction_time")
-            fill_id = str(row.get("id") or "")
-            if not isinstance(when, str) or not fill_id:
-                continue
-            fills.append(
-                BrokerFill(
-                    fill_id=fill_id,
-                    client_order_id=client,
-                    symbol=str(row.get("symbol") or ""),
-                    side=side,
-                    quantity=_money(row.get("qty"), "fill quantity"),
-                    price=_money(row.get("price"), "fill price"),
-                    fill_time_ns=_ns(when),
-                )
+        page_token = ""
+        seen_tokens: set[str] = set()
+        truncated = False
+        while True:
+            query: dict[str, str | int] = {"page_size": _PAGE, "direction": "desc"}
+            if page_token:
+                query["page_token"] = page_token
+            payload = self._request(
+                "GET",
+                f"/v2/account/activities/FILL?{urlencode(query)}",
+                None,
             )
+            if not isinstance(payload, list):
+                raise BrokerRejected("broker fill list was not a list")
+            fills.extend(_fill_from_row(row, broker_to_client) for row in payload)
+            if len(payload) < _PAGE:
+                break
+            page_token = self._fill_page_token(payload)
+            if not page_token or page_token in seen_tokens:
+                truncated = True
+                break
+            seen_tokens.add(page_token)
         fills.sort(key=lambda fill: (fill.fill_time_ns, fill.fill_id))
-        return FillPage(fills=tuple(fills), truncated=len(payload) >= _PAGE)
+        return FillPage(fills=tuple(fills), truncated=truncated)
+
+    @staticmethod
+    def _fill_page_token(payload: list[Any]) -> str:
+        if not payload or not isinstance(payload[-1], dict):
+            return ""
+        return str(payload[-1].get("id") or "")
 
     def _ack(self, payload: dict[str, Any]) -> BrokerAck:
         raw_status = str(payload.get("status") or "")
         status = map_broker_status(raw_status)
-        filled = _money(payload.get("filled_qty") or 0, "filled quantity")
-        raw_price = payload.get("filled_avg_price")
-        fill_price = None if raw_price in (None, "") else _money(raw_price, "average price")
+        filled, fill_price = _ack_execution(payload)
         client = str(payload.get("client_order_id") or "")
         broker_id = str(payload.get("id") or "")
         symbol = str(payload.get("symbol") or "")
         side = str(payload.get("side") or "")
+        if not client or not broker_id or not symbol or side not in {"buy", "sell"}:
+            raise BrokerRejected("broker order identity was incomplete")
+        quantity = _money(payload.get("qty") or 0, "order quantity")
         fills: tuple[BrokerFill, ...] = ()
-        if status in {"filled", "partially_filled"} and filled > 0.0 and fill_price is not None:
+        if filled > 0.0 and fill_price is not None:
             when = (
                 payload.get("filled_at") or payload.get("updated_at") or payload.get("submitted_at")
             )
@@ -515,6 +584,9 @@ class AlpacaBroker:
             fill_price=fill_price,
             fills=fills,
             reason=reason,
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
         )
 
     def _request(self, method: str, path: str, body: dict[str, Any] | None) -> Any:
@@ -535,12 +607,7 @@ class AlpacaBroker:
         allow_missing: bool,
     ) -> tuple[Any, bool]:
         if self.venue == "alpaca-live":
-            raise LiveBrokerRefused(
-                "alpaca-live is refused: the honesty contract forbids live broker "
-                "connectivity (AGENTS.md; docs/INSTITUTIONAL_READINESS.md). "
-                "The venue and host api.alpaca.markets stay configured so this "
-                "refusal is explicit. Paper and loopback are unchanged."
-            )
+            raise LiveBrokerRefused(ALPACA_LIVE_REFUSAL)
         if self._credentials is None:
             raise LiveGateError("broker credentials are not set")
         key, secret = self._credentials
@@ -549,8 +616,80 @@ class AlpacaBroker:
             raise LiveGateError("refusing a broker URL outside the venue host")
         raw_body = _json_body(body)
         headers = _alpaca_headers(key, secret, has_body=raw_body is not None)
-        status, payload = self._transport(method, url, headers, raw_body, self._timeout)
+        try:
+            status, payload = self._transport(method, url, headers, raw_body, self._timeout)
+        except TimeoutError as exc:
+            raise BrokerTimeout("broker request timed out") from exc
         return _parse_broker_response(status, payload, (key, secret), allow_missing=allow_missing)
+
+
+def _require_same_ack(order: LiveOrder, ack: BrokerAck) -> None:
+    """Refuse a client id whose broker order is a different instruction."""
+    if not ack.symbol and not ack.side and ack.quantity == 0.0:
+        return
+    mismatched = (
+        (bool(ack.symbol) and ack.symbol != order.symbol)
+        or (bool(ack.side) and ack.side != order.side)
+        or (ack.quantity != 0.0 and abs(ack.quantity - order.quantity) > 1e-9)
+    )
+    if mismatched:
+        raise LiveGateError("client_order_id conflicts with a different order")
+
+
+def _fill_from_row(row: object, broker_to_client: dict[str, str]) -> BrokerFill:
+    """One FILL activity. A bad row is a broker error, not a skipped print."""
+    if not isinstance(row, dict):
+        raise BrokerRejected("broker fill row was malformed")
+    broker_order_id = str(row.get("order_id") or "")
+    side = str(row.get("side") or "")
+    if side not in {"buy", "sell"}:
+        raise BrokerRejected("broker fill side is not buy or sell")
+    client = broker_to_client.get(broker_order_id, "")
+    if not client and not broker_order_id:
+        raise BrokerRejected("broker fill is missing an order id")
+    when = row.get("transaction_time")
+    fill_id = str(row.get("id") or "")
+    if not isinstance(when, str) or not fill_id:
+        raise BrokerRejected("broker fill is missing an id or time")
+    quantity = _money(row.get("qty"), "fill quantity")
+    price = _money(row.get("price"), "fill price")
+    if quantity <= 0.0 or price <= 0.0:
+        raise BrokerRejected("broker fill quantity and price must be positive")
+    return BrokerFill(
+        fill_id=fill_id,
+        client_order_id=client,
+        symbol=str(row.get("symbol") or ""),
+        side=side,
+        quantity=quantity,
+        price=price,
+        fill_time_ns=_ns(when),
+    )
+
+
+def _order_payload_is_complete(payload: Any, client_order_id: str) -> bool:
+    """True when the payload names this order and carries a status word."""
+    if not isinstance(payload, dict):
+        return False
+    if str(payload.get("client_order_id") or "") != client_order_id:
+        return False
+    if not str(payload.get("id") or "").strip():
+        return False
+    return bool(str(payload.get("status") or "").strip())
+
+
+def _rejection_is_definite(exc: BrokerRejected) -> bool:
+    """A definite rejection means the broker refused the order and it is not live."""
+    text = str(exc)
+    if "client_order_id" in text or "non-JSON" in text:
+        return False
+    return all(f"HTTP {code}" not in text for code in _AMBIGUOUS_HTTP)
+
+
+def _unconfirmed_message(client_order_id: str, why: str) -> str:
+    return (
+        f"broker order {client_order_id} is unconfirmed after {why}; "
+        "state could not be confirmed and the order was not submitted again"
+    )
 
 
 def _decimal(value: float) -> str:

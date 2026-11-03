@@ -9,6 +9,7 @@ import io
 import os
 import socket
 import ssl
+import threading
 import unittest
 import urllib.parse
 from typing import Any
@@ -19,6 +20,7 @@ from fx1.serve.webhooks import (
     _post_once,
     check_callback_url,
     deliver_signed,
+    reset_webhook_replay_cache,
     sign_webhook,
     verify_webhook,
 )
@@ -27,6 +29,9 @@ from fx1.serve.webhooks import (
 class TestWebhooks(unittest.TestCase):
     secret = "synthetic-secret"
     body = b'{"status":"synthetic"}'
+
+    def setUp(self) -> None:
+        reset_webhook_replay_cache()
 
     def signature(self, timestamp: str) -> str:
         # Independently construct the wire signature to catch signing drift.
@@ -89,7 +94,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_valid_signature_and_exact_body(self) -> None:
         signature = self.signature("1000")
-        self.assertEqual(sign_webhook(self.secret, "1000", self.body), signature)
+        self.assertEqual(sign_webhook(self.secret, "1000", self.body, now=1000), signature)
         self.assertTrue(verify_webhook(self.secret, "1000", signature, self.body, now=1000))
         self.assertFalse(verify_webhook("wrong", "1000", signature, self.body, now=1000))
         self.assertFalse(verify_webhook(self.secret, "1000", signature, b"{}", now=1000))
@@ -119,8 +124,9 @@ class TestWebhooks(unittest.TestCase):
         self.assertFalse(
             verify_webhook(self.secret, "1000", signature, self.body, tolerance_s=0, now=1000.001)
         )
+        late = self.signature("50")
         self.assertTrue(
-            verify_webhook(self.secret, "1000", signature, self.body, tolerance_s=-1, now=1000000)
+            verify_webhook(self.secret, "50", late, self.body, tolerance_s=-1, now=1000000)
         )
 
     def test_disabled_freshness_ignores_clock(self) -> None:
@@ -137,7 +143,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_utf8_secret(self) -> None:
         secret = "synthetic-é"
-        signature = sign_webhook(secret, "1000", self.body)
+        signature = sign_webhook(secret, "1000", self.body, now=1000)
         self.assertTrue(verify_webhook(secret, "1000", signature, self.body, now=1000))
 
     def test_malformed_runtime_types(self) -> None:
@@ -222,6 +228,77 @@ class TestWebhooks(unittest.TestCase):
                     verify_webhook(self.secret, "1000", signature, self.body, now=1000)
                 )
 
+    def test_sign_rejects_stale_timestamps_and_reissue(self) -> None:
+        minted = sign_webhook(self.secret, "1000", self.body, now=1000)
+        self.assertEqual(minted, self.signature("1000"))
+        with self.assertRaises(ValueError) as stale:
+            sign_webhook(self.secret, "1000", self.body, now=2000)
+        self.assertIn("tolerance", str(stale.exception))
+        self.assertNotIn(self.secret, str(stale.exception))
+        with self.assertRaises(ValueError) as replay:
+            sign_webhook(self.secret, "1000", self.body, now=1000)
+        self.assertIn("nonce", str(replay.exception))
+        self.assertNotIn(self.secret, str(replay.exception))
+        other = b'{"status":"other"}'
+        disabled = sign_webhook(self.secret, "1000", other, tolerance_s=-1, now=10**9)
+        self.assertTrue(
+            verify_webhook(self.secret, "1000", disabled, other, tolerance_s=-1, now=10**9)
+        )
+        self.assertFalse(
+            verify_webhook(self.secret, "1000", disabled, other, tolerance_s=-1, now=10**9)
+        )
+
+    def test_verify_rejects_a_replayed_signature(self) -> None:
+        signature = self.signature("1000")
+        self.assertTrue(verify_webhook(self.secret, "1000", signature, self.body, now=1000))
+        self.assertFalse(verify_webhook(self.secret, "1000", signature, self.body, now=1000))
+        nxt = self.signature("1001")
+        self.assertTrue(verify_webhook(self.secret, "1001", nxt, self.body, now=1000))
+
+    def test_replay_cache_forgets_the_oldest_nonce(self) -> None:
+        now = 2500.0
+        tolerance = 5000.0
+        first_sig = sign_webhook(self.secret, "0", self.body, tolerance_s=tolerance, now=now)
+        self.assertTrue(
+            verify_webhook(self.secret, "0", first_sig, self.body, tolerance_s=tolerance, now=now)
+        )
+        for offset in range(1, 1025):
+            ts = str(offset)
+            signature = sign_webhook(self.secret, ts, self.body, tolerance_s=tolerance, now=now)
+            self.assertTrue(
+                verify_webhook(
+                    self.secret, ts, signature, self.body, tolerance_s=tolerance, now=now
+                )
+            )
+        self.assertTrue(
+            verify_webhook(self.secret, "0", first_sig, self.body, tolerance_s=tolerance, now=now)
+        )
+
+    def test_retries_mint_distinct_timestamps(self) -> None:
+        answers = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+        ]
+        with (
+            patch("fx1.serve.webhooks.socket.getaddrinfo", return_value=answers),
+            patch("fx1.serve.webhooks._post_once", side_effect=[503, 204]) as post,
+            patch("time.time", return_value=1_700_000_000),
+            patch("time.sleep"),
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://example.com/hook",
+                self.secret,
+                self.body,
+                max_attempts=2,
+                backoff_s=0,
+            )
+        self.assertTrue(delivered, error)
+        self.assertEqual(attempts, 2)
+        first = post.call_args_list[0].args[3]["X-Fx1-Webhook-Timestamp"]
+        second = post.call_args_list[1].args[3]["X-Fx1-Webhook-Timestamp"]
+        self.assertNotEqual(first, second)
+        self.assertTrue(first.isdigit())
+        self.assertTrue(second.isdigit())
+
     def test_malformed_secret(self) -> None:
         for secret in ("", "synthetic-\ud800"):
             with self.subTest(secret=secret):
@@ -242,6 +319,7 @@ class TestWebhooks(unittest.TestCase):
             "http://0.0.0.0/hook",
         )
         with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("FX1_PRIVATE_ALLOW_CIDRS", None)
             os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
             for url in rejected:
                 with self.subTest(url=url), self.assertRaises(ValueError):
@@ -249,11 +327,42 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(check_callback_url("https://8.8.8.8/hook"), "https://8.8.8.8/hook")
 
     def test_private_network_opt_in_is_explicit(self) -> None:
-        with patch.dict(os.environ, {"FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1"}):
+        with patch.dict(os.environ, {"FX1_PRIVATE_ALLOW_CIDRS": "127.0.0.0/8"}):
             self.assertEqual(
                 check_callback_url("http://127.0.0.1/hook"),
                 "http://127.0.0.1/hook",
             )
+            with self.assertRaises(ValueError):
+                check_callback_url("http://192.168.1.1/hook")
+        with patch.dict(os.environ, {"FX1_PRIVATE_ALLOW_CIDRS": "0.0.0.0/0,::/0"}):
+            with self.assertRaises(ValueError):
+                check_callback_url("http://169.254.169.254/latest/meta-data/")
+            with self.assertRaises(ValueError):
+                check_callback_url("http://192.0.2.1/hook")
+        with (
+            patch.dict(os.environ, {"FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1"}),
+            self.assertRaises(ValueError),
+        ):
+            check_callback_url("http://10.0.0.1/hook")
+
+    def test_callback_errors_do_not_echo_credentials(self) -> None:
+        url = "http://user:s3cret-synthetic@hooks.example/hook?token=SECRETKEY"
+        with self.assertRaises(ValueError) as ctx:
+            check_callback_url(url)
+        text = str(ctx.exception)
+        self.assertNotIn("s3cret-synthetic", text)
+        self.assertNotIn("SECRETKEY", text)
+        self.assertIn("userinfo", text)
+
+        delivered, error, attempts = deliver_signed(
+            "https://example.com:bad/hook?token=SECRETKEY",
+            None,
+            self.body,
+        )
+        self.assertFalse(delivered)
+        self.assertIn("invalid port", error or "")
+        self.assertNotIn("SECRETKEY", error or "")
+        self.assertEqual(attempts, 0)
 
     def test_invalid_port_is_rejected_without_delivery_attempt(self) -> None:
         delivered, error, attempts = deliver_signed(
@@ -311,7 +420,7 @@ class TestWebhooks(unittest.TestCase):
                     response = connection_cls.return_value.getresponse.return_value
                     response.__enter__.return_value.status = 204
                     self.assertEqual(deliver_signed(url, None, self.body), (True, None, 1))
-                    resolve.assert_called_once_with("example.com", port)
+                    resolve.assert_called_once_with("example.com", port, 10.0)
                     connection_cls.assert_called_once_with(
                         "example.com", port, "93.184.216.34", 10.0
                     )
@@ -403,6 +512,49 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(attempts, 2)
         self.assertEqual(resolve.call_count, 2)
         post.assert_called_once()
+
+    def test_dns_lookup_is_bounded_by_the_delivery_timeout(self) -> None:
+        release = threading.Event()
+
+        def hang(*_args: object, **_kwargs: object) -> list[object]:
+            release.wait(2.0)
+            return []
+
+        with (
+            patch("fx1.serve.webhooks.socket.getaddrinfo", side_effect=hang),
+            patch("fx1.serve.webhooks._post_once") as post,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://example.com/hook",
+                None,
+                self.body,
+                max_attempts=1,
+                backoff_s=0,
+                timeout_s=0.05,
+            )
+        release.set()
+        self.assertFalse(delivered)
+        self.assertIn("TimeoutError", error or "")
+        self.assertEqual(attempts, 1)
+        post.assert_not_called()
+
+    def test_non_finite_timeout_and_unbounded_attempts_fail_closed(self) -> None:
+        for kwargs in (
+            {"timeout_s": float("nan")},
+            {"timeout_s": float("inf")},
+            {"max_attempts": 10_000},
+        ):
+            with self.subTest(**kwargs):
+                delivered, error, attempts = deliver_signed(
+                    "https://example.com/hook",
+                    None,
+                    self.body,
+                    backoff_s=0,
+                    **kwargs,
+                )
+                self.assertFalse(delivered)
+                self.assertTrue(error)
+                self.assertEqual(attempts, 0)
 
     def test_post_once_closes_real_responses_without_reading_the_body(self) -> None:
         for scheme, port, connection_name in (
@@ -499,6 +651,54 @@ class TestWebhooks(unittest.TestCase):
                 connection.close.assert_called_once_with()
         finally:
             response.close()
+
+    def test_invalid_retry_settings_fail_before_dns_or_delivery(self) -> None:
+        cases = [
+            ({"max_attempts": 0}, "max_attempts must be positive"),
+            ({"max_attempts": -1}, "max_attempts must be positive"),
+            ({"backoff_s": -0.1}, "backoff_s must be finite and non-negative"),
+            ({"backoff_s": float("nan")}, "backoff_s must be finite and non-negative"),
+            ({"timeout_s": 0}, "timeout_s must be finite and positive"),
+            ({"timeout_s": float("inf")}, "timeout_s must be finite and positive"),
+        ]
+        for kwargs, message in cases:
+            with (
+                self.subTest(kwargs=kwargs),
+                patch("fx1.serve.webhooks._resolved_addresses") as resolve,
+                patch("fx1.serve.webhooks._post_once") as post,
+            ):
+                delivered, error, attempts = deliver_signed(
+                    "https://example.com/hook", None, self.body, **kwargs
+                )
+                self.assertFalse(delivered)
+                self.assertIn(message, error or "")
+                self.assertEqual(attempts, 0)
+                resolve.assert_not_called()
+                post.assert_not_called()
+
+    def test_retry_backoff_uses_jitter(self) -> None:
+        with (
+            patch(
+                "fx1.serve.webhooks._resolved_addresses",
+                return_value=("93.184.216.34",),
+            ),
+            patch("fx1.serve.webhooks._post_once", side_effect=[503, 204]) as post,
+            patch("fx1.serve.webhooks.random.uniform", return_value=0.25) as uniform,
+            patch("time.sleep") as sleep,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://8.8.8.8/hook",
+                None,
+                self.body,
+                max_attempts=2,
+                backoff_s=0.5,
+            )
+        self.assertTrue(delivered)
+        self.assertIsNone(error)
+        self.assertEqual(attempts, 2)
+        self.assertEqual(post.call_count, 2)
+        uniform.assert_called_once_with(0.0, 0.5)
+        sleep.assert_called_once_with(0.25)
 
 
 if __name__ == "__main__":

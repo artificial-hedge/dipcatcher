@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from fx1.flash.store import FlashEntry, FlashStore
+from quant_fund.utils.secrets import redact_text
 
 FetchFn = Callable[[str], object]  # url -> object with .status / .error
 
@@ -70,18 +71,19 @@ def refresh_entry(
         url = source.url
         if not url:
             continue
-        report.checked.append(url)
+        safe_url = redact_text(url)
+        report.checked.append(safe_url)
         try:
             result = fetch_fn(url)
             status = getattr(result, "status", None)
             error = getattr(result, "error", None)
             if status is not None and 200 <= status < 400 and not error:
-                report.reachable.append(url)
+                report.reachable.append(safe_url)
             else:
                 reason = error or f"HTTP {status}"
-                report.unreachable.append(f"{url} ({reason})")
+                report.unreachable.append(redact_text(f"{url} ({reason})"))
         except Exception as exc:  # noqa: BLE001 — network faults must not kill refresh
-            report.unreachable.append(f"{url} ({type(exc).__name__}: {exc})")
+            report.unreachable.append(redact_text(f"{url} ({type(exc).__name__}: {exc})"))
 
     if not report.checked:
         report.note = "no sources recorded; nothing to refresh"

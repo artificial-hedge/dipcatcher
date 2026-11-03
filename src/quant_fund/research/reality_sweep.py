@@ -902,7 +902,7 @@ def run_sweep(
 
     ledger = ledger_path or (_ROOT / "research" / "reality" / "trials.jsonl")
     csv_out = csv_path or (_ROOT / "research" / "reality" / "trials.csv")
-    with ProvenanceDB(db) as prov:
+    with ProvenanceDB(db, read_only=True) as prov:
         stored = prov.trials()
     ledger.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(

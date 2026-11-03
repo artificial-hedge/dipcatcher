@@ -40,8 +40,8 @@ class ReceiptRecord(BaseModel):
         return self.research_only and not self.live_pnl_claim
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _sha256(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _eligibility(payload: dict[str, Any]) -> tuple[bool, bool]:
@@ -84,8 +84,9 @@ def load_receipts(
     for root in roots:
         for path in sorted(root.rglob("*.json")):
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+                raw = path.read_bytes()
+                payload = json.loads(raw)
+            except (OSError, ValueError, RecursionError):
                 continue
             if not isinstance(payload, dict):
                 continue
@@ -93,7 +94,7 @@ def load_receipts(
             records.append(
                 ReceiptRecord(
                     path=str(path),
-                    sha256=_sha256(path),
+                    sha256=_sha256(raw),
                     schema_name=str(
                         payload.get("schema", payload.get("schema_version", "unknown"))
                     ),

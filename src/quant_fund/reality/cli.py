@@ -53,8 +53,8 @@ def absent_provenance_db_skip_message(path: Path) -> str:
     """Stdout contract when the provenance DB is not in the checkout.
 
     The committed tree has no ``data/metadata/proofcore.duckdb`` at HEAD or
-    on main. Export opens that path with duckdb, which creates an empty
-    database, then writes 0 trial rows.
+    on main. Preflight skips before export; direct export refuses a missing DB
+    rather than creating one. The skip text retains its legacy output contract.
     """
     return (
         "REALITY_FILTER_SKIP: "

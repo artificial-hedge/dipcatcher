@@ -63,13 +63,19 @@ def test_observation_hooks_off_by_default(monkeypatch: pytest.MonkeyPatch) -> No
     main._maybe_install_observation_hooks()
 
 
-@pytest.mark.parametrize("flag", ["0", "no", "off", "bogus"])
+@pytest.mark.parametrize("flag", ["0", "no", "off"])
 def test_observation_hooks_reject_non_flags(monkeypatch: pytest.MonkeyPatch, flag: str) -> None:
     monkeypatch.setenv("DIPCATCHER_OBSERVE", flag)
     stub = types.ModuleType("quant_fund.observe.install")
     stub.install_passive_hooks = lambda: pytest.fail("hooks must not install")  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "quant_fund.observe.install", stub)
     main._maybe_install_observation_hooks()
+
+
+def test_observation_hooks_reject_invalid_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DIPCATCHER_OBSERVE", "bogus")
+    with pytest.raises(ValueError, match="DIPCATCHER_OBSERVE must be a boolean"):
+        main._maybe_install_observation_hooks()
 
 
 @pytest.mark.parametrize("flag", ["1", "true", "YES", "on"])

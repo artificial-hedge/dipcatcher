@@ -24,10 +24,19 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 INDEX_NAME = "index.jsonl"
 OBJECTS_DIR = "objects"
@@ -40,6 +49,37 @@ class ArtifactStoreError(RuntimeError):
 
 def _object_path(root: Path, sha: str) -> Path:
     return root / OBJECTS_DIR / sha[:2] / sha[2:]
+
+
+@contextmanager
+def _store_lock(root: Path) -> Iterator[None]:
+    root.mkdir(parents=True, exist_ok=True)
+    fd = os.open(
+        root / ".store.lock",
+        os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0),
+        0o600,
+    )
+    locked = False
+    try:
+        if sys.platform == "win32":
+            if os.fstat(fd).st_size == 0:
+                os.write(fd, b"0")
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+        else:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        locked = True
+        yield
+    finally:
+        try:
+            if locked:
+                if sys.platform == "win32":
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
 
 
 def _append_index(root: Path, record: dict[str, Any]) -> None:
@@ -100,22 +140,30 @@ class ArtifactStore:
             raise ValueError("kind must be a non-empty string")
         sha = hash_bytes(payload)
         obj = _object_path(self._root, sha)
-        if not obj.exists():
-            obj.parent.mkdir(parents=True, exist_ok=True)
-            tmp = obj.parent / f".{obj.name}.tmp-{os.getpid()}"
-            tmp.write_bytes(payload)
-            os.replace(tmp, obj)
-        elif obj.read_bytes() != payload:
-            raise ArtifactStoreError(
-                f"sha256 collision or corruption at {obj.name}: same digest, different bytes"
-            )
-        record = {
-            "sha256": sha,
-            "kind": kind,
-            "bytes": len(payload),
-            "prev_index_sha256": _index_sha256(self._root),
-        }
-        _append_index(self._root, record)
+        with _store_lock(self._root):
+            if not obj.exists():
+                obj.parent.mkdir(parents=True, exist_ok=True)
+                fd, temporary = tempfile.mkstemp(prefix=f".{obj.name}.tmp-", dir=obj.parent)
+                tmp = Path(temporary)
+                try:
+                    with os.fdopen(fd, "wb") as handle:
+                        handle.write(payload)
+                        handle.flush()
+                        os.fsync(handle.fileno())
+                    os.replace(tmp, obj)
+                finally:
+                    tmp.unlink(missing_ok=True)
+            elif obj.read_bytes() != payload:
+                raise ArtifactStoreError(
+                    f"sha256 collision or corruption at {obj.name}: same digest, different bytes"
+                )
+            record = {
+                "sha256": sha,
+                "kind": kind,
+                "bytes": len(payload),
+                "prev_index_sha256": _index_sha256(self._root),
+            }
+            _append_index(self._root, record)
         return sha
 
     def fetch(self, sha256: str) -> bytes:

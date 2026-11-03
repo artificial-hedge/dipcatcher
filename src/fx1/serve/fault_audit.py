@@ -566,13 +566,18 @@ def _probe_drain() -> dict[str, bool]:
     """Drain latch: blocks new work, bounded wait, reads stay open."""
     out: dict[str, bool] = {}
 
+    started = threading.Event()
+    release = threading.Event()
+
     def sleepy(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-        time.sleep(0.4)
+        started.set()
+        release.wait(5.0)
         return 0, "ok", ""
 
     client = _client(runner=sleepy)
     jr = client.post("/harness/jobs", json={"command": "doctor"})
     jid = jr.json()["job_id"]
+    assert started.wait(10.0)
     t0 = time.monotonic()
     dr = client.post("/harness/drain", params={"wait_s": 0.1})
     elapsed = time.monotonic() - t0
@@ -589,6 +594,7 @@ def _probe_drain() -> dict[str, bool]:
     )
     out["drain_keeps_job_reads_open"] = client.get(f"/harness/jobs/{jid}").status_code == 200
     out["ready_fails_under_drain"] = client.get("/ready").status_code == 503
+    release.set()
     dr2 = client.post("/harness/drain", params={"wait_s": 1.0})
     out["drain_one_way_latch"] = (
         dr2.json()["drained"] is True

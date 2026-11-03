@@ -18,16 +18,19 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
   actions: read # compare job lists runs + downloads the baseline artifact
 
+# pull_request and push skip these jobs unless repository variable
+# USE_CURSOR_CI is exactly "false". ci.yml package and docs.yml build still
+# run on push. Other events this file already triggers still run. See docs/CURSOR_CI.md.
 jobs:
   record:
-    if: github.event_name != 'pull_request'
+    if: "(github.event_name != 'pull_request') && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false')"
     runs-on: instabox-large
     timeout-minutes: 30
     steps:
@@ -40,9 +43,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev --no-build
       - name: Record baseline on CI hardware
-        run: uv run python scripts/perf_baseline.py record --output perf-baseline.json
+        run: uv run --locked --no-build --no-binary-package fx-1 python scripts/perf_baseline.py record --output perf-baseline.json
       - name: Publish baseline artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -52,7 +55,7 @@ jobs:
           if-no-files-found: error
 
   compare:
-    if: github.event_name == 'pull_request'
+    if: "(github.event_name == 'pull_request') && (github.event_name != 'pull_request' && github.event_name != 'push' || vars.USE_CURSOR_CI == 'false')"
     runs-on: instabox-large
     timeout-minutes: 30
     steps:
@@ -65,11 +68,10 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev --no-build
       - name: Record current timings
-        run: uv run python scripts/perf_baseline.py record --output perf-current.json
+        run: uv run --locked --no-build --no-binary-package fx-1 python scripts/perf_baseline.py record --output perf-current.json
       - name: Fetch main-branch baseline artifact
-        id: baseline
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -77,9 +79,9 @@ jobs:
             --status success --limit 1 --json databaseId \
             --jq '.[0].databaseId // empty')"
           if [ -z "${run_id}" ]; then
-            echo "::warning::no main-branch perf-baseline artifact; comparison skipped." >&2
-            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "::error::no main-branch perf-baseline artifact found." >&2
+            echo "::error::seed it via 'gh workflow run perf-baseline.yml' or any push to main." >&2
+            exit 1
           fi
           if ! gh run download "${run_id}" --name perf-baseline --dir baseline; then
             echo "::error::baseline artifact on run ${run_id} expired (retention)." >&2
@@ -87,11 +89,9 @@ jobs:
             exit 1
           fi
           test -s baseline/perf-baseline.json
-          echo "has_baseline=true" >> "$GITHUB_OUTPUT"
       - name: Compare against baseline (1.5x normalized gate)
-        if: steps.baseline.outputs.has_baseline == 'true'
         run: |
-          uv run python scripts/perf_baseline.py compare \
+          uv run --locked --no-build --no-binary-package fx-1 python scripts/perf_baseline.py compare \
             --baseline baseline/perf-baseline.json \
             --current perf-current.json --json
       - name: Upload current timings

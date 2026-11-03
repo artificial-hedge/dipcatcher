@@ -14,6 +14,7 @@ decision enforced one layer up).
 
 from __future__ import annotations
 
+import math
 import time
 import urllib.error
 import urllib.parse
@@ -21,15 +22,22 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from typing import Any
+from typing import Any, cast
 
 from fx1.webresearch.fetch import DEFAULT_USER_AGENT
+from quant_fund.utils.net_timeout import require_timeout
+from quant_fund.utils.outbound import OutboundRefused, open_pinned
 
 DDG_LITE_URL = "https://lite.duckduckgo.com/lite/"
 DDG_HTML_URL = "https://html.duckduckgo.com/html/"
 _DDG_SEARCH_HOSTS = frozenset({"lite.duckduckgo.com", "html.duckduckgo.com"})
 DEFAULT_TIMEOUT_S = 10.0
 DEFAULT_MAX_RESULTS = 8
+DEFAULT_MAX_RESPONSE_BYTES = 512 * 1024
+
+
+class SearchResponseTooLargeError(ValueError):
+    """The search endpoint exceeded the configured response-size limit."""
 
 
 @dataclass
@@ -146,6 +154,35 @@ def _parse_results(html: str, engine: str) -> list[SearchHit]:
 # offline tests dishonest about what a live run can do.
 
 
+def _require_search_url(url: str) -> None:
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != "https" or parsed.hostname not in _DDG_SEARCH_HOSTS:
+        raise ValueError("search endpoint must be an approved DuckDuckGo HTTPS host")
+
+
+def _pinned_search_read(request: urllib.request.Request, timeout_s: float, max_bytes: int) -> bytes:
+    """Pinned live fetch. One read of ``max_bytes + 1`` enforces the cap."""
+    try:
+        with open_pinned(request, timeout=timeout_s) as handle:
+            body = bytes(handle.read(max_bytes + 1))
+            if len(body) > max_bytes:
+                raise SearchResponseTooLargeError(f"search response exceeds {max_bytes}-byte limit")
+            status = int(handle.status)
+            if 300 <= status < 400:
+                raise OutboundRefused("redirects are not followed")
+            if status >= 400:
+                raise urllib.error.HTTPError(
+                    handle.geturl(),
+                    status,
+                    handle.reason or "error",
+                    handle.headers,
+                    None,
+                )
+            return body
+    except OutboundRefused as exc:
+        raise ValueError("search endpoint was refused") from exc
+
+
 class Searcher:
     """Search protocol: ``search(query, *, max_results, timeout_s)``."""
 
@@ -159,6 +196,24 @@ class Searcher:
         raise NotImplementedError
 
 
+def _search_input_error(query: str, max_results: object, timeout_s: object) -> str:
+    if not query.strip():
+        return "query must be non-blank"
+    if isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1:
+        return "invalid max_results: must be a positive integer"
+    try:
+        valid_timeout = (
+            not isinstance(timeout_s, bool)
+            and math.isfinite(cast(float, timeout_s))
+            and cast(float, timeout_s) > 0
+        )
+    except TypeError:
+        valid_timeout = False
+    if not valid_timeout:
+        return "invalid timeout_s: must be finite and > 0"
+    return ""
+
+
 class DuckDuckGoLiteSearcher(Searcher):
     """Keyless DDG via the lite endpoint, HTML fallback to the html endpoint."""
 
@@ -169,24 +224,39 @@ class DuckDuckGoLiteSearcher(Searcher):
         open_fn: Callable[[urllib.request.Request, float], Any] | None = None,
         pause_s: float = 0.0,
         now_fn: Callable[[], float] = time.monotonic,
+        max_response_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
     ) -> None:
+        if max_response_bytes < 1:
+            raise ValueError("max_response_bytes must be positive")
         self._user_agent = user_agent
         self._open_fn = open_fn
         self._pause_s = pause_s
         self._now = now_fn
+        self._max_response_bytes = max_response_bytes
         self._last_search_at = 0.0
 
+    def _read_response(self, response: Any, timeout_s: float) -> bytes:
+        """One capped read. The socket deadline matches the request timeout."""
+        require_timeout(timeout_s, name="timeout_s")
+        fp = getattr(response, "fp", None)
+        raw = getattr(fp, "raw", None)
+        sock = getattr(raw, "_sock", None)
+        if sock is not None and hasattr(sock, "settimeout"):
+            sock.settimeout(timeout_s)
+        body = bytes(response.read(self._max_response_bytes + 1))
+        if len(body) > self._max_response_bytes:
+            raise SearchResponseTooLargeError(
+                f"search response exceeds {self._max_response_bytes}-byte limit"
+            )
+        return body
+
     def _get(self, url: str, timeout_s: float) -> bytes:
-        parsed = urllib.parse.urlsplit(url)
-        if parsed.scheme != "https" or parsed.hostname not in _DDG_SEARCH_HOSTS:
-            raise ValueError("search endpoint must be an approved DuckDuckGo HTTPS host")
+        _require_search_url(url)
         request = urllib.request.Request(url, headers={"User-Agent": self._user_agent})
         if self._open_fn is not None:
             with self._open_fn(request, timeout_s) as response:
-                return bytes(response.read())
-        # Scheme and host are allowlisted immediately above.
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
-            return bytes(response.read())
+                return self._read_response(response, timeout_s)
+        return _pinned_search_read(request, timeout_s, self._max_response_bytes)
 
     def search(
         self,
@@ -195,17 +265,24 @@ class DuckDuckGoLiteSearcher(Searcher):
         max_results: int = DEFAULT_MAX_RESULTS,
         timeout_s: float = DEFAULT_TIMEOUT_S,
     ) -> SearchResult:
+        result = SearchResult(query=query)
+        input_error = _search_input_error(query, max_results, timeout_s)
+        if input_error:
+            result.error = input_error
+            return result
         started = self._now()
         if self._pause_s:
             wait = self._pause_s - (self._now() - self._last_search_at)
             if wait > 0:
                 time.sleep(wait)
         self._last_search_at = self._now()
-        result = SearchResult(query=query)
         encoded = urllib.parse.urlencode({"q": query})
         for engine, endpoint in (("ddg-lite", DDG_LITE_URL), ("ddg-html", DDG_HTML_URL)):
             try:
                 body = self._get(f"{endpoint}?{encoded}", timeout_s)
+            except SearchResponseTooLargeError as exc:
+                result.error = str(exc)
+                continue
             except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
                 result.error = f"search transport fault ({type(exc).__name__})"
                 continue

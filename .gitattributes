@@ -1,6 +1,10 @@
 # Preserve Git blob bytes for sealed receipts on every platform.
 # The LFS rules below keep binary arrays outside text conversion.
 * text=auto eol=lf
+.github/workflows/*.yml text eol=lf
+.github/workflows/*.yaml text eol=lf
+quality/crown_jewels.json text eol=lf
+quality/epoch_heads.json text eol=lf
 # L8 hygiene (2026-10-08): binary artifacts are never EOL-normalized and never
 # diffed as text. These generic rules stay ABOVE the path-specific LFS and
 # sealed-receipt rules on purpose — a later line wins per attribute, so the LFS

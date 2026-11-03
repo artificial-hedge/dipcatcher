@@ -14,6 +14,14 @@ class BrokerRejected(LiveGateError):
     """The broker accepted the connection and refused the request."""
 
 
+class BrokerUnconfirmed(Exception):
+    """The broker did not confirm the order. It must not be submitted again.
+
+    This is not a ``LiveGateError``. The session treats that type as a local
+    gate refusal. An unconfirmed submit may still be working at the broker.
+    """
+
+
 class LiveBrokerRefused(LiveGateError):
     """The Alpaca live host is configured and refused.
 
@@ -21,3 +29,19 @@ class LiveBrokerRefused(LiveGateError):
     the host stay in the source so the refusal is visible; paper and loopback
     are unchanged.
     """
+
+
+class BrokerTimeout(Exception):
+    """The broker did not answer in time.
+
+    This is not a rejection. The order may still be live, so callers must not
+    mark it dead or send a second copy.
+    """
+
+
+ALPACA_LIVE_REFUSAL = (
+    "alpaca-live is refused: the honesty contract forbids live broker "
+    "connectivity (AGENTS.md; docs/INSTITUTIONAL_READINESS.md). "
+    "The venue and host api.alpaca.markets stay configured so this "
+    "refusal is explicit. Paper and loopback are unchanged."
+)

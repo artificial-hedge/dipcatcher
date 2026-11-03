@@ -71,6 +71,14 @@ def validate_upload_intent(purpose: str, filename: str, accept: frozenset[str]) 
         raise UploadStoreError(
             400, f"input must be a .jsonl file, got {filename!r}", "invalid_request"
         )
+    name = Path(filename)
+    if (
+        name.is_absolute()
+        or name.name != filename
+        or any(part in {"", ".", ".."} for part in name.parts)
+        or any(char in filename for char in "/\\\x00")
+    ):
+        raise UploadStoreError(400, "filename must be a plain .jsonl name", "invalid_request")
 
 
 class UploadMeta(BaseModel):
@@ -124,6 +132,11 @@ def upload_part_object(part_id: str, upload_id: str, created_at: int) -> dict[st
     }
 
 
+def _require_positive(name: str, value: int) -> None:
+    if value < 1:
+        raise ValueError(f"{name} must be positive")
+
+
 class UploadStore:
     """Bounded LRU store of pending/terminal uploads (the ``/v1/uploads``
     surface).
@@ -141,6 +154,8 @@ class UploadStore:
         state_dir: Path | None = None,
         ttl_s: int = UPLOAD_TTL_S,
     ) -> None:
+        _require_positive("max_entries", max_entries)
+        _require_positive("max_bytes", max_bytes)
         self._lock = threading.Lock()
         self._max = max_entries
         self._max_bytes = max_bytes

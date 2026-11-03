@@ -42,6 +42,7 @@ def report_cmd(
     from quant_fund.stress.report import build_stress_report, render_html, render_markdown
     from quant_fund.stress.strategy import load_return_panel, load_strategy
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+    from quant_fund.utils.path_safety import PathSafetyError, write_private_text
 
     loaded = load_strategy(strategy)
     panel_path = returns
@@ -67,11 +68,13 @@ def report_cmd(
         text = render_html(report)
     else:
         raise typer.BadParameter("format must be markdown or html")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(text, encoding="utf-8")
     sidecar = out.with_suffix(".json")
     sealed = {**report, "receipt_sha256": hash_bytes(canonical_json_bytes(report))}
-    sidecar.write_text(json.dumps(sealed, indent=2) + "\n", encoding="utf-8")
+    try:
+        write_private_text(out, text)
+        write_private_text(sidecar, json.dumps(sealed, indent=2) + "\n")
+    except PathSafetyError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     print(f"research_only={report['research_only']} live_trading={report['live_trading']}")
     print(f"wrote {out}")
     print(f"wrote {sidecar}")

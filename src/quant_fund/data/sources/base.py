@@ -11,6 +11,8 @@ from urllib.parse import urlencode, urlsplit
 import polars as pl
 
 from quant_fund.data.concurrent_io import IoError, call_with_retry, pooled_request
+from quant_fund.utils.net_timeout import require_retries, require_timeout
+from quant_fund.utils.secrets import redact_text
 
 
 class SourceError(RuntimeError):
@@ -28,16 +30,16 @@ class HttpClient:
         max_bytes: int = 25_000_000,
         user_agent: str = "dipcatcher/1.0 (research; contact=research@example.invalid)",
     ) -> None:
-        if timeout <= 0 or retries < 0 or max_bytes < 1:
-            raise ValueError("timeout must be positive; retries non-negative; max_bytes positive")
-        self.timeout = float(timeout)
-        self.retries = int(retries)
+        if max_bytes < 1:
+            raise ValueError("max_bytes must be positive")
+        self.timeout = require_timeout(timeout)
+        self.retries = require_retries(retries)
         self.max_bytes = int(max_bytes)
         self.user_agent = user_agent
 
     def _request(self, url: str, *, headers: dict[str, str] | None = None) -> bytes:
         if urlsplit(url).scheme.lower() not in {"http", "https"}:
-            raise SourceError(f"unsupported URL scheme: {url}")
+            raise SourceError(f"unsupported URL scheme: {redact_text(url)}")
         request_headers = {"User-Agent": self.user_agent, "Accept": "*/*"}
         request_headers.update(headers or {})
 
@@ -51,13 +53,13 @@ class HttpClient:
                     max_bytes=self.max_bytes,
                 )
             except IoError as exc:
-                raise SourceError(str(exc)) from exc
+                raise SourceError(redact_text(str(exc))) from exc
             if status < 400:
                 return body
             # 429 and 5xx are transient. Other 4xx will not succeed on retry.
             if status == 429 or status >= 500:
                 raise OSError(status, f"HTTP {status}")
-            raise SourceError(f"GET failed after retries: {url}")
+            raise SourceError(f"GET failed after retries: {redact_text(url)}")
 
         try:
             return call_with_retry(
@@ -71,7 +73,7 @@ class HttpClient:
                 retry_on=(OSError, http.client.HTTPException),
             )
         except (OSError, http.client.HTTPException) as exc:
-            raise SourceError(f"GET failed after retries: {url}") from exc
+            raise SourceError(f"GET failed after retries: {redact_text(url)}") from exc
 
     def get_json(self, url: str, *, headers: dict[str, str] | None = None) -> Any:
         try:
@@ -79,7 +81,7 @@ class HttpClient:
                 self._request(url, headers={"Accept": "application/json", **(headers or {})})
             )
         except json.JSONDecodeError as exc:
-            raise SourceError(f"invalid JSON response: {url}") from exc
+            raise SourceError(f"invalid JSON response: {redact_text(url)}") from exc
 
     def get_text(self, url: str, *, headers: dict[str, str] | None = None) -> str:
         return self._request(url, headers=headers).decode("utf-8-sig", errors="replace")

@@ -84,7 +84,7 @@ def test_scan_unrecognized_and_offline(tmp_path: Path, monkeypatch: pytest.Monke
 
     monkeypatch.setattr(mod, "_http", _dead)
     res = mod.scan_witness_log(root)
-    assert res["ok"] and res["online"] is False
+    assert not res["ok"] and res["online"] is False
     assert res["errors"][0].startswith("index_unreachable")
 
 
