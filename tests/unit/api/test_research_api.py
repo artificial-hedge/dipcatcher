@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given
 from hypothesis import settings as h_settings
 from hypothesis import strategies as st
+from pydantic import ValidationError
 
 from quant_fund.api.research_api import (
     ArtifactDetail,
@@ -24,6 +25,7 @@ from quant_fund.api.research_api import (
     HealthResponse,
     ReceiptDetail,
     ReceiptListResponse,
+    ResearchApiBindSettings,
     ResearchApiSettings,
     ResultDetail,
     ResultListResponse,
@@ -36,6 +38,7 @@ from quant_fund.api.research_api import (
     VerifierVersionDetail,
     VerifierVersionListResponse,
     create_app,
+    main,
 )
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
@@ -228,6 +231,123 @@ def settings(evidence_tree: dict[str, Path]) -> ResearchApiSettings:
 @pytest.fixture()
 def client(settings: ResearchApiSettings) -> TestClient:
     return TestClient(create_app(settings))
+
+
+def _clear_bind_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("RESEARCH_API_HOST", "RESEARCH_API_PORT", "RESEARCH_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_bind_settings_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_bind_env(monkeypatch)
+
+    settings = ResearchApiBindSettings.from_env()
+
+    assert settings.host == "127.0.0.1"
+    assert settings.port == 8010
+
+
+def test_bind_settings_from_env_normalizes_host_and_allows_ephemeral_port(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", "  localhost\n")
+    monkeypatch.setenv("RESEARCH_API_PORT", "0")
+
+    settings = ResearchApiBindSettings.from_env()
+
+    assert settings.host == "localhost"
+    assert settings.port == 0
+
+
+@pytest.mark.parametrize("value", ["", " \t"])
+def test_bind_settings_reject_blank_host(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", value)
+
+    with pytest.raises(ValidationError, match="non-empty host"):
+        ResearchApiBindSettings.from_env()
+
+
+@pytest.mark.parametrize("value", ["", "not-a-number", "-1", "65536", "1.5"])
+def test_bind_settings_reject_invalid_port(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_PORT", value)
+
+    with pytest.raises(ValidationError) as caught:
+        ResearchApiBindSettings.from_env()
+
+    assert "port" in str(caught.value)
+
+
+def test_main_rejects_invalid_port_before_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_PORT", "not-a-number")
+    calls: list[dict[str, object]] = []
+
+    def fake_run(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+    with pytest.raises(SystemExit) as caught:
+        main()
+
+    message = str(caught.value)
+    assert "invalid research API environment" in message
+    assert "RESEARCH_API_PORT" in message
+    assert calls == []
+
+
+@pytest.mark.parametrize("api_key", [None, "", " \t"])
+def test_main_preserves_non_loopback_key_guard(
+    monkeypatch: pytest.MonkeyPatch, api_key: str | None
+) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", "0.0.0.0")
+    if api_key is not None:
+        monkeypatch.setenv("RESEARCH_API_KEY", api_key)
+    calls: list[dict[str, object]] = []
+
+    def fake_run(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+    with pytest.raises(SystemExit, match="non-loopback binding requires RESEARCH_API_KEY"):
+        main()
+
+    assert calls == []
+
+
+def test_main_starts_uvicorn_with_validated_bind_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_HOST", " 0.0.0.0 ")
+    monkeypatch.setenv("RESEARCH_API_PORT", "65535")
+    monkeypatch.setenv("RESEARCH_API_KEY", "not-a-real-key")
+    calls: list[dict[str, object]] = []
+
+    def fake_run(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+    main()
+
+    assert calls == [{"host": "0.0.0.0", "port": 65535, "reload": False}]
+
+
+def test_main_allows_loopback_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_bind_env(monkeypatch)
+    monkeypatch.setenv("RESEARCH_API_PORT", "0")
+    calls: list[dict[str, object]] = []
+
+    def fake_run(*args: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+    main()
+
+    assert calls == [{"host": "127.0.0.1", "port": 0, "reload": False}]
 
 
 # ---------------------------------------------------------------------------
