@@ -65,7 +65,7 @@ UK_LIQUID: tuple[tuple[str, str], ...] = (
 
 def session_close(day: date, suffix: str) -> datetime:
     """Bar close as available_time. ``*.us`` 16:00 ET, ``*.uk`` 16:30 London."""
-    if suffix.endswith(".uk"):
+    if suffix.lower().endswith(".uk"):
         local = datetime(day.year, day.month, day.day, 16, 30, tzinfo=UK_CLOSE)
     else:
         local = datetime(day.year, day.month, day.day, 16, 0, tzinfo=US_CLOSE)
@@ -77,6 +77,7 @@ def parse_stooq_csv(text: str, *, security_id: str, stooq_symbol: str) -> pl.Dat
     reader = csv.DictReader(io.StringIO(text))
     ingested = datetime.now(tz=UTC)
     rows: list[dict[str, object]] = []
+    seen: set[tuple[str, datetime]] = set()
     for raw in reader:
         date_s = (raw.get("Date") or "").strip()
         if not date_s:
@@ -101,6 +102,15 @@ def parse_stooq_csv(text: str, *, security_id: str, stooq_symbol: str) -> pl.Dat
         lo = min(opn, high, low, close)
         hi = max(opn, high, low, close)
         ts = session_close(day, stooq_symbol)
+        if ts > ingested:
+            raise ValueError(
+                f"stooq session close {ts.isoformat()} is after ingested_time "
+                f"{ingested.isoformat()} for {security_id}"
+            )
+        key = (security_id, ts)
+        if key in seen:
+            raise ValueError(f"stooq duplicate derived key {key!r}")
+        seen.add(key)
         rows.append(
             {
                 "security_id": security_id,
@@ -115,7 +125,7 @@ def parse_stooq_csv(text: str, *, security_id: str, stooq_symbol: str) -> pl.Dat
                 "low": float(lo),
                 "close": float(close),
                 "volume": float(volume),
-                "currency": "GBP" if stooq_symbol.endswith(".uk") else "USD",
+                "currency": "GBP" if stooq_symbol.lower().endswith(".uk") else "USD",
                 "session": "rth",
             }
         )

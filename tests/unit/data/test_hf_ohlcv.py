@@ -393,6 +393,71 @@ class TestReadSlice:
                 clock=_clock,
             )
 
+    def test_strict_gaps_rejects_entirely_missing_weekday(self, tmp_path: Path) -> None:
+        def two_complete_sessions(url: str, dest: Path) -> None:
+            rows = _minute_rows(date(2024, 3, 4), H.RTH_OPEN_MOD, 390)
+            rows += _minute_rows(date(2024, 3, 6), H.RTH_OPEN_MOD, 390)
+            _write_month(dest, rows)
+
+        with pytest.raises(H.OhlcvQualityError, match="1 missing weekdays"):
+            H.read_ohlcv_1m(
+                symbols="AAA",
+                cache_dir=tmp_path,
+                start=date(2024, 3, 4),
+                end=date(2024, 3, 6),
+                allow_download=True,
+                fetcher=two_complete_sessions,
+                strict_gaps=True,
+                clock=_clock,
+            )
+
+    def test_missing_weekdays_include_requested_boundaries(self, tmp_path: Path) -> None:
+        def tuesday_only(url: str, dest: Path) -> None:
+            _write_month(dest, _minute_rows(date(2024, 3, 5), H.RTH_OPEN_MOD, 390))
+
+        out = H.read_ohlcv_1m(
+            symbols="AAA",
+            cache_dir=tmp_path,
+            start=date(2024, 3, 4),
+            end=date(2024, 3, 6),
+            allow_download=True,
+            fetcher=tuesday_only,
+            clock=_clock,
+        )
+        assert out.bars.height == 390
+        assert out.quality["n_missing_weekdays"].to_list() == [2]
+
+        with pytest.raises(H.OhlcvQualityError, match="2 missing weekdays"):
+            H.read_ohlcv_1m(
+                symbols="AAA",
+                cache_dir=tmp_path,
+                start=date(2024, 3, 4),
+                end=date(2024, 3, 6),
+                allow_download=True,
+                fetcher=tuesday_only,
+                strict_gaps=True,
+                clock=_clock,
+            )
+
+    def test_strict_gaps_allows_weekend_between_complete_sessions(self, tmp_path: Path) -> None:
+        def friday_and_monday(url: str, dest: Path) -> None:
+            rows = _minute_rows(date(2024, 3, 8), H.RTH_OPEN_MOD, 390)
+            rows += _minute_rows(date(2024, 3, 11), H.RTH_OPEN_MOD, 390)
+            _write_month(dest, rows)
+
+        out = H.read_ohlcv_1m(
+            symbols="AAA",
+            cache_dir=tmp_path,
+            start=date(2024, 3, 8),
+            end=date(2024, 3, 11),
+            allow_download=True,
+            fetcher=friday_and_monday,
+            strict_gaps=True,
+            clock=_clock,
+        )
+        assert out.bars.height == 780
+        assert out.quality["n_missing_weekdays"].to_list() == [0, 0]
+
     def test_cached_month_no_download_needed(self, tmp_path: Path) -> None:
         # pre-seed the cache; second read must not fetch
         sub = tmp_path / H.DATASET_REVISION

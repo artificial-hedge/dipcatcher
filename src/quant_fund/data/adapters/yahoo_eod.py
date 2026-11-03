@@ -19,6 +19,7 @@ import urllib.error
 from datetime import UTC, datetime
 from email.message import Message
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 import polars as pl
@@ -122,6 +123,12 @@ def fetch_yahoo_chart(
         ) from None
 
 
+def _required_list(value: object, name: str) -> list[Any]:
+    if not isinstance(value, list):
+        raise ValueError(f"yahoo {name} must be a list")
+    return value
+
+
 def parse_yahoo_chart(
     payload: dict[str, object], *, security_id: str, yahoo_symbol: str
 ) -> pl.DataFrame:
@@ -134,19 +141,35 @@ def parse_yahoo_chart(
     block = result[0]
     if not isinstance(block, dict):
         return pl.DataFrame()
-    stamps = block.get("timestamp") or []
-    indicators = block.get("indicators") or {}
-    quotes = (indicators.get("quote") or [{}])[0]
-    opens = quotes.get("open") or []
-    highs = quotes.get("high") or []
-    lows = quotes.get("low") or []
-    closes = quotes.get("close") or []
-    volumes = quotes.get("volume") or []
+    stamps = _required_list(block.get("timestamp"), "timestamp")
+    indicators = block.get("indicators")
+    quote_blocks = indicators.get("quote") if isinstance(indicators, dict) else None
+    quotes = (
+        quote_blocks[0]
+        if isinstance(quote_blocks, list) and quote_blocks and isinstance(quote_blocks[0], dict)
+        else {}
+    )
+    opens = _required_list(quotes.get("open"), "open")
+    highs = _required_list(quotes.get("high"), "high")
+    lows = _required_list(quotes.get("low"), "low")
+    closes = _required_list(quotes.get("close"), "close")
+    volumes = _required_list(quotes.get("volume"), "volume")
+    lengths = {
+        "timestamp": len(stamps),
+        "open": len(opens),
+        "high": len(highs),
+        "low": len(lows),
+        "close": len(closes),
+        "volume": len(volumes),
+    }
+    if len(set(lengths.values())) != 1:
+        detail = ", ".join(f"{name}={length}" for name, length in lengths.items())
+        raise ValueError(f"yahoo chart arrays must have equal lengths ({detail})")
     ingested = datetime.now(tz=UTC)
-    suffix = ".uk" if yahoo_symbol.endswith(".L") else ".us"
+    suffix = ".uk" if yahoo_symbol.upper().endswith(".L") else ".us"
     rows: list[dict[str, object]] = []
-    n = min(len(stamps), len(opens), len(highs), len(lows), len(closes), len(volumes))
-    for i in range(n):
+    seen: set[tuple[str, datetime]] = set()
+    for i in range(len(stamps)):
         try:
             opn = float(opens[i])
             high = float(highs[i])
@@ -163,6 +186,15 @@ def parse_yahoo_chart(
         hi = max(opn, high, low, close)
         day = datetime.fromtimestamp(int(stamps[i]), tz=UTC).date()
         ts = session_close(day, suffix)
+        if ts > ingested:
+            raise ValueError(
+                f"yahoo session close {ts.isoformat()} is after ingested_time "
+                f"{ingested.isoformat()} for {security_id}"
+            )
+        key = (security_id, ts)
+        if key in seen:
+            raise ValueError(f"yahoo duplicate derived key {key!r}")
+        seen.add(key)
         rows.append(
             {
                 "security_id": security_id,
@@ -195,6 +227,8 @@ def collect_bars(
     """Fetch, parse, and bound-check every name; return (bars, per-name errors)."""
     start_ts = start or datetime(2019, 1, 2, tzinfo=UTC)
     end_ts = end or datetime.now(tz=UTC)
+    start_d = start.date() if start is not None else None
+    end_d = end.date() if end is not None else None
 
     def _one(pair: tuple[str, str]) -> tuple[str, pl.DataFrame | None, str | None]:
         security_id, symbol = pair
@@ -209,6 +243,10 @@ def collect_bars(
             json.JSONDecodeError,
         ) as exc:
             return security_id, None, str(exc)
+        if start_d is not None and not frame.is_empty():
+            frame = frame.filter(pl.col("event_time").dt.date() >= start_d)
+        if end_d is not None and not frame.is_empty():
+            frame = frame.filter(pl.col("event_time").dt.date() <= end_d)
         return security_id, frame, None
 
     fetched = map_ordered(
