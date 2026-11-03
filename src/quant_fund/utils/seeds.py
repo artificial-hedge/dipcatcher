@@ -19,7 +19,9 @@ def pin_catalog_threads() -> None:
         import torch
     except ImportError:
         return
-    torch.set_num_threads(1)
+    setter = getattr(torch, "set_num_threads", None)
+    if callable(setter):
+        setter(1)
 
 
 def set_global_seed(seed: int) -> None:
