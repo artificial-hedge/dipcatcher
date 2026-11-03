@@ -10,7 +10,7 @@ from quant_fund.live.brokers import (
     _parse_broker_response,
     alpaca_credentials,
 )
-from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.errors import BrokerRejected, BrokerUnconfirmed, LiveGateError
 
 
 def _broker(payload: object, *, status: int = 200) -> AlpacaBroker:
@@ -81,10 +81,26 @@ def test_incomplete_and_malformed_credentials_fail_before_transport(
 
 
 def test_submit_rejects_a_non_object_order_response() -> None:
-    broker = _broker([])
+    calls: list[str] = []
+
+    def transport(
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        body: bytes | None,
+        timeout: float,
+    ) -> tuple[int, bytes]:
+        del url, headers, body, timeout
+        calls.append(method)
+        return 200, b"[]"
+
+    broker = AlpacaBroker("alpaca-paper", ("test-key", "test-secret"), transport=transport)
     order = LiveOrder("client-1", "SYNTH", "buy", 1.0, 10.0, 1)
-    with pytest.raises(BrokerRejected, match="order response was not an object"):
+    with pytest.raises(BrokerUnconfirmed, match="incomplete acknowledgement"):
         broker.submit(order)
+    with pytest.raises(BrokerUnconfirmed, match="a retry"):
+        broker.submit(order)
+    assert calls == ["POST", "GET", "GET"]
 
 
 def test_account_rejects_a_non_finite_cash_value() -> None:
