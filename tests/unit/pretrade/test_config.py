@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import traceback
 from pathlib import Path
 
 import pytest
@@ -49,6 +50,59 @@ def test_non_mapping_yaml_is_rejected(tmp_path: Path) -> None:
     path.write_text("- not-a-mapping\n", encoding="utf-8")
     with pytest.raises(ValueError, match="YAML mapping"):
         load_pretrade_config(path, hmac_key=HMAC_KEY)
+
+
+def _assert_safe_error(caught: pytest.ExceptionInfo[ValueError], marker: str) -> None:
+    message = str(caught.value)
+    rendered = "".join(traceback.format_exception(caught.value))
+    assert len(message) <= 512
+    assert marker not in message
+    assert marker not in rendered
+
+
+def test_malformed_yaml_does_not_echo_its_contents(tmp_path: Path) -> None:
+    marker = "synthetic-malformed-pretrade-sensitive-value"
+    path = tmp_path / "bad.yaml"
+    path.write_text(f'limits: "{marker}\n', encoding="utf-8")
+
+    with pytest.raises(ValueError, match="invalid YAML") as caught:
+        load_pretrade_config(path, hmac_key=HMAC_KEY)
+
+    _assert_safe_error(caught, marker)
+
+
+@pytest.mark.parametrize("section", [None, "limits", "session"])
+def test_extra_keys_do_not_echo_names_or_values(tmp_path: Path, section: str | None) -> None:
+    marker = "synthetic-extra-pretrade-sensitive-value"
+    raw = yaml.safe_load(YAML_PATH.read_text(encoding="utf-8"))
+    target = raw if section is None else raw[section]
+    target[marker] = marker
+    path = tmp_path / "bad.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="extra keys") as caught:
+        load_pretrade_config(path, hmac_key=HMAC_KEY)
+
+    _assert_safe_error(caught, marker)
+
+
+@pytest.mark.parametrize(
+    ("section", "field"),
+    [(None, "schema_version"), ("session", "timezone"), ("limits", "max_order_notional")],
+)
+def test_invalid_fields_do_not_echo_values(tmp_path: Path, section: str | None, field: str) -> None:
+    marker = "synthetic-invalid-pretrade-sensitive-value"
+    raw = yaml.safe_load(YAML_PATH.read_text(encoding="utf-8"))
+    target = raw if section is None else raw[section]
+    target[field] = marker
+    path = tmp_path / "bad.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="pretrade config validation failed") as caught:
+        load_pretrade_config(path, hmac_key=HMAC_KEY)
+
+    assert field in str(caught.value)
+    _assert_safe_error(caught, marker)
 
 
 def test_unknown_schema_version_and_extra_keys_fail() -> None:

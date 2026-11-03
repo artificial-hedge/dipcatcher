@@ -15,7 +15,14 @@ from typing import Any, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 
 class LimitConfig(BaseModel):
@@ -118,16 +125,58 @@ def sign_config(config: PretradeConfig, hmac_key: bytes) -> tuple[str, str]:
     return digest, signature
 
 
+def _safe_field_path(location: tuple[object, ...]) -> str | None:
+    if not location or not isinstance(location[0], str):
+        return None
+    root = location[0]
+    if root not in PretradeConfig.model_fields:
+        return None
+    if len(location) == 1:
+        return root
+    if root not in {"limits", "session"} or len(location) != 2:
+        return None
+    model = LimitConfig if root == "limits" else SessionConfig
+    field = location[1]
+    if not isinstance(field, str) or field not in model.model_fields:
+        return None
+    return f"{root}.{field}"
+
+
+def _safe_validation_error(exc: ValidationError) -> ValueError:
+    details: list[str] = []
+    errors = exc.errors(include_url=False, include_context=False, include_input=False)
+    for error in errors[:8]:
+        if error["type"] == "extra_forbidden":
+            detail = "extra keys are not permitted"
+        else:
+            field = _safe_field_path(error["loc"])
+            if field is None:
+                continue
+            detail = f"{field}: invalid value"
+        if detail not in details:
+            details.append(detail)
+    message = "pretrade config validation failed"
+    if details:
+        message = f"{message}: {'; '.join(details)}"
+    return ValueError(message[:512])
+
+
 def load_pretrade_config(path: str | Path, *, hmac_key: bytes) -> tuple[PretradeConfig, str, str]:
-    """Load YAML, validate the schema, and sign the canonical payload.
+    """Load, validate, and sign YAML without reflecting its contents in errors.
 
     Fails closed: unsafe YAML constructors are not used, extra keys are
     rejected, and a short HMAC key is rejected.
     """
     text = Path(path).read_text(encoding="utf-8")
-    raw = yaml.safe_load(text)
+    try:
+        raw = yaml.safe_load(text)
+    except yaml.YAMLError:
+        raise ValueError("pretrade config contains invalid YAML") from None
     if not isinstance(raw, dict):
         raise ValueError("pretrade config must be a YAML mapping")
-    config = PretradeConfig.model_validate(raw)
+    try:
+        config = PretradeConfig.model_validate(raw)
+    except ValidationError as exc:
+        raise _safe_validation_error(exc) from None
     digest, signature = sign_config(config, hmac_key)
     return config, digest, signature
