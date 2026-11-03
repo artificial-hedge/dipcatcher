@@ -19,6 +19,7 @@ from quant_fund.config.models import UniverseConfig
 from quant_fund.data.lakehouse.store import FileEntry, Snapshot, load_snapshot
 from quant_fund.data.universe import membership_asof
 from quant_fund.schemas.errors import DataContractError, LeakageError, PointInTimeError
+from quant_fund.utils.reproducibility import content_address
 
 _BAR_FIELDS = (
     "security_id",
@@ -160,37 +161,75 @@ def universe_asof(
     return members
 
 
-def _read_bars(root: Path, entry: FileEntry, decision: datetime) -> pl.DataFrame:
-    path = str(Path(root) / entry.object_path)
-    names = set(pl.scan_parquet(path).collect_schema().names())
-    if {"event_time", "available_time"} <= names:
-        sql = """
-            SELECT *
-            FROM read_parquet(?)
-            WHERE event_time <= ? AND available_time <= ?
-        """
-        frame = _duckdb_frame(sql, [path, decision, decision])
-        return _normalize_times(frame, ("event_time", "available_time"))
-    if {"timestamp", "ticker"} <= names and entry.source == "hf_ohlcv_1m":
-        # Vendor timestamp is the minute open. The bronze contract publishes
-        # the bar at minute close. This is a read-time projection; the file
-        # bytes stay as imported.
-        sql = """
-            SELECT
-                upper(CAST(ticker AS VARCHAR)) AS security_id,
-                upper(CAST(ticker AS VARCHAR)) AS symbol,
-                timestamp + INTERVAL 1 MINUTE AS event_time,
-                timestamp + INTERVAL 1 MINUTE AS available_time,
-                open, high, low, close, volume,
-                'hf_ohlcv_1m' AS source
-            FROM read_parquet(?)
-            WHERE timestamp + INTERVAL 1 MINUTE <= ?
-        """
-        frame = _duckdb_frame(sql, [path, decision])
-        return _normalize_times(frame, ("event_time", "available_time"))
-    raise DataContractError(
-        f"{entry.logical_path} has no knowledge-time columns; refusing an event-time-only read"
+def _verify_object(root: Path, entry: FileEntry) -> Path:
+    path = Path(root) / entry.object_path
+    if path.is_symlink() or not path.is_file():
+        raise DataContractError(f"{entry.logical_path} is not a regular lake object")
+    if entry.kind != "blob":
+        raise DataContractError(f"{entry.logical_path} is an LFS pointer; payload is absent")
+    try:
+        address = content_address(path)
+    except OSError as exc:
+        raise DataContractError(f"{entry.logical_path} cannot be read") from exc
+    actual = (
+        address.content_sha256,
+        address.stored_sha256,
+        address.stored_size,
+        address.declared_size,
+        address.kind,
     )
+    expected = (
+        entry.content_sha256,
+        entry.stored_sha256,
+        entry.stored_size,
+        entry.declared_size,
+        entry.kind,
+    )
+    if actual != expected:
+        raise DataContractError(f"{entry.logical_path} object bytes do not match the snapshot")
+    return path
+
+
+def _read_bars(root: Path, entry: FileEntry, decision: datetime) -> pl.DataFrame:
+    path = str(_verify_object(root, entry))
+    try:
+        names = set(pl.scan_parquet(path).collect_schema().names())
+        if {"event_time", "available_time"} <= names:
+            sql = """
+                SELECT *
+                FROM read_parquet(?)
+                WHERE event_time <= ? AND available_time <= ?
+            """
+            frame = _duckdb_frame(sql, [path, decision, decision])
+            frame = _normalize_times(frame, ("event_time", "available_time"))
+        elif {"timestamp", "ticker"} <= names and entry.source == "hf_ohlcv_1m":
+            # Vendor timestamp is the minute open. The bronze contract publishes
+            # the bar at minute close. This is a read-time projection; the file
+            # bytes stay as imported.
+            sql = """
+                SELECT
+                    upper(CAST(ticker AS VARCHAR)) AS security_id,
+                    upper(CAST(ticker AS VARCHAR)) AS symbol,
+                    timestamp + INTERVAL 1 MINUTE AS event_time,
+                    timestamp + INTERVAL 1 MINUTE AS available_time,
+                    open, high, low, close, volume,
+                    'hf_ohlcv_1m' AS source
+                FROM read_parquet(?)
+                WHERE timestamp + INTERVAL 1 MINUTE <= ?
+            """
+            frame = _duckdb_frame(sql, [path, decision])
+            frame = _normalize_times(frame, ("event_time", "available_time"))
+        else:
+            raise DataContractError(
+                f"{entry.logical_path} has no knowledge-time columns; "
+                "refusing an event-time-only read"
+            )
+    except DataContractError:
+        raise
+    except (OSError, duckdb.Error, pl.exceptions.PolarsError) as exc:
+        raise DataContractError(f"{entry.logical_path} cannot be read as Parquet") from exc
+    _verify_object(root, entry)
+    return frame
 
 
 def _members_from_universe_files(
@@ -200,17 +239,24 @@ def _members_from_universe_files(
 ) -> list[UniverseMember]:
     frames: list[pl.DataFrame] = []
     for entry in files:
-        path = str(Path(root) / entry.object_path)
-        names = set(pl.scan_parquet(path).collect_schema().names())
-        if "asof" in names and "security_id" in names:
-            frames.append(_panel_members_frame(path, names, decision))
-        elif "effective_from" in names and "security_id" in names and "available_time" in names:
-            frames.append(_interval_members_frame(path, names, decision))
-        else:
-            raise DataContractError(
-                f"{entry.logical_path} cannot support a survivorship-safe universe; "
-                "need asof membership or effective_from/available_time"
-            )
+        path = str(_verify_object(root, entry))
+        try:
+            names = set(pl.scan_parquet(path).collect_schema().names())
+            if "asof" in names and "security_id" in names:
+                frame = _panel_members_frame(path, names, decision)
+            elif "effective_from" in names and "security_id" in names and "available_time" in names:
+                frame = _interval_members_frame(path, names, decision)
+            else:
+                raise DataContractError(
+                    f"{entry.logical_path} cannot support a survivorship-safe universe; "
+                    "need asof membership or effective_from/available_time"
+                )
+        except DataContractError:
+            raise
+        except (OSError, duckdb.Error, pl.exceptions.PolarsError) as exc:
+            raise DataContractError(f"{entry.logical_path} cannot be read as Parquet") from exc
+        _verify_object(root, entry)
+        frames.append(frame)
     frame = pl.concat(frames, how="diagonal_relaxed")
     if "asof" in frame.columns and frame.height:
         latest = frame.select(pl.col("asof").max()).item()
@@ -282,10 +328,13 @@ def _load_role(root: Path, snapshot: Snapshot, role: str) -> pl.DataFrame | None
         return None
     frames = []
     for entry in files:
-        path = Path(root) / entry.object_path
-        if entry.kind == "lfs_pointer":
-            raise DataContractError(f"{entry.logical_path} is an LFS pointer; payload is absent")
-        frames.append(pl.read_parquet(path))
+        path = _verify_object(root, entry)
+        try:
+            frame = pl.read_parquet(path)
+        except (OSError, pl.exceptions.PolarsError) as exc:
+            raise DataContractError(f"{entry.logical_path} cannot be read as Parquet") from exc
+        _verify_object(root, entry)
+        frames.append(frame)
     return pl.concat(frames, how="diagonal_relaxed")
 
 
