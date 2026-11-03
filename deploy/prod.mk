@@ -9,6 +9,7 @@
 #   make -f deploy/prod.mk prod-smoke
 #   make -f deploy/prod.mk prod-backup
 #   make -f deploy/prod.mk prod-restore
+#   make -f deploy/prod.mk prod-dr-drill
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. prod-secrets writes them
 # to files under SECRET_DIR and does not print them. Containers read those
@@ -54,6 +55,7 @@ export RESEARCH_B
 export DIPCATCHER_QUANT_API_KEY_FILE := $(SECRET_DIR)/quant_api_key
 export DIPCATCHER_RESEARCH_API_KEY_FILE := $(SECRET_DIR)/research_api_key
 export DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE := $(SECRET_DIR)/alert_webhook_secret
+export BACKUP_DIR
 
 ifeq ($(SUDO),)
 COMPOSE := docker compose -f $(COMPOSE_FILE)
@@ -61,7 +63,7 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-restore prod-certs prod-data prod-build prod-secrets
+.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-restore prod-dr-drill prod-certs prod-data prod-build prod-secrets
 
 prod-preflight:
 	@cd $(ROOT) && uv run --quiet python scripts/prod_preflight.py
@@ -130,6 +132,9 @@ prod-backup:
 prod-restore:
 	cd $(ROOT) && $(SUDO) $(ROOT)/.venv/bin/python scripts/paper_state_backup.py restore \
 		--archive $(BACKUP_DIR) --dest $(LAB_DATA)
+
+prod-dr-drill:
+	@cd $(ROOT) && uv run --quiet python scripts/prod_dr_drill.py
 
 prod-certs:
 	mkdir -p $(TLS_DIR)

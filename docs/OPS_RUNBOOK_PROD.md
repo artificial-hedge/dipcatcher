@@ -56,6 +56,13 @@ three replicas are `0`, research data is `:ro`), and the host clock
 (year 2024–2035 and inside the certificate window). `9464` must not be
 one of the publish ports.
 
+When preflight is not root, the JSON also carries `warnings` for
+unattended upgrades, the firewall, SSH key-only authentication, and time
+sync. Each warning is `"not root"`. Those four do not change the exit
+status. When preflight is root, the same four are checks and a failure
+exits 1. `docs/HOST_HARDENING.md` is the host contract. `prod-up` does
+not run preflight as root, so a deploy warns.
+
 `deploy/prod.env` keeps `DIPCATCHER_RATE_LIMIT_RPS=50`. If that variable
 is unset while `DIPCATCHER_PROFILE` is `production` or `prod`, the process
 uses 50 rather than leaving the limit off. `deploy/prod.env.example`
@@ -302,3 +309,63 @@ Compare the restored `kill_switch` and `metadata/paper/` bytes with the
 archive payload. Do not edit receipts. Start `lab-a` again after the live
 directory is the one you intend to run. This is a simulated-paper restore.
 It does not place a live order.
+
+## Disaster recovery
+
+```bash
+make -f deploy/prod.mk prod-dr-drill
+```
+
+The drill stops the stack, writes a SYNTHETIC `broker_state.json` under
+`metadata/paper/dr-drill/` when the lab directory has none, and runs
+`prod-backup`. It then deletes `DIPCATCHER_LAB_DATA` and
+`DIPCATCHER_RESEARCH_DATA`, runs `prod-up`, runs `prod-restore`, and
+hashes the restored files. A path is deleted only when it resolves under
+`/tmp` and a component starts with `dipcatcher-`. These are the
+bind-mounted data directories. The compose file has no named volume to
+remove.
+
+`rto_seconds` is the wall time from the start of that delete through a
+matching ledger digest and both TLS `/health` checks at 200 with HSTS
+`max-age=31536000`. The stop before the backup is not included. The
+ledger digest is the sha256 of the one `broker_state.json`. When the
+archive has more than one, it is the sha256 of the sorted `path digest`
+lines. The drill exits 0 only when every check passed, the digest
+matches, and the final `prod-down` exited 0. Stdout is one JSON object.
+It does not print API keys. It does not place an order.
+
+Measured RTO on this host: 17.846 seconds. The phases were destroy
+0.012 seconds, `prod-up` 15.305 seconds, restore 2.497 seconds, and TLS
+health 0.032 seconds. `prod-up` reused cached image layers from the smoke
+run on the same host. The restored ledger digest was
+`08e1c3bc35d053fb228ef8ce4ef1caf2fff3114d9aae99848fc6f0b3c688263e`.
+`rto_includes` is `destroy, prod-up, restore, ledger digest, TLS health`.
+
+## Epoch drift
+
+```bash
+uv run python scripts/owner_restamp.py
+```
+
+Stdout is one JSON object. `drifted` lists which of `deploy`, `docs`,
+`docker`, `scripts`, `src`, and `tests` differ from the tree root in
+`quality/epoch_heads.json`. `owner_steps` is the key-holder order:
+
+```bash
+make stamp-epochs
+make sign-pins
+make anchor-pins
+make checkpoint
+```
+
+The script is read-only. It does not stamp or sign. `signed` is false.
+Do not run the four commands to make a local tree look clean.
+
+## Kill-switch receipt
+
+`docs/KILL_AUDIT_RECONCILIATION.md` records why
+`receipts/kill_audit.json` says 57 checks and the unit test expects 63,
+which checks were added and which three unknown-`FLATTEN` checks were
+removed, and the owner command that reseals the receipt. Do not edit
+`receipts/` in a deploy slice. The receipt stays sealed at 57 until that
+command runs.

@@ -64,6 +64,7 @@ make -f deploy/prod.mk prod-rollback
 make -f deploy/prod.mk prod-smoke
 make -f deploy/prod.mk prod-backup
 make -f deploy/prod.mk prod-restore
+make -f deploy/prod.mk prod-dr-drill
 ```
 
 `prod-preflight` prints one JSON object and exits 0 or 1. `prod-up` runs it
@@ -77,6 +78,13 @@ one JSON object. The exit status is 0 only when the stack came up, every
 check passed, and the stack came down. It is 1 otherwise. A missing API key
 prints that JSON error and does not call `make`. The script does not print
 key values.
+
+`prod-dr-drill` takes a full `prod-backup`, deletes the lab and research
+data directories, runs `prod-up` and `prod-restore`, and checks the paper
+ledger digest. It prints `rto_seconds`. Host hardening warnings and the
+owner restamp command are on the operator sheet,
+`docs/OPS_RUNBOOK_PROD.md`. The kill-audit count gap is
+`docs/KILL_AUDIT_RECONCILIATION.md`.
 
 `prod-rollback` retags `dipcatcher:previous` onto `dipcatcher:local` and
 `dipcatcher-research-api:previous` onto `dipcatcher-research-api:latest`,

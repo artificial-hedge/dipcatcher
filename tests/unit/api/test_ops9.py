@@ -162,7 +162,14 @@ def test_prod_env_example_lists_the_production_surface() -> None:
     assert "BEGIN PRIVATE KEY" not in example
     assert "DIPCATCHER_PROFILE" not in root
     assert "prod-up: prod-certs prod-data prod-preflight prod-build" in prod
-    for name in ("prod-preflight", "prod-backup", "prod-restore", "prod-rollback", "prod-secrets"):
+    for name in (
+        "prod-preflight",
+        "prod-backup",
+        "prod-restore",
+        "prod-dr-drill",
+        "prod-rollback",
+        "prod-secrets",
+    ):
         assert f"{name}:" in prod
         assert f"{name}:" not in makefile
     runbook = (_ROOT / "docs" / "OPS_RUNBOOK_PROD.md").read_text(encoding="utf-8")

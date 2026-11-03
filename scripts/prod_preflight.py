@@ -4,7 +4,8 @@
 Stdout is one JSON object. The process exits 0 only when every check
 passed, and 1 otherwise. API key values are not part of the JSON.
 ``prod-up`` runs this target after certificates and data directories exist
-and before it builds images.
+and before it builds images. Host hardening is a warning when this process
+is not root, and a failing check when it is.
 """
 
 from __future__ import annotations
@@ -37,6 +38,8 @@ _PUBLISH = (
     ("grafana", "GRAFANA_PUBLISH_PORT", 3000),
 )
 _FORBIDDEN_PUBLISH = 9464
+_FIREWALL_PORTS = frozenset({443, 8443, 8444})
+HARDENING_NAMES = ("unattended-upgrades", "firewall", "ssh", "time-sync")
 
 
 def clock_ok(now: float, not_before: float, not_after: float) -> bool:
@@ -225,6 +228,188 @@ def _openssl_epoch(cert: Path, flag: str) -> float | None:
     return float(calendar.timegm(parsed))
 
 
+def _port_list(raw: str) -> set[int]:
+    ports: set[int] = set()
+    for piece in raw.split(","):
+        if piece.isdigit():
+            ports.add(int(piece))
+    return ports
+
+
+def parse_ufw_ports(text: str) -> set[int] | None:
+    """Allowed TCP ports from ``ufw status verbose``, or None when it is not a deny policy."""
+    if "Status: active" not in text:
+        return None
+    denied = any("deny (incoming)" in line.lower() for line in text.splitlines())
+    if not denied:
+        return None
+    ports: set[int] = set()
+    for raw in text.splitlines():
+        parts = raw.split()
+        if "ALLOW" not in parts:
+            continue
+        head = parts[0]
+        if not head.endswith("/tcp"):
+            continue
+        number = head.split("/", 1)[0]
+        if number.isdigit():
+            ports.add(int(number))
+    return ports
+
+
+def parse_iptables_ports(text: str) -> set[int] | None:
+    """Accepted INPUT TCP ports when the policy is DROP or REJECT."""
+    policy_closed = False
+    wide_open = False
+    ports: set[int] = set()
+    for raw in text.splitlines():
+        parts = raw.split()
+        if len(parts) >= 3 and parts[0] == "-P" and parts[1] == "INPUT":
+            policy_closed = parts[2] in {"DROP", "REJECT"}
+            continue
+        if len(parts) < 3 or parts[0] not in {"-A", "-I"} or parts[1] != "INPUT":
+            continue
+        if "-j" not in parts or parts[parts.index("-j") + 1] != "ACCEPT":
+            continue
+        protocol = parts[parts.index("-p") + 1] if "-p" in parts else ""
+        if protocol not in {"", "tcp", "6"}:
+            continue
+        if "--dport" in parts:
+            ports.update(_port_list(parts[parts.index("--dport") + 1]))
+        elif "--dports" in parts:
+            ports.update(_port_list(parts[parts.index("--dports") + 1]))
+        elif protocol in {"tcp", "6"}:
+            wide_open = True
+    if not policy_closed or wide_open:
+        return None
+    return ports
+
+
+def firewall_ok(ports: set[int] | None) -> bool:
+    """True when the allowed TCP ports are exactly 443, 8443, and 8444."""
+    return ports == _FIREWALL_PORTS
+
+
+def firewall_probes_ok(firewall: str, firewall6: str) -> bool:
+    """True for an active deny-incoming ufw policy, or matching iptables and ip6tables."""
+    if "Status: active" in firewall:
+        return firewall_ok(parse_ufw_ports(firewall))
+    if not firewall_ok(parse_iptables_ports(firewall)):
+        return False
+    if not firewall6.strip():
+        return True
+    return firewall_ok(parse_iptables_ports(firewall6))
+
+
+def _setting_values(text: str, key: str) -> list[str]:
+    found: list[str] = []
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) >= 2 and parts[0] == key:
+            found.append(parts[1].lower())
+    return found
+
+
+def ssh_key_only(text: str) -> bool:
+    """True when password and keyboard auth are off and public keys are not disabled."""
+    password = _setting_values(text, "PasswordAuthentication")
+    if not password or any(item != "no" for item in password):
+        return False
+    interactive = _setting_values(text, "KbdInteractiveAuthentication")
+    interactive.extend(_setting_values(text, "ChallengeResponseAuthentication"))
+    if any(item != "no" for item in interactive):
+        return False
+    return all(item != "no" for item in _setting_values(text, "PubkeyAuthentication"))
+
+
+def upgrades_ok(apt_text: str, service_text: str) -> bool:
+    """True when unattended upgrades are configured and the unit is enabled."""
+    enabled = False
+    for raw in apt_text.splitlines():
+        line = raw.split("//", 1)[0].strip().lower().replace(" ", "")
+        if 'unattended-upgrade"1"' in line:
+            enabled = True
+    return enabled and service_text.strip() == "enabled"
+
+
+def time_sync_ok(text: str) -> bool:
+    """True when timedatectl reports the clock synchronized."""
+    return text.strip().lower() in {"yes", "synchronised", "synchronized"}
+
+
+def _command_text(argv: list[str]) -> str:
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return proc.stdout or ""
+
+
+def firewall_text() -> str:
+    """ufw verbose status when it is active, otherwise iptables."""
+    ufw = _command_text(["ufw", "status", "verbose"])
+    if "Status: active" in ufw:
+        return ufw
+    return _command_text(["iptables", "-S"])
+
+
+def sshd_text() -> str:
+    """sshd config plus drop-ins. The caller is root."""
+    root = Path("/etc/ssh")
+    parts: list[str] = []
+    main = root / "sshd_config"
+    if main.is_file():
+        parts.append(main.read_text(encoding="utf-8", errors="replace"))
+    dropin = root / "sshd_config.d"
+    if dropin.is_dir():
+        parts.extend(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in sorted(dropin.glob("*.conf"))
+            if path.is_file()
+        )
+    return "\n".join(parts)
+
+
+def read_hardening() -> dict[str, str]:
+    """Host texts. Only called when the process is root."""
+    return {
+        "apt": _command_text(["grep", "-R", "-h", "Unattended-Upgrade", "/etc/apt/apt.conf.d"]),
+        "firewall": firewall_text(),
+        "firewall6": _command_text(["ip6tables", "-S"]),
+        "service": _command_text(["systemctl", "is-enabled", "unattended-upgrades"]),
+        "sshd": sshd_text(),
+        "time": _command_text(["timedatectl", "show", "-p", "NTPSynchronized", "--value"]),
+    }
+
+
+def evaluate_hardening(probes: dict[str, str]) -> list[dict[str, object]]:
+    """Four host checks. A false ``ok`` fails preflight. Used when the process is root."""
+    upgrades = upgrades_ok(probes.get("apt", ""), probes.get("service", ""))
+    firewall = firewall_probes_ok(probes.get("firewall", ""), probes.get("firewall6", ""))
+    ssh = ssh_key_only(probes.get("sshd", ""))
+    synced = time_sync_ok(probes.get("time", ""))
+    return [
+        _check("unattended-upgrades", upgrades, "" if upgrades else "not enabled"),
+        _check("firewall", firewall, "" if firewall else "ports"),
+        _check("ssh", ssh, "" if ssh else "password"),
+        _check("time-sync", synced, "" if synced else "ntp"),
+    ]
+
+
+def hardening_warnings() -> list[dict[str, str]]:
+    """Warnings for a non-root preflight. They do not change the exit status."""
+    return [{"name": name, "warning": "not root"} for name in HARDENING_NAMES]
+
+
 def check_clock(cert: Path, now: float | None = None) -> dict[str, object]:
     window = _cert_window(cert)
     if window is None:
@@ -260,7 +445,14 @@ def main(argv: list[str]) -> int:
     if len(argv) != 1:
         _emit({"error": "prod-preflight takes no arguments", "ok": False})
         return 1
-    report = summarize(collect_checks())
+    checks = collect_checks()
+    warnings: list[dict[str, str]] = []
+    if os.geteuid() == 0:
+        checks = [*checks, *evaluate_hardening(read_hardening())]
+    else:
+        warnings = hardening_warnings()
+    report = summarize(checks)
+    report["warnings"] = warnings
     _emit(report)
     return 0 if report["ok"] else 1
 

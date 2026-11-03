@@ -189,6 +189,7 @@ def test_proxy_contract_matches_the_app_cap() -> None:
         "prod-preflight",
         "prod-backup",
         "prod-restore",
+        "prod-dr-drill",
         "prod-rollback",
         "prod-secrets",
     ):
