@@ -94,3 +94,37 @@ SHA and `target.autoCreatePr` false. Poll `GET /v0/agents/{id}`. v0 is the
 legacy API; it still documents this request shape. Basic auth, key as the
 username. The prompt tells the agent not to commit or push. Cursor may still
 keep an internal agent branch; that branch is not the CI result.
+
+## Scorecard row `pr_test_suite`
+
+`make prod-readiness` does not run the full pytest suite. It does not post a
+commit status, generate a key, or sign a result. The row stays `needs-owner`
+until an external attestation names the exact `git rev-parse HEAD` sha.
+
+Either of these is enough:
+
+1. A GitHub combined commit status whose context is `cursor-ci`, whose state
+   is `success`, and whose description is `CURSOR_CI_RESULT: pass`. The
+   scorecard reads `GET /repos/{owner}/{repo}/commits/{sha}/status` when
+   `GITHUB_TOKEN` or `GH_TOKEN` is set, and otherwise asks `gh api` for that
+   GET. A missing remote, a missing status, or a transport error leaves the
+   row at `needs-owner`.
+2. A signed JSON file. Set `CURSOR_CI_RESULT_FILE` to the file and
+   `CURSOR_CI_RESULT_SIG` to the detached signature (the default is the
+   result path plus `.sig`). Set `CURSOR_CI_ATTESTATION_PUBKEY` to the
+   64-character hex Ed25519 public key, or `CURSOR_CI_ATTESTATION_PUBKEY_FILE`
+   to a file that contains only that hex. The signature covers the exact
+   file bytes. The object is exactly these four fields:
+
+```json
+{"context":"cursor-ci","result":"pass","schema":"cursor_ci_result.v1","sha":"<40 lowercase hex>"}
+```
+
+`result` is `pass` or `fail`. A verified `fail`, a bad signature, a
+malformed object, or a pass that disagrees with a fail is a scorecard
+`fail`. A file whose `sha` is a different commit is ignored.
+
+The scorecard ignores a symlink, a path inside its work directory, and any
+tracked path. A commit cannot carry its own pass. The manual CI agent writes
+the file outside the commit and signs it with a key this repository does
+not hold. Do not generate that key inside the scorecard.
