@@ -41,7 +41,7 @@ _FX1_GUARD = (
     "127.0.0.1",
 )
 _RESEARCH_APP_GUARD = (
-    "keys_match",
+    "credential_refusal",
     "X-API-Key",
     "QUANT_API_KEY",
     "127.0.0.1",
@@ -364,7 +364,7 @@ def _ci_token(root: Path) -> dict[str, Any]:
 
 
 def _research_api_guard(root: Path) -> dict[str, Any]:
-    """The lab API compares keys in http_controls.keys_match, which app.py calls."""
+    """The lab API refuses credentials in app.py and compares them in http_controls."""
     app = _guard(
         root,
         "src/quant_fund/api/app.py",
