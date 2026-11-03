@@ -80,6 +80,27 @@ def test_incomplete_and_malformed_credentials_fail_before_transport(
         alpaca_credentials()
 
 
+def test_unmapped_broker_status_does_not_echo_its_raw_value() -> None:
+    marker = "synthetic-status-sensitive-value"
+    broker = _broker(
+        {
+            "id": "order-1",
+            "client_order_id": "client-1",
+            "status": marker,
+            "filled_qty": "0",
+            "symbol": "SYNTH",
+            "side": "buy",
+        }
+    )
+
+    ack = broker.recover("client-1")
+
+    assert ack is not None
+    assert ack.status == "unmapped"
+    assert ack.reason == "unmapped broker status"
+    assert marker not in str(ack)
+
+
 def test_submit_rejects_a_non_object_order_response() -> None:
     broker = _broker([])
     order = LiveOrder("client-1", "SYNTH", "buy", 1.0, 10.0, 1)

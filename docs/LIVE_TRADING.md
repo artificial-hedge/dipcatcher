@@ -36,7 +36,11 @@ export ALPACA_API_KEY_ID=...
 export ALPACA_API_SECRET_KEY=...
 ```
 
-`APCA_API_KEY_ID` and `APCA_API_SECRET_KEY` are accepted as aliases.
+`APCA_API_KEY_ID` and `APCA_API_SECRET_KEY` are accepted as aliases. A complete
+pair is required when a network gateway opens, before any state is created.
+If both namespaces are set, their pairs must match; partial or conflicting
+pairs are rejected. Relative `pretrade_config` paths resolve beside the gateway
+YAML file, not relative to the shell's working directory.
 
 ## Arming
 
@@ -97,9 +101,10 @@ reach into the broker and cancel working orders. Use `cancel` for that, then
 broker snapshot. A drift alarm means the books differ. Idempotent re-delivery
 of a fill id does not change cash or position.
 
-State lives under `state_dir` (default `data/live/default`, gitignored): arm
-file, integrity key, order state, and a hash-chained audit log. Those files
-are mode `0600`. Do not commit them.
+`state_dir` is required and must not be blank. The checked-in config uses
+`data/live/default`, which is gitignored. State contains the arm file,
+integrity key, order state, and a hash-chained audit log. Those files are mode
+`0600`. Do not commit them.
 
 ## What this is not
 

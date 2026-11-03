@@ -30,7 +30,7 @@ from quant_fund.live.brokers import (
 from quant_fund.live.config import LiveConfig
 from quant_fund.live.errors import LiveBrokerRefused, LiveGateError
 from quant_fund.live.ledger import LedgerFill, LiveLedger
-from quant_fund.live.session import open_session
+from quant_fund.live.session import LiveSession, open_session
 
 ROOT = Path(__file__).resolve().parents[3]
 PRETRADE = ROOT / "configs" / "pretrade_risk.yaml"
@@ -62,7 +62,7 @@ def _config(tmp: Path, **overrides: object) -> LiveConfig:
     return LiveConfig.model_validate(payload)
 
 
-def _open(tmp: Path, **overrides: object) -> Any:
+def _open(tmp: Path, **overrides: object) -> LiveSession:
     return open_session(_config(tmp, **overrides), PRETRADE, state_dir=tmp, now_ns=_clock)
 
 
@@ -70,8 +70,8 @@ def _arm(session: Any, *, phrase: str = "") -> None:
     session.arm(actor="ada", confirm_live_capital=phrase)
 
 
-def _buy(session: Any, **overrides: object) -> dict[str, Any]:
-    payload: dict[str, object] = {
+def _buy(session: LiveSession, **overrides: Any) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "symbol": "AAPL",
         "side": "buy",
         "quantity": 10.0,
@@ -219,21 +219,14 @@ def test_alpaca_live_requires_the_phrase_and_refuses_a_backdated_clock(
     monkeypatch.delenv("ALPACA_API_SECRET_KEY", raising=False)
     monkeypatch.delenv("APCA_API_KEY_ID", raising=False)
     monkeypatch.delenv("APCA_API_SECRET_KEY", raising=False)
+    monkeypatch.setenv("ALPACA_API_KEY_ID", "synthetic-key-id")
+    monkeypatch.setenv("ALPACA_API_SECRET_KEY", "synthetic-secret")
     session = _open(tmp_path, venue="alpaca-live")
     with pytest.raises(LiveGateError, match="confirm-live-capital"):
         session.arm(actor="ada", confirm_live_capital="please")
     session.arm(actor="ada", confirm_live_capital=LIVE_CAPITAL_PHRASE)
     with pytest.raises(LiveGateError, match="refused for alpaca-live"):
         _buy(session, quantity=1.0)
-    with pytest.raises(LiveGateError, match="credentials"):
-        session.submit(
-            symbol="AAPL",
-            side="buy",
-            quantity=1.0,
-            limit_price=100.0,
-            mark=100.0,
-            actor="ada",
-        )
 
 
 def test_alpaca_paper_posts_only_to_the_paper_host(tmp_path: Path) -> None:
@@ -666,7 +659,8 @@ def test_expired_and_unknown_broker_statuses_are_not_accepted(tmp_path: Path) ->
     assert canceled["status"] == "expired"
     assert not any(call[0] == "DELETE" for call in transport.calls)
 
-    unknown = _StatusScript("halted_for_review")
+    unknown_status = "synthetic-sensitive-broker-status"
+    unknown = _StatusScript(unknown_status)
     other = open_session(
         _config(tmp_path / "unk", venue="alpaca-paper"),
         PRETRADE,
@@ -678,7 +672,9 @@ def test_expired_and_unknown_broker_statuses_are_not_accepted(tmp_path: Path) ->
     mapped = _buy(other, quantity=1.0, client_order_id="dc-unknown")
     assert mapped["status"] == "unmapped"
     assert mapped["status"] != "accepted"
-    assert "unmapped broker status" in mapped["reason"]
+    assert mapped["reason"] == "unmapped broker status"
+    assert unknown_status not in str(mapped)
+    assert unknown_status not in (tmp_path / "unk" / "state.json").read_text(encoding="utf-8")
 
 
 def test_two_sessions_do_not_overwrite_each_others_orders(tmp_path: Path) -> None:

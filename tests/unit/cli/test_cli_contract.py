@@ -13,8 +13,9 @@ import sys
 from pathlib import Path
 
 import pytest
+import typer
 import yaml
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 from fx1 import __version__
 from fx1.cli import app as fx1_app
@@ -70,12 +71,12 @@ def _blob(result: object) -> str:
     return stdout + stderr + output
 
 
-def _assert_usage(result: object, argv: str) -> None:
+def _assert_usage(result: Result, argv: str) -> None:
     assert result.exit_code == 2, f"{argv} exited {result.exit_code}: {_blob(result)}"
     assert "Traceback" not in _blob(result)
 
 
-def _assert_surface(typer_app: object, program: str) -> None:
+def _assert_surface(typer_app: typer.Typer, program: str) -> None:
     version = _VERSION[program]
     root_help = _RUNNER.invoke(typer_app, ["--help"])
     assert root_help.exit_code == 0, _blob(root_help)
@@ -442,7 +443,9 @@ def test_verify_ledger_missing_directory_is_not_a_traceback(tmp_path: Path) -> N
 
 def test_argparse_subcommands_match_the_parsers() -> None:
     sim = market_sim_parser()
-    names = sorted(sim._subparsers._group_actions[0].choices)  # noqa: SLF001
+    subparsers = sim._subparsers  # noqa: SLF001
+    assert subparsers is not None
+    names = sorted(subparsers._group_actions[0].choices or {})  # noqa: SLF001
     assert names == ["bench", "report", "scenarios", "stress", "stylized"]
 
 
@@ -479,6 +482,31 @@ def _refuse_transport(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     return calls
 
 
+def test_live_alpaca_requires_credentials_at_startup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = _refuse_transport(monkeypatch)
+    for name in (
+        "ALPACA_API_KEY_ID",
+        "ALPACA_API_SECRET_KEY",
+        "APCA_API_KEY_ID",
+        "APCA_API_SECRET_KEY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    config = _gateway(tmp_path, "alpaca-paper")
+    state = tmp_path / "state"
+
+    result = _RUNNER.invoke(
+        dipcatcher_app,
+        ["live", "status", "--config", str(config), "--state-dir", str(state)],
+    )
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout)["error"] == "broker credentials are not set"
+    assert not state.exists()
+    assert calls["n"] == 0
+
+
 def test_live_alpaca_stays_fail_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls = _refuse_transport(monkeypatch)
     for name in (
@@ -488,6 +516,8 @@ def test_live_alpaca_stays_fail_closed(tmp_path: Path, monkeypatch: pytest.Monke
         "APCA_API_SECRET_KEY",
     ):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("ALPACA_API_KEY_ID", "synthetic-cli-key")
+    monkeypatch.setenv("ALPACA_API_SECRET_KEY", "synthetic-cli-secret")
     config = _gateway(tmp_path, "alpaca-live")
     state = tmp_path / "state"
     common = ["--config", str(config), "--state-dir", str(state), "--actor", "ada"]
@@ -518,31 +548,6 @@ def test_live_alpaca_stays_fail_closed(tmp_path: Path, monkeypatch: pytest.Monke
     )
     assert armed.exit_code == 0, _blob(armed)
     assert json.loads(armed.stdout)["live_capital_confirmed"] is True
-    denied = _RUNNER.invoke(
-        dipcatcher_app,
-        [
-            "live",
-            "submit",
-            *common,
-            "--symbol",
-            "AAPL",
-            "--side",
-            "buy",
-            "--qty",
-            "1",
-            "--limit",
-            "100",
-            "--mark",
-            "100",
-        ],
-    )
-    assert denied.exit_code == 1
-    body = json.loads(denied.stdout)
-    assert body["ok"] is False
-    assert body["live_pnl_claim"] is False
-    assert "credentials" in body["error"]
-    monkeypatch.setenv("ALPACA_API_KEY_ID", "cli-test-key")
-    monkeypatch.setenv("ALPACA_API_SECRET_KEY", "cli-test-secret-value")
     refused = _RUNNER.invoke(
         dipcatcher_app,
         [
@@ -568,9 +573,30 @@ def test_live_alpaca_stays_fail_closed(tmp_path: Path, monkeypatch: pytest.Monke
     assert "alpaca-live is refused" in payload["error"]
     assert "honesty contract" in payload["error"]
     combined = _blob(refused)
-    assert "cli-test-secret-value" not in combined
+    assert "synthetic-cli-secret" not in combined
     assert "Traceback" not in combined
     assert calls["n"] == 0
+
+
+def test_pretrade_cli_errors_do_not_echo_configuration_values(tmp_path: Path) -> None:
+    marker = "synthetic-cli-pretrade-sensitive-value"
+    raw = yaml.safe_load((_ROOT / "configs" / "pretrade_risk.yaml").read_text(encoding="utf-8"))
+    raw[marker] = marker
+    path = tmp_path / "pretrade.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+
+    result = _RUNNER.invoke(
+        dipcatcher_app,
+        ["live", "status", "--root", str(tmp_path / "desk"), "--config", str(path)],
+    )
+
+    assert result.exit_code == 1
+    body = json.loads(result.stdout)
+    assert body["ok"] is False
+    assert "extra keys are not permitted" in body["error"]
+    combined = _blob(result)
+    assert marker not in combined
+    assert "Traceback" not in combined
 
 
 def test_help_does_not_create_a_live_desk(tmp_path: Path) -> None:
