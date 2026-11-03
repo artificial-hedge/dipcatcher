@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import threading
 import uuid
@@ -30,6 +31,14 @@ from quant_fund.live.arming import (
     write_arming,
 )
 from quant_fund.live.bridge import BridgeError, BrokerEvent, DropBridge, LoopbackBridge
+from quant_fund.live.exchange_clock import (
+    ClockError,
+    band_map,
+    flag_map,
+    move_entry,
+    nyse_rth_closed,
+    outside_band,
+)
 from quant_fund.live.market_data import (
     ActionPlan,
     MarketDataError,
@@ -171,6 +180,8 @@ class LiveDesk:
     reference: ReferenceSnapshot | None = None
     actions: list[dict[str, Any]] = field(default_factory=list)
     action_halt: set[str] = field(default_factory=set)
+    quote_ok: dict[str, bool] = field(default_factory=dict)
+    bands: dict[str, tuple[float, float]] = field(default_factory=dict)
     _gate: Any = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -412,6 +423,21 @@ class LiveDesk:
             self._journal("reference", {"version": snapshot.version})
             self._save()
             return self._envelope(accepted=True, status="reference", version=snapshot.version)
+
+    def set_price_band(
+        self, symbol: str, lower: float, upper: float, ts_ns: int
+    ) -> dict[str, object]:
+        """Install an inclusive LULD-style band. Prices outside it are not tradable."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            cleaned = _symbol(symbol)
+            self.bands[cleaned] = _valid_band(lower, upper)
+            self._journal("price_band", {"symbol": cleaned, "lower": lower, "upper": upper})
+            self._save()
+            return self._envelope(
+                accepted=True, status="price_band", symbol=cleaned, lower=lower, upper=upper
+            )
 
     def apply_corporate_action(
         self,
@@ -833,6 +859,7 @@ class LiveDesk:
             raise LiveDeskError("action halt set is malformed")
         self.action_halt = {str(item) for item in halted}
         self.feeds = _feed_map(raw.get("feeds"))
+        self._load_clock(raw)
         self.reference = _reference_from_state(raw.get("reference"))
         if "symbol_map" not in raw:
             self.symbol_map = {}
@@ -842,6 +869,13 @@ class LiveDesk:
         if not isinstance(payload, dict):
             raise LiveDeskError("symbol map is malformed")
         self.symbol_map = {str(key): str(value) for key, value in payload.items()}
+
+    def _load_clock(self, raw: Mapping[str, Any]) -> None:
+        try:
+            self.quote_ok = flag_map(raw.get("quote_ok"))
+            self.bands = band_map(raw.get("price_bands"))
+        except ClockError as exc:
+            raise LiveDeskError(str(exc)) from exc
 
     def _seed_identity(self) -> None:
         names = set(self.positions) | set(self.marks)
@@ -1084,6 +1118,19 @@ class LiveDesk:
             cleaned = require_internal(self.symbol_map, symbol)
         except MarketDataError as exc:
             raise LiveDeskError(str(exc)) from exc
+        if self._nyse_closed(ts_ns):
+            self._journal(
+                "quote", {"symbol": cleaned, "accepted": False, "reasons": ["market_closed"]}
+            )
+            self._save()
+            return self._envelope(
+                accepted=False,
+                status="quote",
+                symbol=cleaned,
+                stale=False,
+                reasons=["market_closed"],
+                mark=self.marks.get(cleaned),
+            )
         previous_seq, was_stale = self.feeds.get(cleaned, (None, False))
         decision = assess_quote(
             bid=float(bid),
@@ -1094,23 +1141,18 @@ class LiveDesk:
             was_stale=was_stale,
             snapshot=snapshot,
         )
-        self.feeds[cleaned] = (decision.seq, decision.stale)
-        if decision.accept and decision.mark is not None:
-            self.marks[cleaned] = decision.mark
-            self.mark_ts[cleaned] = ts_ns
-            self._project(ts_ns)
-            self._latch_loss(ts_ns)
+        accepted, stale, reasons = self._store_quote(cleaned, decision, ts_ns)
         self._journal(
             "quote",
-            {"symbol": cleaned, "accepted": decision.accept, "reasons": list(decision.reasons)},
+            {"symbol": cleaned, "accepted": accepted, "reasons": reasons},
         )
         self._save()
         return self._envelope(
-            accepted=decision.accept,
+            accepted=accepted,
             status="quote",
             symbol=cleaned,
-            stale=decision.stale,
-            reasons=list(decision.reasons),
+            stale=stale,
+            reasons=reasons,
             mark=self.marks.get(cleaned),
         )
 
@@ -1211,6 +1253,8 @@ class LiveDesk:
             self.feeds[new] = feed
         if old in self.controls:
             self.controls[new] = self.controls.pop(old)
+        move_entry(self.quote_ok, old, new)
+        move_entry(self.bands, old, new)
         self._move_lots(old, new, factor, ts_ns)
 
     def _move_lots(self, old: str, new: str, factor: float, ts_ns: int) -> None:
@@ -1246,12 +1290,18 @@ class LiveDesk:
     def _market_block(self, symbol: str, ts_ns: int, qty: float, px: float) -> tuple[str, ...]:
         if self._going_backwards(ts_ns):
             return ("non_monotonic_time",)
+        if self._nyse_closed(ts_ns):
+            return ("market_closed",)
+        if self._quote_blocks(symbol):
+            return ("invalid_quote",)
         if self._mark_is_stale(symbol, ts_ns) or self._feed_stale(symbol):
             return ("stale_data",)
         reasons: list[str] = []
         jumped = jump_problem(self.marks.get(symbol), px)
         if jumped:
             reasons.append(jumped)
+        if outside_band(px, self.bands.get(symbol)):
+            reasons.append("luld")
         ref = snapshot_problem(self.reference, symbol, ts_ns)
         if ref:
             reasons.append(ref)
@@ -1266,6 +1316,36 @@ class LiveDesk:
     def _feed_stale(self, symbol: str) -> bool:
         row = self.feeds.get(symbol)
         return row is not None and bool(row[1])
+
+    def _nyse_closed(self, ts_ns: int) -> bool:
+        clock = self.config.session
+        if clock.timezone != "America/New_York" or clock.weekends_open:
+            return False
+        return nyse_rth_closed(ts_ns)
+
+    def _quote_blocks(self, symbol: str) -> bool:
+        """A rejected quote with no stored mark must not authorize the next order."""
+        return self.quote_ok.get(symbol) is False and symbol not in self.marks
+
+    def _store_quote(self, symbol: str, decision: Any, ts_ns: int) -> tuple[bool, bool, list[str]]:
+        had_mark = symbol in self.marks
+        mark = decision.mark
+        accept = bool(decision.accept and mark is not None)
+        reasons = list(decision.reasons)
+        if accept and outside_band(float(mark), self.bands.get(symbol)):
+            accept = False
+            reasons.append("luld")
+        self.feeds[symbol] = (decision.seq, decision.stale)
+        if accept and mark is not None:
+            price = float(mark)
+            self.quote_ok[symbol] = True
+            self.marks[symbol] = price
+            self.mark_ts[symbol] = ts_ns
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+        elif not had_mark:
+            self.quote_ok[symbol] = False
+        return accept, bool(decision.stale), reasons
 
     def _symbol_working(self, symbol: str) -> bool:
         return any(
@@ -1444,6 +1524,11 @@ class LiveDesk:
             "reference": None if self.reference is None else self.reference.as_dict(),
             "corporate_actions": list(self.actions),
             "action_halt": sorted(self.action_halt),
+            "quote_ok": dict(self.quote_ok),
+            "price_bands": {
+                symbol: {"lower": lower, "upper": upper}
+                for symbol, (lower, upper) in self.bands.items()
+            },
         }
 
     def _load_without_snapshot(
@@ -1720,6 +1805,14 @@ def _reference_from_state(raw: object) -> ReferenceSnapshot | None:
         return snapshot_from_dict({str(key): value for key, value in raw.items()})
     except (MarketDataError, KeyError, TypeError, ValueError) as exc:
         raise LiveDeskError("reference snapshot is malformed") from exc
+
+
+def _valid_band(lower: float, upper: float) -> tuple[float, float]:
+    lo = float(lower)
+    hi = float(upper)
+    if not math.isfinite(lo) or not math.isfinite(hi) or lo <= 0.0 or hi < lo:
+        raise LiveDeskError("bad_price_band")
+    return lo, hi
 
 
 def _positive(value: float | None, default: float | None) -> float:

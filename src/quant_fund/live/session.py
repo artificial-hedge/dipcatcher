@@ -36,6 +36,14 @@ from quant_fund.live.brokers import (
 )
 from quant_fund.live.config import LiveConfig, load_gateway_pretrade
 from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.exchange_clock import (
+    ClockError,
+    band_map,
+    flag_map,
+    move_entry,
+    nyse_rth_closed,
+    outside_band,
+)
 from quant_fund.live.gateway_arm import (
     arm_session,
     disarm_session,
@@ -126,6 +134,14 @@ def _limit_payload(limits: LimitConfig | None) -> dict[str, Any] | None:
         return None
     dumped: dict[str, Any] = limits.model_dump(mode="json")
     return dumped
+
+
+def _valid_band(lower: float, upper: float) -> tuple[float, float]:
+    lo = float(lower)
+    hi = float(upper)
+    if not math.isfinite(lo) or not math.isfinite(hi) or lo <= 0.0 or hi < lo:
+        raise LiveGateError("bad_price_band")
+    return lo, hi
 
 
 def _market_reply(**fields: object) -> dict[str, Any]:
@@ -349,6 +365,8 @@ class LiveSession:
         self._reference: ReferenceSnapshot | None = None
         self._actions: list[dict[str, Any]] = []
         self._action_halt: set[str] = set()
+        self._quote_ok: dict[str, bool] = {}
+        self._bands: dict[str, tuple[float, float]] = {}
         self._thread_lock = threading.Lock()
         self.ledger = LiveLedger(
             baseline_cash=float(config.starting_cash),
@@ -535,6 +553,19 @@ class LiveSession:
             self._persist()
             self._audit("reference", {"version": snapshot.version})
             return _market_reply(version=snapshot.version)
+
+    def set_price_band(
+        self, *, symbol: str, lower: float, upper: float, actor: str
+    ) -> dict[str, Any]:
+        """Install an inclusive LULD-style band. Prices outside it are not tradable."""
+        with self._lock():
+            self._require_trading()
+            _actor(actor)
+            cleaned = _symbol(symbol)
+            self._bands[cleaned] = _valid_band(lower, upper)
+            self._persist()
+            self._audit("price_band", {"symbol": cleaned, "lower": lower, "upper": upper})
+            return _market_reply(symbol=cleaned, lower=lower, upper=upper)
 
     def apply_corporate_action(
         self,
@@ -1036,6 +1067,15 @@ class LiveSession:
         except MarketDataError as exc:
             raise LiveGateError(str(exc)) from exc
         ts = self._clock(at_ns)
+        if self._nyse_closed(ts):
+            self._persist()
+            return _market_reply(
+                ok=False,
+                symbol=cleaned,
+                stale=False,
+                reasons=["market_closed"],
+                mark=self.marks.get(cleaned),
+            )
         previous_seq, was_stale = self._feeds.get(cleaned, (None, False))
         decision = assess_quote(
             bid=float(bid),
@@ -1046,18 +1086,13 @@ class LiveSession:
             was_stale=was_stale,
             snapshot=snapshot,
         )
-        self._feeds[cleaned] = (decision.seq, decision.stale)
-        if decision.accept and decision.mark is not None:
-            self.marks[cleaned] = decision.mark
-            self.broker.set_mark(cleaned, decision.mark)
-            self._sync_account(ts)
-            self._enforce_kill(ts)
+        accepted, stale, reasons = self._store_quote(cleaned, decision, ts)
         self._persist()
         return _market_reply(
-            ok=decision.accept,
+            ok=accepted,
             symbol=cleaned,
-            stale=decision.stale,
-            reasons=list(decision.reasons),
+            stale=stale,
+            reasons=reasons,
             mark=self.marks.get(cleaned),
         )
 
@@ -1146,6 +1181,8 @@ class LiveSession:
             self._halted.pop(old, None)
         if old in self._locate:
             self._locate[new] = self._locate.pop(old)
+        move_entry(self._quote_ok, old, new)
+        move_entry(self._bands, old, new)
 
     def _move_engine_symbol(self, old: str, new: str, factor: float, ts: int) -> None:
         sid = self._sids.get(old)
@@ -1202,12 +1239,18 @@ class LiveSession:
             self.broker.set_mark(symbol, price)
 
     def _market_block(self, symbol: str, ts: int, qty: float, price: float) -> tuple[str, ...]:
+        if self._nyse_closed(ts):
+            return ("market_closed",)
+        if self._quote_blocks(symbol):
+            return ("invalid_quote",)
         if self._quote_is_stale(symbol, ts) or self._feed_stale(symbol):
             return ("stale_data",)
         reasons: list[str] = []
         jumped = jump_problem(self.marks.get(symbol), price)
         if jumped:
             reasons.append(jumped)
+        if outside_band(price, self._bands.get(symbol)):
+            reasons.append("luld")
         ref = snapshot_problem(self._reference, symbol, ts)
         if ref:
             reasons.append(ref)
@@ -1225,6 +1268,36 @@ class LiveSession:
     def _feed_stale(self, symbol: str) -> bool:
         row = self._feeds.get(symbol)
         return row is not None and bool(row[1])
+
+    def _nyse_closed(self, ts: int) -> bool:
+        clock = self.pretrade.session
+        if clock.timezone != "America/New_York" or clock.weekends_open:
+            return False
+        return nyse_rth_closed(ts)
+
+    def _quote_blocks(self, symbol: str) -> bool:
+        """A rejected quote with no stored mark must not authorize the next order."""
+        return self._quote_ok.get(symbol) is False and symbol not in self.marks
+
+    def _store_quote(self, symbol: str, decision: Any, ts: int) -> tuple[bool, bool, list[str]]:
+        had_mark = symbol in self.marks
+        mark = decision.mark
+        accept = bool(decision.accept and mark is not None)
+        reasons = list(decision.reasons)
+        if accept and outside_band(float(mark), self._bands.get(symbol)):
+            accept = False
+            reasons.append("luld")
+        self._feeds[symbol] = (decision.seq, decision.stale)
+        if accept and mark is not None:
+            price = float(mark)
+            self._quote_ok[symbol] = True
+            self.marks[symbol] = price
+            self.broker.set_mark(symbol, price)
+            self._sync_account(ts)
+            self._enforce_kill(ts)
+        elif not had_mark:
+            self._quote_ok[symbol] = False
+        return accept, bool(decision.stale), reasons
 
     def _symbol_working(self, symbol: str) -> bool:
         return any(
@@ -1632,6 +1705,7 @@ class LiveSession:
             raise LiveGateError("action halt set is malformed")
         self._action_halt = {str(item) for item in halted}
         self._feeds = _feed_map(stored.get("feeds"))
+        self._load_clock(stored)
         self._reference = _reference_from_state(stored.get("reference"))
         if "symbol_map" not in stored:
             self._symbol_map = {}
@@ -1643,6 +1717,13 @@ class LiveSession:
         self._symbol_map = {str(key): str(value) for key, value in raw_map.items()}
         if self._symbol_map and not mapping_is_bijective(self._symbol_map):
             raise LiveGateError("symbol map is not bijective")
+
+    def _load_clock(self, stored: dict[str, Any]) -> None:
+        try:
+            self._quote_ok = flag_map(stored.get("quote_ok"))
+            self._bands = band_map(stored.get("price_bands"))
+        except ClockError as exc:
+            raise LiveGateError(str(exc)) from exc
 
     def _seed_identity(self, fills: object) -> None:
         names = set(self.marks)
@@ -1807,6 +1888,8 @@ class LiveSession:
         self._reference = None
         self._actions = []
         self._action_halt = set()
+        self._quote_ok = {}
+        self._bands = {}
         self._pretrade_blob = None
         self._baseline_from_broker = self.venue == "loopback"
         self.ledger = self._new_ledger(float(self.config.starting_cash), {})
@@ -1879,6 +1962,11 @@ class LiveSession:
             "symbol_map": dict(self._symbol_map),
             "feeds": {
                 symbol: {"seq": seq, "stale": stale} for symbol, (seq, stale) in self._feeds.items()
+            },
+            "quote_ok": dict(self._quote_ok),
+            "price_bands": {
+                symbol: {"lower": lower, "upper": upper}
+                for symbol, (lower, upper) in self._bands.items()
             },
             "reference": None if self._reference is None else self._reference.as_dict(),
             "corporate_actions": list(self._actions),

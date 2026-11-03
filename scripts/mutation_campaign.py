@@ -64,27 +64,42 @@ class Equivalent:
 
 
 EQUIVALENT: tuple[Equivalent, ...] = (
+    # M0000 inserts `not` around `self.state not in VALID_STATES`. The body
+    # is `pass`. The constructor writes only the two assignments above that
+    # test. Neither branch of the mutant assigns, raises, or returns, so
+    # every later read of `state` and `allow_auto_flatten` is unchanged.
     Equivalent(
         "kill-switch",
         "M0000",
         23,
         "negation-insertion",
-        "Empty pass body; negating the test still passes.",
+        "Negating `state not in VALID_STATES` still guards `pass`. "
+        "No later read depends on which branch ran.",
     ),
+    # M0005 swaps `not in` for `in` on that same empty `pass`. The body runs
+    # when the state is valid, or is skipped when it is invalid, and both
+    # are no-ops. `assert_new_orders_allowed` still blocks on `state != ENABLED`,
+    # which this line does not assign.
     Equivalent(
         "kill-switch",
         "M0005",
         23,
         "comparison-swap",
-        "Empty pass body; swapping not-in for in still passes.",
+        "Swapping `not in` for `in` still guards `pass`. "
+        "The stored state is assigned before the test.",
     ),
+    # M0055 is Gt->GtE on `not value > limit`, so equality falls through to
+    # `(value - limit) > slack`. slack = max(1e-9, 1e-12 * abs(limit)) >= 1e-9.
+    # Finite value == limit implies value - limit == 0, and 0 > slack is False.
+    # value < limit returns False on both sides. value > limit takes the same
+    # slack test. Non-finite inputs return True on the line above.
     Equivalent(
         "risk-ceilings",
         "M0055",
         23,
         "comparison-swap",
-        "value > limit versus >= both return False at equality; "
-        "a zero breach never reaches the slack test.",
+        "Gt->GtE lets equality reach a strictly positive slack test, "
+        "and 0 > slack is False. Other finite cases are unchanged.",
     ),
 )
 
