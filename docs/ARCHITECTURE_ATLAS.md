@@ -172,7 +172,6 @@ flowchart LR
   end
   dipcatcher_cli -->|2| fx1_interactive
   dipcatcher_cli -->|1| quant_fund_cli
-  fx1 -->|1| fx1_secret_guard
   fx1_bench -->|1| fx1_honesty
   fx1_bench -->|5| quant_fund_utils
   fx1_cli -->|1| fx1
@@ -882,7 +881,7 @@ sequenceDiagram
 
 - Modules scanned: **13413**
 - Packages: **99**
-- Cross-package import edges: **425**
+- Cross-package import edges: **424**
 
 <!-- END GENERATED: coverage -->
 

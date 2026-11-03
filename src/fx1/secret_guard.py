@@ -2,9 +2,9 @@
 
 :mod:`quant_fund.utils.secret_guard` owns the filter, the handler hook, and
 the keystore mode checks. This module re-exports that surface so existing
-``fx1.secret_guard`` imports, including the install performed by
-:mod:`fx1`, keep working. The harness must not import :mod:`fx1` to scrub
-logs.
+``fx1.secret_guard`` imports keep working. :mod:`fx1` installs the hook by
+loading that file directly, so ``import fx1.serve`` does not import the
+``quant_fund`` package. The harness must not import :mod:`fx1` to scrub logs.
 """
 
 from __future__ import annotations

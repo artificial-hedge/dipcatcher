@@ -15,10 +15,6 @@
       "src": "dipcatcher_cli.app"
     },
     {
-      "dst": "fx1.secret_guard",
-      "src": "fx1"
-    },
-    {
       "dst": "fx1.bench.dip",
       "src": "fx1.bench"
     },
@@ -75244,11 +75240,6 @@
       "dst": "quant_fund.cli",
       "imports": 1,
       "src": "dipcatcher_cli"
-    },
-    {
-      "dst": "fx1.secret_guard",
-      "imports": 1,
-      "src": "fx1"
     },
     {
       "dst": "fx1.bench",

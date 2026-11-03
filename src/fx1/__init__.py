@@ -17,6 +17,27 @@ __version__ = "0.4.0"
 
 BASE_MODEL = "moonshotai/Kimi-K3"
 
-from fx1.secret_guard import install_secret_redaction  # noqa: E402
 
-install_secret_redaction()
+def _install_secret_redaction() -> None:
+    """Install log redaction without importing the ``quant_fund`` package.
+
+    ``import fx1.serve`` must leave ``quant_fund`` out of ``sys.modules``.
+    The harness implementation is stdlib-only, so loading that file by path
+    installs the same hook the ``fx1.secret_guard`` re-export calls later.
+    """
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent.parent / "quant_fund" / "utils" / "secret_guard.py"
+    spec = importlib.util.spec_from_file_location("_fx1_secret_redaction", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load secret redaction from {path}")
+    from typing import Any, cast
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    loaded = cast(Any, module)
+    loaded.install_secret_redaction()
+
+
+_install_secret_redaction()
