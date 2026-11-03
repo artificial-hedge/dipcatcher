@@ -15,8 +15,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from fx1.secret_guard import refuse_world_readable
 from quant_fund.audit.errors import AuditError, SignatureUnavailableError
+from quant_fund.utils.secret_guard import refuse_world_readable
 
 _PUB_LEN = 32
 _SIG_LEN = 64

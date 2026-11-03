@@ -9,8 +9,8 @@ from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import Any
 
-from fx1.secret_guard import redact_text
 from quant_fund.observe.flags import observe_enabled
+from quant_fund.utils.secret_guard import redact_text
 
 _correlation: ContextVar[str | None] = ContextVar("dipcatcher_correlation_id", default=None)
 _sink: list[dict[str, Any]] | None = None
