@@ -186,7 +186,14 @@ def test_webhook_delivery_pins_the_first_vetted_address() -> None:
 
 def test_webhook_homoglyph_does_not_opt_into_loopback() -> None:
     host = "l\u043ecalh\u043est"
-    with patch("socket.getaddrinfo", side_effect=_refuse_dns):
+    # A sibling audit may have left a loopback allowlist in the process.
+    # This contract is the default policy: the name is not loopback, and a
+    # resolution to 127.0.0.1 is still private.
+    closed = {PRIVATE_ALLOW_CIDRS_ENV: ""}
+    with (
+        patch.dict(os.environ, closed, clear=False),
+        patch("socket.getaddrinfo", side_effect=_refuse_dns),
+    ):
         assert webhooks.check_callback_url(f"http://{host}/hook") == f"http://{host}/hook"
 
     def resolve(name: str, port: int, *_args: Any, **_kwargs: Any) -> list[object]:
@@ -194,6 +201,7 @@ def test_webhook_homoglyph_does_not_opt_into_loopback() -> None:
         return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", port))]
 
     with (
+        patch.dict(os.environ, closed, clear=False),
         patch("fx1.serve.webhooks.socket.getaddrinfo", side_effect=resolve),
         patch("fx1.serve.webhooks._post_once") as post,
     ):
