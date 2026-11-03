@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -152,6 +153,39 @@ def test_registry_wires_head() -> None:
 
     head = FLEET_HEAD_REGISTRY["tirex2"]([0.1, 0.5, 0.9], 0)
     assert isinstance(head, Tirex2Distribution)
+
+
+def test_inductor_cpp_backend_unusable_without_python_headers(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from quant_fund.models import tirex2
+
+    monkeypatch.setattr(tirex2.sys, "platform", "linux")
+    monkeypatch.setattr(tirex2.sysconfig, "get_path", lambda _name: str(tmp_path))
+    assert tirex2.inductor_cpp_backend_unusable() is True
+
+
+def test_inductor_cpp_backend_usable_when_python_header_exists(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from quant_fund.models import tirex2
+
+    (tmp_path / "Python.h").write_text("/* synthetic header */\n", encoding="utf-8")
+    monkeypatch.setattr(tirex2.sys, "platform", "linux")
+    monkeypatch.setattr(tirex2.sysconfig, "get_path", lambda _name: str(tmp_path))
+    assert tirex2.inductor_cpp_backend_unusable() is False
+
+
+def test_windows_without_msvc_disables_inductor_even_with_headers(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from quant_fund.models import tirex2
+
+    (tmp_path / "Python.h").write_text("/* synthetic header */\n", encoding="utf-8")
+    monkeypatch.setattr(tirex2.sys, "platform", "win32")
+    monkeypatch.setattr(tirex2.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(tirex2.sysconfig, "get_path", lambda _name: str(tmp_path))
+    assert tirex2.inductor_cpp_backend_unusable() is True
 
 
 @pytest.mark.network
