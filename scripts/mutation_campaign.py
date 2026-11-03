@@ -64,30 +64,6 @@ class Equivalent:
 
 
 EQUIVALENT: tuple[Equivalent, ...] = (
-    # M0000 inserts `not` around `self.state not in VALID_STATES`. The body
-    # is `pass`. The constructor writes only the two assignments above that
-    # test. Neither branch of the mutant assigns, raises, or returns, so
-    # every later read of `state` and `allow_auto_flatten` is unchanged.
-    Equivalent(
-        "kill-switch",
-        "M0000",
-        23,
-        "negation-insertion",
-        "Negating `state not in VALID_STATES` still guards `pass`. "
-        "No later read depends on which branch ran.",
-    ),
-    # M0005 swaps `not in` for `in` on that same empty `pass`. The body runs
-    # when the state is valid, or is skipped when it is invalid, and both
-    # are no-ops. `assert_new_orders_allowed` still blocks on `state != ENABLED`,
-    # which this line does not assign.
-    Equivalent(
-        "kill-switch",
-        "M0005",
-        23,
-        "comparison-swap",
-        "Swapping `not in` for `in` still guards `pass`. "
-        "The stored state is assigned before the test.",
-    ),
     # M0055 is Gt->GtE on `not value > limit`, so equality falls through to
     # `(value - limit) > slack`. slack = max(1e-9, 1e-12 * abs(limit)) >= 1e-9.
     # Finite value == limit implies value - limit == 0, and 0 > slack is False.
@@ -112,21 +88,21 @@ SUITES: tuple[Suite, ...] = (
     Suite(
         name="kill-switch",
         target="src/quant_fund/monitoring/kill_switch.py",
-        # M0000 and M0005 rewrite an empty ``pass``. See EQUIVALENT.
+        # M0000 and M0005 flip the constructor's state check. The body raises.
         picks=_picks(
             (
                 ("M0000", 23, "negation-insertion"),
-                ("M0001", 29, "negation-insertion"),
-                ("M0002", 35, "negation-insertion"),
-                ("M0003", 42, "negation-insertion"),
-                ("M0004", 44, "negation-insertion"),
+                ("M0001", 28, "negation-insertion"),
+                ("M0002", 34, "negation-insertion"),
+                ("M0003", 41, "negation-insertion"),
+                ("M0004", 43, "negation-insertion"),
                 ("M0005", 23, "comparison-swap"),
-                ("M0006", 29, "comparison-swap"),
-                ("M0007", 35, "comparison-swap"),
-                ("M0008", 39, "comparison-swap"),
-                ("M0009", 42, "comparison-swap"),
-                ("M0010", 43, "const-bool-flip"),
-                ("M0011", 45, "const-bool-flip"),
+                ("M0006", 28, "comparison-swap"),
+                ("M0007", 34, "comparison-swap"),
+                ("M0008", 38, "comparison-swap"),
+                ("M0009", 41, "comparison-swap"),
+                ("M0010", 42, "const-bool-flip"),
+                ("M0011", 44, "const-bool-flip"),
             )
         ),
         selectors=(

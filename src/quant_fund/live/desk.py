@@ -898,8 +898,10 @@ class LiveDesk:
 
     def _restore_saved_limits(self, raw: Mapping[str, Any]) -> None:
         payload = raw.get("limit_override")
-        if not isinstance(payload, dict):
+        if payload is None:
             return
+        if not isinstance(payload, dict):
+            raise LiveDeskError("stored limit override is malformed")
         self._apply_limits(LimitConfig.model_validate(payload))
 
     def _project(self, ts_ns: int) -> None:

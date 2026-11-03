@@ -93,8 +93,8 @@ def test_equivalent_survivors_leave_the_score_and_kills_stay_kills() -> None:
         assert picks == [CampaignPick(item.mutant_id, item.lineno, item.operator)]
     survived = mt.CampaignReport(
         created_utc="t",
-        target="kill_switch.py",
-        module="quant_fund.monitoring.kill_switch",
+        target="risk_gate.py",
+        module="quant_fund.portfolio.risk_gate",
         selectors=(),
         seed=0,
         timeout_s=1.0,
@@ -104,23 +104,23 @@ def test_equivalent_survivors_leave_the_score_and_kills_stay_kills() -> None:
         score=0.0,
         results=[
             {
-                "mutant_id": "M0000",
+                "mutant_id": "M0055",
                 "lineno": 23,
-                "operator": "negation-insertion",
+                "operator": "comparison-swap",
                 "status": "survived",
-                "description": "empty pass",
+                "description": "Gt->GtE",
             },
             {
-                "mutant_id": "M0001",
-                "lineno": 29,
-                "operator": "negation-insertion",
+                "mutant_id": "M0056",
+                "lineno": 23,
+                "operator": "comparison-swap",
                 "status": "survived",
-                "description": "real branch",
+                "description": "Gt->Lt",
             },
         ],
         survivors=[],
     )
-    reclassify_equivalent(survived, "kill-switch")
+    reclassify_equivalent(survived, "risk-ceilings")
     assert survived.results[0]["status"] == "equivalent"
     assert survived.results[1]["status"] == "survived"
     assert survived.counts["equivalent"] == 1
@@ -144,7 +144,7 @@ def test_equivalent_survivors_leave_the_score_and_kills_stay_kills() -> None:
                 "lineno": 23,
                 "operator": "negation-insertion",
                 "status": "killed",
-                "description": "empty pass",
+                "description": "constructor rejects an invalid state",
             }
         ],
         survivors=[],

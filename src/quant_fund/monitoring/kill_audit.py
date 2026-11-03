@@ -8,9 +8,10 @@ Every state x action cell is checked against the declared spec:
 - ``CANCEL_OPEN_ORDERS``: orders blocked; cancel=True; flatten=False.
 - ``FLATTEN_OPTIONAL``: orders blocked; cancel=True; flatten only with
   ``human_authorized=True`` (and never under ``allow_auto_flatten``).
-- Any *unknown* state (typo, future enum, empty): orders must raise
-  (fail closed) and cancel/flatten must return False.
-- ``set_state`` to an unknown name must raise, never transition.
+- Any *unknown* state (typo, future enum, empty): construction raises
+  ``KillSwitchActive`` (fail closed). Cancel and flatten are not offered.
+- ``set_state`` or attribute assignment of an unknown name must raise,
+  never transition.
 
 Sealed ``kill_audit.v1``.
 """
@@ -45,6 +46,28 @@ def _mk(state: str, auto_flatten: bool = False) -> KillSwitch:
     return KillSwitch(KillSwitchConfig(state=state, allow_auto_flatten=auto_flatten))
 
 
+def _record_unknown(rec: Any) -> None:
+    """Unknown names are rejected at construction and on ``set_state``."""
+    for bad in _UNKNOWN:
+        try:
+            _mk(bad)
+        except KillSwitchActive:
+            stored = False
+        else:
+            stored = True
+        rec(
+            f"unknown[{bad!r}]:orders", not stored, "" if not stored else "invalid state was stored"
+        )
+        detail = "construction rejected" if not stored else "invalid state was stored"
+        rec(f"unknown[{bad!r}]:cancel+flatten", not stored, detail)
+        ks2 = _mk(ENABLED)
+        try:
+            ks2.set_state(bad)
+            rec(f"set_state[{bad!r}]", False, f"transitioned to {ks2.state!r}")
+        except KillSwitchActive:
+            rec(f"set_state[{bad!r}]", ks2.state == ENABLED)
+
+
 def kill_switch_audit() -> dict[str, Any]:
     """Enumerate every state x action cell; record spec violations."""
     checks: list[dict[str, Any]] = []
@@ -76,24 +99,7 @@ def kill_switch_audit() -> dict[str, Any]:
                     f"may_flatten={got}",
                 )
 
-    for bad in _UNKNOWN:
-        ks = _mk(bad)
-        try:
-            ks.assert_new_orders_allowed()
-            rec(f"unknown[{bad!r}]:orders", False, "orders allowed on unknown state")
-        except KillSwitchActive:
-            rec(f"unknown[{bad!r}]:orders", True)
-        rec(
-            f"unknown[{bad!r}]:cancel+flatten",
-            not ks.may_cancel_open_orders() and not ks.may_flatten(True),
-            f"cancel={ks.may_cancel_open_orders()} flatten={ks.may_flatten(True)}",
-        )
-        ks2 = _mk(ENABLED)
-        try:
-            ks2.set_state(bad)
-            rec(f"set_state[{bad!r}]", False, f"transitioned to {ks2.state!r}")
-        except KillSwitchActive:
-            rec(f"set_state[{bad!r}]", ks2.state == ENABLED)
+    _record_unknown(rec)
 
     # valid transitions all reachable
     for state in _SPEC:
