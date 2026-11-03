@@ -113,33 +113,43 @@ def test_zero_or_invalid_quantity_rejected_cleanly(qty) -> None:
 
 
 def test_duplicate_order_id_fails_closed() -> None:
-    """A second live order with the same id must not silently overwrite the first."""
+    """A second live order with the same id returns the first and does not overwrite it."""
     broker = _broker()
-    broker.submit(_order("dup", limit=99.0), price=100.0, nav=1e6, adv_dollars=1e9)
-    with pytest.raises(ValueError, match="already working"):
-        broker.submit(
-            _order("dup", side=OrderSide.SELL, qty=50.0, limit=101.0),
-            price=100.0,
-            nav=1e6,
-            adv_dollars=1e9,
-        )
+    first = broker.submit(_order("dup", limit=99.0), price=100.0, nav=1e6, adv_dollars=1e9)
+    replay = broker.submit(
+        _order("dup", side=OrderSide.SELL, qty=50.0, limit=101.0),
+        price=100.0,
+        nav=1e6,
+        adv_dollars=1e9,
+    )
+    assert replay is first
     resting = broker.open_orders["dup"]
     assert resting.side is OrderSide.BUY
     assert resting.limit_price == 99.0
 
 
-def test_order_id_free_after_fill_or_cancel() -> None:
-    """Ids are only reserved while working; completed ids may be reused."""
+def test_completed_order_id_stays_reserved() -> None:
+    """A fill or cancel does not free the id for a second order."""
     broker = _broker()
-    broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
-    rec = broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
+    first = broker.submit(_order("x"), price=100.0, nav=1e6, adv_dollars=1e9)
+    cash = broker.cash
+    shares = dict(broker.shares)
+    rec = broker.submit(
+        _order("x", side=OrderSide.SELL, qty=4.0), price=100.0, nav=1e6, adv_dollars=1e9
+    )
+    assert rec is first
     assert rec.order.status is OrderStatus.FILLED
+    assert broker.cash == pytest.approx(cash)
+    assert broker.shares == shares
+    assert len(broker.fills) == 1
 
     broker2 = _broker()
-    broker2.submit(_order("y", limit=99.0), price=100.0, nav=1e6, adv_dollars=1e9)
+    rested = broker2.submit(_order("y", limit=99.0), price=100.0, nav=1e6, adv_dollars=1e9)
     broker2.cancel_order("y")
-    broker2.submit(_order("y", limit=98.0), price=100.0, nav=1e6, adv_dollars=1e9)
-    assert broker2.open_orders["y"].limit_price == 98.0
+    replay = broker2.submit(_order("y", limit=98.0), price=100.0, nav=1e6, adv_dollars=1e9)
+    assert replay is rested
+    assert "y" not in broker2.open_orders
+    assert not broker2.fills
 
 
 def test_limit_fills_never_leave_the_bar_range() -> None:

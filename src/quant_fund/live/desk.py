@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
+import threading
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -29,13 +31,44 @@ from quant_fund.live.arming import (
     write_arming,
 )
 from quant_fund.live.bridge import BridgeError, BrokerEvent, DropBridge, LoopbackBridge
+from quant_fund.live.exchange_clock import (
+    ClockError,
+    band_map,
+    flag_map,
+    move_entry,
+    nyse_rth_closed,
+    outside_band,
+)
+from quant_fund.live.market_data import (
+    ActionPlan,
+    MarketDataError,
+    ReferenceSnapshot,
+    assess_quote,
+    jump_problem,
+    plan_action,
+    price_problem,
+    require_internal,
+    size_problems,
+    snapshot_from_dict,
+    snapshot_problem,
+)
+from quant_fund.live.market_data import (
+    bind_symbol as bind_map,
+)
+from quant_fund.live.risk_limits import (
+    install_ceilings,
+    loosened_names,
+    loss_reason,
+    precision_reasons,
+    structural_changes,
+)
 from quant_fund.pretrade.codes import (
     INTERNAL,
     KIND_CANCEL,
     KIND_ORDER,
     reason_names,
 )
-from quant_fund.pretrade.config import PretradeConfig, sign_config
+from quant_fund.pretrade.config import LimitConfig, PretradeConfig, sign_config
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
 
 _EPS = 1e-8
@@ -140,9 +173,20 @@ class LiveDesk:
     _closed: bool = False
     _integrity_frozen: bool = False
     _settled_before: float = 0.0
+    controls: dict[str, tuple[bool, bool]] = field(default_factory=dict)
+    _limit_override: LimitConfig | None = None
+    symbol_map: dict[str, str] = field(default_factory=dict)
+    feeds: dict[str, tuple[int | None, bool]] = field(default_factory=dict)
+    reference: ReferenceSnapshot | None = None
+    actions: list[dict[str, Any]] = field(default_factory=list)
+    action_halt: set[str] = field(default_factory=set)
+    quote_ok: dict[str, bool] = field(default_factory=dict)
+    bands: dict[str, tuple[float, float]] = field(default_factory=dict)
+    _gate: Any = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         self._drop = DropBridge(self.root)
+        self._gate = threading.RLock()
 
     @classmethod
     def open(
@@ -241,13 +285,66 @@ class LiveDesk:
         return self._envelope(accepted=True, status="shadow")
 
     def kill(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
-        self._alive()
-        self._clock(ts_ns)
-        self.engine.trip(actor, reason, ts_ns)
-        self.halt_reason = reason
-        self._journal("kill", {"actor": actor, "reason": reason})
-        self._save()
-        return self._envelope(accepted=True, status="halted")
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            self.engine.trip(actor, reason, ts_ns)
+            self.halt_reason = reason
+            canceled = self._cancel_working(ts_ns)
+            still = self._working_ids()
+            self._journal("kill", {"actor": actor, "reason": reason, "canceled": canceled})
+            self._save()
+            report = self._envelope(accepted=not still, status="halted")
+            report["canceled"] = canceled
+            report["still_working"] = still
+            return report
+
+    def set_symbol_controls(
+        self,
+        symbol: str,
+        ts_ns: int,
+        *,
+        halted: bool | None = None,
+        locate_ok: bool | None = None,
+    ) -> dict[str, object]:
+        """Halt a name or clear its locate. The next order sees it without a restart."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            symbol = _symbol(symbol)
+            halt, locate = self._symbol_flags(symbol)
+            if halted is not None:
+                halt = bool(halted)
+            if locate_ok is not None:
+                locate = bool(locate_ok)
+            self.controls[symbol] = (halt, locate)
+            if symbol in self.marks:
+                self._project(ts_ns)
+            self._journal(
+                "symbol_controls", {"symbol": symbol, "halted": halt, "locate_ok": locate}
+            )
+            self._save()
+            return self._envelope(accepted=True, status="controls", halted=halt, locate_ok=locate)
+
+    def update_limits(
+        self, limits: LimitConfig, ts_ns: int, *, reauthorize: bool = False
+    ) -> dict[str, object]:
+        """Apply ceilings now. A looser ceiling needs ``reauthorize``."""
+        with self._gate:
+            self._alive()
+            self._require_funded()
+            self._clock(ts_ns)
+            structural = structural_changes(self.config.limits, limits)
+            if structural:
+                return self._limit_envelope(applied=False, structural=structural)
+            looser = loosened_names(self.config.limits, limits)
+            if looser and not reauthorize:
+                return self._limit_envelope(applied=False, loosened=looser)
+            self._apply_limits(limits)
+            self._latch_loss(ts_ns)
+            self._journal("limits", {"reauthorized": reauthorize, "loosened": list(looser)})
+            self._save()
+            return self._limit_envelope(applied=True, loosened=looser, reauthorized=reauthorize)
 
     def reset(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
         """Clear a halt. An integrity failure or an internal fault stays halted."""
@@ -266,17 +363,105 @@ class LiveDesk:
         return report
 
     def mark(self, symbol: str, px: float, ts_ns: int) -> dict[str, object]:
-        self._alive()
-        self._clock(ts_ns)
-        symbol = _symbol(symbol)
-        _price(px)
-        self.marks[symbol] = px
-        self.mark_ts[symbol] = ts_ns
-        self._project(ts_ns)
-        self._collect_matured()
-        self._journal("mark", {"symbol": symbol, "px": px, "ts_ns": ts_ns})
-        self._save()
-        return self._envelope(accepted=True, status="marked")
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            symbol = _symbol(symbol)
+            _price(px)
+            if self._quote_is_older(symbol, ts_ns):
+                raise LiveDeskError("mark timestamp is older than the stored quote")
+            problem = jump_problem(self.marks.get(symbol), px)
+            if problem:
+                raise LiveDeskError(problem)
+            self._bind_identity(symbol)
+            self.marks[symbol] = px
+            self.mark_ts[symbol] = ts_ns
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+            self._collect_matured()
+            self._journal("mark", {"symbol": symbol, "px": px, "ts_ns": ts_ns})
+            self._save()
+            return self._envelope(accepted=True, status="marked")
+
+    def bind_symbol(self, internal: str, broker: str, ts_ns: int) -> dict[str, object]:
+        """Bind one internal id to one broker symbol. A second binding is an error."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            left = _symbol(internal)
+            try:
+                bind_map(self.symbol_map, left, broker)
+            except MarketDataError as exc:
+                raise LiveDeskError(str(exc)) from exc
+            self._journal("symbol_map", {"internal": left, "broker": self.symbol_map[left]})
+            self._save()
+            return self._envelope(accepted=True, status="symbol_map", symbol=left)
+
+    def ingest_quote(
+        self,
+        symbol: str,
+        bid: float,
+        ask: float,
+        seq: int,
+        ts_ns: int,
+        *,
+        snapshot: bool = False,
+    ) -> dict[str, object]:
+        """Accept a sequenced quote or leave the stored mark untouched."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            return self._ingest_locked(symbol, bid, ask, seq, ts_ns, snapshot=snapshot)
+
+    def set_reference(self, snapshot: ReferenceSnapshot, ts_ns: int) -> dict[str, object]:
+        """Install the lot and tick snapshot used on the next order."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            self._require_reference(snapshot)
+            self.reference = snapshot
+            self._journal("reference", {"version": snapshot.version})
+            self._save()
+            return self._envelope(accepted=True, status="reference", version=snapshot.version)
+
+    def set_price_band(
+        self, symbol: str, lower: float, upper: float, ts_ns: int
+    ) -> dict[str, object]:
+        """Install an inclusive LULD-style band. Prices outside it are not tradable."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            cleaned = _symbol(symbol)
+            self.bands[cleaned] = _valid_band(lower, upper)
+            self._journal("price_band", {"symbol": cleaned, "lower": lower, "upper": upper})
+            self._save()
+            return self._envelope(
+                accepted=True, status="price_band", symbol=cleaned, lower=lower, upper=upper
+            )
+
+    def apply_corporate_action(
+        self,
+        kind: str,
+        symbol: str,
+        ts_ns: int,
+        *,
+        ratio: float | None = None,
+        cash_per_share: float | None = None,
+        new_symbol: str | None = None,
+    ) -> dict[str, object]:
+        """Adjust one name, or halt it, without changing account value."""
+        with self._gate:
+            self._alive()
+            self._require_funded()
+            self._clock(ts_ns)
+            return self._apply_action_locked(
+                kind,
+                symbol,
+                ts_ns,
+                ratio=ratio,
+                cash_per_share=cash_per_share,
+                new_symbol=new_symbol,
+            )
 
     def submit(
         self,
@@ -289,6 +474,19 @@ class LiveDesk:
         client_order_id: str | None = None,
     ) -> dict[str, object]:
         """Risk-check one limit order. Transmit only when the venue switch is on."""
+        with self._gate:
+            return self._submit_body(symbol, side, qty, px, ts_ns, client_order_id=client_order_id)
+
+    def _submit_body(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+        ts_ns: int,
+        *,
+        client_order_id: str | None = None,
+    ) -> dict[str, object]:
         self._alive()
         self._require_funded()
         self._clock(ts_ns)
@@ -308,8 +506,11 @@ class LiveDesk:
                 idempotent=True,
                 order=order.as_dict(),
             )
-        if self._going_backwards(ts_ns):
-            return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
+        blocked = self._market_block(symbol, ts_ns, qty, px)
+        if blocked:
+            return self._deny(symbol, side, qty, px, ts_ns, client, blocked)
+        prior_mark = self.marks.get(symbol)
+        self._bind_identity(symbol)
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -317,6 +518,14 @@ class LiveDesk:
         decision = self.engine.decide(view, apply=False)
         self._collect_matured()
         reasons = list(decision.reasons)
+        reasons.extend(
+            precision_reasons(
+                qty,
+                px,
+                float(self.config.limits.qty_tick),
+                float(self.config.limits.price_tick),
+            )
+        )
         if self._rate_blocked(ts_ns, order=True) and "order_rate" not in reasons:
             reasons.append("order_rate")
         if self._duplicate(symbol, side, qty, px, ts_ns) and "duplicate_order" not in reasons:
@@ -336,6 +545,7 @@ class LiveDesk:
         )
         self._store(order)
         if reasons or not decision.allowed:
+            self._drop_unaccepted_mark(symbol, prior_mark)
             order.status = "denied"
             self._journal("deny", order.as_dict())
             self._save()
@@ -499,6 +709,7 @@ class LiveDesk:
             }
         )
         self._sync_order(order)
+        self._note_loss(ts_ns)
         if event.synthetic:
             order.synthetic = True
         self._check_books()
@@ -563,6 +774,134 @@ class LiveDesk:
             trace_ok=self.trace_ok,
         )
 
+    def _symbol_flags(self, symbol: str) -> tuple[bool, bool]:
+        return self.controls.get(symbol, (False, True))
+
+    def _latch_loss(self, ts_ns: int) -> None:
+        if self.engine.book.killed:
+            return
+        nav = float(self.engine.book.nav)
+        if nav != nav or not nav > 0.0:
+            return
+        reason = loss_reason(
+            nav, float(self.engine.book.daily_floor), float(self.engine.book.dd_floor)
+        )
+        if not reason:
+            return
+        self.engine.trip("risk", reason, ts_ns)
+        self.halt_reason = reason
+        self._cancel_working(ts_ns)
+
+    def _note_loss(self, ts_ns: int) -> None:
+        nav = self._account_value()
+        if nav == nav and nav > 0.0:
+            self.engine.book.nav = nav
+            if nav > float(self.engine.book.peak):
+                self.engine.book.peak = nav
+                self.peak = nav
+                self.engine._recompute_floors()
+        self._latch_loss(ts_ns)
+
+    def _cancel_working(self, ts_ns: int) -> list[str]:
+        """Cancel every transmitted working order. Only confirmed cancels count."""
+        targets = [
+            order
+            for order in list(self.orders.values())
+            if order.lifecycle in {"new", "partial"} and order.transmitted
+        ]
+        for order in targets:
+            self._send(_cancel_ticket(order))
+        if targets and self.arming.venue == "loopback":
+            self.poll(ts_ns)
+        return [
+            order.order_id
+            for order in targets
+            if order.lifecycle not in {"new", "partial"} or not order.transmitted
+        ]
+
+    def _working_ids(self) -> list[str]:
+        return [
+            order.order_id
+            for order in self.orders.values()
+            if order.lifecycle in {"new", "partial"} and order.transmitted
+        ]
+
+    def _apply_limits(self, limits: LimitConfig) -> None:
+        install_ceilings(self.engine, limits)
+        self.config = self.config.model_copy(update={"limits": limits})
+        digest, signature = sign_config(self.config, self.hmac_key)
+        self.engine.config_sha256 = digest
+        self.engine.config_hmac_sha256 = signature
+        self._limit_override = limits
+
+    def _limit_envelope(
+        self,
+        *,
+        applied: bool,
+        loosened: tuple[str, ...] = (),
+        structural: tuple[str, ...] = (),
+        reauthorized: bool = False,
+    ) -> dict[str, object]:
+        status = "limits" if applied else "limits_refused"
+        return self._envelope(
+            accepted=applied,
+            status=status,
+            applied=applied,
+            loosened=list(loosened),
+            structural=list(structural),
+            reauthorized=reauthorized,
+        )
+
+    def _restore_market(self, raw: Mapping[str, Any]) -> None:
+        self.actions = _action_list(raw.get("corporate_actions"))
+        halted = raw.get("action_halt") or []
+        if not isinstance(halted, list):
+            raise LiveDeskError("action halt set is malformed")
+        self.action_halt = {str(item) for item in halted}
+        self.feeds = _feed_map(raw.get("feeds"))
+        self._load_clock(raw)
+        self.reference = _reference_from_state(raw.get("reference"))
+        if "symbol_map" not in raw:
+            self.symbol_map = {}
+            self._seed_identity()
+            return
+        payload = raw.get("symbol_map")
+        if not isinstance(payload, dict):
+            raise LiveDeskError("symbol map is malformed")
+        self.symbol_map = {str(key): str(value) for key, value in payload.items()}
+
+    def _load_clock(self, raw: Mapping[str, Any]) -> None:
+        try:
+            self.quote_ok = flag_map(raw.get("quote_ok"))
+            self.bands = band_map(raw.get("price_bands"))
+        except ClockError as exc:
+            raise LiveDeskError(str(exc)) from exc
+
+    def _seed_identity(self) -> None:
+        names = set(self.positions) | set(self.marks)
+        names.update(order.symbol for order in self.orders.values())
+        for name in sorted(names):
+            if name not in self.symbol_map:
+                bind_map(self.symbol_map, name, name)
+
+    def _restore_controls(self, raw: Mapping[str, Any]) -> None:
+        payload = raw.get("symbol_controls") or {}
+        if not isinstance(payload, dict):
+            raise LiveDeskError("symbol controls are malformed")
+        for symbol, item in payload.items():
+            if not isinstance(item, dict):
+                raise LiveDeskError("symbol control is malformed")
+            self.controls[str(symbol)] = (
+                bool(item.get("halted")),
+                bool(item.get("locate_ok", True)),
+            )
+
+    def _restore_saved_limits(self, raw: Mapping[str, Any]) -> None:
+        payload = raw.get("limit_override")
+        if not isinstance(payload, dict):
+            return
+        self._apply_limits(LimitConfig.model_validate(payload))
+
     def _project(self, ts_ns: int) -> None:
         self.engine.refresh_session(ts_ns)
         symbols = set(self.positions) | set(self.reserved_qty) | set(self.marks)
@@ -572,7 +911,15 @@ class LiveDesk:
                 raise LiveDeskError("symbol table is full")
             pos = self.positions.get(symbol, 0.0) + self.reserved_qty.get(symbol, 0.0)
             ref = self.marks.get(symbol, float("nan"))
-            self.engine.set_symbol(sid, pos=pos, ref_px=ref, ref_ts_ns=self.mark_ts.get(symbol, 0))
+            halted, locate_ok = self._symbol_flags(symbol)
+            self.engine.set_symbol(
+                sid,
+                pos=pos,
+                ref_px=ref,
+                ref_ts_ns=self.mark_ts.get(symbol, 0),
+                halted=halted,
+                locate_ok=locate_ok,
+            )
         account = self._account_value()
         self.engine.update_account(nav=account, mark_ts_ns=ts_ns if account > 0.0 else 0)
         self.peak = float(self.engine.book.peak)
@@ -757,6 +1104,288 @@ class LiveDesk:
         count = sum(1 for stamp in self.rate_message_ts if ts_ns - stamp <= window)
         return count >= int(self.config.limits.max_messages_per_window)
 
+    def _ingest_locked(
+        self,
+        symbol: str,
+        bid: float,
+        ask: float,
+        seq: int,
+        ts_ns: int,
+        *,
+        snapshot: bool,
+    ) -> dict[str, object]:
+        try:
+            cleaned = require_internal(self.symbol_map, symbol)
+        except MarketDataError as exc:
+            raise LiveDeskError(str(exc)) from exc
+        if self._nyse_closed(ts_ns):
+            self._journal(
+                "quote", {"symbol": cleaned, "accepted": False, "reasons": ["market_closed"]}
+            )
+            self._save()
+            return self._envelope(
+                accepted=False,
+                status="quote",
+                symbol=cleaned,
+                stale=False,
+                reasons=["market_closed"],
+                mark=self.marks.get(cleaned),
+            )
+        previous_seq, was_stale = self.feeds.get(cleaned, (None, False))
+        decision = assess_quote(
+            bid=float(bid),
+            ask=float(ask),
+            seq=int(seq),
+            previous_seq=previous_seq,
+            previous_mark=self.marks.get(cleaned),
+            was_stale=was_stale,
+            snapshot=snapshot,
+        )
+        accepted, stale, reasons = self._store_quote(cleaned, decision, ts_ns)
+        self._journal(
+            "quote",
+            {"symbol": cleaned, "accepted": accepted, "reasons": reasons},
+        )
+        self._save()
+        return self._envelope(
+            accepted=accepted,
+            status="quote",
+            symbol=cleaned,
+            stale=stale,
+            reasons=reasons,
+            mark=self.marks.get(cleaned),
+        )
+
+    def _apply_action_locked(
+        self,
+        kind: str,
+        symbol: str,
+        ts_ns: int,
+        *,
+        ratio: float | None,
+        cash_per_share: float | None,
+        new_symbol: str | None,
+    ) -> dict[str, object]:
+        cleaned = _symbol(symbol)
+        plan = plan_action(
+            kind=kind,
+            symbol=cleaned,
+            cash=float(self.cash),
+            positions=dict(self.positions),
+            marks=dict(self.marks),
+            working=self._symbol_working(cleaned),
+            ratio=ratio,
+            cash_per_share=cash_per_share,
+            new_symbol=new_symbol,
+            qty_cap=float(self.config.limits.max_position_quantity),
+        )
+        if plan.apply:
+            self._commit_action(plan, ts_ns)
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+        elif plan.halt:
+            self._halt_for_action(plan.symbol, ts_ns)
+        record = _action_record(kind, plan, ts_ns)
+        self.actions.append(record)
+        self._journal("corporate_action", record)
+        self._save()
+        return self._envelope(
+            accepted=plan.apply,
+            status="corporate_action",
+            reason=plan.reason,
+            symbol=plan.symbol,
+            new_symbol=plan.new_symbol,
+            halted=bool(self.controls.get(plan.new_symbol, (False, True))[0]),
+        )
+
+    def _commit_action(self, plan: ActionPlan, ts_ns: int) -> None:
+        self.cash = float(plan.cash)
+        self.positions = {str(key): float(value) for key, value in plan.positions.items()}
+        self.marks = {str(key): float(value) for key, value in plan.marks.items()}
+        self._scale_desk_orders(plan)
+        if plan.new_symbol != plan.symbol:
+            self._rename_desk(plan.symbol, plan.new_symbol, plan.qty_factor, ts_ns)
+        else:
+            self._scale_lots(plan.symbol, plan.qty_factor)
+        self._clear_action_halt(plan, ts_ns)
+
+    def _halt_for_action(self, symbol: str, ts_ns: int) -> None:
+        self.action_halt.add(symbol)
+        halt, locate = self._symbol_flags(symbol)
+        del halt
+        self.controls[symbol] = (True, locate)
+        if symbol in self.marks:
+            self._project(ts_ns)
+
+    def _clear_action_halt(self, plan: ActionPlan, ts_ns: int) -> None:
+        if plan.symbol not in self.action_halt and plan.new_symbol not in self.action_halt:
+            return
+        self.action_halt.discard(plan.symbol)
+        self.action_halt.discard(plan.new_symbol)
+        _halt, locate = self._symbol_flags(plan.new_symbol)
+        self.controls[plan.new_symbol] = (False, locate)
+
+    def _scale_desk_orders(self, plan: ActionPlan) -> None:
+        factor = float(plan.qty_factor)
+        for order in self.orders.values():
+            if order.symbol != plan.symbol:
+                continue
+            if factor != 1.0:
+                order.qty *= factor
+                order.filled_qty *= factor
+                order.px /= factor
+            if plan.new_symbol != plan.symbol:
+                order.symbol = plan.new_symbol
+        if factor != 1.0 and plan.symbol in self.reserved_qty:
+            self.reserved_qty[plan.symbol] = float(self.reserved_qty[plan.symbol]) * factor
+        if plan.new_symbol == plan.symbol:
+            return
+        if plan.symbol in self.reserved_qty:
+            self.reserved_qty[plan.new_symbol] = self.reserved_qty.pop(plan.symbol)
+        if plan.symbol in self.mark_ts:
+            self.mark_ts[plan.new_symbol] = self.mark_ts.pop(plan.symbol)
+
+    def _rename_desk(self, old: str, new: str, factor: float, ts_ns: int) -> None:
+        broker_name = self.symbol_map.pop(old, old)
+        self.symbol_map[new] = new if broker_name == old else broker_name
+        feed = self.feeds.pop(old, None)
+        if feed is not None:
+            self.feeds[new] = feed
+        if old in self.controls:
+            self.controls[new] = self.controls.pop(old)
+        move_entry(self.quote_ok, old, new)
+        move_entry(self.bands, old, new)
+        self._move_lots(old, new, factor, ts_ns)
+
+    def _move_lots(self, old: str, new: str, factor: float, ts_ns: int) -> None:
+        sid = self.engine._ids.get(old)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        lots = [
+            (float(sym.lq[index]) * factor, int(sym.ls[index]), int(sym.lu[index]))
+            for index in range(int(sym.nlot))
+        ]
+        self.engine.set_symbol(sid, pos=0.0, ref_px=1.0, ref_ts_ns=ts_ns, locate_ok=True)
+        for index in range(int(sym.nlot)):
+            sym.lq[index] = 0.0
+        sym.nlot = 0
+        new_sid = self._sid(new)
+        for qty, settles, funded in lots:
+            if qty > 0.0:
+                self.engine.restore_lot(
+                    new_sid, qty=qty, settles_ns=settles, unsettled_funded=bool(funded)
+                )
+
+    def _scale_lots(self, symbol: str, factor: float) -> None:
+        if factor == 1.0:
+            return
+        sid = self.engine._ids.get(symbol)
+        if sid is None:
+            return
+        sym = self.engine.book.syms[sid]
+        for index in range(int(sym.nlot)):
+            sym.lq[index] = float(sym.lq[index]) * factor
+
+    def _market_block(self, symbol: str, ts_ns: int, qty: float, px: float) -> tuple[str, ...]:
+        if self._going_backwards(ts_ns):
+            return ("non_monotonic_time",)
+        if self._nyse_closed(ts_ns):
+            return ("market_closed",)
+        if self._quote_blocks(symbol):
+            return ("invalid_quote",)
+        if self._mark_is_stale(symbol, ts_ns) or self._feed_stale(symbol):
+            return ("stale_data",)
+        reasons: list[str] = []
+        jumped = jump_problem(self.marks.get(symbol), px)
+        if jumped:
+            reasons.append(jumped)
+        if outside_band(px, self.bands.get(symbol)):
+            reasons.append("luld")
+        ref = snapshot_problem(self.reference, symbol, ts_ns)
+        if ref:
+            reasons.append(ref)
+        elif self.reference is not None:
+            reasons.extend(
+                size_problems(
+                    qty, px, self.reference.lot_size[symbol], self.reference.tick_size[symbol]
+                )
+            )
+        return tuple(reasons)
+
+    def _feed_stale(self, symbol: str) -> bool:
+        row = self.feeds.get(symbol)
+        return row is not None and bool(row[1])
+
+    def _nyse_closed(self, ts_ns: int) -> bool:
+        clock = self.config.session
+        if clock.timezone != "America/New_York" or clock.weekends_open:
+            return False
+        return nyse_rth_closed(ts_ns)
+
+    def _quote_blocks(self, symbol: str) -> bool:
+        """A rejected quote with no stored mark must not authorize the next order."""
+        return self.quote_ok.get(symbol) is False and symbol not in self.marks
+
+    def _store_quote(self, symbol: str, decision: Any, ts_ns: int) -> tuple[bool, bool, list[str]]:
+        had_mark = symbol in self.marks
+        mark = decision.mark
+        accept = bool(decision.accept and mark is not None)
+        reasons = list(decision.reasons)
+        if accept and outside_band(float(mark), self.bands.get(symbol)):
+            accept = False
+            reasons.append("luld")
+        self.feeds[symbol] = (decision.seq, decision.stale)
+        if accept and mark is not None:
+            price = float(mark)
+            self.quote_ok[symbol] = True
+            self.marks[symbol] = price
+            self.mark_ts[symbol] = ts_ns
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+        elif not had_mark:
+            self.quote_ok[symbol] = False
+        return accept, bool(decision.stale), reasons
+
+    def _symbol_working(self, symbol: str) -> bool:
+        return any(
+            order.symbol == symbol and order.lifecycle in {"new", "partial"}
+            for order in self.orders.values()
+        )
+
+    def _bind_identity(self, symbol: str) -> None:
+        if symbol in self.symbol_map:
+            return
+        bind_map(self.symbol_map, symbol, symbol)
+
+    def _drop_unaccepted_mark(self, symbol: str, prior: float | None) -> None:
+        """A denied order must not leave the first print behind as a reference."""
+        if prior is not None:
+            return
+        self.marks.pop(symbol, None)
+        self.mark_ts.pop(symbol, None)
+
+    def _require_reference(self, snapshot: ReferenceSnapshot) -> None:
+        if snapshot.version < 1 or snapshot.max_age_ns < 0 or snapshot.as_of_ns < 0:
+            raise LiveDeskError("bad_reference_version")
+        if set(snapshot.lot_size) != set(snapshot.tick_size):
+            raise LiveDeskError("bad_reference")
+        for name in snapshot.lot_size:
+            if price_problem(snapshot.lot_size[name]) or price_problem(snapshot.tick_size[name]):
+                raise LiveDeskError("bad_reference")
+
+    def _mark_is_stale(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        if prior is None:
+            return False
+        if ts_ns < prior:
+            return True
+        return ts_ns > prior + int(self.config.limits.max_mark_age_ns)
+
+    def _quote_is_older(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        return prior is not None and ts_ns < prior
+
     def _going_backwards(self, ts_ns: int) -> bool:
         last = int(self.engine.book.last_ts)
         return last != 0 and ts_ns < last
@@ -883,6 +1512,23 @@ class LiveDesk:
             "live_pnl_claim": False,
             "would_promote_live": False,
             "evidence_conditions": "blocked",
+            "symbol_controls": {
+                symbol: {"halted": halt, "locate_ok": locate}
+                for symbol, (halt, locate) in self.controls.items()
+            },
+            "limit_override": _limit_payload(self._limit_override),
+            "symbol_map": dict(self.symbol_map),
+            "feeds": {
+                symbol: {"seq": seq, "stale": stale} for symbol, (seq, stale) in self.feeds.items()
+            },
+            "reference": None if self.reference is None else self.reference.as_dict(),
+            "corporate_actions": list(self.actions),
+            "action_halt": sorted(self.action_halt),
+            "quote_ok": dict(self.quote_ok),
+            "price_bands": {
+                symbol: {"lower": lower, "upper": upper}
+                for symbol, (lower, upper) in self.bands.items()
+            },
         }
 
     def _load_without_snapshot(
@@ -961,7 +1607,10 @@ class LiveDesk:
         self.rate_message_ts = [int(item) for item in list(raw.get("rate_message_ts", []))]
         self.dupes = [_dupe(item) for item in list(raw.get("dupes", []))]
         self._restore_orders(raw)
+        self._restore_market(raw)
         self._restore_engine(raw)
+        self._restore_controls(raw)
+        self._restore_saved_limits(raw)
         self._restore_trace()
         problem = self._verify_journal()
         if problem:
@@ -1054,27 +1703,14 @@ class LiveDesk:
             if self.journal_hash != _ZERO:
                 return "journal missing"
             return None
-        prev = _ZERO
-        last = _ZERO
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
         except OSError as exc:
             return f"journal unreadable: {exc}"
-        for line_no, line in enumerate(lines, start=1):
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                return f"journal break at line {line_no}"
-            if not isinstance(row, dict) or row.get("prev") != prev:
-                return f"journal break at line {line_no}"
-            digest = _digest({"kind": row.get("kind"), "payload": row.get("payload"), "prev": prev})
-            if row.get("event_hash") != digest:
-                return f"journal hash mismatch at line {line_no}"
-            prev = digest
-            last = digest
-        if last != self.journal_hash:
-            return "journal head does not match the desk snapshot"
-        return None
+        if lines and _torn_json(lines[-1]):
+            lines = lines[:-1]
+            _rewrite_lines(path, lines)
+        return _journal_problem(lines, self.journal_hash)
 
     def _scan_outbound(self) -> None:
         outbound = self.root / "outbound"
@@ -1105,6 +1741,78 @@ class LiveDesk:
             self._lock_path = path
             return
         raise LiveDeskError(f"desk is locked: {path}")
+
+
+def _action_record(kind: str, plan: ActionPlan, ts_ns: int) -> dict[str, Any]:
+    return {
+        "kind": kind,
+        "symbol": plan.symbol,
+        "new_symbol": plan.new_symbol,
+        "apply": plan.apply,
+        "halt": plan.halt,
+        "reason": plan.reason,
+        "qty_factor": plan.qty_factor,
+        "cash_delta": plan.cash_delta,
+        "ts_ns": ts_ns,
+    }
+
+
+def _action_list(raw: object) -> list[dict[str, Any]]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise LiveDeskError("corporate actions are malformed")
+    rows: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            raise LiveDeskError("corporate action is malformed")
+        rows.append(
+            {
+                "kind": str(item.get("kind", "")),
+                "symbol": str(item["symbol"]),
+                "new_symbol": str(item.get("new_symbol", item["symbol"])),
+                "apply": bool(item.get("apply")),
+                "halt": bool(item.get("halt")),
+                "reason": str(item.get("reason", "")),
+                "qty_factor": float(item.get("qty_factor", 1.0)),
+                "cash_delta": float(item.get("cash_delta", 0.0)),
+                "ts_ns": int(item.get("ts_ns", 0)),
+            }
+        )
+    return rows
+
+
+def _feed_map(raw: object) -> dict[str, tuple[int | None, bool]]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise LiveDeskError("feed state is malformed")
+    feeds: dict[str, tuple[int | None, bool]] = {}
+    for symbol, item in raw.items():
+        if not isinstance(item, dict):
+            raise LiveDeskError("feed state is malformed")
+        seq = item.get("seq")
+        feeds[str(symbol)] = (None if seq is None else int(seq), bool(item.get("stale")))
+    return feeds
+
+
+def _reference_from_state(raw: object) -> ReferenceSnapshot | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise LiveDeskError("reference snapshot is malformed")
+    try:
+        return snapshot_from_dict({str(key): value for key, value in raw.items()})
+    except (MarketDataError, KeyError, TypeError, ValueError) as exc:
+        raise LiveDeskError("reference snapshot is malformed") from exc
+
+
+def _valid_band(lower: float, upper: float) -> tuple[float, float]:
+    lo = float(lower)
+    hi = float(upper)
+    if not math.isfinite(lo) or not math.isfinite(hi) or lo <= 0.0 or hi < lo:
+        raise LiveDeskError("bad_price_band")
+    return lo, hi
 
 
 def _positive(value: float | None, default: float | None) -> float:
@@ -1141,6 +1849,12 @@ def _quantity(qty: float) -> None:
 def _price(px: float) -> None:
     if isinstance(px, bool) or px != px or px <= 0.0 or px == float("inf"):
         raise LiveDeskError("price must be finite and positive")
+
+
+def _limit_payload(limits: LimitConfig | None) -> dict[str, object] | None:
+    if limits is None:
+        return None
+    return limits.model_dump(mode="json")
 
 
 def _ticks(
@@ -1182,6 +1896,60 @@ def _cancel_ticket(order: DeskOrder) -> dict[str, object]:
 def _digest(body: Mapping[str, object]) -> str:
     encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(encoded.encode()).hexdigest()
+
+
+def _journal_problem(lines: list[str], expected: str) -> str | None:
+    """Walk the chain. A torn last line is dropped; a bad earlier line still freezes."""
+    body = list(lines)
+    if body and _torn_json(body[-1]):
+        body = body[:-1]
+    prev = _ZERO
+    last = _ZERO
+    for line_no, line in enumerate(body, start=1):
+        digest, problem = _journal_link(line, line_no, prev)
+        if problem is not None:
+            return problem
+        prev = digest
+        last = digest
+    if last != expected:
+        return "journal head does not match the desk snapshot"
+    return None
+
+
+def _torn_json(line: str) -> bool:
+    try:
+        json.loads(line)
+    except json.JSONDecodeError:
+        return True
+    return False
+
+
+def _rewrite_lines(path: Path, lines: list[str]) -> None:
+    """Drop a torn tail so the next append chains from the last intact line."""
+    payload = "".join(f"{line}\n" for line in lines).encode()
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, payload)
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, path)
+    os.chmod(path, 0o600)
+
+
+def _journal_link(line: str, line_no: int, prev: str) -> tuple[str, str | None]:
+    try:
+        row = json.loads(line)
+    except json.JSONDecodeError:
+        return "", f"journal break at line {line_no}"
+    if not isinstance(row, dict) or row.get("prev") != prev:
+        return "", f"journal break at line {line_no}"
+    digest = _digest({"kind": row.get("kind"), "payload": row.get("payload"), "prev": prev})
+    if row.get("event_hash") != digest:
+        return "", f"journal hash mismatch at line {line_no}"
+    return digest, None
 
 
 def _append_line(path: Path, row: Mapping[str, object]) -> None:
