@@ -60,7 +60,7 @@ def bench_saddlepoint() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SADDLEPOINT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -72,7 +72,7 @@ def bench_mutual_info() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MUTUAL_INFO_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -86,7 +86,7 @@ def bench_transfer_entropy() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_TRANSFER_ENTROPY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -100,7 +100,7 @@ def bench_brownian_bridge() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BROWNIAN_BRIDGE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -114,7 +114,7 @@ def bench_jarrow_turnbull() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_JARROW_TURNBULL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -128,6 +128,6 @@ def bench_campbell_shiller() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CAMPBELL_SHILLER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

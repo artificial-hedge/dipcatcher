@@ -164,7 +164,11 @@ class _Sink:
                 pass
 
         self._srv = ThreadingHTTPServer(("127.0.0.1", 0), _H)
-        self._thread = threading.Thread(target=self._srv.serve_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self._srv.serve_forever,
+            kwargs={"poll_interval": 0.05},
+            daemon=True,
+        )
         self._thread.start()
 
     @property
@@ -260,7 +264,7 @@ def _wait_hits(sink: _Sink, n: int, timeout: float = _WAIT_S) -> None:
         time.sleep(0.05)
 
 
-def _busy_executor(app: FastAPI, slots: int, sleep_s: float = 1.5) -> None:
+def _busy_executor(app: FastAPI, slots: int, sleep_s: float = 0.4) -> None:
     """Occupy every worker thread with a sleeper so a submitted record
     stays 'queued' — the deterministic way to reach the queued-cancel
     path. All five surfaces share ``jobs_executor``."""
@@ -675,7 +679,7 @@ def _probe_retry(ctx: _Ctx) -> dict[str, bool]:
 
     # sink that accepts then stalls past the read timeout: unit-level
     # deliver_signed with a short timeout — retried, bounded, loud error
-    sink.stall_s = 1.0
+    sink.stall_s = 0.5
     t0 = time.monotonic()
     ok, err, attempts = deliver_signed(
         sink.url("/stall"), None, b"{}", timeout_s=0.2, backoff_s=0.01

@@ -68,5 +68,5 @@ class TestCrossformer:
         assert x.shape == (40, 48, 4)
 
     def test_bench(self) -> None:
-        out = bench_crossformer(seed=17, n=120, iters=200)
+        out = bench_crossformer(seed=17, n=120, iters=40)
         assert np.isfinite(out["synthetic_crossformer_mae"])

@@ -171,7 +171,11 @@ class _StubUpstream:
 
         self._server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
         self._server.daemon_threads = True
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self._server.serve_forever,
+            kwargs={"poll_interval": 0.05},
+            daemon=True,
+        )
         self._thread.start()
         _RESOURCES.get().callback(self.close)
 
@@ -291,7 +295,7 @@ class _StubUpstream:
             )
             if not self._sse_frame(h, first.encode()):
                 return
-            time.sleep(max(self.delay_s, 1.0))
+            time.sleep(self.delay_s if self.delay_s > 0 else 1.0)
             self._sse_frame(h, b"data: {not-json\n\n")
 
 
@@ -1216,7 +1220,9 @@ def _probe_timeout_stream() -> dict[str, bool]:
 
     # hung upstream → enveloped 502 inside the declared timeout
     upstream.mode = "chat_ok"
-    upstream.delay_s = 3.0
+    # OpenAICompatBackend takes an int timeout, so the header has to be
+    # at least 1s. The stub stays asleep past that deadline.
+    upstream.delay_s = 1.5
     t0 = time.monotonic()
     r = client.post(
         "/v1/chat/completions",
@@ -1267,7 +1273,7 @@ def _probe_timeout_stream() -> dict[str, bool]:
     # + [DONE] (the HTTP status is already committed to SSE)
     client_sse, _api_sse, _c3 = _client(sse_keepalive_s=0.25)
     upstream.mode = "sse_mid_fault"
-    upstream.delay_s = 1.0
+    upstream.delay_s = 0.5
     r = client_sse.post(
         "/harness/complete/stream",
         json={

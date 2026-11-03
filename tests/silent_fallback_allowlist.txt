@@ -1,0 +1,27 @@
+# Intended silent fallbacks in the high-risk packages.
+# Columns: path, qualname, handler types, swallow kind, reason.
+# Rows are sorted. A new swallow fails tests/unit/test_silent_fallback.py
+# until a row is added here or the handler fails closed.
+#
+# Not listed, on purpose:
+# - ImportError -> {} when a scorecard lane's module is optional.
+# - ValueError / RuntimeError / FloatingPointError / TypeError -> {}
+#   when a lane cannot be constructed or a score is non-finite.
+#   KeyError is not in that degrade: a renamed required score is a bug.
+# - contextlib.suppress(OSError) around cleanup.
+# - forward_shadow's suppress(ValueError, sqlite3.Error) around a
+#   failure-journal write that still re-raises the original error.
+# - .get(symbol, 0) / .get(name, {}) for optional subsections, zero
+#   baselines, and absent persisted lists. A .get of candidates,
+#   provenance, health, promotion, or synthetic_coverage with an empty
+#   default is a swallow and must be a row.
+src/quant_fund/research/auditor_bundle.py	_extract_entry_pubkey	KeyError,TypeError,ValueError,JSONDecodeError	return None	crown-jewel pin; a malformed Rekor entry has no signer key, and the verifier treats None as unsigned. Left in place until the pin moves.
+src/quant_fund/research/checkpoint_chain.py	checkpoint_spine	KeyError,TypeError,ValueError	continue	crown-jewel pin; a rotation record with a malformed predecessor registry is skipped while the spine keeps checking the other records. Left in place until the pin moves.
+src/quant_fund/research/fleet_eval.py	run_distribution_fleet	AttributeError,ImportError,KeyError,RuntimeError,TypeError,ValueError	pass	Metadata is a label. A missing or unreadable head stays "unknown"; scoring errors are recorded on the row above.
+src/quant_fund/research/key_rotation.py	verify_rotations	Exception	continue	crown-jewel pin; one bad signature is a miss and the verifier tries the next record. Left in place until the pin moves.
+src/quant_fund/research/ots_anchor.py	_fetch_block_witness	Exception	return None	crown-jewel pin; an explorer outage skips that block witness (noqa BLE001) instead of failing the upgrade. Left in place until the pin moves.
+src/quant_fund/research/ots_anchor.py	_fetch_header	Exception	return None	crown-jewel pin; an explorer outage skips that header (noqa BLE001) instead of failing the upgrade. Left in place until the pin moves.
+src/quant_fund/research/ots_anchor.py	stamp_ots	OSError,ValueError,KeyError	continue	crown-jewel pin; a dead calendar is skipped and stamp_ots still fails if every calendar is silent. Left in place until the pin moves.
+src/quant_fund/research/ots_anchor.py	upgrade_ots	Exception	continue	crown-jewel pin; a dead calendar is skipped while the upgrade tries the next one (noqa BLE001). Left in place until the pin moves.
+src/quant_fund/research/verify.py	_artifact_errors	get:provenance	{}	A missing immutable provenance block has no run_id, so the verifier records immutable_provenance_mismatch instead of accepting the receipt.
+src/quant_fund/research/witness_scan.py	_entry_digest	ValueError,KeyError,TypeError	return None	crown-jewel pin; an unrecognizable hashedrekord body is not a digest, matching the function's contract. Left in place until the pin moves.

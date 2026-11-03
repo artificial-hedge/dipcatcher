@@ -60,7 +60,7 @@ def bench_mlmc() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MLMC_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -74,7 +74,7 @@ def bench_black_karasinski() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BLACK_KARASINSKI_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -86,7 +86,7 @@ def bench_debtrank() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DEBTRANK_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -98,7 +98,7 @@ def bench_ews_signals() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EWS_SIGNALS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -112,7 +112,7 @@ def bench_permutation_entropy() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PERMUTATION_ENTROPY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -124,6 +124,6 @@ def bench_svgd() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SVGD_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

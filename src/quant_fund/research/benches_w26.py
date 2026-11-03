@@ -79,7 +79,7 @@ def bench_marchenko_pastur() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_MP_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -98,7 +98,7 @@ def bench_factor_nowcast() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_DFM_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -116,7 +116,7 @@ def bench_stationary_bootstrap() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_SB_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -135,7 +135,7 @@ def bench_skill_ratings() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_SKILL_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -154,7 +154,7 @@ def bench_modularity_communities() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_MODULARITY_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -172,5 +172,5 @@ def bench_stein_thinning() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_STEIN_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

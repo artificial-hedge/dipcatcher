@@ -65,7 +65,7 @@ def bench_unconstrained_optimizers() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_OPT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -79,7 +79,7 @@ def bench_clustering_methods() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CLUSTER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -93,7 +93,7 @@ def bench_manifold_learning() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MANIFOLD_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -107,7 +107,7 @@ def bench_robust_regression() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ROBUST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -121,7 +121,7 @@ def bench_empirical_bayes() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EB_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -135,6 +135,6 @@ def bench_design_experiments() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DOE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

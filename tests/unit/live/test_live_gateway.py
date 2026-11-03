@@ -436,6 +436,53 @@ def test_lost_broker_response_stays_inflight_until_it_can_be_canceled(tmp_path: 
     assert broker.cancels == 1
 
 
+def test_recover_none_is_a_lost_response_not_a_closed_failure(tmp_path: Path) -> None:
+    broker = _NoRecordBroker()
+    session = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    _arm(session)
+    with pytest.raises(LiveGateError, match="stays inflight") as caught:
+        _buy(session, quantity=1.0, client_order_id="dc-none")
+    assert isinstance(caught.value.__cause__, TimeoutError)
+    stored = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
+    assert stored["orders"][0]["status"] == "inflight"
+    assert stored["orders"][0]["reason"] == "broker response lost; order remains recoverable"
+
+
+def test_recover_key_error_fails_closed(tmp_path: Path) -> None:
+    broker = _KeyErrorBroker()
+    session = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    _arm(session)
+    with pytest.raises(LiveGateError, match="failed closed") as caught:
+        _buy(session, quantity=1.0, client_order_id="dc-key")
+    assert isinstance(caught.value.__cause__, KeyError)
+    stored = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
+    assert stored["orders"][0]["status"] == "inflight"
+    assert stored["orders"][0]["reason"] == "broker recovery failed closed"
+    with pytest.raises(LiveGateError, match="failed closed") as reopened:
+        open_session(
+            _config(tmp_path, venue="alpaca-paper"),
+            PRETRADE,
+            state_dir=tmp_path,
+            now_ns=_clock,
+            broker=broker,
+        )
+    assert isinstance(reopened.value.__cause__, KeyError)
+    again = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
+    assert again["orders"][0]["reason"] == "broker recovery failed closed"
+
+
 def test_pretrade_limits_survive_a_new_process(tmp_path: Path) -> None:
     pretrade = _tight(tmp_path, max_orders_per_window=1)
     first = _gateway(tmp_path / "rate", pretrade=pretrade)
@@ -763,6 +810,18 @@ class _LosingBroker:
     def fills(self, *, broker_to_client: dict[str, str]) -> FillPage:
         del broker_to_client
         return FillPage(fills=(), truncated=False)
+
+
+class _NoRecordBroker(_LosingBroker):
+    def recover(self, client_order_id: str) -> BrokerAck | None:
+        del client_order_id
+        return None
+
+
+class _KeyErrorBroker(_LosingBroker):
+    def recover(self, client_order_id: str) -> BrokerAck | None:
+        del client_order_id
+        raise KeyError("client_order_id")
 
 
 class _StatusScript:

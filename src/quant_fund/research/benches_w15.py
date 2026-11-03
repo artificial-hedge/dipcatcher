@@ -198,7 +198,7 @@ def bench_subspace_denoising() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -234,7 +234,7 @@ def bench_conformal_transfer() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -270,7 +270,7 @@ def bench_hpd_conformal() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -324,7 +324,7 @@ def bench_capability_value() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -366,7 +366,7 @@ def bench_agent_referee() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -418,7 +418,7 @@ def bench_vintage_eval() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -463,7 +463,7 @@ def bench_entropy_shapley() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -526,5 +526,5 @@ def bench_fourier_pricing() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

@@ -53,7 +53,7 @@ def bench_johansen_vecm() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_JOHANSEN_VECM_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -66,7 +66,7 @@ def bench_pin_model() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_PIN_MODEL_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -79,7 +79,7 @@ def bench_kyle_lambda() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_KYLE_LAMBDA_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -92,7 +92,7 @@ def bench_oster_bounds() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_OSTER_BOUNDS_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -105,7 +105,7 @@ def bench_storey_fdr() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_STOREY_FDR_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -118,5 +118,5 @@ def bench_kiefer_vogelsang() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_KIEFER_VOGELSANG_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

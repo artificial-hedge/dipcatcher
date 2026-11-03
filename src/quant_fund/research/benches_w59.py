@@ -61,7 +61,7 @@ def bench_emd_hht() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EMD_HHT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -75,7 +75,7 @@ def bench_gallant_snp() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GALLANT_SNP_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -87,7 +87,7 @@ def bench_srisk() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SRISK_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -101,7 +101,7 @@ def bench_wavelet_coherence() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_WAVELET_COHERENCE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -113,7 +113,7 @@ def bench_tar_coint() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_TAR_COINT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -125,6 +125,6 @@ def bench_extreme_qr() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EXTREME_QR_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

@@ -51,7 +51,7 @@ def bench_acd_duration() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_ACD_DURATION_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -64,7 +64,7 @@ def bench_hjm() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_HJM_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -77,7 +77,7 @@ def bench_affine_term() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_AFFINE_TERM_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -90,7 +90,7 @@ def bench_gil_pelaez() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_GIL_PELAEZ_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -103,7 +103,7 @@ def bench_hedonic() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_HEDONIC_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -116,5 +116,5 @@ def bench_dea() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_DEA_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

@@ -639,28 +639,27 @@ def make_synthetic_trajectory(
             lookback = min(past_t + 1, 60)
             start = max(0, past_t + 1 - lookback)
             window = signal_matrix[start : past_t + 1, :]
-            rank_ic_vals: list[float] = []
-            ic_vals: list[float] = []
             if window.shape[0] >= 3:
-                for k in range(n_signals):
-                    col = window[:, k]
-                    if np.std(col) > _SS and len(col) > 1:
-                        from scipy.stats import pearsonr
-
-                        # Simple lookback signal strength as pseudo decision
-                        r_val = float(np.mean(col))
-                        ic_vals.append(min(max(r_val, -1.0), 1.0))
-                        if np.std(col[:-1]) > _SS and np.std(col[1:]) > _SS:
-                            r, _ = pearsonr(col[:-1], col[1:])
-                            rank_ic_vals.append(r if np.isfinite(r) else 0.0)
-                        else:
-                            rank_ic_vals.append(0.0)
-                    else:
-                        ic_vals.append(0.0)
-                        rank_ic_vals.append(0.0)
-                avg_rank_ic = float(np.mean(rank_ic_vals)) if rank_ic_vals else 0.0
+                # Pearson lag-1 on every column. Same statistic as
+                # scipy.stats.pearsonr(col[:-1], col[1:]), one pass.
+                col_std = np.std(window, axis=0)
+                active = col_std > _SS
+                ic = np.where(active, np.clip(np.mean(window, axis=0), -1.0, 1.0), 0.0)
+                left = window[:-1]
+                right = window[1:]
+                lag_ok = active & (np.std(left, axis=0) > _SS) & (np.std(right, axis=0) > _SS)
+                xc = left - np.mean(left, axis=0)
+                yc = right - np.mean(right, axis=0)
+                numer = np.sum(xc * yc, axis=0)
+                denom = np.sqrt(np.sum(xc * xc, axis=0) * np.sum(yc * yc, axis=0))
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    corr = np.where(denom > 0.0, numer / denom, 0.0)
+                rank_ic = np.where(lag_ok & np.isfinite(corr), corr, 0.0)
+                avg_rank_ic = float(np.mean(rank_ic))
+                avg_ic = float(np.mean(ic))
             else:
                 avg_rank_ic = 0.0
+                avg_ic = 0.0
 
             # Decision: some trials "accepted" based on signal strength
             decision = "accepted" if avg_rank_ic > 0.01 and rng.random() < 0.35 else "rejected"
@@ -668,7 +667,7 @@ def make_synthetic_trajectory(
                 TrialRecord(
                     submission_date=past_date.isoformat(),
                     rank_ic=avg_rank_ic,
-                    ic=float(np.mean(ic_vals)) if ic_vals else 0.0,
+                    ic=avg_ic,
                     decision=decision,
                     factor_id=f"F{past_t:03d}",
                 )

@@ -77,7 +77,7 @@ def bench_bocpd_changepoint() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_bocpd_core_bench(seed=_BOCPD_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -97,7 +97,7 @@ def bench_rough_heston_rbergomi() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_rhrb_core_bench(seed=_RHRB_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -118,5 +118,5 @@ def bench_signature_features() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_sig_core_bench(seed=_SIG_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

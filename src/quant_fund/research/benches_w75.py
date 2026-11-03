@@ -53,7 +53,7 @@ def bench_cronbach() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CRONBACH_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -67,7 +67,7 @@ def bench_icc() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ICC_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -81,7 +81,7 @@ def bench_dif() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DIF_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -93,7 +93,7 @@ def bench_g_theory() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_G_THEORY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -107,7 +107,7 @@ def bench_omega() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_OMEGA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -121,6 +121,6 @@ def bench_rasch_fit() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RASCH_FIT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

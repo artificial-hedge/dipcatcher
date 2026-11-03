@@ -132,7 +132,7 @@ def write_report_text(report: dict[str, Any]) -> str:
     for section in ("candidates", "provenance", "health", "promotion"):
         lines.append(f"## {section.title()}")
         lines.append("```json")
-        lines.append(json.dumps(report.get(section, {}), indent=2, sort_keys=True, default=str))
+        lines.append(json.dumps(report[section], indent=2, sort_keys=True, default=str))
         lines.extend(["```", ""])
     return "\n".join(lines)
 
