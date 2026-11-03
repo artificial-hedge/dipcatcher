@@ -177,7 +177,7 @@ def bench_conformal_oce() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -235,7 +235,7 @@ def bench_adaptive_eps() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -333,7 +333,7 @@ def bench_greek_neutral() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -390,7 +390,7 @@ def bench_diffusion_forecaster() -> dict[str, float]:
         return mapped
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -434,7 +434,7 @@ def bench_diffpts() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -469,7 +469,7 @@ def bench_extra_conformal() -> dict[str, float]:
             "xc_harm_ess_fraction": float(harm["synthetic_ess_fraction"]),
         }
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -541,7 +541,7 @@ def bench_multilevel_mm() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -727,7 +727,7 @@ def bench_rlmm_c51() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -782,7 +782,7 @@ def bench_sga_uq() -> dict[str, float]:
             "sga_n_nodes": float(graph.n_nodes),
         }
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -857,7 +857,7 @@ def bench_passive_impact() -> dict[str, float]:
             "pim_horizon": float(plan.horizon),
         }
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -902,5 +902,5 @@ def bench_stochastic_tracking() -> dict[str, float]:
             "st_n_steps": float(grid.n_steps),
         }
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

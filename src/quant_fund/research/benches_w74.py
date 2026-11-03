@@ -52,7 +52,7 @@ def bench_dispersion_tests() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DISPERSION_TESTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -66,7 +66,7 @@ def bench_median_tests() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MEDIAN_TESTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -80,7 +80,7 @@ def bench_cochran_q() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_COCHRAN_Q_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -92,7 +92,7 @@ def bench_quade() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_QUADE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -106,7 +106,7 @@ def bench_van_der_waerden() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_VAN_DER_WAERDEN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -120,6 +120,6 @@ def bench_dunn_test() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DUNN_TEST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

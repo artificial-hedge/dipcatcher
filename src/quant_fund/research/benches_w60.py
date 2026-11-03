@@ -61,7 +61,7 @@ def bench_kalman_em() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_KALMAN_EM_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -75,7 +75,7 @@ def bench_fractional_coint() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FRACTIONAL_COINT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -87,7 +87,7 @@ def bench_star_model() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_STAR_MODEL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -101,7 +101,7 @@ def bench_garch_in_mean() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GARCH_IN_MEAN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -113,7 +113,7 @@ def bench_log_acd() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_LOG_ACD_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -127,6 +127,6 @@ def bench_wigner_ville() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_WIGNER_VILLE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

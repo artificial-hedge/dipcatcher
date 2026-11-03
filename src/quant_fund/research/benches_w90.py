@@ -64,7 +64,7 @@ def bench_mars_regression() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MARS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -78,7 +78,7 @@ def bench_ace_avas() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ACE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -92,7 +92,7 @@ def bench_projection_pursuit() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PPR_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -106,7 +106,7 @@ def bench_marginal_likelihood() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ML_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -120,7 +120,7 @@ def bench_root_finders() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ROOTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -134,6 +134,6 @@ def bench_blind_sources() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BSS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

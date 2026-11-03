@@ -58,7 +58,7 @@ def bench_lmoments() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_LMOMENTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -70,7 +70,7 @@ def bench_sobol_sensitivity() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SOBOL_SENSITIVITY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -82,7 +82,7 @@ def bench_recurrent_events() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RECURRENT_EVENTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -94,7 +94,7 @@ def bench_dawid_skene() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DAWID_SKENE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -108,7 +108,7 @@ def bench_matrix_profile() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MATRIX_PROFILE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -122,6 +122,6 @@ def bench_hierarchical_reconciliation() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HIERARCHICAL_RECONCILIATION_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

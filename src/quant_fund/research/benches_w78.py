@@ -57,7 +57,7 @@ def bench_multiple_comparisons() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MULTIPLE_COMPARISONS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -71,7 +71,7 @@ def bench_rank_aggregation() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RANK_AGGREGATION_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -85,7 +85,7 @@ def bench_spc() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SPC_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -97,7 +97,7 @@ def bench_risk_parity() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RISK_PARITY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -111,7 +111,7 @@ def bench_mst_topology() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MST_TOPOLOGY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -125,6 +125,6 @@ def bench_e_divisive() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_E_DIVISIVE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

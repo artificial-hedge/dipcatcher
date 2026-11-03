@@ -60,7 +60,7 @@ def bench_log_concave() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_LOG_CONCAVE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -72,7 +72,7 @@ def bench_dtw_warp() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DTW_WARP_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -84,7 +84,7 @@ def bench_chow_lin() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CHOW_LIN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -98,7 +98,7 @@ def bench_chen_tiao_outliers() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CHEN_TIAO_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -110,7 +110,7 @@ def bench_beta_ar() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BETA_AR_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -122,6 +122,6 @@ def bench_ingarch() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_INGARCH_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

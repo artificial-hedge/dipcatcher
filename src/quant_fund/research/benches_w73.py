@@ -53,7 +53,7 @@ def bench_mardia() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MARDIA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -67,7 +67,7 @@ def bench_mantel() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MANTEL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -81,7 +81,7 @@ def bench_moran() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MORAN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -93,7 +93,7 @@ def bench_friedman() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FRIEDMAN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -107,7 +107,7 @@ def bench_contingency() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CONTINGENCY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -121,6 +121,6 @@ def bench_hoeffding() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HOEFFDING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

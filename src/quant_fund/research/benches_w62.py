@@ -62,7 +62,7 @@ def bench_entropy_pooling() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ENTROPY_POOL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -74,7 +74,7 @@ def bench_narrative_svar() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_NARRATIVE_SVAR_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -86,7 +86,7 @@ def bench_bfast() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BFAST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -98,7 +98,7 @@ def bench_stable_dist() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_STABLE_DIST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -110,7 +110,7 @@ def bench_asian_option() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ASIAN_OPTION_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -122,6 +122,6 @@ def bench_black_litterman() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BLACK_LITTERMAN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
