@@ -905,11 +905,11 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         # Fail-closed helpers (net timeouts, vetted outbound, secret redaction,
         # atomic cards, operator kill drain).
         ("fx1.flash.refresh", "quant_fund.utils.secrets"),
+        ("fx1.forecast.config", "quant_fund.config.yaml_safe"),
         ("fx1.forecast.evaluate", "quant_fund.schemas.errors"),
         ("fx1.modelcard", "quant_fund.utils.atomicio"),
         ("fx1.serve.backends", "quant_fund.utils.net_timeout"),
         ("fx1.serve.backends", "quant_fund.utils.outbound"),
-        ("fx1.serve.backends", "quant_fund.utils.secrets"),
         ("fx1.serve.byok_pin", "quant_fund.utils.net_timeout"),
         ("fx1.serve.byok_pin", "quant_fund.utils.outbound"),
         ("fx1.serve.e2e_audit", "quant_fund.utils.outbound"),
