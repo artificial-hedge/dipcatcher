@@ -125,15 +125,56 @@ def _committed_files(revision: str = "HEAD") -> dict[str, str]:
     return files
 
 
+# Content-addressed: an oid's bytes never change, so repeat exports in one
+# process (the freshness test rebuilds the tree several times) reuse them.
+_BLOB_CACHE: dict[str, bytes] = {}
+
+
+def _cat_file_batch(oids: list[str]) -> None:
+    """Fill ``_BLOB_CACHE`` for every missing oid in one ``git cat-file``."""
+    missing = [oid for oid in oids if oid not in _BLOB_CACHE]
+    if not missing:
+        return
+    proc = subprocess.Popen(
+        ["git", "cat-file", "--batch"],
+        cwd=REPO_ROOT,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    assert proc.stdin is not None and proc.stdout is not None
+    out, _ = proc.communicate("".join(f"{oid}\n" for oid in missing).encode())
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(proc.returncode, ["git", "cat-file", "--batch"])
+    cursor = 0
+    for oid in missing:
+        newline = out.index(b"\n", cursor)
+        header = out[cursor:newline]
+        cursor = newline + 1
+        parts = header.split()
+        if len(parts) < 3 or parts[1] == b"missing":
+            raise RuntimeError(f"git cat-file --batch missing {oid}")
+        size = int(parts[2])
+        blob = out[cursor : cursor + size]
+        if len(blob) != size:
+            raise RuntimeError(f"git cat-file --batch short read for {oid}")
+        cursor += size
+        if cursor < len(out) and out[cursor : cursor + 1] == b"\n":
+            cursor += 1
+        _BLOB_CACHE[oid] = blob
+
+
 def _committed_bytes(oid: str) -> bytes:
-    return subprocess.check_output(["git", "cat-file", "blob", oid], cwd=REPO_ROOT)
+    _cat_file_batch([oid])
+    return _BLOB_CACHE[oid]
 
 
 def _build_hash_index(files: dict[str, str] | None = None) -> dict[str, str]:
     """Map digests of committed blobs, including canonical JSON, to repo paths."""
     matches: dict[str, str] = {}
-    for rel, oid in sorted((files if files is not None else _committed_files()).items()):
-        raw = _committed_bytes(oid)
+    indexed = files if files is not None else _committed_files()
+    _cat_file_batch(list(dict.fromkeys(indexed.values())))
+    for rel, oid in sorted(indexed.items()):
+        raw = _BLOB_CACHE[oid]
         matches.setdefault(hashlib.sha256(raw).hexdigest(), rel)
         if rel.endswith(".json"):
             try:
