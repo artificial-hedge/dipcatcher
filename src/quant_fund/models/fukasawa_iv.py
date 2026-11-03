@@ -123,9 +123,23 @@ import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
+
+try:
+    from numba import njit
+except ImportError:  # pragma: no cover - numba is a required dependency
+
+    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
+        def _deco(fn: Any) -> Any:
+            return fn
+
+        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+            return _args[0]
+        return _deco
+
+
 from numpy.typing import NDArray
 from scipy.stats import norm
 
@@ -852,6 +866,47 @@ def simulate_ou_factor_sv(
     )
 
 
+@njit(cache=True)
+def _ou_step_contribs_nb(
+    z_x0: np.ndarray,
+    z_b: np.ndarray,
+    z_p: np.ndarray,
+    v_star: float,
+    beta: float,
+    decay: float,
+    w_eff: float,
+    stat_sd: float,
+    noise_scale: float,
+    rho: float,
+    dt: float,
+    sqdt: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Scalar-rho OU factor steps. Same recurrence as the Python loop."""
+    n_p, n_steps = z_b.shape
+    one_m = 1.0 - rho * rho
+    sqrt_one = math.sqrt(one_m)
+    rho2 = rho * rho
+    da = np.empty((n_p, n_steps))
+    dj = np.empty((n_p, n_steps))
+    dc = np.empty((n_p, n_steps))
+    dd = np.empty((n_p, n_steps))
+    dls = np.empty((n_p, n_steps))
+    for p in range(n_p):
+        x = z_x0[p] * stat_sd
+        for i in range(n_steps):
+            v_t = v_star * math.exp(beta * math.tanh(x))
+            sq_v = math.sqrt(v_t)
+            inc_b = z_b[p, i] * sqdt
+            inc_p = z_p[p, i] * sqdt
+            da[p, i] = v_t * dt
+            dj[p, i] = sq_v * rho * inc_b
+            dc[p, i] = v_t * rho2 * dt
+            dd[p, i] = v_t * one_m * dt
+            dls[p, i] = sq_v * (rho * inc_b + sqrt_one * inc_p) - 0.5 * v_t * dt
+            x = decay * x + noise_scale * w_eff * inc_b
+    return da, dj, dc, dd, dls
+
+
 def _ou_step_contribs(
     z_x0: Array,
     z_b: Array,
@@ -887,6 +942,24 @@ def _ou_step_contribs(
     w_eff = math.sqrt((1.0 - decay * decay) / (2.0 * kappa * dt))
     stat_sd = nu / math.sqrt(2.0 * lam)
     x = z_x0 * stat_sd
+    if not callable(rho):
+        rho_f = float(rho)
+        if not math.isfinite(rho_f) or abs(rho_f) >= 1.0:
+            raise ValueError("rho(x) must stay finite and |rho| < 1 on all paths")
+        return _ou_step_contribs_nb(
+            np.ascontiguousarray(z_x0, dtype=np.float64),
+            np.ascontiguousarray(z_b, dtype=np.float64),
+            np.ascontiguousarray(z_p, dtype=np.float64),
+            float(v_star),
+            float(beta),
+            float(decay),
+            float(w_eff),
+            float(stat_sd),
+            float(math.sqrt(accel) * nu),
+            rho_f,
+            float(dt),
+            float(sqdt),
+        )
     da = np.empty((n_p, n_steps))
     dj = np.empty((n_p, n_steps))
     dc = np.empty((n_p, n_steps))
@@ -894,7 +967,7 @@ def _ou_step_contribs(
     dls = np.empty((n_p, n_steps))
     for i in range(n_steps):
         v_t = v_star * np.exp(beta * np.tanh(x))
-        r_v = np.asarray(rho(x) if callable(rho) else np.full(n_p, float(rho)), dtype=float)
+        r_v = np.asarray(rho(x), dtype=float)
         if not bool(np.all(np.isfinite(r_v))) or bool(np.any(np.abs(r_v) >= 1.0)):
             raise ValueError("rho(x) must stay finite and |rho| < 1 on all paths")
         sq_v = np.sqrt(v_t)

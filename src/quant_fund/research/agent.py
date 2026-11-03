@@ -11,6 +11,7 @@ Proper scores only — no Sharpe.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import platform
@@ -4197,7 +4198,7 @@ def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
     return {name: payload for name, payload in families.items() if name not in retired}
 
 
-def _live_optional_family_blobs() -> dict[str, Any]:
+def _build_live_optional_family_blobs() -> dict[str, Any]:
     """Seeded live-optional benches. Default ``run_research`` still runs them."""
     return {
         "anytime_valid": bench_anytime_valid(),
@@ -5610,6 +5611,63 @@ def _live_optional_family_blobs() -> dict[str, Any]:
         "swim_gossip": bench_swim_gossip_family(),
         "two_three_pc": bench_two_three_pc_family(),
     }
+
+
+# Pytest sets DIP_SCORECARD_BUDGET=ci. Those benches are seeded and do not
+# read the research panel. The in-process dict serves a second run_research
+# on the same worker; the on-disk cache (budget + source hash) serves a
+# cold process such as the research CLI echo on another xdist worker.
+_CI_OPTIONAL_BLOBS: dict[str, dict[str, Any]] = {}
+
+
+def _bench_fingerprint() -> tuple[tuple[str, int], ...]:
+    return tuple(
+        (name, id(fn))
+        for name, fn in sorted(globals().items())
+        if name.startswith("bench_") and callable(fn)
+    )
+
+
+_ORIGINAL_BENCH_IDS = _bench_fingerprint()
+
+
+def _live_optional_family_blobs() -> dict[str, Any]:
+    """Return live-optional benches, cached when the CI scorecard budget is on.
+
+    The disk cache is consulted only for an unpatched bench table. Production
+    (any budget other than ``ci``) always rebuilds.
+    """
+    from quant_fund.research.ci_blob_cache import (
+        cache_disabled,
+        exclusive_lock,
+        load_blobs,
+        store_blobs,
+    )
+
+    budget = os.environ.get("DIP_SCORECARD_BUDGET", "full")
+    if budget != "ci":
+        return _build_live_optional_family_blobs()
+    cached = _CI_OPTIONAL_BLOBS.get(budget)
+    if cached is not None:
+        return copy.deepcopy(cached)
+    use_disk = _bench_fingerprint() == _ORIGINAL_BENCH_IDS and not cache_disabled()
+    if not use_disk:
+        blobs = _build_live_optional_family_blobs()
+        _CI_OPTIONAL_BLOBS[budget] = copy.deepcopy(blobs)
+        return blobs
+    with exclusive_lock():
+        cached = _CI_OPTIONAL_BLOBS.get(budget)
+        if cached is not None:
+            return copy.deepcopy(cached)
+        loaded = load_blobs(budget)
+        if loaded is None:
+            blobs = _build_live_optional_family_blobs()
+            stored = copy.deepcopy(blobs)
+            _CI_OPTIONAL_BLOBS[budget] = stored
+            store_blobs(budget, stored)
+            return copy.deepcopy(stored)
+        _CI_OPTIONAL_BLOBS[budget] = loaded
+        return copy.deepcopy(loaded)
 
 
 def _merge_live_optional(families: dict[str, Any], *, include: bool) -> None:

@@ -16,6 +16,7 @@ from quant_fund.models.dr3_reg import bench_dr3_reg
 from quant_fund.models.ob2i import bench_ob2i
 from quant_fund.models.redq import bench_redq
 from quant_fund.models.td7_lite import bench_td7_lite
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -58,7 +59,7 @@ def bench_awac_family() -> dict[str, float]:
 
 def bench_redq_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("redq", bench_redq(seed=_SEED + 961)))
+        return _floats(_finite_blob("redq", call_bench(bench_redq, seed=_SEED + 961)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:
