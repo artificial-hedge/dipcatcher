@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -124,6 +125,12 @@ def test_concurrent_job_submissions_return_one_job(
             assert a.json()["job_id"] == second_item["job_id"]
             assert a.json()["replayed"] is False
             assert second_item["replayed"] is True
+            # put() submits the runner after it returns. On a loaded worker
+            # the HTTP responses land before that thread has appended to
+            # ``calls``. Wait inside the lifespan: shutdown cancels futures.
+            deadline = time.monotonic() + 5.0
+            while len(calls) < 1 and time.monotonic() < deadline:
+                await anyio.sleep(0.01)
             assert len(publications) == len(calls) == 1
             assert a.headers["location"] == f"/harness/jobs/{a.json()['job_id']}"
 
