@@ -81,6 +81,8 @@ class LoopbackBridge:
 
     def __init__(self) -> None:
         self._queued: list[BrokerEvent] = []
+        self.defer_fill = False
+        self.cancel_sends = 0
 
     def transmit(self, ticket: Mapping[str, object]) -> None:
         kind = ticket.get("ticket")
@@ -88,6 +90,7 @@ class LoopbackBridge:
         if not isinstance(order_id, str) or not order_id:
             raise BridgeError("loopback ticket missing order_id")
         if kind == "cancel":
+            self.cancel_sends += 1
             self._queued.append(
                 BrokerEvent(
                     kind="cancel",
@@ -101,6 +104,11 @@ class LoopbackBridge:
             raise BridgeError("loopback ticket must be an order or a cancel")
         qty = _num(ticket.get("qty"), "loopback qty")
         price = _num(ticket.get("limit_price"), "loopback limit_price")
+        if self.defer_fill:
+            self._queued.append(
+                BrokerEvent(kind="ack", order_id=order_id, event_id=f"a-{order_id}", synthetic=True)
+            )
+            return
         self._queued.append(
             BrokerEvent(kind="ack", order_id=order_id, event_id=f"a-{order_id}", synthetic=True)
         )

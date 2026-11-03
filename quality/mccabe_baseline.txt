@@ -705,7 +705,6 @@ src/quant_fund/models/xor_filter.py:build 13
 src/quant_fund/models/xva.py:SyntheticBook.__post_init__ 20
 src/quant_fund/models/xva.py:compute_cva 13
 src/quant_fund/models/xva.py:compute_mva 10
-src/quant_fund/monitoring/kill_audit.py:kill_switch_audit 11
 src/quant_fund/native/conformance.py:_compare 11
 src/quant_fund/northset/benches.py:bench_northset 14
 src/quant_fund/observe/metrics.py:render_prometheus 11
