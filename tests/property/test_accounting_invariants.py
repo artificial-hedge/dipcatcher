@@ -214,7 +214,10 @@ def test_paper_ledger_conserves_cash_pnl_and_fees(
     seen_fees: list[float] = []
     with TemporaryDirectory() as root:
         ledger = PaperLedger(root, "inv")
+        assert PaperLedger.SCHEMA_VERSION == 2
+        assert ledger._meta["schema_version"] == PaperLedger.SCHEMA_VERSION
         ledger.set_meta(live_pnl_claim=False, research_only=True, label="PAPER_SIMULATED")
+        assert ledger._meta["schema_version"] == 2
         for index, (sid, side, qty, price) in enumerate(steps):
             held = broker.shares.get(sid, 0.0)
             if side is OrderSide.SELL and not allow_short:
