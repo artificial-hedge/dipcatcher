@@ -20,6 +20,7 @@ evidence. NAV is a simulated mark-to-model accounting identity, not live P&L.
 from __future__ import annotations
 
 import json
+import math
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -122,7 +123,10 @@ class PaperBrokerAdapter:
     ) -> None:
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
         self.state_path = Path(state_path)
-        self._nav_tolerance = float(nav_tolerance)
+        tolerance = float(nav_tolerance)
+        if not math.isfinite(tolerance) or tolerance < 0.0:
+            raise OrderLedgerError("nav_tolerance must be finite and non-negative")
+        self._nav_tolerance = tolerance
         self._starting_cash = float(starting_cash)
         self._ledger = OrderFillLedger(
             endpoint_kind=self.endpoint_kind, starting_cash=starting_cash
