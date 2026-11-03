@@ -81,7 +81,8 @@ def _buy(session: Any, **overrides: object) -> dict[str, Any]:
         "at_ns": TS,
     }
     payload.update(overrides)
-    return session.submit(**payload)
+    result: dict[str, Any] = session.submit(**payload)
+    return result
 
 
 def test_paper_adapter_still_refuses_a_live_endpoint() -> None:
@@ -201,6 +202,48 @@ def test_saturday_rth_is_closed_and_continuous_is_open(tmp_path: Path) -> None:
         at_ns=SATURDAY,
     )
     assert filled["status"] == "filled"
+
+
+def _at_ns(year: int, month: int, day: int, hour: int, minute: int = 0) -> int:
+    return int(
+        datetime(year, month, day, hour, minute, tzinfo=ZoneInfo("America/New_York")).timestamp()
+        * 1_000_000_000
+    )
+
+
+def test_us_rth_observes_xnys_holidays_and_early_closes(tmp_path: Path) -> None:
+    holiday = _open(tmp_path / "holiday")
+    _arm(holiday)
+    denied_holiday = _buy(holiday, at_ns=_at_ns(2024, 7, 4, 10))
+    assert "market_closed" in denied_holiday["reasons"]
+    assert holiday.orders == []
+
+    early_close = _open(tmp_path / "early-close")
+    _arm(early_close)
+    denied_after_close = _buy(early_close, at_ns=_at_ns(2024, 7, 3, 14))
+    assert "market_closed" in denied_after_close["reasons"]
+    assert early_close.orders == []
+
+    continuous = _open(tmp_path / "continuous-holiday", calendar="continuous")
+    _arm(continuous)
+    assert _buy(continuous, at_ns=_at_ns(2024, 7, 4, 10))["status"] == "filled"
+
+
+def test_alpaca_paper_refuses_at_different_from_wall_clock(tmp_path: Path) -> None:
+    transport = _Script()
+    broker = AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=transport)
+    session = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=lambda: SATURDAY,
+        broker=broker,
+    )
+    _arm(session)
+
+    with pytest.raises(LiveGateError, match="wall clock"):
+        _buy(session, at_ns=TS)
+    assert transport.calls == []
 
 
 def test_flatten_sells_the_loopback_position(tmp_path: Path) -> None:
