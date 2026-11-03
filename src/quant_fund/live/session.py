@@ -29,6 +29,7 @@ from quant_fund.live.brokers import (
     BrokerFill,
     LiveOrder,
     LoopbackBroker,
+    _rejection_is_definite,
     alpaca_credentials,
     map_broker_status,
 )
@@ -678,6 +679,9 @@ class LiveSession:
         try:
             return self.broker.submit(order)
         except BrokerRejected as exc:
+            recovered = self._recovered_after_reject(row, order, exc)
+            if recovered is not None:
+                return recovered
             return BrokerAck(
                 client_order_id=order.client_order_id,
                 broker_order_id="",
@@ -730,6 +734,31 @@ class LiveSession:
             raise LiveGateError(
                 "broker response lost; the order stays inflight until recovery succeeds"
             ) from cause
+
+    def _recovered_after_reject(
+        self, row: dict[str, Any], order: LiveOrder, exc: BrokerRejected
+    ) -> BrokerAck | None:
+        """Confirm a broker rejection. An ambiguous or unconfirmed one stays inflight."""
+        try:
+            recovered, lookup_exc = self._classify_recover(
+                order.client_order_id, trigger="submit_rejected"
+            )
+        except LiveGateError:
+            row["status"] = "inflight"
+            row["reason"] = "broker recovery failed closed"
+            self._persist()
+            raise
+        if recovered is not None:
+            return recovered
+        if lookup_exc is not None or not _rejection_is_definite(exc):
+            row["status"] = "inflight"
+            row["reason"] = "broker response lost; order remains recoverable"
+            self._persist()
+            cause = lookup_exc if lookup_exc is not None else exc
+            raise LiveGateError(
+                "broker response lost; the order stays inflight until recovery succeeds"
+            ) from cause
+        return None
 
     def _classify_recover(
         self, client_order_id: str, *, trigger: str
@@ -1103,12 +1132,15 @@ class LiveSession:
         if self.orders or self.ledger.fills():
             return
         account = self.broker.account()
-        self.ledger = LiveLedger(
-            baseline_cash=account.cash,
-            baseline_positions=dict(account.positions),
-            cash_tolerance=self.config.cash_tolerance,
-            position_tolerance=self.config.position_tolerance,
-        )
+        try:
+            self.ledger = LiveLedger(
+                baseline_cash=account.cash,
+                baseline_positions=dict(account.positions),
+                cash_tolerance=self.config.cash_tolerance,
+                position_tolerance=self.config.position_tolerance,
+            )
+        except ValueError as exc:
+            raise LiveGateError(f"broker account snapshot is not usable: {exc}") from exc
         self._baseline_from_broker = True
 
     def _recover_inflight(self) -> None:
@@ -1376,13 +1408,19 @@ class LiveSession:
                 handle.flush()
             os.chmod(path, 0o600)
             _acquire(handle)
+            entered = False
             try:
                 token = self._file_token()
                 if token != self._disk_token:
                     self._reload_locked()
+                entered = True
                 yield
-                self._disk_token = self._file_token()
             finally:
+                if entered:
+                    # A persist that then raises still changed the files. Leave
+                    # the token current so the next call does not treat that
+                    # write as someone else's update.
+                    self._disk_token = self._file_token()
                 _release(handle)
         finally:
             handle.close()
@@ -1405,12 +1443,14 @@ class LiveSession:
         self._build_engine()
         for symbol, price in self.marks.items():
             self.broker.set_mark(symbol, price)
+        # Adopt inflight executions before judging the book. A fill the broker
+        # already holds is not cash drift until recovery has had a chance.
+        self._recover_inflight()
         self._sync_loopback_if_clear(self._require_broker_book())
         if self.kill_state["latched"]:
             self.engine.trip(
                 str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
             )
-        self._recover_inflight()
 
     def _build_engine(self) -> None:
         """New engine, then the persisted rings and a fill replay for settlement."""

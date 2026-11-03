@@ -260,13 +260,16 @@ def test_cancel_ack_keeps_executions_and_late_fills_do_not_reopen(tmp_path: Path
     broker.page = FillPage((first_race_fill, late_fill), False)
     report = session.reconcile(at_ns=TS + 4)
 
-    assert report["ok"] is True
+    assert report["ok"] is False
+    assert report["drift"]["alarm"] is True
     row = session.orders[0]
     assert row["status"] == "canceled"
-    assert row["filled_quantity"] == pytest.approx(10.0)
-    assert row["fill_price"] == pytest.approx(106.0)
-    assert session.ledger.computed_positions["AAPL"] == pytest.approx(10.0)
-    assert session.ledger.computed_cash == pytest.approx(998_940.0)
+    assert row["filled_quantity"] == pytest.approx(4.0)
+    assert row["fill_price"] == pytest.approx(100.0)
+    assert session.ledger.computed_positions["AAPL"] == pytest.approx(4.0)
+    assert session.ledger.computed_cash == pytest.approx(999_600.0)
+    assert session.kill_state["latched"] is True
+    assert str(session.kill_state["reason"]).startswith("fill_after_terminal")
     replay = session.cancel(client_order_id="order-1", actor="test", at_ns=TS + 5)
     assert replay["replayed"] is True
     assert broker.cancel_calls == 1
@@ -277,14 +280,17 @@ def test_reconciled_overfill_fails_closed_without_dropping_accounting(tmp_path: 
     session = _session(tmp_path, broker, quantity=5.0)
     broker.page = FillPage((_fill("too-much", 6.0),), False)
 
-    with pytest.raises(LiveGateError, match="fills exceed order quantity"):
-        session.reconcile(at_ns=TS + 1)
+    report = session.reconcile(at_ns=TS + 1)
 
+    assert report["ok"] is False
+    assert report["overfills"] == 1
     assert session.orders[0]["filled_quantity"] == 0.0
     assert session.orders[0]["status"] == "accepted"
     assert len(session.ledger.fills()) == 1
-    assert session.ledger.computed_positions["AAPL"] == pytest.approx(6.0)
-    assert session.ledger.computed_cash == pytest.approx(999_400.0)
+    assert "AAPL" not in session.ledger.computed_positions
+    assert session.ledger.computed_cash == pytest.approx(1_000_000.0)
+    assert session.kill_state["latched"] is True
+    assert str(session.kill_state["reason"]).startswith("overfill")
 
 
 @pytest.mark.parametrize(("symbol", "side"), [("MSFT", "buy"), ("AAPL", "sell")])

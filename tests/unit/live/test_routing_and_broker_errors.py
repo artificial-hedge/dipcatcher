@@ -20,7 +20,12 @@ from quant_fund.live.brokers import (
     alpaca_credentials,
 )
 from quant_fund.live.config import LiveConfig
-from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import (
+    BrokerRejected,
+    BrokerUnconfirmed,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
 from quant_fund.live.session import open_session
 
@@ -232,8 +237,9 @@ def test_alpaca_maps_malformed_account_cancel_and_fill_rows(
         return 500, b""
 
     found = _broker(cancel_transport).cancel("client-1", "ord-1")
-    assert found.status == "canceled"
+    assert found.status == "pending_cancel"
     assert found.broker_order_id == "ord-1"
+    assert "unconfirmed" in found.reason
 
     def recover_transport(method, url, headers, body, timeout):
         del method, headers, body, timeout
@@ -253,7 +259,7 @@ def test_alpaca_maps_malformed_account_cancel_and_fill_rows(
     assert recovered.status == "filled"
     assert recovered.fills[0].fill_id.startswith("order:")
 
-    with pytest.raises(BrokerRejected, match="not an object"):
+    with pytest.raises(BrokerRejected, match="incomplete"):
         _broker(
             lambda *args: (200, b"[]") if "by_client_order_id" in args[1] else (200, b"{}")
         ).recover("client-1")
@@ -284,42 +290,66 @@ def test_alpaca_maps_malformed_account_cancel_and_fill_rows(
             )
         ).account()
 
-    def fills_transport(method, url, headers, body, timeout):
-        del method, url, headers, body, timeout
-        rows: list[object] = ["nope"]
-        rows.append(
-            {
-                "id": "",
-                "order_id": "",
-                "side": "buy",
-                "qty": "1",
-                "price": "1",
-                "symbol": "AAPL",
-                "transaction_time": "2024-01-02T15:00:00Z",
-            }
-        )
-        rows.append(
-            {
-                "id": "f-bad-side",
-                "order_id": "b1",
-                "side": "short",
-                "qty": "1",
-                "price": "1",
-                "transaction_time": "2024-01-02T15:00:00Z",
-            }
-        )
-        rows.append(
-            {
-                "id": "f-no-time",
-                "order_id": "b1",
-                "side": "sell",
-                "qty": "1",
-                "price": "1",
-                "transaction_time": 5,
-            }
-        )
-        for index in range(100):
-            rows.append(
+    def _fill_rows(rows: list[object]) -> object:
+        encoded = json.dumps(rows).encode()
+
+        def transport(method, url, headers, body, timeout):
+            del method, url, headers, body, timeout
+            return 200, encoded
+
+        return transport
+
+    with pytest.raises(BrokerRejected, match="malformed"):
+        _broker(_fill_rows(["nope"])).fills(broker_to_client={"b1": "client-1"})
+    with pytest.raises(BrokerRejected, match="missing an order id"):
+        _broker(
+            _fill_rows(
+                [
+                    {
+                        "id": "",
+                        "order_id": "",
+                        "side": "buy",
+                        "qty": "1",
+                        "price": "1",
+                        "symbol": "AAPL",
+                        "transaction_time": "2024-01-02T15:00:00Z",
+                    }
+                ]
+            )
+        ).fills(broker_to_client={})
+    with pytest.raises(BrokerRejected, match="not buy or sell"):
+        _broker(
+            _fill_rows(
+                [
+                    {
+                        "id": "f-bad-side",
+                        "order_id": "b1",
+                        "side": "short",
+                        "qty": "1",
+                        "price": "1",
+                        "transaction_time": "2024-01-02T15:00:00Z",
+                    }
+                ]
+            )
+        ).fills(broker_to_client={"b1": "client-1"})
+    with pytest.raises(BrokerRejected, match="missing an id or time"):
+        _broker(
+            _fill_rows(
+                [
+                    {
+                        "id": "f-no-time",
+                        "order_id": "b1",
+                        "side": "sell",
+                        "qty": "1",
+                        "price": "1",
+                        "transaction_time": 5,
+                    }
+                ]
+            )
+        ).fills(broker_to_client={"b1": "client-1"})
+    page = _broker(
+        _fill_rows(
+            [
                 {
                     "id": f"f{index}",
                     "order_id": "b1",
@@ -329,16 +359,16 @@ def test_alpaca_maps_malformed_account_cancel_and_fill_rows(
                     "symbol": "AAPL",
                     "transaction_time": "2024-01-02T15:00:00Z",
                 }
-            )
-        return 200, json.dumps(rows).encode()
-
-    page = _broker(fills_transport).fills(broker_to_client={"b1": "client-1"})
+                for index in range(100)
+            ]
+        )
+    ).fills(broker_to_client={"b1": "client-1"})
     assert page.truncated is True
     assert page.fills
     assert all(item.side == "buy" for item in page.fills)
     with pytest.raises(BrokerRejected, match="not a list"):
         _broker(lambda *args: (200, b"{}")).fills(broker_to_client={})
-    with pytest.raises(BrokerRejected, match="non-JSON"):
+    with pytest.raises(BrokerUnconfirmed, match="unconfirmed"):
         _broker(lambda *args: (200, b"not-json")).submit(
             LiveOrder("client-1", "AAPL", "buy", 1.0, 10.0, 1)
         )
@@ -348,7 +378,7 @@ def test_alpaca_maps_malformed_account_cancel_and_fill_rows(
         _broker(lambda *args: (400, json.dumps({"message": "secret leaked"}).encode())).submit(
             LiveOrder("c", "AAPL", "buy", 1.0, 1.0, 1)
         )
-    with pytest.raises(BrokerRejected, match="HTTP 500"):
+    with pytest.raises(BrokerUnconfirmed, match="unconfirmed"):
         _broker(lambda *args: (500, b"")).submit(LiveOrder("c", "AAPL", "buy", 1.0, 1.0, 1))
 
     guarded = _broker(lambda *args: (200, b"{}"))

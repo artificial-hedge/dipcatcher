@@ -119,8 +119,10 @@ def test_stale_explicit_quote_does_not_send(tmp_path: Path) -> None:
     session = _open(tmp_path, broker)
     _arm(session)
     age = int(session.engine._max_ref_age)
-    with pytest.raises(LiveGateError, match="stale quote for AAPL"):
-        _buy(session, client_order_id="stale", quote_ts_ns=TS - (age + 1))
+    denied = _buy(session, client_order_id="stale", quote_ts_ns=TS - (age + 1))
+    assert denied["ok"] is False
+    assert denied["broker_called"] is False
+    assert denied["reasons"] == ["stale_data"]
     assert broker.submits == 0
     assert session.orders == []
     assert broker.positions == {}
@@ -155,8 +157,10 @@ def test_reopen_still_halts_a_quote_that_aged_out(tmp_path: Path) -> None:
     assert _buy(first, client_order_id="kept", quote_ts_ns=TS)["ok"] is True
     second_broker = _CountingBroker()
     second = _open(tmp_path, second_broker)
-    with pytest.raises(LiveGateError, match="stale quote for AAPL"):
-        _buy(second, client_order_id="late", at_ns=TS + age + 1)
+    denied = _buy(second, client_order_id="late", at_ns=TS + age + 1)
+    assert denied["ok"] is False
+    assert denied["broker_called"] is False
+    assert denied["reasons"] == ["stale_data"]
     assert second_broker.submits == 0
     assert [row["client_order_id"] for row in second.orders] == ["kept"]
 
@@ -194,14 +198,18 @@ def test_desk_stale_quote_does_not_transmit_and_a_new_tick_can(tmp_path: Path) -
         desk.arm("loopback", "", TS_NS)
         first = desk.submit("aapl", "BUY", 1, 100.0, TS_NS, client_order_id="fresh")
         assert first["transmitted"] is True
-        with pytest.raises(LiveDeskError, match="stale quote for AAPL"):
-            desk.submit("aapl", "BUY", 1, 100.0, TS_NS + age + 1, client_order_id="stale")
-        clients = [order.client_order_id for order in desk.orders.values()]
-        assert clients == ["fresh"]
+        denied = desk.submit("aapl", "BUY", 1, 100.0, TS_NS + age + 1, client_order_id="stale")
+        assert denied["transmitted"] is False
+        assert denied["status"] == "denied"
+        stale_order = denied["order"]
+        assert isinstance(stale_order, dict)
+        assert "stale_data" in stale_order["reasons"]
+        transmitted = [order.client_order_id for order in desk.orders.values() if order.transmitted]
         desk.mark("aapl", 100.0, TS_NS + age + 1)
         nxt = desk.submit("aapl", "BUY", 1, 100.0, TS_NS + age + 1, client_order_id="after")
         assert nxt["transmitted"] is True
-        clients = [order.client_order_id for order in desk.orders.values()]
+        assert transmitted == ["fresh"]
+        clients = [order.client_order_id for order in desk.orders.values() if order.transmitted]
         assert "stale" not in clients
         assert "after" in clients
     finally:
