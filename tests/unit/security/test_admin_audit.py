@@ -224,8 +224,10 @@ def test_research_admin_post_is_unclassified(
         api_key=_ADMIN,
     )
     client = TestClient(create_app(settings), client=("203.0.113.60", 9))
+    quiet = client.get("/receipts", headers={"X-API-Key": _ADMIN, "X-Request-ID": "req-get"})
     denied = client.post("/receipts", headers={"X-API-Key": _WRONG, "X-Request-ID": "req-d"})
     response = client.post("/receipts", headers={"X-API-Key": _ADMIN, "X-Request-ID": "req-r"})
+    assert quiet.status_code == 200
     assert denied.status_code == 401
     assert response.status_code == 405
     rows = _records(log_path)
@@ -289,6 +291,94 @@ def test_portfolio_optimize_kind_is_optimize(
     assert row["route"] == "POST /portfolio/optimize"
     assert row["request_id"] == "req-opt"
     assert _ADMIN not in log_path.read_text(encoding="utf-8")
+
+
+def test_sensitive_reads_append_outcome_read(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear(monkeypatch)
+    log_path = tmp_path / "audit.jsonl"
+    ledger = "/backtest/" + "ab" * 8
+    monkeypatch.setenv("QUANT_API_KEY", _ADMIN)
+    monkeypatch.setenv("QUANT_API_READ_KEY", _READ)
+    monkeypatch.setenv("QUANT_API_AUDIT_LOG", str(log_path))
+    client = TestClient(app, raise_server_exceptions=False)
+    wrong = client.get(ledger, headers={"X-API-Key": _WRONG})
+    models = client.get("/models", headers={"X-API-Key": _ADMIN})
+    health = client.get("/health")
+    doctor = client.get("/doctor", headers={"X-API-Key": _ADMIN})
+    read = client.get(
+        ledger,
+        headers={"X-API-Key": _READ, "X-Request-ID": _ADMIN},
+    )
+    head = client.head(
+        "/backtest/" + "cd" * 8,
+        headers={"X-API-Key": _ADMIN, "X-Request-ID": "req-head"},
+    )
+    positions = client.get(
+        "/portfolio/exposures",
+        headers={"X-API-Key": _ADMIN, "X-Request-ID": "req-pos"},
+    )
+    assert wrong.status_code == 401
+    assert models.status_code == 200
+    assert health.status_code == 200
+    assert doctor.status_code == 200
+    assert read.status_code == 404
+    assert head.status_code < 500
+    assert positions.status_code == 200
+    text = log_path.read_text(encoding="utf-8")
+    for secret in (_ADMIN, _READ, _WRONG):
+        assert secret not in text
+    rows = _records(log_path)
+    assert [row["outcome"] for row in rows] == ["read", "read", "read"]
+    assert [row["kind"] for row in rows] == ["ledger", "ledger", "positions"]
+    assert rows[0]["route"] == f"GET {ledger}"
+    assert rows[0]["key_id"] == hashlib.sha256(_READ.encode()).hexdigest()
+    assert rows[0]["request_id"] != _ADMIN
+    assert rows[1]["route"] == "HEAD /backtest/" + "cd" * 8
+    assert rows[1]["request_id"] == "req-head"
+    assert rows[2]["route"] == "GET /portfolio/exposures"
+    assert rows[2]["request_id"] == "req-pos"
+    assert rows[2]["key_id"] == hashlib.sha256(_ADMIN.encode()).hexdigest()
+    monkeypatch.setenv("QUANT_API_AUDIT_READS", "off")
+    again = client.get(ledger, headers={"X-API-Key": _ADMIN, "X-Request-ID": "req-off"})
+    assert again.status_code == 404
+    assert len(_records(log_path)) == 3
+
+
+def test_loopback_without_a_key_audits_a_sensitive_read(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear(monkeypatch)
+    log_path = tmp_path / "audit.jsonl"
+    monkeypatch.setenv("QUANT_API_AUDIT_LOG", str(log_path))
+    client = TestClient(app, raise_server_exceptions=False)
+    quiet = client.get("/models")
+    ledger = client.get("/backtest/" + "ab" * 8)
+    assert quiet.status_code == 200
+    assert ledger.status_code == 404
+    rows = _records(log_path)
+    assert len(rows) == 1
+    assert rows[0]["outcome"] == "read"
+    assert rows[0]["kind"] == "ledger"
+    assert rows[0]["key_id"] == hashlib.sha256(b"").hexdigest()
+
+
+def test_a_closed_log_refuses_a_sensitive_read(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _clear(monkeypatch)
+    blocked = tmp_path / "not-a-file"
+    blocked.mkdir()
+    monkeypatch.setenv("QUANT_API_KEY", _ADMIN)
+    monkeypatch.setenv("QUANT_API_AUDIT_LOG", str(blocked))
+    client = TestClient(app, raise_server_exceptions=False)
+    quiet = client.get("/models", headers={"X-API-Key": _ADMIN})
+    response = client.get("/risk/portfolio", headers={"X-API-Key": _ADMIN, "X-Request-ID": _ADMIN})
+    assert quiet.status_code == 200
+    assert response.status_code == 503
+    assert response.json() == {"detail": "audit log unavailable"}
+    assert _ADMIN not in response.text
 
 
 def _kill_unbound(root: Path) -> None:

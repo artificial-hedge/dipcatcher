@@ -1,10 +1,12 @@
-"""Append-only audit lines for admin-key mutations.
+"""Append-only audit lines for admin-key mutations and sensitive reads.
 
 One JSON object per line: time, route, key id, request id, outcome, kind,
-and prev. The key id is the SHA-256 hex of the presented admin key. ``prev``
+and prev. The key id is the SHA-256 hex of the presented key. ``prev``
 is the SHA-256 hex of the previous raw line. The line never contains the key.
-``kill-file``, ``ledger``, ``config``, and ``optimize`` are the known kinds.
-A route that is none of those gets ``unclassified``.
+``kill-file``, ``ledger``, ``config``, ``optimize``, and ``positions`` are
+the known kinds. A route that is none of those gets ``unclassified``.
+``GET`` and ``HEAD`` of a ledger artifact or a position route append outcome
+``read`` when the reads flag is on, which is the default.
 """
 
 from __future__ import annotations
@@ -25,11 +27,13 @@ from typing import Any
 
 _LOGGER = logging.getLogger("quant_fund.api.audit")
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
-_KINDS = frozenset({"kill-file", "ledger", "config", "optimize", "unclassified"})
+_KINDS = frozenset({"kill-file", "ledger", "config", "optimize", "positions", "unclassified"})
 _ROUTE_KIND = {
     ("POST", "/backtest"): "ledger",
     ("POST", "/portfolio/optimize"): "optimize",
 }
+_POSITION_PATHS = frozenset({"/risk/portfolio", "/portfolio/target", "/portfolio/exposures"})
+_READS_OFF = frozenset({"0", "off", "false", "no"})
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 _ACTOR_TOKEN = re.compile(r"[^A-Za-z0-9._-]")
 _ACTOR: ContextVar[_Actor | None] = ContextVar("dipcatcher_admin_audit", default=None)
@@ -49,15 +53,18 @@ class _Actor:
     secrets: tuple[str, ...]
     kind: str
     log_env: str
+    fixed_outcome: str | None = None
 
 
 def audit_log_env_names() -> tuple[str, ...]:
-    """Log paths and the byte caps that rotate them."""
+    """Log paths, the byte caps that rotate them, and the sensitive-read flags."""
     return (
         "QUANT_API_AUDIT_LOG",
         "RESEARCH_API_AUDIT_LOG",
         "QUANT_API_AUDIT_LOG_MAX_BYTES",
         "RESEARCH_API_AUDIT_LOG_MAX_BYTES",
+        "QUANT_API_AUDIT_READS",
+        "RESEARCH_API_AUDIT_READS",
     )
 
 
@@ -173,7 +180,14 @@ def _http_actor(
     log_env: str,
 ) -> _Actor | None:
     if request.method.upper() in _SAFE_METHODS:
-        return None
+        return _sensitive_read_actor(
+            request,
+            admin_current,
+            admin_previous,
+            read_current,
+            read_previous,
+            log_env,
+        )
     presented = request.headers.get("X-API-Key")
     from quant_fund.api.http_controls import admin_key_matches
 
@@ -196,6 +210,59 @@ def _http_actor(
     )
 
 
+def _sensitive_read_actor(
+    request: Any,
+    admin_current: str | None,
+    admin_previous: str | None,
+    read_current: str | None,
+    read_previous: str | None,
+    log_env: str,
+) -> _Actor | None:
+    """Actor for a ledger or position read. Other safe methods stay quiet.
+
+    The request already passed ``credential_refusal``. This path does not
+    compare keys again. ``dump_resolved`` remains outcome ``written``; there
+    is no HTTP config-dump route.
+    """
+    if not _reads_enabled(log_env):
+        return None
+    kind = _read_kind(request.url.path)
+    if kind is None:
+        return None
+    presented = request.headers.get("X-API-Key") or ""
+    secrets = _secret_values(
+        presented,
+        admin_current,
+        admin_previous,
+        read_current,
+        read_previous,
+    )
+    return _actor_from_presented(
+        f"{request.method.upper()} {request.url.path}",
+        presented,
+        kind,
+        log_env,
+        secrets,
+        request.headers.get("X-Request-ID"),
+        "read",
+    )
+
+
+def _reads_enabled(log_env: str) -> bool:
+    name = f"{log_env.removesuffix('_LOG')}_READS"
+    raw = os.environ.get(name, "on").strip().lower()
+    return raw not in _READS_OFF
+
+
+def _read_kind(path: str) -> str | None:
+    if path in _POSITION_PATHS:
+        return "positions"
+    marker = "/backtest/"
+    if path.startswith(marker) and len(path) > len(marker):
+        return "ledger"
+    return None
+
+
 def _actor_from_presented(
     route: str,
     presented: str,
@@ -203,6 +270,7 @@ def _actor_from_presented(
     log_env: str,
     secrets: tuple[str, ...],
     header: str | None,
+    fixed_outcome: str | None = None,
 ) -> _Actor:
     return _Actor(
         route=route,
@@ -211,6 +279,7 @@ def _actor_from_presented(
         secrets=secrets,
         kind=kind,
         log_env=log_env,
+        fixed_outcome=fixed_outcome,
     )
 
 
@@ -224,7 +293,8 @@ def _blocked(actor: _Actor | None) -> Any:
 def _finish(actor: _Actor | None, response: Any) -> Any:
     if actor is None:
         return response
-    if _emit(actor, kind=actor.kind, outcome=str(_status_code(response))):
+    outcome = actor.fixed_outcome if actor.fixed_outcome else str(_status_code(response))
+    if _emit(actor, kind=actor.kind, outcome=outcome):
         return response
     return _unavailable()
 
