@@ -331,7 +331,6 @@ class LiveSession:
         quote_ts_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
-            self._recover_inflight()
             return self._submit_locked(
                 symbol=symbol,
                 side=side,
@@ -384,9 +383,14 @@ class LiveSession:
             try:
                 ack = self.broker.cancel(str(row["client_order_id"]), str(row["broker_order_id"]))
             except BrokerRejected as exc:
-                row["reason"] = str(exc)
-                self._persist()
-                return _public_order(row, venue=self.venue, replayed=False)
+                recovered = self._safe_recover(str(row["client_order_id"]))
+                if recovered is None:
+                    row["reason"] = str(exc)
+                    self._persist()
+                    result = _public_order(row, venue=self.venue, replayed=False)
+                    result["ok"] = False
+                    return result
+                ack = recovered
             except (BrokerTimeout, TimeoutError):
                 self._note_cancel_timeout(row)
                 raise LiveGateError("cancel unconfirmed after broker timeout") from None
@@ -498,10 +502,13 @@ class LiveSession:
         self._refuse_unconfirmed(client)
         existing = self._find(client)
         if existing is not None:
-            return self._replay_client(existing, cleaned, order_side, qty, limit)
+            _require_same_client(existing, cleaned, order_side, qty, limit)
+            self._recover_inflight()
+            return _public_order(existing, venue=self.venue, replayed=True)
         if self.kill_state["latched"]:
             return self._deny_killed(who, client, cleaned, order_side, qty, limit)
         self._gate_quote(cleaned, ts, quote_ts_ns)
+        self._recover_inflight()
         self._capture_baseline()
         self.marks[cleaned] = reference
         self.mark_ts[cleaned] = ts
@@ -570,6 +577,17 @@ class LiveSession:
         try:
             return self.broker.submit(order)
         except BrokerRejected as exc:
+            try:
+                recovered = self.broker.recover(order.client_order_id)
+            except Exception:
+                row["status"] = "inflight"
+                row["reason"] = "broker rejection could not be recovered; order remains recoverable"
+                self._persist()
+                raise LiveGateError(
+                    "broker response uncertain; the order stays inflight until recovery succeeds"
+                ) from None
+            if recovered is not None:
+                return recovered
             return BrokerAck(
                 client_order_id=order.client_order_id,
                 broker_order_id="",
@@ -600,17 +618,6 @@ class LiveSession:
             return self.broker.recover(client_order_id)
         except Exception:
             return None
-
-    def _replay_client(
-        self,
-        existing: dict[str, Any],
-        symbol: str,
-        side: str,
-        quantity: float,
-        limit_price: float,
-    ) -> dict[str, Any]:
-        _require_same_client(existing, symbol, side, quantity, limit_price)
-        return _public_order(existing, venue=self.venue, replayed=True)
 
     def _deny_killed(
         self,
@@ -648,25 +655,75 @@ class LiveSession:
         row["reason"] = "cancel unconfirmed after broker timeout"
         self._persist()
 
-    def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
+    def _validated_ack_filled(self, row: dict[str, Any], ack: BrokerAck) -> float:
+        client = str(row["client_order_id"])
+        if ack.client_order_id != client:
+            raise LiveGateError("ack client identity does not match the order")
+        prior_broker_id = str(row["broker_order_id"])
+        if prior_broker_id and ack.broker_order_id and ack.broker_order_id != prior_broker_id:
+            raise LiveGateError("ack broker identity does not match the order")
         _refuse_ack_mismatch(row, ack)
-        row["broker_order_id"] = ack.broker_order_id
-        status = map_broker_status(ack.status)
-        row["status"] = status
-        row["filled_quantity"] = float(ack.filled_quantity)
-        row["fill_price"] = ack.fill_price
-        row["reason"] = ack.reason
-        if status == "unmapped" and not row["reason"]:
-            row["reason"] = f"unmapped broker status {ack.status}"
-        expects = ack.status in {"filled", "partially_filled"}
-        row["expects_fill"] = expects
-        self.ledger.set_expects_fill(str(row["client_order_id"]), expects)
+        try:
+            filled = float(ack.filled_quantity)
+        except (TypeError, ValueError):
+            raise LiveGateError("ack filled quantity is not a number") from None
+        if not math.isfinite(filled) or filled < 0.0:
+            raise LiveGateError("ack filled quantity must be finite and non-negative")
+        for fill in ack.fills:
+            if fill.client_order_id != client:
+                raise LiveGateError("ack fill client identity does not match the order")
+            self._validate_fill_order(fill)
+        return min(filled, float(row["quantity"]))
+
+    def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
+        client = str(row["client_order_id"])
+        prior_broker_id = str(row["broker_order_id"])
+        filled = self._validated_ack_filled(row, ack)
         for fill in ack.fills:
             self._record_fill(fill, ts)
+        if not prior_broker_id:
+            row["broker_order_id"] = ack.broker_order_id
+        previous_status = str(row["status"])
+        status = self._ack_status(previous_status, ack.status)
+        row["status"] = status
+        prior_filled = float(row["filled_quantity"])
+        if filled > prior_filled:
+            row["filled_quantity"] = filled
+            row["fill_price"] = ack.fill_price
+        elif filled == prior_filled and filled > 0.0 and row["fill_price"] is None:
+            row["fill_price"] = ack.fill_price
+        if status != previous_status or not row["reason"]:
+            row["reason"] = ack.reason
+        if status == "unmapped" and not row["reason"]:
+            row["reason"] = f"unmapped broker status {ack.status}"
+        expects = (
+            bool(row["expects_fill"])
+            or status in {"filled", "partially_filled"}
+            or max(prior_filled, filled) > 0.0
+            or bool(ack.fills)
+        )
+        row["expects_fill"] = expects
+        self.ledger.set_expects_fill(client, expects)
+        self._project_fills_onto_orders()
 
-    def _record_fill(self, fill: BrokerFill, ts: int) -> str:
+    @staticmethod
+    def _ack_status(previous_status: str, broker_status: str) -> str:
+        status = map_broker_status(broker_status)
+        if previous_status in _TERMINAL or (
+            previous_status == "partially_filled" and status in {"accepted", "inflight", "unmapped"}
+        ):
+            return previous_status
+        return status
+
+    def _validate_fill_order(self, fill: BrokerFill) -> None:
         if fill.side not in {"buy", "sell"}:
             raise LiveGateError("broker fill side is not buy or sell")
+        row = self._find(fill.client_order_id)
+        if row is not None and (fill.symbol != row["symbol"] or fill.side != row["side"]):
+            raise LiveGateError("broker fill identity does not match the order")
+
+    def _record_fill(self, fill: BrokerFill, ts: int) -> str:
+        self._validate_fill_order(fill)
         ledger_fill = LedgerFill(
             fill_id=fill.fill_id,
             client_order_id=fill.client_order_id,
@@ -677,13 +734,12 @@ class LiveSession:
             fill_time_ns=fill.fill_time_ns if fill.fill_time_ns > 0 else ts,
         )
         verdict = self.ledger.record_fill(ledger_fill)
-        if verdict in {"duplicate_fill", "orphan_fill"}:
+        if verdict in {"duplicate_fill", "conflicting_fill", "orphan_fill"}:
             return verdict
-        if fill.client_order_id in self._engine_noted or verdict == "replaced_provisional":
-            self._sync_account(ts)
+        if verdict == "replaced_provisional":
+            self._rebuild_engine_accounting()
         else:
             self._engine_from_fill(fill, ts)
-            self._engine_noted.add(fill.client_order_id)
         return verdict
 
     def _engine_from_fill(self, fill: BrokerFill, ts: int) -> None:
@@ -769,28 +825,37 @@ class LiveSession:
         return qty, cash
 
     def _project_fills_onto_orders(self) -> None:
-        """Copy reconciled fills onto the order row so cancel sees a filled order."""
+        """Project execution facts without reopening terminal orders or hiding overfills."""
         grouped: dict[str, list[LedgerFill]] = {}
         for fill in self.ledger.fills():
             grouped.setdefault(fill.client_order_id, []).append(fill)
         for row in self.orders:
-            fills = grouped.get(str(row["client_order_id"]))
-            if not fills:
-                continue
-            qty = sum(fill.quantity for fill in fills)
-            cost = sum(fill.quantity * fill.price for fill in fills)
-            row["filled_quantity"] = qty
-            if qty > 0.0:
-                row["fill_price"] = cost / qty
-            if qty + 1e-9 >= float(row["quantity"]):
-                row["status"] = "filled"
-                row["expects_fill"] = True
-            elif qty > 1e-9 and row["status"] not in _TERMINAL:
-                row["status"] = "partially_filled"
-                row["expects_fill"] = True
             client = str(row["client_order_id"])
-            if client in self.ledger._expects:
-                self.ledger.set_expects_fill(client, bool(row["expects_fill"]))
+            fills = grouped.get(client)
+            if fills and sum(fill.quantity for fill in fills) > float(row["quantity"]) + 1e-9:
+                raise LiveGateError(f"reconciled fills exceed order quantity for {client}")
+        for row in self.orders:
+            self._project_row_fills(row, grouped.get(str(row["client_order_id"])))
+
+    def _project_row_fills(self, row: dict[str, Any], fills: list[LedgerFill] | None) -> None:
+        if not fills:
+            return
+        client = str(row["client_order_id"])
+        ledger_qty = sum(fill.quantity for fill in fills)
+        cost = sum(fill.quantity * fill.price for fill in fills)
+        order_qty = float(row["quantity"])
+        prior_qty = float(row["filled_quantity"])
+        qty = max(prior_qty, min(ledger_qty, order_qty))
+        row["filled_quantity"] = qty
+        if ledger_qty >= prior_qty and ledger_qty > 0.0:
+            row["fill_price"] = cost / ledger_qty
+        if row["status"] not in _TERMINAL:
+            if qty + 1e-9 >= order_qty:
+                row["status"] = "filled"
+            elif qty > 1e-9:
+                row["status"] = "partially_filled"
+        row["expects_fill"] = bool(row["expects_fill"]) or qty > 1e-9
+        self.ledger.set_expects_fill(client, bool(row["expects_fill"]))
 
     def _install(
         self, symbol: str, qty: float, mark: float, ts: int, *, seed_lots: bool = True
@@ -846,7 +911,7 @@ class LiveSession:
         ts = self._now()
         changed = False
         for row in self.orders:
-            if row["status"] != "inflight":
+            if row["status"] not in _WORKING:
                 continue
             ack = self._safe_recover(str(row["client_order_id"]))
             if ack is None:
@@ -1145,9 +1210,20 @@ class LiveSession:
             restore_pretrade(self.engine, self._pretrade_blob)
         self._replay_fills_into_engine(self._now())
 
+    def _rebuild_engine_accounting(self) -> None:
+        self._pretrade_blob = export_pretrade(self.engine)
+        self._build_engine()
+        if self.kill_state["latched"]:
+            self.engine.trip(
+                str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
+            )
+
     def _replay_fills_into_engine(self, ts: int) -> None:
         positions: dict[str, float] = {}
+        known_orders = {str(row["client_order_id"]) for row in self.orders}
         for fill in self.ledger.fills():
+            if fill.client_order_id not in known_orders:
+                continue
             signed = fill.quantity if fill.side == "buy" else -fill.quantity
             before = positions.get(fill.symbol, 0.0)
             after = before + signed

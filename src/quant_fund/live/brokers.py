@@ -339,6 +339,26 @@ class LoopbackBroker:
         )
 
 
+def _ack_execution(payload: dict[str, Any]) -> tuple[float, float | None]:
+    filled = _money(payload.get("filled_qty") or 0, "filled quantity")
+    if filled < 0.0:
+        raise BrokerRejected("broker filled quantity was negative")
+    raw_quantity = payload.get("qty")
+    if raw_quantity not in (None, ""):
+        quantity = _money(raw_quantity, "order quantity")
+        if quantity <= 0.0:
+            raise BrokerRejected("broker order quantity was not positive")
+        if filled > quantity:
+            raise BrokerRejected("broker filled quantity exceeded order quantity")
+    raw_price = payload.get("filled_avg_price")
+    fill_price = None if raw_price in (None, "") else _money(raw_price, "average price")
+    if fill_price is not None and fill_price <= 0.0:
+        raise BrokerRejected("broker average price was not positive")
+    if filled > 0.0 and fill_price is None:
+        raise BrokerRejected("broker filled order had no average price")
+    return filled, fill_price
+
+
 class AlpacaBroker:
     """Alpaca trading API v2. Paper and live are different hosts, chosen by the venue."""
 
@@ -419,11 +439,14 @@ class AlpacaBroker:
             return BrokerAck(
                 client_order_id=client_order_id,
                 broker_order_id=target,
-                status="canceled",
+                status="pending_cancel",
                 filled_quantity=0.0,
                 fill_price=None,
                 fills=(),
-                reason="",
+                reason=(
+                    "cancel acknowledged but order lookup returned 404; "
+                    "cancellation and execution state are unconfirmed"
+                ),
             )
         if not isinstance(payload, dict):
             raise BrokerRejected("broker cancel response was not an object")
@@ -497,16 +520,16 @@ class AlpacaBroker:
     def _ack(self, payload: dict[str, Any]) -> BrokerAck:
         raw_status = str(payload.get("status") or "")
         status = map_broker_status(raw_status)
-        filled = _money(payload.get("filled_qty") or 0, "filled quantity")
-        raw_price = payload.get("filled_avg_price")
-        fill_price = None if raw_price in (None, "") else _money(raw_price, "average price")
+        filled, fill_price = _ack_execution(payload)
         client = str(payload.get("client_order_id") or "")
         broker_id = str(payload.get("id") or "")
         symbol = str(payload.get("symbol") or "")
         side = str(payload.get("side") or "")
+        if not client or not broker_id or not symbol or side not in {"buy", "sell"}:
+            raise BrokerRejected("broker order identity was incomplete")
         quantity = _money(payload.get("qty") or 0, "order quantity")
         fills: tuple[BrokerFill, ...] = ()
-        if status in {"filled", "partially_filled"} and filled > 0.0 and fill_price is not None:
+        if filled > 0.0 and fill_price is not None:
             when = (
                 payload.get("filled_at") or payload.get("updated_at") or payload.get("submitted_at")
             )
