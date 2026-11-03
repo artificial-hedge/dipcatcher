@@ -283,7 +283,10 @@ def _validate_bar_panel(bars: pl.DataFrame) -> None:
     )
     if duplicates.height:
         raise ValueError("duplicate bars for event_time/security_id")
-    require_monotonic_event_times(bars.get_column("event_time").to_list())
+    # A multi-name panel is stored name-by-name. Times must advance inside
+    # each name; the concatenated column steps backward at the boundary.
+    for panel in bars.partition_by("security_id", maintain_order=True):
+        require_monotonic_event_times(panel.get_column("event_time").to_list())
 
 
 def _validate_weight_panel(weights: pl.DataFrame) -> None:
