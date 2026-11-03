@@ -135,8 +135,12 @@ class ResearchApiSettings(BaseModel):
         return cls.model_validate(
             {
                 "data_root": data_root_env if data_root_env is not None else _REPO_ROOT / "data",
-                "receipts_dir": os.environ.get("RESEARCH_API_RECEIPTS_DIR", _REPO_ROOT / "receipts"),
-                "verifier_dir": os.environ.get("RESEARCH_API_VERIFIER_DIR", _REPO_ROOT / "verifier"),
+                "receipts_dir": os.environ.get(
+                    "RESEARCH_API_RECEIPTS_DIR", _REPO_ROOT / "receipts"
+                ),
+                "verifier_dir": os.environ.get(
+                    "RESEARCH_API_VERIFIER_DIR", _REPO_ROOT / "verifier"
+                ),
                 "artifacts_dir": os.environ.get(
                     "RESEARCH_API_ARTIFACTS_DIR", _REPO_ROOT / "artifacts"
                 ),

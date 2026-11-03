@@ -50,9 +50,7 @@ def test_other_flag_values_leave_it_off(monkeypatch: pytest.MonkeyPatch, value: 
 
 
 @pytest.mark.parametrize("value", ["enable", "2"])
-def test_unrecognized_flag_values_fail_closed(
-    monkeypatch: pytest.MonkeyPatch, value: str
-) -> None:
+def test_unrecognized_flag_values_fail_closed(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
     monkeypatch.setenv("DIPCATCHER_OBSERVE", value)
     with pytest.raises(ValueError, match="must be a boolean"):
         flags.observe_enabled()

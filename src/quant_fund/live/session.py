@@ -750,15 +750,11 @@ class LiveSession:
             raise
         except Exception as exc:
             self._note_recovery("error", trigger, error_type=type(exc).__name__)
-            raise LiveGateError(
-                "broker recovery failed closed; the order stays inflight"
-            ) from exc
+            raise LiveGateError("broker recovery failed closed; the order stays inflight") from exc
         if ack is None:
             self._note_recovery("not_found", trigger)
             return None, None
-        self._note_recovery(
-            "recovered", trigger, status=map_broker_status(ack.status)
-        )
+        self._note_recovery("recovered", trigger, status=map_broker_status(ack.status))
         return ack, None
 
     def _note_recovery(self, outcome: str, trigger: str, **fields: str) -> None:
