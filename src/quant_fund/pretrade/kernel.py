@@ -9,6 +9,8 @@ only when a latch transitions.
 
 from __future__ import annotations
 
+from math import isfinite
+
 from quant_fund.pretrade.codes import (
     BUYING_POWER,
     COLLAR,
@@ -217,6 +219,30 @@ def account_message(book: HotBook, ts: int) -> int:
     return bits
 
 
+def _nonfinite_bit(value: float, limit: float) -> int:
+    if not isfinite(value) or not isfinite(limit):
+        return NON_FINITE
+    return 0
+
+
+def _risk_state_bits(book: HotBook, sym: SymbolSlot) -> int:
+    if (
+        not isfinite(book.gross)
+        or not isfinite(book.net)
+        or not isfinite(book.max_qty)
+        or not isfinite(book.max_notional)
+        or not isfinite(book.max_pos_qty)
+        or not isfinite(book.max_pos_notional)
+        or not isfinite(book.max_gross)
+        or not isfinite(book.max_net)
+        or not isfinite(book.name_limit)
+        or not isfinite(sym.pos)
+        or (sym.ref_ok and not isfinite(sym.ref))
+    ):
+        return NON_FINITE | INTERNAL
+    return 0
+
+
 def hot_check(
     book: HotBook,
     sym: SymbolSlot,
@@ -232,8 +258,8 @@ def hot_check(
 ) -> int:
     """Run one check-set. Returns the reason bitset. ``0`` allows an order."""
     if (
-        qty != qty
-        or px != px
+        not isfinite(qty)
+        or not isfinite(px)
         or qty <= 0.0
         or px <= 0.0
         or (side != 1 and side != -1)
@@ -244,7 +270,8 @@ def hot_check(
     ):
         return NON_FINITE
 
-    bits = 0
+    bits = _risk_state_bits(book, sym)
+    tripped = bits & INTERNAL
     if book.last_ts != 0 and ts < book.last_ts:
         bits |= NON_MONOTONIC
         eff = book.last_ts
@@ -263,7 +290,7 @@ def hot_check(
     ):
         bits |= STALE
     nav = book.nav
-    if nav != nav or not nav > 0.0:
+    if not isfinite(nav) or not nav > 0.0:
         bits |= NON_FINITE
 
     if kind != KIND_CANCEL and (
@@ -277,32 +304,58 @@ def hot_check(
     ref = sym.ref
     pos = sym.pos
     if kind != KIND_CANCEL:
-        if qty > book.max_qty:
+        if not isfinite(book.max_qty) or qty > book.max_qty:
             bits |= MAX_QTY
         basis = ref if ref_ok and px < ref else px
-        if qty * basis > book.max_notional:
-            bits |= MAX_NOTIONAL
+        order_n = qty * basis
+        if (
+            not isfinite(order_n)
+            or not isfinite(book.max_notional)
+            or (ref_ok and not isfinite(ref))
+            or order_n > book.max_notional
+        ):
+            bits |= MAX_NOTIONAL | _nonfinite_bit(order_n, book.max_notional)
         if is_limit and ref_ok and (px > sym.hi or px < sym.lo):
             bits |= COLLAR
         signed = qty if side > 0 else -qty
         new_pos = pos + signed
-        if new_pos > book.max_pos_qty or -new_pos > book.max_pos_qty:
-            bits |= POSITION_QTY
+        if (
+            not isfinite(new_pos)
+            or not isfinite(book.max_pos_qty)
+            or new_pos > book.max_pos_qty
+            or -new_pos > book.max_pos_qty
+        ):
+            bits |= POSITION_QTY | _nonfinite_bit(new_pos, book.max_pos_qty)
         if ref_ok:
             old_n = pos * ref
             new_n = new_pos * ref
-            if new_n > book.max_pos_notional or -new_n > book.max_pos_notional:
-                bits |= POSITION_NOTIONAL
+            if (
+                not isfinite(new_n)
+                or not isfinite(book.max_pos_notional)
+                or new_n > book.max_pos_notional
+                or -new_n > book.max_pos_notional
+            ):
+                bits |= POSITION_NOTIONAL | _nonfinite_bit(new_n, book.max_pos_notional)
             abs_old = old_n if old_n >= 0.0 else -old_n
             abs_new = new_n if new_n >= 0.0 else -new_n
             gross_after = book.gross - abs_old + abs_new
             net_after = book.net - old_n + new_n
-            if gross_after > book.max_gross or gross_after < 0.0:
-                bits |= GROSS
-            if net_after > book.max_net or -net_after > book.max_net:
-                bits |= NET
-            if abs_new > book.name_limit:
-                bits |= CONCENTRATION
+            if (
+                not isfinite(gross_after)
+                or not isfinite(book.max_gross)
+                or gross_after > book.max_gross
+                or gross_after < 0.0
+            ):
+                bits |= GROSS | _nonfinite_bit(gross_after, book.max_gross)
+            if (
+                not isfinite(net_after)
+                or not isfinite(book.max_net)
+                or net_after > book.max_net
+                or -net_after > book.max_net
+            ):
+                bits |= NET | _nonfinite_bit(net_after, book.max_net)
+            if not isfinite(abs_new) or not isfinite(book.name_limit) or abs_new > book.name_limit:
+                bits |= CONCENTRATION | _nonfinite_bit(abs_new, book.name_limit)
         else:
             new_pos = pos
         # Reg SHO. A cash account cannot open or increase a short. Margin
@@ -348,7 +401,7 @@ def hot_check(
         if side < 0 and book.uc_live >= book.uc_cap:
             bits |= STATE_FULL
 
-    if kind != KIND_CANCEL:
+    if kind != KIND_CANCEL and not (bits & NON_FINITE):
         fp = _fingerprint(book, symbol_id, side, qty, px)
         bits |= _note_duplicate(book, fp, eff)
 
@@ -381,8 +434,7 @@ def hot_check(
         if not ok:
             bits |= STATE_FULL
 
-    tripped = 0
-    if nav == nav and nav > 0.0:
+    if isfinite(nav) and nav > 0.0:
         if nav <= book.daily_floor:
             bits |= DAILY_LOSS
             tripped |= DAILY_LOSS
