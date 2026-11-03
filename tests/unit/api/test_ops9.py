@@ -26,7 +26,14 @@ _NAMES = (
     "DIPCATCHER_BIND_PORT",
     "PORT",
     "QUANT_API_KEY",
+    "QUANT_API_KEY_FILE",
     "RESEARCH_API_KEY",
+    "RESEARCH_API_KEY_FILE",
+    "DIPCATCHER_ALERT_WEBHOOK_SECRET",
+    "DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE",
+    "DIPCATCHER_ALERT_WEBHOOK_URL",
+    "DIPCATCHER_QUANT_API_KEY_FILE",
+    "DIPCATCHER_RESEARCH_API_KEY_FILE",
     "RESEARCH_API_HOST",
     "RESEARCH_API_PORT",
     "RESEARCH_API_DATA_ROOT",
@@ -135,8 +142,10 @@ def test_entrypoint_fills_an_unset_production_rate(
     assert raised.value.code == 0
     assert seen == [str(int(PRODUCTION_DEFAULT_RPS))]
     assert str(int(PRODUCTION_DEFAULT_RPS)) == entry._PRODUCTION_DEFAULT_RPS
+    # entrypoint writes the default directly. Drop that value before monkeypatch
+    # records it, or the fixture undo puts the production rate back.
+    os.environ.pop("DIPCATCHER_RATE_LIMIT_RPS", None)
     monkeypatch.delenv("DIPCATCHER_PROFILE", raising=False)
-    monkeypatch.delenv("DIPCATCHER_RATE_LIMIT_RPS", raising=False)
     entry._apply_production_rate_default()
     assert os.environ.get("DIPCATCHER_RATE_LIMIT_RPS") in {None, ""}
 
@@ -153,7 +162,17 @@ def test_prod_env_example_lists_the_production_surface() -> None:
     assert "BEGIN PRIVATE KEY" not in example
     assert "DIPCATCHER_PROFILE" not in root
     assert "prod-up: prod-certs prod-data prod-preflight prod-build" in prod
-    for name in ("prod-preflight", "prod-backup", "prod-restore"):
+    for name in (
+        "prod-preflight",
+        "prod-backup",
+        "prod-restore",
+        "prod-dr-drill",
+        "prod-rollback",
+        "prod-secrets",
+        "prod-canary",
+        "prod-log-retain",
+        "prod-backup-ship",
+    ):
         assert f"{name}:" in prod
         assert f"{name}:" not in makefile
     runbook = (_ROOT / "docs" / "OPS_RUNBOOK_PROD.md").read_text(encoding="utf-8")

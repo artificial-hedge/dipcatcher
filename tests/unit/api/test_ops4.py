@@ -227,9 +227,10 @@ def test_alert_pack_covers_slo_readiness_drain_kill_and_errors() -> None:
     assert "sharpe" not in rendered.lower()
     assert "sortino" not in rendered.lower()
     prometheus = yaml.safe_load((_OBS / "prometheus.yml").read_text(encoding="utf-8"))
-    assert prometheus["rule_files"] == ["alerts.yml"]
+    assert prometheus["rule_files"] == ["alerts.yml", "slo_rules.yml"]
     compose = (_OBS / "docker-compose.yml").read_text(encoding="utf-8")
     assert "./alerts.yml:/etc/prometheus/alerts.yml:ro" in compose
+    assert "./slo_rules.yml:/etc/prometheus/slo_rules.yml:ro" in compose
     runbook = (_ROOT / "docs" / "PRODUCTION_RUNBOOK.md").read_text(encoding="utf-8")
     assert "python -m fx1.serve.api" in runbook
     assert "write_operator_kill" in runbook

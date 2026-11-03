@@ -1,0 +1,7 @@
+# Nightly verified backup. Install:
+#   sudo cp deploy/cron/dipcatcher-prod-backup /etc/cron.d/dipcatcher-prod-backup
+# /etc/dipcatcher/backup.env is optional KEY=value. It selects rsync or s3.
+# Do not put AWS keys or API keys in that file.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+15 3 * * * root if [ -f /etc/dipcatcher/backup.env ]; then . /etc/dipcatcher/backup.env; fi; /opt/dipcatcher/.venv/bin/python /opt/dipcatcher/scripts/prod_backup_ship.py --source /var/lib/dipcatcher/lab --root /var/backups/dipcatcher

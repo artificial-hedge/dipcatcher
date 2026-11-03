@@ -32,10 +32,10 @@ value.
 | `DIPCATCHER_METRICS_LOOPBACK_SCRAPE` | unset (off) | Allows an unauthenticated `/metrics` scrape only when `DIPCATCHER_METRICS_HOST` is loopback. Any other host refuses startup. |
 | `DIPCATCHER_KILL_SWITCH_PATH` | unset | See below. Missing file means `ENABLED`. |
 | `PORT` | `8000` lab / `8010` research image | Fallback when the service's named port is unset. |
-| `QUANT_API_KEY` | unset | Required to bind the lab API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. |
+| `QUANT_API_KEY` | unset | Required to bind the lab API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. Under `production` or `prod`, the process reads it from `QUANT_API_KEY_FILE` and a plain value is refused. |
 | `RESEARCH_API_HOST` | `127.0.0.1` (image sets `0.0.0.0`) | Research bind host. Off-loopback requires `RESEARCH_API_KEY`. |
 | `RESEARCH_API_PORT` | unset, then `PORT`, then `8010` | Research bind port. |
-| `RESEARCH_API_KEY` | unset | Required to bind the research API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. |
+| `RESEARCH_API_KEY` | unset | Required to bind the research API off loopback. Sent as `X-API-Key` or `Authorization: Bearer`. Under `production` or `prod`, the process reads it from `RESEARCH_API_KEY_FILE` and a plain value is refused. |
 
 The lab image sets `PORT=8000` and `DIPCATCHER_BIND_PORT=8000`. The research
 image sets `PORT=8010` and `RESEARCH_API_PORT=8010`. The container probe
@@ -60,20 +60,54 @@ make -f deploy/prod.mk prod-preflight
 make -f deploy/prod.mk prod-up
 make -f deploy/prod.mk prod-down
 make -f deploy/prod.mk prod-restart
+make -f deploy/prod.mk prod-rollback
 make -f deploy/prod.mk prod-smoke
 make -f deploy/prod.mk prod-backup
 make -f deploy/prod.mk prod-restore
+make -f deploy/prod.mk prod-dr-drill
+make -f deploy/prod.mk prod-log-retain
+make -f deploy/prod.mk prod-backup-ship
+make -f deploy/prod.mk prod-canary
 ```
 
 `prod-preflight` prints one JSON object and exits 0 or 1. `prod-up` runs it
 after the certificate and data directories exist and before the image
 build. A failed preflight does not build and does not start the stack.
 
-`prod-smoke` runs `prod-up`, checks TLS `/health`, the 64 KiB body cap, and
-the write lock, then runs `prod-down`. Stdout is one JSON object. The exit
-status is 0 only when the stack came up, every check passed, and the stack
-came down. It is 1 otherwise. A missing API key prints that JSON error and
-does not call `make`. The script does not print key values.
+`prod-smoke` runs `prod-up`, checks TLS `/health`, the 64 KiB body cap, the
+write lock, and that one request id is in the proxy log and a replica log,
+then rolls back to the previous image tag and runs `prod-down`. Stdout is
+one JSON object. The exit status is 0 only when the stack came up, every
+check passed, and the stack came down. It is 1 otherwise. A missing API key
+prints that JSON error and does not call `make`. The script does not print
+key values.
+
+`prod-dr-drill` takes a full `prod-backup`, deletes the lab and research
+data directories, runs `prod-up` and `prod-restore`, and checks the paper
+ledger digest. It prints `rto_seconds`. Host hardening warnings and the
+owner restamp command are on the operator sheet,
+`docs/OPS_RUNBOOK_PROD.md`. The kill-audit count gap is
+`docs/KILL_AUDIT_RECONCILIATION.md`.
+
+`prod-log-retain` applies the size, age, and file caps to the `app`,
+`proxy`, and `audit` directories under `LOG_DIR`, and it prunes rotated
+Docker json-file logs for the compose project. It does not rename the
+live `*-json.log`, and it does not rotate `entries.jsonl` or
+`checkpoints.jsonl`. `prod-backup-ship` writes a new stamp under
+`BACKUP_ROOT`, rehashes the manifest, and copies it only after that
+check. `DIPCATCHER_BACKUP_COPY` is `none`, `rsync`, or `s3`. The timer
+does not stop the writer. `prod-canary` starts one lab reader that is
+not in the proxy pool, probes it, then recreates the API replicas and
+the proxy or leaves them running and removes the canary. Run
+`prod-build` before `prod-canary`. The canary does not take the write
+lock. A fresh host is `docs/DEPLOY_REAL_HOST.md`. These knobs are not
+part of `ENV_CONTRACT`.
+
+`prod-rollback` retags `dipcatcher:previous` onto `dipcatcher:local` and
+`dipcatcher-research-api:previous` onto `dipcatcher-research-api:latest`,
+recreates the API replicas and the proxy, and exits 0 only when both TLS
+listeners are healthy. `prod-build` saves the current tags as those
+previous names before it builds. The drill is in `docs/OPS_RUNBOOK_PROD.md`.
 
 The root Makefile does not define those targets. `deploy/prod.mk` builds
 the lab and research images one at a time, creates the data directories,
@@ -155,7 +189,14 @@ message. A production boot with an unset rate fills
 `DIPCATCHER_RATE_LIMIT_RPS=50` before exec, which is the same default the
 process uses when it is started without the entrypoint. Zero or an invalid
 rate still exits before exec. The message names `DIPCATCHER_RATE_LIMIT_RPS`
-and does not print the value.
+and does not print the value. Under the same profile the entrypoint refuses
+a plain `QUANT_API_KEY`, `RESEARCH_API_KEY`, or
+`DIPCATCHER_ALERT_WEBHOOK_SECRET`. Those values are read from the matching
+`*_FILE` variable. The message names the variable and does not print the
+file contents. Each request log is one JSON object and includes
+`request_id`. The proxy forwards `X-Request-Id`, or generates one when the
+header is absent. Prometheus rules in `deploy/observability/slo_rules.yml`
+record availability, p99 latency, and the 30 day error budget.
 
 `GET /health` is liveness and stays public. `GET /ready` is readiness. On a
 fresh tree it returns 503 until a data manifest and a research receipt

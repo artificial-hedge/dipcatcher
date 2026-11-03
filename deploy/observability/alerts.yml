@@ -57,3 +57,18 @@ groups:
           severity: page
         annotations:
           summary: A dipcatcher scrape target is down.
+      # The ratio 0.15 is the disk-pressure knob. Prometheus does not
+      # substitute an environment variable into this file. node-exporter
+      # must be up or the series is absent and this rule stays silent.
+      - alert: DipcatcherDiskPressure
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|devtmpfs|overlay|squashfs|ramfs|aufs"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|devtmpfs|overlay|squashfs|ramfs|aufs"}
+          ) < 0.15
+          and node_filesystem_readonly == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: A filesystem has under 15 percent free.

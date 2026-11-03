@@ -1,10 +1,12 @@
 # Two replicas of each API behind the Caddy proxy in deploy/proxy/Caddyfile.
 # Research and simulated paper only. No live broker and no order path.
-# Export QUANT_API_KEY and RESEARCH_API_KEY, then run
-# `make -f deploy/prod.mk prod-up`. The interpolation below refuses to start
-# when a required variable is missing. deploy/prod.env sets the production
-# profile, a positive rate limit, and the data-dir write probe. It contains
-# no secrets. DIPCATCHER_WRITE_OWNER is set per replica below, not in that
+# Export QUANT_API_KEY and RESEARCH_API_KEY in the shell, then run
+# `make -f deploy/prod.mk prod-up`. The makefile writes those values to files
+# outside the repo and mounts them as docker secrets. Containers set
+# QUANT_API_KEY_FILE and RESEARCH_API_KEY_FILE and do not receive the plain
+# values. deploy/prod.env sets the production profile, a positive rate
+# limit, and the data-dir write probe. It contains no secrets.
+# DIPCATCHER_WRITE_OWNER is set per replica below, not in that
 # file: lab-a holds the write lock. lab-b and both research replicas refuse
 # ledger and kill-file writes. The research data mount is read-only.
 # Replica API ports and 9464 are not published. Clients use the loopback TLS
@@ -14,6 +16,12 @@
 # (3000). Data directories and the certificate directory are host paths.
 
 name: dipcatcher-ops7
+
+x-json-log: &json-log
+  driver: json-file
+  options:
+    max-size: ${DIPCATCHER_LOG_MAX_SIZE:-10m}
+    max-file: ${DIPCATCHER_LOG_MAX_FILE:-5}
 
 x-api-health: &api-health
   test: ["CMD", "/app/.venv/bin/python", "/app/healthcheck.py"]
@@ -32,14 +40,20 @@ x-lab: &lab
   healthcheck: *api-health
   stop_signal: SIGTERM
   stop_grace_period: 30s
+  logging: *json-log
   volumes:
     - ${DIPCATCHER_LAB_DATA:?set DIPCATCHER_LAB_DATA to a directory owned by uid 10001}:/app/data
+    - ${DIPCATCHER_LOG_DIR:-/tmp/dipcatcher-ops7-logs}:/logs
+  secrets:
+    - quant_api_key
+    - alert_webhook_secret
 
 x-lab-env: &lab-env
   PORT: "8000"
   DIPCATCHER_BIND_HOST: 0.0.0.0
   DIPCATCHER_BIND_PORT: "8000"
-  QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
+  QUANT_API_KEY_FILE: /run/secrets/quant_api_key
+  DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE: /run/secrets/alert_webhook_secret
   DIPCATCHER_OBSERVE: "1"
   DIPCATCHER_METRICS_HOST: 0.0.0.0
   DIPCATCHER_METRICS_PORT: "9464"
@@ -60,13 +74,19 @@ x-research: &research
   healthcheck: *api-health
   stop_signal: SIGTERM
   stop_grace_period: 30s
+  logging: *json-log
   volumes:
     - ${DIPCATCHER_RESEARCH_DATA:?set DIPCATCHER_RESEARCH_DATA to a directory owned by uid 10001}:/app/data:ro
+    - ${DIPCATCHER_LOG_DIR:-/tmp/dipcatcher-ops7-logs}:/logs
+  secrets:
+    - research_api_key
+    - alert_webhook_secret
 
 x-research-env: &research-env
   RESEARCH_API_HOST: 0.0.0.0
   RESEARCH_API_PORT: "8010"
-  RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
+  RESEARCH_API_KEY_FILE: /run/secrets/research_api_key
+  DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE: /run/secrets/alert_webhook_secret
   RESEARCH_API_DATA_ROOT: /app/data
   DIPCATCHER_OBSERVE: "1"
   DIPCATCHER_METRICS_HOST: 0.0.0.0
@@ -85,12 +105,14 @@ services:
     environment:
       <<: *lab-env
       DIPCATCHER_WRITE_OWNER: "1"
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/lab-a.jsonl
 
   lab-b:
     <<: *lab
     command: ["dipcatcher", "api"]
     environment:
       <<: *lab-env
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/lab-b.jsonl
     depends_on:
       lab-a:
         condition: service_healthy
@@ -100,21 +122,40 @@ services:
     command: ["python", "-m", "quant_fund.api.research_api"]
     environment:
       <<: *research-env
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/research-a.jsonl
 
   research-b:
     <<: *research
     command: ["python", "-m", "quant_fund.api.research_api"]
     environment:
       <<: *research-env
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/research-b.jsonl
+
+  lab-canary:
+    <<: *lab
+    profiles: ["canary"]
+    command: ["dipcatcher", "api"]
+    environment:
+      <<: *lab-env
+      DIPCATCHER_WRITE_OWNER: "0"
+      DIPCATCHER_AUDIT_LOG_PATH: /logs/audit/lab-canary.jsonl
 
   proxy:
     image: caddy:2.8.4
+    entrypoint: ["/bin/sh", "/opt/dipcatcher/secret-entrypoint.sh"]
+    command: ["run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
     environment:
-      QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
-      RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
+      DIPCATCHER_PROFILE: production
+      QUANT_API_KEY_FILE: /run/secrets/quant_api_key
+      RESEARCH_API_KEY_FILE: /run/secrets/research_api_key
+    secrets:
+      - quant_api_key
+      - research_api_key
     volumes:
       - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./proxy/secret-entrypoint.sh:/opt/dipcatcher/secret-entrypoint.sh:ro
       - ${DIPCATCHER_TLS_DIR:?set DIPCATCHER_TLS_DIR to the certificate directory}:/certs:ro
+    logging: *json-log
     ports:
       - "127.0.0.1:${LAB_TLS_PORT:-8443}:8443"
       - "127.0.0.1:${RESEARCH_TLS_PORT:-8444}:8444"
@@ -133,12 +174,18 @@ services:
     entrypoint: ["/bin/sh", "/etc/prometheus/prometheus-entrypoint.sh"]
     command: []
     environment:
-      QUANT_API_KEY: ${QUANT_API_KEY:?set QUANT_API_KEY in the environment}
-      RESEARCH_API_KEY: ${RESEARCH_API_KEY:?set RESEARCH_API_KEY in the environment}
+      DIPCATCHER_PROFILE: production
+      QUANT_API_KEY_FILE: /run/secrets/quant_api_key
+      RESEARCH_API_KEY_FILE: /run/secrets/research_api_key
+    secrets:
+      - quant_api_key
+      - research_api_key
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./observability/slo_rules.yml:/etc/prometheus/slo_rules.yml:ro
       - ./observability/prometheus-entrypoint.sh:/etc/prometheus/prometheus-entrypoint.sh:ro
+    logging: *json-log
     ports:
       - "127.0.0.1:${PROMETHEUS_PUBLISH_PORT:-9090}:9090"
     depends_on:
@@ -159,7 +206,26 @@ services:
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    logging: *json-log
     ports:
       - "127.0.0.1:${GRAFANA_PUBLISH_PORT:-3000}:3000"
     depends_on:
       - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    command:
+      - --path.rootfs=/host
+      - --collector.disable-defaults
+      - --collector.filesystem
+    volumes:
+      - /:/host:ro
+    logging: *json-log
+
+secrets:
+  quant_api_key:
+    file: ${DIPCATCHER_QUANT_API_KEY_FILE:?set DIPCATCHER_QUANT_API_KEY_FILE}
+  research_api_key:
+    file: ${DIPCATCHER_RESEARCH_API_KEY_FILE:?set DIPCATCHER_RESEARCH_API_KEY_FILE}
+  alert_webhook_secret:
+    file: ${DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE:?set DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE}

@@ -29,9 +29,10 @@ status is 0 only when `prod-up` exited 0, every check passed, and
 on both listeners (200 and HSTS `max-age=31536000`), a small POST that is
 not 413, a POST of 65537 bytes that is 413, `write_owner_busy` from a
 second claim in `lab-a`, `is not the writer` from a kill-file write in
-`lab-b`, and errno `EROFS` from a create on the research data mount. Make
-and docker logs go to stderr with the key values redacted. If either key
-is missing, the object is
+`lab-b`, errno `EROFS` from a create on the research data mount, a request
+id in the proxy log and a replica log for each API, and `rollback` after
+`prod-rollback`. Make and docker logs go to stderr with the key values
+redacted. If either key is missing, the object is
 `{"error": "QUANT_API_KEY and RESEARCH_API_KEY are required", "ok": false}`
 and `make` is not invoked. After a `prod-up` attempt the script always
 attempts `prod-down`. `prod-up` runs `prod-preflight` first. A failed
@@ -54,6 +55,13 @@ directories, the compose write-owner layout (`lab-a` is `1`, the other
 three replicas are `0`, research data is `:ro`), and the host clock
 (year 2024–2035 and inside the certificate window). `9464` must not be
 one of the publish ports.
+
+When preflight is not root, the JSON also carries `warnings` for
+unattended upgrades, the firewall, SSH key-only authentication, and time
+sync. Each warning is `"not root"`. Those four do not change the exit
+status. When preflight is root, the same four are checks and a failure
+exits 1. `docs/HOST_HARDENING.md` is the host contract. `prod-up` does
+not run preflight as root, so a deploy warns.
 
 `deploy/prod.env` keeps `DIPCATCHER_RATE_LIMIT_RPS=50`. If that variable
 is unset while `DIPCATCHER_PROFILE` is `production` or `prod`, the process
@@ -94,7 +102,70 @@ so the restarted `lab-a` can claim it again. Do not set
 `DIPCATCHER_WRITE_OWNER=1` on `lab-b` while `lab-a` might still be running.
 A second owner exits before bind with `write_owner_busy`.
 
+## Secrets
+
+`prod-up` writes the shell keys to `SECRET_DIR` (default
+`/tmp/dipcatcher-ops7-secrets`) and mounts them as docker secrets. The
+directory is mode `0700` and each file is mode `0644`. Compose bind-mounts
+that inode and ignores a secret `mode`, and the API process is uid 10001,
+so a mode `0600` file owned by the host user is not readable in the
+container. The containers set `QUANT_API_KEY_FILE` and
+`RESEARCH_API_KEY_FILE`. They do not receive the plain values. Under `DIPCATCHER_PROFILE=production` a
+plain `QUANT_API_KEY`, `RESEARCH_API_KEY`, or
+`DIPCATCHER_ALERT_WEBHOOK_SECRET` refuses the boot. The message names the
+variable and does not print the value. The same refusal applies when the
+plain value and the file are both set.
+
+`DIPCATCHER_ALERT_WEBHOOK_URL` is optional. When it is set, the webhook
+secret file is required. The URL is http or https with a host and no
+userinfo. `prod-secrets` keeps an existing webhook token file when the
+shell variable is unset, or writes a random token. It does not print the
+token. Do not commit `SECRET_DIR`.
+
+## Request ids
+
+The proxy forwards `X-Request-Id` to the replica. When the header is
+absent it uses the request uuid. Access logs on the proxy are JSON on
+stdout. Each API replica writes one JSON object per request, with
+`request_id`, and echoes the id on the response. An id that is not a
+single token of letters, digits, `.`, `_`, or `-` is replaced before it
+is logged. `prod-smoke` sends one id to each listener and requires that
+id in the proxy log and in one replica log.
+
+## Service level objectives
+
+`deploy/observability/slo_rules.yml` is a Prometheus rule file. It records
+5 minute and 30 day availability, 5 minute p99 latency, and the fraction
+of the 30 day error budget that remains. The availability objective is
+99.9 percent of requests not answered with 5xx. The latency objective is
+p99 under 0.25 seconds. `DipcatcherErrorBudgetBurn` pages when the fast
+burn (14.4 times the budget, on both the 5 minute and 1 hour windows) or
+the slow burn (6 times the budget, on both the 30 minute and 6 hour
+windows) is true for 2 minutes. These are process objectives, not
+research scores. `promtool test rules deploy/observability/slo_rules_test.yml`
+checks the burn-rate alert.
+
 ## Rollback
+
+`prod-build` tags the current `dipcatcher:local` image as
+`dipcatcher:previous`, and the current `dipcatcher-research-api:latest`
+image as `dipcatcher-research-api:previous`, before it builds. Roll back
+with:
+
+```bash
+make -f deploy/prod.mk prod-rollback
+```
+
+The target tags those previous names back onto the running tags, recreates
+the four API replicas and the proxy without building, and then requires
+both TLS `/health` checks to be 200 with HSTS and the four replicas to be
+healthy. Stdout of the gate is one JSON object. Exit 0 is healthy. Exit 1
+leaves the new containers in place for inspection. Do not delete the lab
+data directory. The research mount stays `:ro`.
+
+`prod-smoke` points the previous tags at the image it just deployed and
+then runs `prod-rollback`, so the drill recreates that image and checks
+health. A rollback outside that drill uses the tags `prod-build` saved.
 
 `make -f deploy/prod.mk prod-up` rebuilds both images from the working
 tree. Do not use it to roll back. Tag the images you trust before you
@@ -238,3 +309,167 @@ Compare the restored `kill_switch` and `metadata/paper/` bytes with the
 archive payload. Do not edit receipts. Start `lab-a` again after the live
 directory is the one you intend to run. This is a simulated-paper restore.
 It does not place a live order.
+
+## Disaster recovery
+
+```bash
+make -f deploy/prod.mk prod-dr-drill
+```
+
+The drill stops the stack, writes a SYNTHETIC `broker_state.json` under
+`metadata/paper/dr-drill/` when the lab directory has none, and runs
+`prod-backup`. It then deletes `DIPCATCHER_LAB_DATA` and
+`DIPCATCHER_RESEARCH_DATA`, runs `prod-up`, runs `prod-restore`, and
+hashes the restored files. A path is deleted only when it resolves under
+`/tmp` and a component starts with `dipcatcher-`. These are the
+bind-mounted data directories. The compose file has no named volume to
+remove.
+
+`rto_seconds` is the wall time from the start of that delete through a
+matching ledger digest and both TLS `/health` checks at 200 with HSTS
+`max-age=31536000`. The stop before the backup is not included. The
+ledger digest is the sha256 of the one `broker_state.json`. When the
+archive has more than one, it is the sha256 of the sorted `path digest`
+lines. The drill exits 0 only when every check passed, the digest
+matches, and the final `prod-down` exited 0. Stdout is one JSON object.
+It does not print API keys. It does not place an order.
+
+Measured RTO on this host: 16.566 seconds. The phases were destroy
+0.007 seconds, `prod-up` 14.229 seconds, restore 2.301 seconds, and TLS
+health 0.03 seconds. `prod-up` reused cached image layers from the smoke
+run on the same host, and that boot also started the unpublished
+node-exporter. The restored ledger digest was
+`08e1c3bc35d053fb228ef8ce4ef1caf2fff3114d9aae99848fc6f0b3c688263e`.
+`rto_includes` is `destroy, prod-up, restore, ledger digest, TLS health`.
+
+## Epoch drift
+
+```bash
+uv run python scripts/owner_restamp.py
+```
+
+Stdout is one JSON object. `drifted` lists which of `deploy`, `docs`,
+`docker`, `scripts`, `src`, and `tests` differ from the tree root in
+`quality/epoch_heads.json`. `owner_steps` is the key-holder order:
+
+```bash
+make stamp-epochs
+make sign-pins
+make anchor-pins
+make checkpoint
+```
+
+The script is read-only. It does not stamp or sign. `signed` is false.
+Do not run the four commands to make a local tree look clean.
+
+## Kill-switch receipt
+
+`docs/KILL_AUDIT_RECONCILIATION.md` records why
+`receipts/kill_audit.json` says 57 checks and the unit test expects 63,
+which checks were added and which three unknown-`FLATTEN` checks were
+removed, and the owner command that reseals the receipt. Do not edit
+`receipts/` in a deploy slice. The receipt stays sealed at 57 until that
+command runs.
+
+## Log retention
+
+App and proxy processes keep writing to stderr and stdout. Compose caps
+those streams with the json-file driver (`DIPCATCHER_LOG_MAX_SIZE`,
+default `10m`, and `DIPCATCHER_LOG_MAX_FILE`, default `5`). json-file has
+no age cap. `prod-log-retain` deletes rotated `*-json.log.N` files that
+are older than the age cap or past the file cap, and it does not rename
+the live file the daemon still has open.
+
+The same command rotates regular files under `LOG_DIR/app`,
+`LOG_DIR/proxy`, and `LOG_DIR/audit`. The defaults are 10 MiB, 7 days,
+and 5 files (`DIPCATCHER_LOG_MAX_BYTES`, `DIPCATCHER_LOG_MAX_AGE_S`,
+`DIPCATCHER_LOG_MAX_FILES`). A stream can override them with
+`DIPCATCHER_APP_LOG_*`, `DIPCATCHER_PROXY_LOG_*`, or
+`DIPCATCHER_AUDIT_LOG_*`. Non-decimal values and values below 1 make the
+command exit 1. The hash-chained ledger names `entries.jsonl` and
+`checkpoints.jsonl`, including numbered copies, are never renamed or
+deleted.
+
+Each replica appends its own audit file when
+`DIPCATCHER_AUDIT_LOG_PATH` is an absolute path inside the container.
+The production compose file sets `/logs/audit/<replica>.jsonl`. Unset,
+the service stays stderr-only. A symlink is ignored. The in-process
+size cap is `DIPCATCHER_AUDIT_LOG_MAX_BYTES` (default 10485760) and
+`DIPCATCHER_AUDIT_LOG_MAX_FILES` (default 5). Age is the retain script.
+
+```bash
+make -f deploy/prod.mk prod-log-retain
+```
+
+`DipcatcherDiskPressure` pages when
+`node_filesystem_avail_bytes / node_filesystem_size_bytes` stays under
+`0.15` for 5 minutes on a writable filesystem. `0.15` is the knob in
+`deploy/observability/alerts.yml`. Prometheus does not substitute an
+environment variable there. The series comes from the unpublished
+`node-exporter` service. If that process is down, the series is absent
+and the rule stays silent.
+
+## Off-host backup
+
+`prod-backup` still writes one archive at `BACKUP_DIR`. `prod-backup-ship`
+writes a new directory `BACKUP_ROOT/<UTC stamp>`, rehashes every payload
+against `manifest.json`, and only then copies. `BACKUP_ROOT` defaults to
+`/tmp/dipcatcher-ops7-backups`. A root that already contains
+`manifest.json` is refused so a stamp is not nested inside the
+`prod-backup` archive. Previous stamps are kept. A torn read fails the
+hash check, skips the copy, and exits 1. The timer does not stop
+`lab-a`. Stop it yourself when you need a quiet writer:
+
+```bash
+docker stop dipcatcher-ops7-lab-a-1
+make -f deploy/prod.mk prod-backup-ship
+```
+
+`DIPCATCHER_BACKUP_COPY` is `none` (verify only), `rsync`, or `s3`.
+The rsync target is a local absolute path or `user@host:/absolute`.
+The s3 target is `s3://bucket/prefix`. Use an instance role or
+`aws configure`. Do not put AWS keys in `backup.env`. Paths must stay
+under `/tmp/dipcatcher*`, `/var/lib/dipcatcher*`, `/var/log/dipcatcher*`,
+or `/var/backups/`.
+
+```bash
+sudo install -d -m 0700 /etc/dipcatcher
+sudo tee /etc/dipcatcher/backup.env >/dev/null <<'EOF'
+DIPCATCHER_BACKUP_COPY=rsync
+DIPCATCHER_BACKUP_RSYNC_TARGET=backup@backup.example:/var/backups/dipcatcher
+EOF
+sudo chmod 600 /etc/dipcatcher/backup.env
+sudo cp deploy/systemd/dipcatcher-prod-backup.service /etc/systemd/system/
+sudo cp deploy/systemd/dipcatcher-prod-backup.timer /etc/systemd/system/
+sudo cp deploy/systemd/dipcatcher-log-retain.service /etc/systemd/system/
+sudo cp deploy/systemd/dipcatcher-log-retain.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now dipcatcher-prod-backup.timer dipcatcher-log-retain.timer
+```
+
+The backup timer is `OnCalendar=*-*-* 03:15:00` with `Persistent=true`.
+The log timer is hourly. `deploy/cron/` has the same two schedules for
+hosts that use cron instead of systemd. Both units run
+`/opt/dipcatcher/.venv/bin/python`. They do not call `uv`.
+
+## Canary
+
+`prod-build` tags the running image as `dipcatcher:previous` and then
+builds `dipcatcher:local`. Containers that are already up keep the old
+image until they are recreated. `prod-canary` does not build. It starts
+`lab-canary` with the canary profile, waits until that container is
+healthy, and probes `http://127.0.0.1:8000/health` from inside it: GET
+200, a small POST below 500 and not 413, and a 65537-byte POST at 413.
+The canary is one lab reader (`DIPCATCHER_WRITE_OWNER=0`). It is not a
+Caddy upstream.
+
+A passing probe recreates `lab-a`, `lab-b`, `research-a`, `research-b`,
+and `proxy`, then removes the canary. A failing probe removes only the
+canary. Exit 0 means the roll happened. Exit 1 means abort, or the roll
+command failed. `prod-smoke` is a separate drill and it always stops
+the stack. Do not point the canary at it.
+
+```bash
+make -f deploy/prod.mk prod-build
+make -f deploy/prod.mk prod-canary
+```

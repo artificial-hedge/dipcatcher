@@ -7,7 +7,9 @@ the research API. Production research must see a data directory it cannot
 write. That profile leaves an unset ``DIPCATCHER_RATE_LIMIT_RPS`` at the
 process default of 50 so the limit cannot stay off. Zero and any invalid
 rate still refuse to boot. The research image leaves the write flag off;
-``deploy/prod.env`` turns the profile on. This file uses the stdlib only.
+``deploy/prod.env`` turns the profile on. Under that profile, API keys and
+the alert webhook secret are read from ``*_FILE`` and a plain value is
+refused. This file uses the stdlib only.
 """
 
 from __future__ import annotations
@@ -15,7 +17,9 @@ from __future__ import annotations
 import errno
 import math
 import os
+import stat
 import sys
+from urllib.parse import urlsplit
 
 _DIP_UID = 10001
 _TRUE = frozenset({"1", "true", "yes", "on"})
@@ -25,6 +29,12 @@ _PRODUCTION_DEFAULT_RPS = "50"
 _RESEARCH_ARGV = "quant_fund.api.research_api"
 _READ_ONLY_ERRNO = frozenset({errno.EROFS, errno.EACCES, errno.EPERM})
 _RESEARCH_RO = "must be read-only when DIPCATCHER_PROFILE is production"
+_SECRET_NAMES = (
+    "QUANT_API_KEY",
+    "RESEARCH_API_KEY",
+    "DIPCATCHER_ALERT_WEBHOOK_SECRET",
+)
+_SECRET_MAX_BYTES = 4096
 
 
 def _enabled(name: str, default: str) -> bool:
@@ -132,8 +142,98 @@ def check_data_dir(path: str, *, require_write: bool) -> str | None:
     return _write_problem(path, failure)
 
 
+def _single_token(value: str) -> bool:
+    if not value or any(char.isspace() for char in value):
+        return False
+    return not any(char in value for char in "\"'{}#")
+
+
+def _read_secret(path: str) -> str | None:
+    """Return the file text, or ``None`` when it cannot be read. Do not log it."""
+    if not path or os.path.islink(path):
+        return None
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+    except OSError:
+        return None
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode) or info.st_size == 0 or info.st_size > _SECRET_MAX_BYTES:
+            return None
+        raw = os.read(descriptor, _SECRET_MAX_BYTES)
+    except OSError:
+        return None
+    finally:
+        os.close(descriptor)
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    if text.endswith("\n"):
+        text = text[:-1]
+    if text.endswith("\r"):
+        text = text[:-1]
+    return text
+
+
+def _one_secret(name: str, production: bool) -> str | None:
+    file_var = f"{name}_FILE"
+    path = os.environ.get(file_var, "").strip()
+    plain = os.environ.get(name, "").strip()
+    if path and plain:
+        return f"{name} must not be set in the environment when {file_var} is set"
+    if production and plain:
+        return f"{name} must be loaded from {file_var} when DIPCATCHER_PROFILE is production"
+    if not path:
+        return None
+    value = _read_secret(path)
+    if value is None or not _single_token(value):
+        return f"{file_var} must contain one token"
+    return None
+
+
+def _webhook_url_ok(url: str) -> bool:
+    if len(url) > 512 or any(char.isspace() for char in url):
+        return False
+    parts = urlsplit(url)
+    if parts.scheme not in {"http", "https"} or not parts.hostname:
+        return False
+    return not parts.username and not parts.password
+
+
+def _webhook_problem(production: bool) -> str | None:
+    url = os.environ.get("DIPCATCHER_ALERT_WEBHOOK_URL", "").strip()
+    if not url:
+        return None
+    if not _webhook_url_ok(url):
+        return "DIPCATCHER_ALERT_WEBHOOK_URL is invalid"
+    file_set = bool(os.environ.get("DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE", "").strip())
+    plain = bool(os.environ.get("DIPCATCHER_ALERT_WEBHOOK_SECRET", "").strip())
+    if file_set or plain:
+        return None
+    if production:
+        return (
+            "DIPCATCHER_ALERT_WEBHOOK_SECRET_FILE is required "
+            "when DIPCATCHER_ALERT_WEBHOOK_URL is set"
+        )
+    return "DIPCATCHER_ALERT_WEBHOOK_SECRET is required when DIPCATCHER_ALERT_WEBHOOK_URL is set"
+
+
+def _secret_problems() -> list[str]:
+    production = _production()
+    problems = [problem for name in _SECRET_NAMES if (problem := _one_secret(name, production))]
+    webhook = _webhook_problem(production)
+    if webhook:
+        problems.append(webhook)
+    return problems
+
+
 def main(argv: list[str]) -> int:
     problems: list[str] = []
+    problems.extend(_secret_problems())
     _apply_production_rate_default()
     rate = _production_rate_problem()
     if rate is not None:

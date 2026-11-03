@@ -37,6 +37,12 @@ METRIC_HELP = {
     "dipcatcher_kill_switch_info": (
         "Current operator kill code. The code label is a stable reader code, never the file body."
     ),
+    "dipcatcher_http_requests_total": (
+        "HTTP responses by status code. Operational telemetry, not a research score."
+    ),
+    "dipcatcher_http_request_duration_seconds": (
+        "HTTP request latency in seconds. Operational telemetry, not a research score."
+    ),
 }
 
 _OPS_CODE = re.compile(r"^[A-Za-z0-9_:-]{1,64}$")
@@ -174,6 +180,8 @@ class _Registry:
         self.errors: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
         self.counters: dict[str, dict[tuple[str, ...], int]] = {}
+        self.http_counts: dict[tuple[str, str], int] = {}
+        self.http_latency: dict[str, _Histogram] = {}
 
     def observe(self, stage: str, seconds: float) -> None:
         if stage not in STAGES:
@@ -190,6 +198,16 @@ class _Registry:
             raise ValueError(f"unknown stage {stage}")
         with self._lock:
             self.errors[stage] = self.errors.get(stage, 0) + 1
+
+    def observe_http(self, service: str, code: str, seconds: float) -> None:
+        with self._lock:
+            key = (service, code)
+            self.http_counts[key] = self.http_counts.get(key, 0) + 1
+            histogram = self.http_latency.get(service)
+            if histogram is None:
+                histogram = _Histogram()
+                self.http_latency[service] = histogram
+            histogram.observe(seconds)
 
     def gauge(self, name: str, value: float) -> None:
         if name not in METRIC_HELP or not math.isfinite(value):
@@ -223,6 +241,15 @@ class _Registry:
                 "errors": dict(self.errors),
                 "gauges": dict(self.gauges),
                 "counters": {name: dict(series) for name, series in self.counters.items()},
+                "http_counts": dict(self.http_counts),
+                "http_latency": {
+                    service: {
+                        "bucket_counts": list(histogram.bucket_counts),
+                        "total": histogram.total,
+                        "n": histogram.n,
+                    }
+                    for service, histogram in self.http_latency.items()
+                },
             }
 
     def reset(self) -> None:
@@ -231,6 +258,8 @@ class _Registry:
             self.errors.clear()
             self.gauges.clear()
             self.counters.clear()
+            self.http_counts.clear()
+            self.http_latency.clear()
 
 
 REGISTRY = _Registry()
@@ -250,6 +279,15 @@ def record_error(stage: str) -> None:
     if not observe_enabled():
         return
     REGISTRY.error(stage)
+
+
+def record_http_request(service: str, status: int, seconds: float) -> None:
+    """Count one HTTP response when observability is on. Ignore unknown labels."""
+    if not observe_enabled():
+        return
+    if service not in {"lab", "research"} or status < 100 or status > 599:
+        return
+    REGISTRY.observe_http(service, str(status), seconds)
 
 
 def set_data_freshness(seconds: float) -> None:
@@ -407,10 +445,59 @@ def render_prometheus() -> str:
                 f'{label}="{value}"' for (label, _), value in zip(labels, values, strict=True)
             )
             lines.append(f"{name}{{{label_text}}} {series[values]}")
+    _append_http(lines, snap)
     text = "\n".join(lines)
     if text:
         text += "\n"
     return text
+
+
+def _append_http(lines: list[str], snap: dict[str, Any]) -> None:
+    counts: dict[tuple[str, str], int] = snap["http_counts"]
+    if counts:
+        _append_http_counts(lines, counts)
+    latency: dict[str, dict[str, Any]] = snap["http_latency"]
+    if latency:
+        _append_http_latency(lines, latency)
+
+
+def _append_http_counts(lines: list[str], counts: dict[tuple[str, str], int]) -> None:
+    _help(lines, "dipcatcher_http_requests_total", "counter")
+    for service, code in sorted(counts):
+        lines.append(
+            f'dipcatcher_http_requests_total{{code="{code}",service="{service}"}} '
+            f"{counts[(service, code)]}"
+        )
+
+
+def _append_http_latency(lines: list[str], latency: dict[str, dict[str, Any]]) -> None:
+    _help(lines, "dipcatcher_http_request_duration_seconds", "histogram")
+    for service in ("lab", "research"):
+        histogram = latency.get(service)
+        if histogram is not None:
+            _append_http_buckets(lines, service, histogram)
+
+
+def _append_http_buckets(lines: list[str], service: str, histogram: dict[str, Any]) -> None:
+    cumulative = 0
+    for index, bound in enumerate(BUCKETS):
+        cumulative += histogram["bucket_counts"][index]
+        lines.append(
+            "dipcatcher_http_request_duration_seconds_bucket"
+            f'{{le="{_num(bound)}",service="{service}"}} {cumulative}'
+        )
+    cumulative += histogram["bucket_counts"][-1]
+    lines.append(
+        "dipcatcher_http_request_duration_seconds_bucket"
+        f'{{le="+Inf",service="{service}"}} {cumulative}'
+    )
+    lines.append(
+        "dipcatcher_http_request_duration_seconds_sum"
+        f'{{service="{service}"}} {_num(histogram["total"])}'
+    )
+    lines.append(
+        f'dipcatcher_http_request_duration_seconds_count{{service="{service}"}} {histogram["n"]}'
+    )
 
 
 def _help(lines: list[str], name: str, metric_type: str) -> None:

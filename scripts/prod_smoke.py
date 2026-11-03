@@ -25,6 +25,12 @@ from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[1]
 _BODY_LIMIT = 64 * 1024
+_LAB_REQUEST_ID = "ops10-lab-0123456789abcdef"
+_RESEARCH_REQUEST_ID = "ops10-research-0123456789abcdef"
+_LAB_IMAGE = "dipcatcher:local"
+_LAB_PREVIOUS = "dipcatcher:previous"
+_RESEARCH_IMAGE = "dipcatcher-research-api:latest"
+_RESEARCH_PREVIOUS = "dipcatcher-research-api:previous"
 _UP_TIMEOUT_S = 900
 _DOWN_TIMEOUT_S = 180
 _READY_TIMEOUT_S = 30
@@ -107,7 +113,7 @@ def _keys_present() -> bool:
 
 def _redact(text: str) -> str:
     redacted = text
-    for name in ("QUANT_API_KEY", "RESEARCH_API_KEY"):
+    for name in ("QUANT_API_KEY", "RESEARCH_API_KEY", "DIPCATCHER_ALERT_WEBHOOK_SECRET"):
         value = os.environ.get(name, "")
         if value:
             redacted = redacted.replace(value, f"<{name}>")
@@ -140,10 +146,18 @@ def _make(target: str, timeout: float) -> int:
     return proc.returncode
 
 
-def _request(url: str, ca_file: Path, body: bytes | None) -> tuple[int, dict[str, str]]:
+def _request(
+    url: str,
+    ca_file: Path,
+    body: bytes | None,
+    headers: Mapping[str, str] | None = None,
+) -> tuple[int, dict[str, str]]:
     context = ssl.create_default_context(cafile=str(ca_file))
     method = "GET" if body is None else "POST"
     request = urllib.request.Request(url, data=body, method=method)
+    if headers:
+        for key, value in headers.items():
+            request.add_header(key, value)
     try:
         with urllib.request.urlopen(request, context=context, timeout=10) as response:
             response.read()
@@ -152,11 +166,16 @@ def _request(url: str, ca_file: Path, body: bytes | None) -> tuple[int, dict[str
         return exc.code, {key: value for key, value in exc.headers.items()}
 
 
-def _request_retry(url: str, ca_file: Path, body: bytes | None) -> tuple[int, dict[str, str]]:
+def _request_retry(
+    url: str,
+    ca_file: Path,
+    body: bytes | None,
+    headers: Mapping[str, str] | None = None,
+) -> tuple[int, dict[str, str]]:
     deadline = time.monotonic() + _READY_TIMEOUT_S
     while True:
         try:
-            return _request(url, ca_file, body)
+            return _request(url, ca_file, body, headers)
         except Exception:
             if time.monotonic() >= deadline:
                 return 0, {}
@@ -223,6 +242,80 @@ def _token_check(name: str, container: str, code: str, predicate) -> dict[str, o
     return {"detail": _detail(text), "name": name, "ok": bool(predicate(text))}
 
 
+def request_id_visible(sent: str, echoed: str, proxy_log: str, app_log: str) -> bool:
+    """True when the proxy and one replica both recorded the id the client sent."""
+    if not sent or echoed != sent or sent not in proxy_log:
+        return False
+    return f'"request_id": "{sent}"' in app_log
+
+
+def _header(headers: Mapping[str, str], name: str) -> str:
+    folded = {key.lower(): value for key, value in headers.items()}
+    return folded.get(name, "")
+
+
+def _docker_logs(container: str) -> str:
+    try:
+        proc = subprocess.run(
+            [*docker_argv(), "logs", "--tail", "400", container],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return (proc.stdout or "") + (proc.stderr or "")
+
+
+def _wait_log(containers: list[str], needle: str) -> str:
+    deadline = time.monotonic() + 20
+    blob = ""
+    while True:
+        blob = "\n".join(_docker_logs(name) for name in containers)
+        if needle in blob or time.monotonic() >= deadline:
+            return blob
+        time.sleep(1)
+
+
+def _pin_previous() -> bool:
+    pairs = ((_LAB_IMAGE, _LAB_PREVIOUS), (_RESEARCH_IMAGE, _RESEARCH_PREVIOUS))
+    for source, dest in pairs:
+        try:
+            proc = subprocess.run(
+                [*docker_argv(), "tag", source, dest],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        sys.stderr.write(_redact(proc.stderr or ""))
+        if proc.returncode != 0:
+            return False
+    return True
+
+
+def _request_id_check(
+    name: str, port: str, ca_file: Path, sent: str, replicas: list[str]
+) -> dict[str, object]:
+    status, headers = _request_retry(
+        f"https://127.0.0.1:{port}/health",
+        ca_file,
+        None,
+        {"X-Request-Id": sent},
+    )
+    echoed = _header(headers, "x-request-id")
+    proxy_log = _wait_log([_container("PROXY", "proxy-1")], sent)
+    app_log = _wait_log(replicas, sent)
+    return {
+        "name": name,
+        "ok": request_id_visible(sent, echoed, proxy_log, app_log),
+        "status": status,
+    }
+
+
 def collect_checks() -> list[dict[str, object]]:
     """TLS health, the body cap, the lab lock, and the research read-only mount."""
     tls = os.environ.get("DIPCATCHER_TLS_DIR", "").strip()
@@ -237,6 +330,24 @@ def collect_checks() -> list[dict[str, object]]:
         return checks
     checks.extend(_tls_checks("lab", lab_port, ca_file))
     checks.extend(_tls_checks("research", research_port, ca_file))
+    checks.append(
+        _request_id_check(
+            "lab-request-id",
+            lab_port,
+            ca_file,
+            _LAB_REQUEST_ID,
+            [_container("LAB_A", "lab-a-1"), _container("LAB_B", "lab-b-1")],
+        )
+    )
+    checks.append(
+        _request_id_check(
+            "research-request-id",
+            research_port,
+            ca_file,
+            _RESEARCH_REQUEST_ID,
+            [_container("RESEARCH_A", "research-a-1"), _container("RESEARCH_B", "research-b-1")],
+        )
+    )
     checks.append(
         _token_check(
             "lab-a-lock",
@@ -278,6 +389,12 @@ def main(argv: list[str]) -> int:
         up = _make("prod-up", _UP_TIMEOUT_S)
         if up == 0:
             checks = collect_checks()
+            if checks and all(bool(item.get("ok")) for item in checks):
+                if not _pin_previous():
+                    checks.append({"detail": "previous tag", "name": "rollback", "ok": False})
+                else:
+                    rollback = _make("prod-rollback", _UP_TIMEOUT_S)
+                    checks.append({"name": "rollback", "ok": rollback == 0})
     finally:
         down = _make("prod-down", _DOWN_TIMEOUT_S)
     report = summarize(up, down, checks)

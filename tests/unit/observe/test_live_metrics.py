@@ -187,6 +187,8 @@ def test_reset_clears_live_counters_and_restores_empty_output(
         "errors": {},
         "gauges": {},
         "counters": {},
+        "http_counts": {},
+        "http_latency": {},
     }
     assert render_prometheus() == ""
 
