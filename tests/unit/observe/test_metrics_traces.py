@@ -185,7 +185,7 @@ def test_export_failure_does_not_mask_the_result(monkeypatch: pytest.MonkeyPatch
 def test_metrics_http_serves_text(monkeypatch: pytest.MonkeyPatch) -> None:
     _enable(monkeypatch)
     set_data_freshness(3.5)
-    port = start_metrics_server(0)
+    port = start_metrics_server(0, allow_unauthenticated=True)
     try:
         import http.client
 
