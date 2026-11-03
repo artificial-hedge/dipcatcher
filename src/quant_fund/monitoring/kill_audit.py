@@ -10,8 +10,8 @@ Every state x action cell is checked against the declared spec:
   ``human_authorized=True`` (and never under ``allow_auto_flatten``).
 - Any *unknown* state (typo, future enum, empty): construction raises
   ``KillSwitchActive`` (fail closed). Cancel and flatten are not offered.
-- ``set_state`` or attribute assignment of an unknown name must raise,
-  never transition.
+- ``set_state`` or attribute assignment of an unknown name must raise
+  and latch ``HALT_NEW_ORDERS``. Trading must not stay ``ENABLED``.
 
 Sealed ``kill_audit.v1``.
 """
@@ -65,7 +65,7 @@ def _record_unknown(rec: Any) -> None:
             ks2.set_state(bad)
             rec(f"set_state[{bad!r}]", False, f"transitioned to {ks2.state!r}")
         except KillSwitchActive:
-            rec(f"set_state[{bad!r}]", ks2.state == ENABLED)
+            rec(f"set_state[{bad!r}]", ks2.state == HALT_NEW_ORDERS)
 
 
 def kill_switch_audit() -> dict[str, Any]:

@@ -24,8 +24,9 @@ class KillSwitch:
             raise KillSwitchActive(f"invalid kill switch state={self._state}")
 
     def set_state(self, state: str) -> None:
-        """Transition kill-switch state. Invalid names raise KillSwitchActive (fail closed)."""
+        """Transition kill-switch state. Invalid names halt, then raise."""
         if state not in VALID_STATES:
+            self._state = HALT_NEW_ORDERS
             raise KillSwitchActive(f"invalid kill switch state={state}")
         self._state = state
 

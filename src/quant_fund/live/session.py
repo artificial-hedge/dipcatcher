@@ -12,7 +12,6 @@ import json
 import math
 import os
 import re
-import secrets
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -44,6 +43,7 @@ from quant_fund.live.exchange_clock import (
     nyse_rth_closed,
     outside_band,
 )
+from quant_fund.live.fat_finger import fat_finger_reasons
 from quant_fund.live.gateway_arm import (
     arm_session,
     disarm_session,
@@ -51,6 +51,7 @@ from quant_fund.live.gateway_arm import (
     read_arm,
     zero_audit_head,
 )
+from quant_fund.live.idempotency import assign_key
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
 from quant_fund.live.market_data import (
     ActionPlan,
@@ -306,10 +307,6 @@ def _positive(value: float, label: str) -> float:
     return number
 
 
-def _new_client_id() -> str:
-    return "dc" + secrets.token_hex(8)
-
-
 def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = (json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
@@ -328,9 +325,18 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
 def _read_object(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
-    raw = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise LiveGateError("session state file is unreadable") from exc
+    if not text.strip():
+        raise LiveGateError("session state file is truncated")
+    try:
+        raw = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise LiveGateError("session state file is truncated") from exc
     if not isinstance(raw, dict):
-        raise LiveGateError(f"{path.name} is not a JSON object")
+        raise LiveGateError("session state file is corrupt")
     return raw
 
 
@@ -777,7 +783,14 @@ class LiveSession:
         qty = _positive(quantity, "quantity")
         limit = _positive(limit_price, "limit price")
         reference = _positive(mark, "mark")
-        client = client_order_id or _new_client_id()
+        client = assign_key(
+            symbol=cleaned,
+            side=order_side,
+            quantity=qty,
+            limit_price=limit,
+            client_order_id=client_order_id,
+            known=tuple((str(row["client_order_id"]), str(row["status"])) for row in self.orders),
+        )
         if not _CLIENT.fullmatch(client):
             raise LiveGateError("client_order_id must be 1..48 letters, digits, _ or -")
         existing = self._find(client)
@@ -793,11 +806,13 @@ class LiveSession:
         )
         if blocked is not None:
             return blocked
+        finger = self._fat_finger(cleaned, qty, limit, reference)
         self._capture_baseline()
         blocked_market = self._market_block(cleaned, ts, qty, reference)
         if blocked_market:
+            reasons = _merge_reasons(blocked_market, finger)
             denied = _denied(
-                reasons=blocked_market,
+                reasons=reasons,
                 symbol=cleaned,
                 side=order_side,
                 quantity=qty,
@@ -807,14 +822,17 @@ class LiveSession:
             )
             self._audit(
                 "deny",
-                {"actor": who, "client_order_id": client, "reasons": list(blocked_market)},
+                {"actor": who, "client_order_id": client, "reasons": list(reasons)},
             )
             self._persist()
             return denied
         prior_mark = self.marks.get(cleaned)
         self._bind_identity(cleaned)
-        self.marks[cleaned] = reference
-        self.broker.set_mark(cleaned, reference)
+        if prior_mark is None:
+            self.marks[cleaned] = reference
+            self.broker.set_mark(cleaned, reference)
+        else:
+            self.broker.set_mark(cleaned, prior_mark)
         self._sync_account(ts, reset_session=not self.orders)
         self._enforce_kill(ts)
         placeholder = {
@@ -829,12 +847,14 @@ class LiveSession:
             "fill_price": None,
             "expects_fill": False,
             "reason": "",
+            "idempotency_key": client,
         }
         decision = self.engine.decide(self._view(placeholder, limit, ts, KIND_ORDER), apply=False)
-        if not decision.allowed:
+        if finger or not decision.allowed:
             self._drop_unaccepted_mark(cleaned, prior_mark)
+            reasons = _merge_reasons(decision.reasons, finger)
             denied = _denied(
-                reasons=decision.reasons,
+                reasons=reasons,
                 symbol=cleaned,
                 side=order_side,
                 quantity=qty,
@@ -842,11 +862,11 @@ class LiveSession:
                 client_order_id=client,
                 venue=self.venue,
             )
-            self._audit(
-                "deny", {"actor": who, "client_order_id": client, "reasons": list(decision.reasons)}
-            )
+            self._audit("deny", {"actor": who, "client_order_id": client, "reasons": list(reasons)})
             self._persist()
             return denied
+        self.marks[cleaned] = reference
+        self.broker.set_mark(cleaned, reference)
         self.orders.append(placeholder)
         self.ledger.note_order(client, expects_fill=False, quantity=qty)
         self._persist()
@@ -926,6 +946,16 @@ class LiveSession:
             report["ok"] = False
         self._project_fills_onto_orders()
         report["venue"] = self.venue
+        alerts = _position_alerts(
+            report,
+            cash_tolerance=float(self.config.cash_tolerance),
+            position_tolerance=float(self.config.position_tolerance),
+        )
+        report["alerts"] = alerts
+        if alerts:
+            report["ok"] = False
+            self._latch_position_mismatch(alerts, stamp)
+            self._audit("alert", {"alerts": alerts})
         self._sync_account(stamp)
         self._enforce_kill(stamp)
         self._persist()
@@ -1043,6 +1073,47 @@ class LiveSession:
         if stamp > horizon:
             return ts
         return stamp
+
+    def _fat_finger(
+        self, symbol: str, quantity: float, limit_price: float, mark: float
+    ) -> tuple[str, ...]:
+        """Caps versus the last stored mark. The first order has no collar yet."""
+        anchor = self.marks.get(symbol)
+        limits = self.pretrade.limits
+        reasons = fat_finger_reasons(
+            quantity=quantity,
+            limit_price=limit_price,
+            mark=anchor if anchor is not None else mark,
+            max_quantity=float(limits.max_order_quantity),
+            max_notional=float(limits.max_order_notional),
+            collar_bps=float(limits.price_collar_bps),
+        )
+        if anchor is None:
+            return tuple(reason for reason in reasons if reason != "price_collar")
+        return reasons
+
+    def _latch_restore(self, reason: str) -> None:
+        """A bad snapshot halts. Catching the error must not leave trading enabled."""
+        text = reason.strip() or "state restore failed"
+        self.kill_state = {
+            "latched": True,
+            "actor": "restore",
+            "reason": text[:240],
+            "state": "HALT_NEW_ORDERS",
+        }
+        self.engine.trip("restore", text[:240], int(self._now()))
+
+    def _latch_position_mismatch(self, alerts: list[str], ts: int) -> None:
+        if self.kill_state["latched"]:
+            return
+        reason = "; ".join(alerts)
+        self.engine.trip("reconcile", reason, ts)
+        self.kill_state = {
+            "latched": True,
+            "actor": "reconcile",
+            "reason": reason,
+            "state": "HALT_NEW_ORDERS",
+        }
 
     def _latch_broker_fault(self, verdict: str, fill_id: str, ts: int) -> None:
         """Stop new orders when broker truth is an unknown, excess, or late fill."""
@@ -1650,6 +1721,12 @@ class LiveSession:
     def _enforce_kill(self, ts: int) -> list[str]:
         if not self.kill_state["latched"]:
             return []
+        # A position break stops new orders. It does not cancel a partial fill.
+        if (
+            self.kill_state.get("actor") == "reconcile"
+            and self.kill_state.get("state") == "HALT_NEW_ORDERS"
+        ):
+            return []
         return self._cancel_working(ts)
 
     def _cancel_working(self, ts: int) -> list[str]:
@@ -2039,10 +2116,16 @@ class LiveSession:
         """Read the desk from disk. The caller already holds the process lock."""
         if self.audit_path.exists():
             os.chmod(self.audit_path, 0o600)
-        self._arm = read_arm(self.arm_path, venue=self.venue, pretrade_sha256=self.pretrade_sha256)
-        stored = _read_object(self.state_path)
-        self.audit_head = _verify_audit(self.audit_path)
-        self._load_state(stored)
+        try:
+            self._arm = read_arm(
+                self.arm_path, venue=self.venue, pretrade_sha256=self.pretrade_sha256
+            )
+            stored = _read_object(self.state_path)
+            self.audit_head = _verify_audit(self.audit_path)
+            self._load_state(stored)
+        except LiveGateError as exc:
+            self._latch_restore(str(exc))
+            raise
         self._build_engine()
         self._restore_limits()
         for symbol, price in self.marks.items():
@@ -2240,13 +2323,43 @@ def _state_collections(
     return orders, fills, marks, kill
 
 
+def _position_alerts(
+    report: dict[str, Any],
+    *,
+    cash_tolerance: float,
+    position_tolerance: float,
+) -> list[str]:
+    """Name each broker mismatch outside tolerance. No declaration means no alert."""
+    drift = report.get("drift")
+    if not isinstance(drift, dict) or not drift.get("declared"):
+        return []
+    alerts: list[str] = []
+    cash_drift = drift.get("cash_drift")
+    if cash_drift is not None and float(cash_drift) > cash_tolerance:
+        alerts.append("cash mismatch")
+    positions = drift.get("position_drift")
+    if isinstance(positions, dict):
+        for symbol in sorted(positions):
+            if float(positions[symbol]) > position_tolerance:
+                alerts.append(f"position mismatch {symbol}")
+    return alerts
+
+
+_KILL_STATES = frozenset({"ENABLED", "HALT_NEW_ORDERS", "CANCEL_OPEN_ORDERS", "FLATTEN_OPTIONAL"})
+
+
 def _kill_from_state(kill: dict[str, Any]) -> dict[str, Any]:
     latched = bool(kill.get("latched"))
     actor = str(kill.get("actor") or "")
     reason = str(kill.get("reason") or "")
     if latched and (not actor.strip() or not reason.strip()):
         raise LiveGateError("a latched kill switch needs an actor and a reason")
-    return {"latched": latched, "actor": actor, "reason": reason}
+    name = kill.get("state", "HALT_NEW_ORDERS" if latched else "ENABLED")
+    if not isinstance(name, str) or name not in _KILL_STATES:
+        raise LiveGateError(f"unknown kill switch state={name!r}")
+    if name != "ENABLED":
+        latched = True
+    return {"latched": latched, "actor": actor, "reason": reason, "state": name}
 
 
 def _order_row(raw: object) -> dict[str, Any]:
@@ -2268,6 +2381,7 @@ def _order_row(raw: object) -> dict[str, Any]:
         "fill_price": None if fill_price is None else float(fill_price),
         "expects_fill": bool(raw.get("expects_fill")),
         "reason": str(raw.get("reason") or ""),
+        "idempotency_key": str(raw.get("idempotency_key") or raw["client_order_id"]),
     }
 
 
@@ -2289,9 +2403,18 @@ def _public_order(row: dict[str, Any], *, venue: str, replayed: bool) -> dict[st
         "reasons": [],
         "venue": venue,
         "broker_called": True,
+        "idempotency_key": str(row.get("idempotency_key") or row["client_order_id"]),
         "live_pnl_claim": False,
         "research_evidence": False,
     }
+
+
+def _merge_reasons(primary: tuple[str, ...] | list[str], extra: tuple[str, ...]) -> tuple[str, ...]:
+    merged = list(primary)
+    for reason in extra:
+        if reason not in merged:
+            merged.append(reason)
+    return tuple(merged)
 
 
 def _denied(
@@ -2320,6 +2443,7 @@ def _denied(
         "reasons": list(reasons),
         "venue": venue,
         "broker_called": False,
+        "idempotency_key": client_order_id,
         "live_pnl_claim": False,
         "research_evidence": False,
     }

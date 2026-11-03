@@ -436,9 +436,11 @@ def test_kill_switch_blocks_every_order_until_human_reset(
     assert "rest" in broker.open_orders
 
     broker.kill.set_state(state)
+    assert broker.kill.may_flatten(human) is (state == FLATTEN_OPTIONAL and human and not auto)
+    assert broker.kill.may_cancel_open_orders() is (state in {CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL})
     with pytest.raises(KillSwitchActive):
         broker.kill.set_state("BROKEN")
-    assert broker.kill.state == state
+    assert broker.kill.state == HALT_NEW_ORDERS
     cash = broker.cash
     shares = dict(broker.shares)
     blocked = broker.submit(
@@ -466,8 +468,8 @@ def test_kill_switch_blocks_every_order_until_human_reset(
     assert "rest" in broker.open_orders
     with pytest.raises(KillSwitchActive):
         broker.kill.assert_new_orders_allowed()
-    assert broker.kill.may_flatten(human) is (state == FLATTEN_OPTIONAL and human and not auto)
-    assert broker.kill.may_cancel_open_orders() is (state in {CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL})
+    assert broker.kill.may_flatten(human) is False
+    assert broker.kill.may_cancel_open_orders() is False
     still = broker.submit(
         _order("still", "A", OrderSide.BUY, 1.0),
         price=50.0,

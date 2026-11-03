@@ -39,6 +39,8 @@ from quant_fund.live.exchange_clock import (
     nyse_rth_closed,
     outside_band,
 )
+from quant_fund.live.fat_finger import fat_finger_reasons
+from quant_fund.live.idempotency import assign_key
 from quant_fund.live.market_data import (
     ActionPlan,
     MarketDataError,
@@ -494,7 +496,14 @@ class LiveDesk:
         side = _side(side)
         _quantity(qty)
         _price(px)
-        client = client_order_id or uuid.uuid4().hex
+        client = assign_key(
+            symbol=symbol,
+            side=side,
+            quantity=qty,
+            limit_price=px,
+            client_order_id=client_order_id,
+            known=tuple((item.client_order_id, item.status) for item in self.orders.values()),
+        )
         _client(client)
         prior = self._by_client.get(client)
         if prior is not None:
@@ -510,6 +519,14 @@ class LiveDesk:
         if blocked:
             return self._deny(symbol, side, qty, px, ts_ns, client, blocked)
         prior_mark = self.marks.get(symbol)
+        finger = fat_finger_reasons(
+            quantity=qty,
+            limit_price=px,
+            mark=prior_mark if prior_mark is not None else px,
+            max_quantity=float(self.config.limits.max_order_quantity),
+            max_notional=float(self.config.limits.max_order_notional),
+            collar_bps=float(self.config.limits.price_collar_bps),
+        )
         self._bind_identity(symbol)
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
@@ -530,6 +547,7 @@ class LiveDesk:
             reasons.append("order_rate")
         if self._duplicate(symbol, side, qty, px, ts_ns) and "duplicate_order" not in reasons:
             reasons.append("duplicate_order")
+        _merge_reasons(reasons, finger)
         self._note_rate(ts_ns, order=True)
         self._note_dupe(symbol, side, qty, px, ts_ns)
         order = DeskOrder(
@@ -1584,9 +1602,15 @@ class LiveDesk:
             return
         if cash is not None or account_value is not None:
             raise LiveDeskError("cash and account are already persisted; refusing to override")
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            text = path.read_text(encoding="utf-8")
+            raw = json.loads(text) if text.strip() else None
+        except json.JSONDecodeError as exc:
+            self._latch("desk state file is truncated")
+            raise LiveDeskError("desk state file is truncated") from exc
         if not isinstance(raw, dict):
-            raise LiveDeskError("desk state must be a JSON object")
+            self._latch("desk state file is corrupt")
+            raise LiveDeskError("desk state file is corrupt")
         _require_closed_state(raw)
         if raw.get("config_sha256") != self.config_sha256:
             self._latch("risk config changed")
@@ -1836,6 +1860,12 @@ def _side(side: str) -> str:
     if text not in {"BUY", "SELL"}:
         raise LiveDeskError("side must be BUY or SELL")
     return text
+
+
+def _merge_reasons(reasons: list[str], extra: tuple[str, ...]) -> None:
+    for reason in extra:
+        if reason not in reasons:
+            reasons.append(reason)
 
 
 def _client(client: str) -> None:
