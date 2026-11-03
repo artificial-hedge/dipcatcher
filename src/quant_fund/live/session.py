@@ -318,6 +318,13 @@ class LiveSession:
         at_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
+            self._existing_order_for_retry(
+                client_order_id=client_order_id,
+                symbol=symbol,
+                side=side,
+                quantity=quantity,
+                limit_price=limit_price,
+            )
             self._recover_inflight()
             return self._submit_locked(
                 symbol=symbol,
@@ -482,7 +489,13 @@ class LiveSession:
         client = client_order_id or _new_client_id()
         if not _CLIENT.fullmatch(client):
             raise LiveGateError("client_order_id must be 1..48 letters, digits, _ or -")
-        existing = self._find(client)
+        existing = self._existing_order_for_retry(
+            client_order_id=client,
+            symbol=cleaned,
+            side=order_side,
+            quantity=qty,
+            limit_price=limit,
+        )
         if existing is not None:
             return _public_order(existing, venue=self.venue, replayed=True)
         self._capture_baseline()
@@ -537,6 +550,39 @@ class LiveSession:
         )
         return _public_order(placeholder, venue=self.venue, replayed=False)
 
+    def _existing_order_for_retry(
+        self,
+        *,
+        client_order_id: str | None,
+        symbol: str,
+        side: str,
+        quantity: float,
+        limit_price: float,
+    ) -> dict[str, Any] | None:
+        if client_order_id is None:
+            return None
+        existing = self._find(client_order_id)
+        if existing is None:
+            return None
+        requested = (
+            _symbol(symbol),
+            _side(side),
+            _positive(quantity, "quantity"),
+            _positive(limit_price, "limit price"),
+        )
+        stored = (
+            str(existing["symbol"]),
+            str(existing["side"]),
+            float(existing["quantity"]),
+            float(existing["limit_price"]),
+        )
+        if requested != stored:
+            raise LiveGateError(
+                "client_order_id is already associated with a different order; "
+                "symbol, side, quantity, and limit_price must match"
+            )
+        return existing
+
     def _send(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
         try:
             return self.broker.submit(order)
@@ -575,6 +621,11 @@ class LiveSession:
             return None
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
+        if ack.client_order_id != str(row["client_order_id"]):
+            raise LiveGateError("broker ack client_order_id does not match the local order")
+        known_broker_id = str(row["broker_order_id"])
+        if known_broker_id and ack.broker_order_id != known_broker_id:
+            raise LiveGateError("broker ack broker_order_id does not match the local order")
         row["broker_order_id"] = ack.broker_order_id
         status = map_broker_status(ack.status)
         row["status"] = status
