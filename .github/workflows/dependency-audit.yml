@@ -46,6 +46,8 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
+      - name: Security gate instruction
+        run: printf '%s\n' 'make -f deploy/security.mk security-gate'
       - run: uv lock --check
       - run: make audit
 
@@ -81,7 +83,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # 2026-09-03
       - run: cargo install cargo-audit --version 0.22.2 --locked
       - run: make audit-rust
 

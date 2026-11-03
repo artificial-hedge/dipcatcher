@@ -8,8 +8,9 @@ from numbers import Integral
 from pathlib import Path
 from typing import Annotated, Literal
 
-import yaml
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StrictInt, model_validator
+
+from quant_fund.config.yaml_safe import load_yaml_document
 
 
 class _Strict(BaseModel):
@@ -158,7 +159,7 @@ def load_harness_config(path: Path) -> Fx1HarnessConfig:
     if Path(path).suffix.lower() == ".json":
         payload = json.loads(text)
     else:
-        payload = yaml.safe_load(text)
+        payload = load_yaml_document(text)
     if not isinstance(payload, dict):
         raise ValueError("harness config must be a mapping")
     return Fx1HarnessConfig.model_validate(payload)

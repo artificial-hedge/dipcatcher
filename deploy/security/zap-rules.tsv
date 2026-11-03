@@ -1,0 +1,8 @@
+# zap-baseline and zap-api-scan rule configuration.
+# Plugin 100000 flags any HTTP 500-class status, including 503.
+# Lab GET /ready returns 503 with status not_ready when the data manifest
+# or the research receipt is missing or invalid. That is the fail-closed
+# readiness signal from quant_fund.api.app.readiness and
+# quant_fund.pipeline.doctor. A 500 on any other URL still alerts.
+# The third field is a regular expression matched from the start of the alert URL.
+100000	OUTOFSCOPE	https?://[^/]+/ready/?(?:\?.*)?$
