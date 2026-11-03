@@ -163,6 +163,16 @@ A dividend on day 2 and a 2-for-1 on day 3 stays `[50, 55.5, 55.5]`.
 Regression: `tests/regression/test_split_dividend_conservation.py`.
 Default configs do not change a no-split dividend series.
 
+Duplicate ``submit`` of the same ``order_id`` used to fill twice.
+Frictionless, initial cash 100_000, two submits of 10 shares at 100
+moved cash to 98_000 and left 20 shares. The broker now returns the
+first record and applies no second fill, including when the retry
+changes side or size. The id stays reserved after a fill, reject, or
+cancel. A hand-built trace with a second ``submit`` is still rejected
+by the specification. Paper, parity, and forward-shadow runs mint a
+fresh id per order, so those outputs are unchanged. Regression:
+``tests/regression/test_duplicate_order_submit.py``.
+
 Paper cash events omitted turnover that the broker already deducts.
 `total_cost` includes `bps_per_turnover`. `record_orders` summed fee,
 spread, and impact only. On a 1000 notional buy at 10 bps of turnover,
@@ -175,13 +185,6 @@ leave it at 0 keep the same cash. Regression:
 `tests/regression/test_cash_ledger_turnover.py`.
 
 ### Reported, not patched
-
-Duplicate `submit` of the same `order_id` is not idempotent. Frictionless,
-initial cash 100_000, two submits of 10 shares at 100: distinct fill ids,
-20 shares, cash 98_000. The specification rejects the trace (`submit` is
-enabled only from `absent`). The submission path is unchanged. Paper order
-ids are fresh UUIDs, so the ordinary paper loop does not hit this.
-Regression: `tests/regression/test_duplicate_order_submit.py`.
 
 `run_backtest` deducts turnover inside `total`, and the reported cost
 components sum commission, spread, and impact only. Adding a metric key
