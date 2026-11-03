@@ -1,0 +1,43 @@
+# promtool unit test for the read-only filesystem page.
+# DiskPressure stays quiet when node_filesystem_readonly is 1.
+# `promtool test rules deploy/observability/fs_readonly_test.yml`
+
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{device="/dev/drill",fstype="ext4",mountpoint="/var/lib/dipcatcher"}'
+        values: '1+0x30'
+      - series: 'node_filesystem_size_bytes{device="/dev/drill",fstype="ext4",mountpoint="/var/lib/dipcatcher"}'
+        values: '100+0x30'
+      - series: 'node_filesystem_readonly{device="/dev/drill",fstype="ext4",mountpoint="/var/lib/dipcatcher"}'
+        values: '1+0x30'
+      - series: 'node_filesystem_readonly{device="/dev/tmp",fstype="tmpfs",mountpoint="/tmp"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: DipcatcherFilesystemReadOnly
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              device: /dev/drill
+              fstype: ext4
+              mountpoint: /var/lib/dipcatcher
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherFilesystemReadOnly.md
+              summary: A filesystem is mounted read-only.
+      - eval_time: 10m
+        alertname: DipcatcherDiskPressure
+        exp_alerts: []
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_readonly{device="/dev/drill",fstype="ext4",mountpoint="/var/lib/dipcatcher"}'
+        values: '0+0x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: DipcatcherFilesystemReadOnly
+        exp_alerts: []

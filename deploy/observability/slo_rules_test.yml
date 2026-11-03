@@ -1,0 +1,77 @@
+# promtool unit test for the HTTP burn-rate alert.
+# `promtool test rules deploy/observability/slo_rules_test.yml`
+
+rule_files:
+  - slo_rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'dipcatcher_http_requests_total{code="200",service="lab"}'
+        values: '0+5x400'
+      - series: 'dipcatcher_http_requests_total{code="500",service="lab"}'
+        values: '0+20x400'
+    alert_rule_test:
+      - eval_time: 6h
+        alertname: DipcatcherErrorBudgetBurn
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              service: lab
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherErrorBudgetBurn.md
+              summary: HTTP error budget is burning.
+      - eval_time: 6h
+        alertname: DipcatcherErrorBudgetExhausted
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              service: lab
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherErrorBudgetExhausted.md
+              summary: The 30 day HTTP error budget is exhausted.
+  - interval: 1m
+    input_series:
+      - series: 'dipcatcher_http_requests_total{code="200",service="lab"}'
+        values: '0+100x400'
+      - series: 'dipcatcher_http_requests_total{code="500",service="lab"}'
+        values: '0x400'
+    alert_rule_test:
+      - eval_time: 6h
+        alertname: DipcatcherErrorBudgetBurn
+        exp_alerts: []
+      - eval_time: 6h
+        alertname: DipcatcherErrorBudgetExhausted
+        exp_alerts: []
+  - interval: 1m
+    input_series:
+      - series: 'dipcatcher_http_request_duration_seconds_bucket{le="0.25",service="lab"}'
+        values: '0+1x30'
+      - series: 'dipcatcher_http_request_duration_seconds_bucket{le="1",service="lab"}'
+        values: '0+100x30'
+      - series: 'dipcatcher_http_request_duration_seconds_bucket{le="+Inf",service="lab"}'
+        values: '0+100x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: DipcatcherLatencyP99
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              service: lab
+            exp_annotations:
+              runbook: docs/incidents/DipcatcherLatencyP99.md
+              summary: HTTP p99 latency is above 0.25 seconds.
+  - interval: 1m
+    input_series:
+      - series: 'dipcatcher_http_request_duration_seconds_bucket{le="0.25",service="lab"}'
+        values: '0+100x30'
+      - series: 'dipcatcher_http_request_duration_seconds_bucket{le="1",service="lab"}'
+        values: '0+100x30'
+      - series: 'dipcatcher_http_request_duration_seconds_bucket{le="+Inf",service="lab"}'
+        values: '0+100x30'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: DipcatcherLatencyP99
+        exp_alerts: []

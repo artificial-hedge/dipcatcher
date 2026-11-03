@@ -1,0 +1,17 @@
+[Unit]
+Description=Ship a verified dipcatcher paper-state backup
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Environment=SUDO=
+Environment=LAB_DATA=/var/lib/dipcatcher/lab
+Environment=BACKUP_ROOT=/var/backups/dipcatcher
+EnvironmentFile=-/etc/dipcatcher/backup.env
+WorkingDirectory=/opt/dipcatcher
+ExecStart=/opt/dipcatcher/.venv/bin/python /opt/dipcatcher/scripts/prod_backup_ship.py --source /var/lib/dipcatcher/lab --root /var/backups/dipcatcher
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

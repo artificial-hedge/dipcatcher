@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly dipcatcher log retention
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=dipcatcher-log-retain.service
+
+[Install]
+WantedBy=timers.target

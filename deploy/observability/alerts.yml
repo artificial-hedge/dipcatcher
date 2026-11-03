@@ -1,0 +1,159 @@
+groups:
+  - name: dipcatcher-ops
+    rules:
+      - alert: DipcatcherNotReady
+        expr: dipcatcher_ready == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Lab readiness is closed.
+          runbook: docs/incidents/DipcatcherNotReady.md
+      - alert: DipcatcherDraining
+        expr: dipcatcher_draining == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: The lab SIGTERM drain latch is set.
+          runbook: docs/incidents/DipcatcherDraining.md
+      - alert: DipcatcherKillSwitchBlocking
+        expr: dipcatcher_kill_switch_blocking == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: The operator kill file is blocking new orders.
+          runbook: docs/incidents/DipcatcherKillSwitchBlocking.md
+      - alert: DipcatcherStageLatencyP99
+        expr: histogram_quantile(0.99, sum by (le) (rate(dipcatcher_stage_latency_seconds_bucket[5m]))) > 2
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Stage latency p99 is above the 2 second SLO.
+          runbook: docs/incidents/DipcatcherStageLatencyP99.md
+      - alert: DipcatcherErrorRatio
+        expr: (sum(rate(dipcatcher_errors_total{stage!="otel_export"}[5m])) / sum(rate(dipcatcher_stage_latency_seconds_count[5m]))) >= 0.01
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The instrumented error ratio is outside the 0.01 SLO.
+          runbook: docs/incidents/DipcatcherErrorRatio.md
+      - alert: DipcatcherErrorRate
+        expr: sum(rate(dipcatcher_errors_total{stage!="otel_export"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Instrumented stages are recording errors.
+          runbook: docs/incidents/DipcatcherErrorRate.md
+      - alert: DipcatcherDataStale
+        expr: dipcatcher_data_freshness_seconds >= 86400
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Data freshness is outside the 86400 second SLO.
+          runbook: docs/incidents/DipcatcherDataStale.md
+      - alert: DipcatcherTargetDown
+        expr: up{job=~"lab-api|research-api"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A dipcatcher scrape target is down.
+          runbook: docs/incidents/DipcatcherTargetDown.md
+      # The ratio 0.15 is the disk-pressure knob. Prometheus does not
+      # substitute an environment variable into this file. node-exporter
+      # must be up or the series is absent and this rule stays silent.
+      - alert: DipcatcherDiskPressure
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|devtmpfs|overlay|squashfs|ramfs|aufs"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|devtmpfs|overlay|squashfs|ramfs|aufs"}
+          ) < 0.15
+          and node_filesystem_readonly == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: A filesystem has under 15 percent free.
+          runbook: docs/incidents/DipcatcherDiskPressure.md
+      # DiskPressure requires node_filesystem_readonly == 0, so a remount
+      # does not page that rule. This rule is the read-only page.
+      - alert: DipcatcherFilesystemReadOnly
+        expr: 'node_filesystem_readonly{fstype!~"tmpfs|devtmpfs|overlay|squashfs|ramfs|aufs"} == 1'
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A filesystem is mounted read-only.
+          runbook: docs/incidents/DipcatcherFilesystemReadOnly.md
+      # 1 means owner-restamp would list a drifted corpus. The series is a
+      # textfile gauge. Absent means this rule stays silent.
+      - alert: DipcatcherReconcileDrift
+        expr: dipcatcher_reconcile_drift == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A pinned corpus epoch does not match the working tree.
+          runbook: docs/incidents/DipcatcherReconcileDrift.md
+      # 86400 seconds is the backup-age knob. The gauge is the unix time of
+      # the last verified stamp. Prometheus does not substitute an environment
+      # variable into this file.
+      - alert: DipcatcherBackupAge
+        expr: (time() - dipcatcher_backup_last_success_timestamp) > 86400
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The last verified backup is older than 86400 seconds.
+          runbook: docs/incidents/DipcatcherBackupAge.md
+      # 1 means the canary probe failed or the roll did not finish.
+      - alert: DipcatcherCanaryAbort
+        expr: dipcatcher_canary_abort == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: The canary did not roll the stack.
+          runbook: docs/incidents/DipcatcherCanaryAbort.md
+      # 1 means a ledger, journal, rate-store, or audit write did not land.
+      - alert: DipcatcherWriteHalt
+        expr: dipcatcher_write_halt == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A ledger, journal, rate-store, or audit write did not land.
+          runbook: docs/incidents/DipcatcherWriteHalt.md
+      # 1 means this process lost or was refused the paper order lease.
+      - alert: DipcatcherSplitBrain
+        expr: dipcatcher_split_brain == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Two paper order loops contended for one state directory.
+          runbook: docs/incidents/DipcatcherSplitBrain.md
+      # 1 means DNS, TLS, or the broker port failed closed before a submit.
+      - alert: DipcatcherDependencyDown
+        expr: dipcatcher_dependency_down == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A paper broker dependency probe failed closed.
+          runbook: docs/incidents/DipcatcherDependencyDown.md
+      # 1 means startup rejected the paper journal or audit hash chain.
+      - alert: DipcatcherAuditTamper
+        expr: dipcatcher_audit_tamper == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A paper journal or audit hash chain failed at startup.
+          runbook: docs/incidents/DipcatcherAuditTamper.md

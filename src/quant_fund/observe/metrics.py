@@ -8,10 +8,14 @@ they are not a live P&L claim.
 from __future__ import annotations
 
 import math
+import re
 import threading
+from collections.abc import Callable
 from typing import Any
 
 from quant_fund.observe.flags import STAGES, observe_enabled
+from quant_fund.observe.order_guard import audit_tamper, dependency_code, split_brain
+from quant_fund.observe.write_halt import write_halt_reason
 
 BUCKETS = (0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 _ERROR_STAGES = frozenset((*STAGES, "otel_export"))
@@ -29,7 +33,27 @@ METRIC_HELP = {
     "dipcatcher_simulation_net_exposure": (
         "Simulated net exposure. Not a live trading position and not a research score."
     ),
+    "dipcatcher_ready": "1 when the lab process may accept work. 0 when readiness is closed.",
+    "dipcatcher_draining": "1 when the lab SIGTERM drain latch is set.",
+    "dipcatcher_kill_switch_blocking": "1 when the operator kill file blocks new orders.",
+    "dipcatcher_kill_switch_info": (
+        "Current operator kill code. The code label is a stable reader code, never the file body."
+    ),
+    "dipcatcher_write_halt": ("1 when a ledger, journal, rate-store, or audit write did not land."),
+    "dipcatcher_split_brain": "1 when this process lost or was refused the paper order lease.",
+    "dipcatcher_dependency_down": "1 when a paper broker dependency probe failed closed.",
+    "dipcatcher_audit_tamper": "1 when a paper journal or audit hash chain failed at startup.",
+    "dipcatcher_http_requests_total": (
+        "HTTP responses by status code. Operational telemetry, not a research score."
+    ),
+    "dipcatcher_http_request_duration_seconds": (
+        "HTTP request latency in seconds. Operational telemetry, not a research score."
+    ),
 }
+
+_OPS_CODE = re.compile(r"^[A-Za-z0-9_:-]{1,64}$")
+_OpsSampler = Callable[[], tuple[float, float, float, str]]
+_OPS_SAMPLER: _OpsSampler | None = None
 
 
 class _Histogram:
@@ -56,6 +80,8 @@ class _Registry:
         self.histograms: dict[str, _Histogram] = {}
         self.errors: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
+        self.http_counts: dict[tuple[str, str], int] = {}
+        self.http_latency: dict[str, _Histogram] = {}
 
     def observe(self, stage: str, seconds: float) -> None:
         if stage not in STAGES:
@@ -72,6 +98,16 @@ class _Registry:
             raise ValueError(f"unknown stage {stage}")
         with self._lock:
             self.errors[stage] = self.errors.get(stage, 0) + 1
+
+    def observe_http(self, service: str, code: str, seconds: float) -> None:
+        with self._lock:
+            key = (service, code)
+            self.http_counts[key] = self.http_counts.get(key, 0) + 1
+            histogram = self.http_latency.get(service)
+            if histogram is None:
+                histogram = _Histogram()
+                self.http_latency[service] = histogram
+            histogram.observe(seconds)
 
     def gauge(self, name: str, value: float) -> None:
         if name not in METRIC_HELP or not math.isfinite(value):
@@ -93,6 +129,15 @@ class _Registry:
                 "histograms": histograms,
                 "errors": dict(self.errors),
                 "gauges": dict(self.gauges),
+                "http_counts": dict(self.http_counts),
+                "http_latency": {
+                    service: {
+                        "bucket_counts": list(histogram.bucket_counts),
+                        "total": histogram.total,
+                        "n": histogram.n,
+                    }
+                    for service, histogram in self.http_latency.items()
+                },
             }
 
     def reset(self) -> None:
@@ -100,6 +145,8 @@ class _Registry:
             self.histograms.clear()
             self.errors.clear()
             self.gauges.clear()
+            self.http_counts.clear()
+            self.http_latency.clear()
 
 
 REGISTRY = _Registry()
@@ -119,6 +166,15 @@ def record_error(stage: str) -> None:
     if not observe_enabled():
         return
     REGISTRY.error(stage)
+
+
+def record_http_request(service: str, status: int, seconds: float) -> None:
+    """Count one HTTP response when observability is on. Ignore unknown labels."""
+    if not observe_enabled():
+        return
+    if service not in {"lab", "research"} or status < 100 or status > 599:
+        return
+    REGISTRY.observe_http(service, str(status), seconds)
 
 
 def set_data_freshness(seconds: float) -> None:
@@ -151,6 +207,64 @@ def histogram_quantile_upper(stage: str, quantile: float) -> float:
         if cumulative >= target:
             return bound
     return math.inf
+
+
+def register_ops_sampler(sampler: _OpsSampler) -> None:
+    """Register the lab scrape sampler. Values are read on each exposition."""
+    global _OPS_SAMPLER
+    _OPS_SAMPLER = sampler
+
+
+def clear_ops_sampler() -> None:
+    """Drop the lab scrape sampler. Used when the process stops and in tests."""
+    global _OPS_SAMPLER
+    _OPS_SAMPLER = None
+
+
+def _append_operator_gauges(lines: list[str]) -> None:
+    """Add readiness, drain, and kill series when the lab process registered them.
+
+    The series are operator signals, not research scores. A missing sampler
+    leaves the exposition unchanged. The kill label is the reader code.
+    """
+    sampler = _OPS_SAMPLER
+    if sampler is None:
+        return
+    ready, draining, blocking, code = sampler()
+    if not _unit_gauge(ready) or not _unit_gauge(draining) or not _unit_gauge(blocking):
+        return
+    safe = code if _OPS_CODE.fullmatch(code) else "kill_switch_invalid"
+    _emit_gauge(lines, "dipcatcher_ready", ready)
+    _emit_gauge(lines, "dipcatcher_draining", draining)
+    _emit_gauge(lines, "dipcatcher_kill_switch_blocking", blocking)
+    _help(lines, "dipcatcher_kill_switch_info", "gauge")
+    lines.append(f'dipcatcher_kill_switch_info{{code="{safe}"}} 1')
+
+
+def _append_write_halt(lines: list[str]) -> None:
+    """Emit the halt series only after a durable write has failed."""
+    if write_halt_reason() is None:
+        return
+    _emit_gauge(lines, "dipcatcher_write_halt", 1.0)
+
+
+def _append_order_guard(lines: list[str]) -> None:
+    """Emit paper guard series only while the matching latch is set."""
+    if split_brain():
+        _emit_gauge(lines, "dipcatcher_split_brain", 1.0)
+    if dependency_code() is not None:
+        _emit_gauge(lines, "dipcatcher_dependency_down", 1.0)
+    if audit_tamper() is not None:
+        _emit_gauge(lines, "dipcatcher_audit_tamper", 1.0)
+
+
+def _unit_gauge(value: object) -> bool:
+    return isinstance(value, float) and value in {0.0, 1.0}
+
+
+def _emit_gauge(lines: list[str], name: str, value: float) -> None:
+    _help(lines, name, "gauge")
+    lines.append(f"{name} {_num(value)}")
 
 
 def render_prometheus() -> str:
@@ -191,10 +305,62 @@ def render_prometheus() -> str:
         if name in snap["gauges"]:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
+    _append_operator_gauges(lines)
+    _append_write_halt(lines)
+    _append_order_guard(lines)
+    _append_http(lines, snap)
     text = "\n".join(lines)
     if text:
         text += "\n"
     return text
+
+
+def _append_http(lines: list[str], snap: dict[str, Any]) -> None:
+    counts: dict[tuple[str, str], int] = snap["http_counts"]
+    if counts:
+        _append_http_counts(lines, counts)
+    latency: dict[str, dict[str, Any]] = snap["http_latency"]
+    if latency:
+        _append_http_latency(lines, latency)
+
+
+def _append_http_counts(lines: list[str], counts: dict[tuple[str, str], int]) -> None:
+    _help(lines, "dipcatcher_http_requests_total", "counter")
+    for service, code in sorted(counts):
+        lines.append(
+            f'dipcatcher_http_requests_total{{code="{code}",service="{service}"}} '
+            f"{counts[(service, code)]}"
+        )
+
+
+def _append_http_latency(lines: list[str], latency: dict[str, dict[str, Any]]) -> None:
+    _help(lines, "dipcatcher_http_request_duration_seconds", "histogram")
+    for service in ("lab", "research"):
+        histogram = latency.get(service)
+        if histogram is not None:
+            _append_http_buckets(lines, service, histogram)
+
+
+def _append_http_buckets(lines: list[str], service: str, histogram: dict[str, Any]) -> None:
+    cumulative = 0
+    for index, bound in enumerate(BUCKETS):
+        cumulative += histogram["bucket_counts"][index]
+        lines.append(
+            "dipcatcher_http_request_duration_seconds_bucket"
+            f'{{le="{_num(bound)}",service="{service}"}} {cumulative}'
+        )
+    cumulative += histogram["bucket_counts"][-1]
+    lines.append(
+        "dipcatcher_http_request_duration_seconds_bucket"
+        f'{{le="+Inf",service="{service}"}} {cumulative}'
+    )
+    lines.append(
+        "dipcatcher_http_request_duration_seconds_sum"
+        f'{{service="{service}"}} {_num(histogram["total"])}'
+    )
+    lines.append(
+        f'dipcatcher_http_request_duration_seconds_count{{service="{service}"}} {histogram["n"]}'
+    )
 
 
 def _help(lines: list[str], name: str, metric_type: str) -> None:

@@ -119,12 +119,10 @@ class Broker(Protocol):
     def fills(self, *, broker_to_client: dict[str, str]) -> FillPage: ...
 
 
-def alpaca_credentials() -> tuple[str, str] | None:
-    """Read Alpaca keys from the environment. Both names Alpaca documents are accepted."""
-    key = os.environ.get("ALPACA_API_KEY_ID") or os.environ.get("APCA_API_KEY_ID") or ""
-    secret = os.environ.get("ALPACA_API_SECRET_KEY") or os.environ.get("APCA_API_SECRET_KEY") or ""
-    key = key.strip()
-    secret = secret.strip()
+def _env_pair(key_name: str, secret_name: str) -> tuple[str, str] | None:
+    """One complete pair, ``None`` when both are unset, or an error when mixed."""
+    key = os.environ.get(key_name, "").strip()
+    secret = os.environ.get(secret_name, "").strip()
     if not key and not secret:
         return None
     if not key or not secret or len(key) > 200 or len(secret) > 200:
@@ -132,6 +130,38 @@ def alpaca_credentials() -> tuple[str, str] | None:
     if any(char in key or char in secret for char in "\r\n\x00"):
         raise LiveGateError("broker credentials are malformed")
     return key, secret
+
+
+def alpaca_credentials() -> tuple[str, str] | None:
+    """The current pair. ``ALPACA_*`` wins when it is complete. ``APCA_*`` is the overlap pair."""
+    alpaca = _env_pair("ALPACA_API_KEY_ID", "ALPACA_API_SECRET_KEY")
+    if alpaca is not None:
+        return alpaca
+    return _env_pair("APCA_API_KEY_ID", "APCA_API_SECRET_KEY")
+
+
+def broker_fallback_credentials() -> tuple[str, str] | None:
+    """The other complete pair during rotation, or ``None`` when there is only one."""
+    primary = alpaca_credentials()
+    if primary is None:
+        return None
+    alpaca = _env_pair("ALPACA_API_KEY_ID", "ALPACA_API_SECRET_KEY")
+    apca = _env_pair("APCA_API_KEY_ID", "APCA_API_SECRET_KEY")
+    other = apca if primary == alpaca else alpaca
+    if other is None or other == primary:
+        return None
+    return other
+
+
+def broker_overlap_pairs() -> tuple[tuple[str, str], ...]:
+    """Current pair, then the previous pair when both names are set."""
+    primary = alpaca_credentials()
+    if primary is None:
+        return ()
+    fallback = broker_fallback_credentials()
+    if fallback is None:
+        return (primary,)
+    return (primary, fallback)
 
 
 def urllib_transport(
@@ -336,6 +366,8 @@ class AlpacaBroker:
         venue: Venue,
         credentials: tuple[str, str] | None,
         *,
+        fallback: tuple[str, str] | None = None,
+        reread_env: bool = False,
         transport: Transport | None = None,
         timeout: float = 10.0,
     ) -> None:
@@ -344,6 +376,8 @@ class AlpacaBroker:
         self.venue = venue
         self.base = _HOSTS[venue]
         self._credentials = credentials
+        self._fallback = None if fallback == credentials else fallback
+        self._reread_env = reread_env
         self._transport = transport or urllib_transport
         self._timeout = float(timeout)
         self._marks: dict[str, float] = {}
@@ -541,16 +575,42 @@ class AlpacaBroker:
                 "The venue and host api.alpaca.markets stay configured so this "
                 "refusal is explicit. Paper and loopback are unchanged."
             )
-        if self._credentials is None:
+        pairs = self._auth_pairs()
+        if not pairs:
             raise LiveGateError("broker credentials are not set")
-        key, secret = self._credentials
         url = self.base + path
         if not url.startswith(self.base + "/"):
             raise LiveGateError("refusing a broker URL outside the venue host")
         raw_body = _json_body(body)
+        status, payload = self._once(pairs[0], method, url, raw_body)
+        if status in {401, 403} and len(pairs) > 1:
+            status, payload = self._once(pairs[1], method, url, raw_body)
+        return _parse_broker_response(
+            status,
+            payload,
+            _secret_values(pairs),
+            allow_missing=allow_missing,
+        )
+
+    def _auth_pairs(self) -> tuple[tuple[str, str], ...]:
+        if self._reread_env:
+            return broker_overlap_pairs()
+        if self._credentials is None:
+            return ()
+        if self._fallback is None:
+            return (self._credentials,)
+        return (self._credentials, self._fallback)
+
+    def _once(
+        self,
+        pair: tuple[str, str],
+        method: str,
+        url: str,
+        raw_body: bytes | None,
+    ) -> tuple[int, bytes]:
+        key, secret = pair
         headers = _alpaca_headers(key, secret, has_body=raw_body is not None)
-        status, payload = self._transport(method, url, headers, raw_body, self._timeout)
-        return _parse_broker_response(status, payload, (key, secret), allow_missing=allow_missing)
+        return self._transport(method, url, headers, raw_body, self._timeout)
 
 
 def _decimal(value: float) -> str:
@@ -576,10 +636,17 @@ def _alpaca_headers(key: str, secret: str, *, has_body: bool) -> dict[str, str]:
     return headers
 
 
+def _secret_values(pairs: tuple[tuple[str, str], ...]) -> tuple[str, ...]:
+    values: list[str] = []
+    for key, secret in pairs:
+        values.extend((key, secret))
+    return tuple(values)
+
+
 def _parse_broker_response(
     status: int,
     payload: bytes,
-    secrets: tuple[str, str],
+    secrets: tuple[str, ...],
     *,
     allow_missing: bool,
 ) -> tuple[Any, bool]:
@@ -597,7 +664,7 @@ def _empty_response(status: int) -> tuple[Any, bool]:
     raise BrokerRejected(f"broker HTTP {status}")
 
 
-def _parse_json_response(status: int, text: str, secrets: tuple[str, str]) -> tuple[Any, bool]:
+def _parse_json_response(status: int, text: str, secrets: tuple[str, ...]) -> tuple[Any, bool]:
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as exc:
@@ -607,7 +674,7 @@ def _parse_json_response(status: int, text: str, secrets: tuple[str, str]) -> tu
     return parsed, False
 
 
-def _broker_error(status: int, parsed: Any, secrets: tuple[str, str]) -> str:
+def _broker_error(status: int, parsed: Any, secrets: tuple[str, ...]) -> str:
     message = ""
     if isinstance(parsed, dict):
         message = str(parsed.get("message") or parsed.get("error") or "")
