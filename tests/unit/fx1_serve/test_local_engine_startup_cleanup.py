@@ -179,6 +179,28 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         self._assert_cleaned()
         self.assertEqual(self.proc.calls, [])
 
+    def test_startup_errors_do_not_echo_launch_template(self) -> None:
+        secret = "SYNTHETIC-local-startup-secret"
+        self.backend._serve_cmd = f"SYNTHETIC-engine --api-key {secret}"
+
+        self.spawn.side_effect = OSError("SYNTHETIC missing command")
+        with self.assertRaisesRegex(RuntimeError, "failed to spawn") as spawned:
+            self.backend._ensure_engine()
+
+        self.proc.returncode = 17
+        with self.assertRaisesRegex(RuntimeError, "exited during startup") as exited:
+            self.backend._wait_for_engine(self.proc)
+
+        self.proc.returncode = None
+        with (
+            patch.object(backends.time, "monotonic", side_effect=[0.0, 2.0]),
+            self.assertRaisesRegex(RuntimeError, "did not become ready") as timed_out,
+        ):
+            self.backend._wait_for_engine(self.proc)
+
+        for caught in (spawned, exited, timed_out):
+            self.assertNotIn(secret, str(caught.exception))
+
     def test_attach_mismatch_does_not_stop_external_engine(self) -> None:
         self.up.return_value = True
         self._served_weights("b" * 64)
