@@ -34,6 +34,7 @@ def _invoke(
     path: str = "/health",
     headers: list[tuple[bytes, bytes]] | None = None,
     chunks: list[bytes] | None = None,
+    client: tuple[str, int] = ("198.51.100.60", 9),
 ) -> tuple[int, bytes, list[tuple[bytes, bytes]]]:
     raw_headers = headers if headers is not None else [(b"host", b"example.com")]
     parts = chunks if chunks is not None else [b""]
@@ -51,7 +52,7 @@ def _invoke(
         "raw_path": path.encode("ascii"),
         "query_string": b"",
         "headers": raw_headers,
-        "client": ("198.51.100.60", 9),
+        "client": client,
         "server": ("127.0.0.1", 80),
     }
     sent: list[dict[str, Any]] = []
