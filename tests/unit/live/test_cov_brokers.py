@@ -304,17 +304,21 @@ def test_cancel_unknown_order_is_refused() -> None:
         paper(Script((404, b"{}"))).cancel("c1", "")
 
 
-def test_cancel_empty_body_synthesizes_a_canceled_ack() -> None:
+def test_cancel_empty_body_stays_unconfirmed_when_lookup_misses() -> None:
     script = Script((204, b""), (404, b"{}"))
     ack = paper(script).cancel("c1", "ord-9")
-    assert ack.status == "canceled"
+    assert ack.status == "pending_cancel"
     assert ack.broker_order_id == "ord-9"
     assert ack.filled_quantity == 0.0
     assert ack.fills == ()
+    assert "unconfirmed" in ack.reason
 
 
 def test_cancel_empty_body_returns_the_recovered_verdict() -> None:
-    script = Script((204, b""), (200, ack_payload(status="filled", filled_qty="10")))
+    script = Script(
+        (204, b""),
+        (200, ack_payload(status="filled", filled_qty="10", filled_avg_price="10")),
+    )
     ack = paper(script).cancel("c1", "ord-9")
     assert ack.status == "filled"
     assert ack.filled_quantity == pytest.approx(10.0)
@@ -415,11 +419,11 @@ def test_fills_records_mapped_rows_and_marks_a_full_page() -> None:
         }
         for index in range(100)
     ]
-    page = paper(Script((200, json.dumps(rows).encode()))).fills(
-        broker_to_client={"broker-1": "c1"}
-    )
+    script = Script((200, json.dumps(rows).encode()), (200, b"[]"))
+    page = paper(script).fills(broker_to_client={"broker-1": "c1"})
     assert len(page.fills) == 100
-    assert page.truncated is True
+    assert page.truncated is False
+    assert len(script.calls) == 2
     assert page.fills[0].client_order_id == "c1"
     assert page.fills[0].fill_time_ns == 1_704_312_000_000_000_000
 
