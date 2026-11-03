@@ -8,7 +8,8 @@ Structure: "Deployment" through "Windows remote-fleet operations" are the
 production operations procedures (deploy, rollback, incident response,
 gate-key rotation, receipt verification, checkpoint spine, remote fleet).
 From "Northset session-L2 identity floor" onward are the lab's field-record
-notes for the microstructure verification waves.
+notes for the microstructure verification waves. The short deploy checklist
+is [`PRODUCTION.md`](PRODUCTION.md).
 
 ## Pre-run checks
 

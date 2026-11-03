@@ -630,7 +630,8 @@ def test_help_does_not_create_a_live_desk(tmp_path: Path) -> None:
 
 
 def _readme_index() -> dict[str, list[str]]:
-    text = (_ROOT / "README.md").read_text(encoding="utf-8")
+    # README.md is a crown jewel. The checked index lives beside the docs.
+    text = (_ROOT / "docs" / "CLI_INDEX.md").read_text(encoding="utf-8")
     start = text.index(_INDEX_START)
     end = text.index(_INDEX_END)
     sections: dict[str, list[str]] = {}
