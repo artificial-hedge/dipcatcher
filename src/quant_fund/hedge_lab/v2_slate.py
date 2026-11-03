@@ -31,10 +31,10 @@ from typing import Any, cast
 
 import numpy as np
 import polars as pl
-import yaml
 from numpy.typing import NDArray
 
 from quant_fund.config import load_config
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.hedge_lab._receipt import (
     seal_receipt,
     verify_lane_receipt,
@@ -75,7 +75,7 @@ def load_slate(path: str | Path = SLATE_PATH) -> tuple[dict[str, Any], str, str]
     bytes too so the citation survives whitespace-only accidents.
     """
     raw_path = Path(path)
-    raw = yaml.safe_load(raw_path.read_text(encoding="utf-8"))
+    raw = load_yaml_document(raw_path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("lanes slate must be a mapping")
     for key in ("slate_id", "parent_slate", "evaluation", "lanes", "promotion"):

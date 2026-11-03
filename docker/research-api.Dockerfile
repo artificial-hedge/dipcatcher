@@ -20,7 +20,7 @@
 # ignore-file convention).
 
 # --- Builder: resolve/sync the locked venv, then install the project ---
-FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS builder
+FROM python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159 AS builder
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
 # --- Runtime: no uv, no pip, no build caches; self-contained venv ---
-FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS runtime
+FROM python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159 AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
@@ -56,9 +56,10 @@ COPY --chown=dipcatcher:dipcatcher verifier ./verifier
 COPY --chown=dipcatcher:dipcatcher artifacts ./artifacts
 # data/ is dockerignored — mount it read-only at runtime (see header).
 RUN mkdir -p /app/data && chown dipcatcher:dipcatcher /app/data
-USER dipcatcher
+# Numeric uid: the name "dipcatcher" is not in the host's passwd (hadolint DL3066).
+USER 10001
 EXPOSE 8010
 # Container networking requires a non-loopback bind and the guarded entry point.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD python -c "import os, urllib.request; urllib.request.urlopen(f\"http://{os.environ.get('HOST', '127.0.0.1')}:{os.environ.get('PORT', '8010')}/health\", timeout=3)"
+  CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen(f\"http://{os.environ.get('HOST', '127.0.0.1')}:{os.environ.get('PORT', '8010')}/health\", timeout=3)"]
 CMD ["python", "-m", "quant_fund.api.research_api"]

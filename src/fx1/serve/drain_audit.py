@@ -977,7 +977,7 @@ def _recovery_probes() -> dict[str, bool]:
 def _webhook_probes() -> dict[str, bool]:
     out: dict[str, bool] = {}
     # Synthetic loopback receiver: opt in narrowly inside the swept audit context.
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    os.environ["FX1_PRIVATE_ALLOW_CIDRS"] = "127.0.0.0/8,::1/128"
     from fx1.serve.conv_audit import _RESOURCES  # noqa: PLC0415
     from fx1.serve.jobs_audit import _Runner  # noqa: PLC0415
     from fx1.serve.webhook_audit import _Sink  # noqa: PLC0415

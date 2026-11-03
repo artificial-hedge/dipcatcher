@@ -43,6 +43,7 @@ from typing import Any
 
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.outbound import directory_child, read_http, repo_file
 
 WITNESS_SCHEMA = "integrity_witness.v1"
 WITNESS_DIR = Path("quality/witness")
@@ -84,9 +85,8 @@ def _post_entry(target_bytes: bytes, witness_key_pem: bytes, rekor_url: str) -> 
         data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310  # nosec B310
-        result: dict[str, Any] = json.loads(resp.read())
-        return result
+    result: dict[str, Any] = json.loads(read_http(req, timeout=30))
+    return result
 
 
 def submit_witness(
@@ -102,13 +102,13 @@ def submit_witness(
     records everything an offline verifier needs; only the 32-byte digest
     and our ECDSA signature ever leave the machine.
     """
-    root_path = Path(root)
-    target_bytes = (root_path / target).read_bytes()
+    root_path, target_path = repo_file(root, target)
+    target_bytes = target_path.read_bytes()
     entry_resp = _post_entry(target_bytes, witness_key_pem, rekor_url)
     record = _witness_record(target.as_posix(), target_bytes, entry_resp, rekor_url)
     out_dir = root_path / WITNESS_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / f"{target.name}_{record['rekor']['log_index']}.json"
+    out = directory_child(out_dir, f"{target.name}_{record['rekor']['log_index']}.json")
     atomic_write_text(out, json.dumps(record, indent=2, sort_keys=True) + "\n")
     return out
 
@@ -451,11 +451,13 @@ def verify_witness_online(
     pub_file = Path(root) / REKOR_PUBKEY_PATH
     errors: list[str] = []
     try:
-        with urllib.request.urlopen(  # noqa: S310  # nosec B310
-            rekor_url.rstrip("/") + "/api/v1/log", timeout=timeout
-        ) as resp:
-            log = json.loads(resp.read())
-    except (OSError, json.JSONDecodeError) as exc:
+        log = json.loads(
+            read_http(
+                urllib.request.Request(rekor_url.rstrip("/") + "/api/v1/log"),
+                timeout=float(timeout),
+            )
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
         return {"ok": False, "online": False, "errors": [f"log_unreachable:{exc}"]}
     note = str(log.get("signedTreeHead", ""))
     parsed = _parse_checkpoint_note(note)
@@ -480,7 +482,7 @@ def verify_witness_online(
         ip = pres.get("inclusion_proof") or {}
         # proofs from verify_witness_file don't carry ip; reload the record
         try:
-            record = json.loads((Path(root) / WITNESS_DIR / name).read_text())
+            record = json.loads(directory_child(Path(root) / WITNESS_DIR, str(name)).read_text())
             ip = record["rekor"]["inclusion_proof"]
         except (OSError, ValueError, KeyError, TypeError):
             errors.append(f"{name}:proof_malformed")
@@ -497,12 +499,16 @@ def verify_witness_online(
                 errors.append(f"{name}:root_diverged")
             continue
         try:
-            with urllib.request.urlopen(  # noqa: S310  # nosec B310
+            proof_url = (
                 rekor_url.rstrip("/")
-                + f"/api/v1/log/proof?firstSize={old_size}&lastSize={cur_size}",
-                timeout=timeout,
-            ) as resp:
-                path = [bytes.fromhex(h) for h in json.loads(resp.read())["hashes"]]
+                + f"/api/v1/log/proof?firstSize={old_size}&lastSize={cur_size}"
+            )
+            path = [
+                bytes.fromhex(item)
+                for item in json.loads(
+                    read_http(urllib.request.Request(proof_url), timeout=float(timeout))
+                )["hashes"]
+            ]
         except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{name}:proof_fetch_failed:{exc}")
             continue
