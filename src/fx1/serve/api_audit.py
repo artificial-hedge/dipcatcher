@@ -39,6 +39,8 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from fx1.serve.api_audit_reuse import _OiAppReuse, isolated_client
+
 _MESSAGES_PATH = "/v1/messages"
 _LEGACY_PATH = "/v1/completions"
 _PING_MSG = "clean:ping"
@@ -75,121 +77,12 @@ def _client(
     api_key: str | None = None,
 ) -> tuple[TestClient, ModuleType]:
     """(TestClient, api_module) — isolated env per construction."""
-    from fastapi.testclient import TestClient
-
-    import fx1.serve.api as api_mod
-    from fx1.harness import Harness
-
     # An injected runner keeps the audit hermetic — probes never spawn real
     # lab processes, exactly like harness_audit's in-process probes.
-    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-        return 0, f"ran:{' '.join(argv)}", ""
-
-    saved = {
-        k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
-    }
-    try:
-        if api_key is None:
-            os.environ.pop(_API_KEY_ENV, None)
-        else:
-            os.environ[_API_KEY_ENV] = api_key
-        app = api_mod.create_app(harness=Harness(runner=fake_runner))
-        return TestClient(app, raise_server_exceptions=False), api_mod
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
-
-
-# These constructors look stateless, but a shared app keeps their idempotency
-# and key stores. Probes that mint keys against a fresh app must not hit them.
-_REUSE_DENY_CLASSES = frozenset({"_CleanBackend"})
-
-
-def _oi_lambda_key(resolver: Any) -> tuple[Any, ...] | None:
-    """Identity of a lambda whose closures are classes, not instances.
-
-    ``lambda *a, **k: _OiBackend()`` at two call sites shares one app.
-    ``_hdr_resolver`` is not a lambda, and a lambda that closes over a live
-    backend instance does not either. ``_CleanBackend`` is denied: key
-    probes need the store those apps start with.
-    """
-    code = getattr(resolver, "__code__", None)
-    if code is None or code.co_name != "<lambda>":
-        return None
-    names: list[str] = []
-    cells: list[int] = []
-    for cell in resolver.__closure__ or ():
-        try:
-            value = cell.cell_contents
-        except ValueError:
-            return None
-        if not isinstance(value, type) or value.__name__ in _REUSE_DENY_CLASSES:
-            return None
-        names.append(value.__name__)
-        cells.append(id(value))
-    if not names:
-        if not code.co_names or any(name in _REUSE_DENY_CLASSES for name in code.co_names):
-            return None
-        names.extend(code.co_names)
-    try:
-        consts = tuple(code.co_consts)
-        hash(consts)
-    except TypeError:
-        return None
-    return (code.co_code, tuple(names), consts, tuple(cells))
-
-
-class _OiAppReuse:
-    """Reuse apps built by identical stateless backend lambdas.
-
-    The cache lives for one ``api_audit`` call. Constructor kwargs and the
-    ``FX1_*`` environment are part of the key, so a rate-limited app does
-    not satisfy an unlimited one.
-    """
-
-    def __enter__(self) -> _OiAppReuse:
-        import fx1.serve.api as api_mod
-
-        self._mod = api_mod
-        self._real = api_mod.create_app
-        cache: dict[tuple[Any, ...], Any] = {}
-
-        def _create(*args: Any, **kwargs: Any) -> Any:
-            resolver = kwargs.get("backend_resolver")
-            ident = _oi_lambda_key(resolver) if resolver is not None else None
-            if args or ident is None:
-                return self._real(*args, **kwargs)
-            extra: list[tuple[str, Any]] = []
-            for name, value in sorted(kwargs.items()):
-                if name == "backend_resolver":
-                    continue
-                try:
-                    hash(value)
-                except TypeError:
-                    return self._real(*args, **kwargs)
-                extra.append((name, value))
-            env = tuple(
-                sorted(
-                    (key, os.environ.get(key))
-                    for key in os.environ
-                    if key.startswith("FX1_") or key == "MOONSHOT_API_KEY"
-                )
-            )
-            key = (ident, tuple(extra), env)
-            app = cache.get(key)
-            if app is None:
-                app = self._real(*args, **kwargs)
-                cache[key] = app
-            return app
-
-        api_mod.create_app = _create  # type: ignore[method-assign]
-        return self
-
-    def __exit__(self, *_exc: object) -> None:
-        self._mod.create_app = self._real
+    return isolated_client(
+        api_key,
+        (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY"),
+    )
 
 
 def api_audit() -> dict[str, Any]:
@@ -1077,10 +970,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         max_inflight=2,
     )
     qc = _TC2(qapp)
-    # Hold the workers only until the queued-cancel asserts land, then
-    # release them. A fixed multi-second sleep made the following polls
-    # wait out the sleeper; the probes only require the slot to be busy
-    # while the cancel is observed.
+    # Release the busy workers after the queued-cancel asserts, not on a fixed sleep.
     _queue_release = threading.Event()
     qapp.state.jobs_executor.submit(lambda: _queue_release.wait(timeout=5))
     qapp.state.jobs_executor.submit(lambda: _queue_release.wait(timeout=5))
