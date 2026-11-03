@@ -265,3 +265,50 @@ def test_redaction_covers_hyphenated_and_unseparated_names(
         assert record["key_id"] == "visible"
     finally:
         set_log_sink(None)
+
+
+def test_redaction_recurses_through_nested_payloads(monkeypatch: pytest.MonkeyPatch) -> None:
+    _enable(monkeypatch)
+    sink: list[dict[str, object]] = []
+    set_log_sink(sink)
+    try:
+        log_event(
+            "live_order_result",
+            context={
+                "apiKey": "nested-api-key",
+                "credentials": {"secretKey": "nested-secret-key"},
+                "safe": "visible-context",
+                "history": [
+                    {"refreshToken": "nested-refresh-token"},
+                    {"password": "nested-password"},
+                ],
+            },
+            values=["visible-value", {"token": "nested-token"}],
+            monkey="visible-monkey",
+        )
+        record = sink[0]
+        context = record["context"]
+        assert isinstance(context, dict)
+        assert context["apiKey"] == "[redacted]"
+        assert context["credentials"] == "[redacted]"
+        assert context["history"] == [
+            {"refreshToken": "[redacted]"},
+            {"password": "[redacted]"},
+        ]
+        assert context["safe"] == "visible-context"
+        assert record["values"] == ["visible-value", {"token": "[redacted]"}]
+        assert record["monkey"] == "visible-monkey"
+        serialized = json.dumps(record)
+        for marker in (
+            "nested-api-key",
+            "nested-secret-key",
+            "nested-refresh-token",
+            "nested-password",
+            "nested-token",
+        ):
+            assert marker not in serialized
+        assert "visible-context" in serialized
+        assert "visible-value" in serialized
+        assert "visible-monkey" in serialized
+    finally:
+        set_log_sink(None)
