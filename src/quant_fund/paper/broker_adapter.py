@@ -20,7 +20,6 @@ evidence. NAV is a simulated mark-to-model accounting identity, not live P&L.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +33,7 @@ from quant_fund.execution.order_recon import (
     OrderLedgerError,
     refuse_live_endpoint,
 )
+from quant_fund.observe.write_halt import replace_text
 
 
 def _fill_to_dict(fill: Fill) -> dict[str, Any]:
@@ -174,6 +174,12 @@ class PaperBrokerAdapter:
             self._order_sequence.append(order.order_id)
         return verdict
 
+    def drop_accepted(self, order_id: str) -> None:
+        """Remove an order that was accepted only in memory."""
+        self._orders.pop(order_id, None)
+        self._order_sequence = [item for item in self._order_sequence if item != order_id]
+        self._ledger.drop_unpersisted(order_id)
+
     def apply_fill(self, fill: Fill) -> str:
         verdict = self._ledger.record_fill(fill)
         if verdict in ("accepted", "out_of_order_fill"):
@@ -217,10 +223,7 @@ class PaperBrokerAdapter:
         state = self._state_dict()
         self._persisted_nav = float(state["nav"])
         payload = json.dumps(state, sort_keys=True, default=str) + "\n"
-        self.state_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.state_path.with_name(f".{self.state_path.name}.tmp")
-        tmp.write_text(payload, encoding="utf-8")
-        os.replace(tmp, self.state_path)
+        replace_text(self.state_path, payload)
         return self.seam_report()
 
     def seam_report(self) -> dict[str, Any]:

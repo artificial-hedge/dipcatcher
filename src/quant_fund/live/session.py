@@ -30,8 +30,10 @@ from quant_fund.live.brokers import (
     LiveOrder,
     LoopbackBroker,
     alpaca_credentials,
+    broker_fallback_credentials,
     map_broker_status,
 )
+from quant_fund.live.clock_guard import ClockGuard
 from quant_fund.live.config import LiveConfig, load_gateway_pretrade
 from quant_fund.live.errors import BrokerRejected, LiveGateError
 from quant_fund.live.gateway_arm import (
@@ -43,6 +45,12 @@ from quant_fund.live.gateway_arm import (
 )
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
 from quant_fund.live.risk_memory import export_pretrade, restore_pretrade
+from quant_fund.observe.write_halt import (
+    configured_parents,
+    ensure_directories,
+    errno_code,
+    note_write_failure,
+)
 from quant_fund.pretrade.codes import KIND_CANCEL, KIND_ORDER
 from quant_fund.pretrade.config import PretradeConfig
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
@@ -175,6 +183,7 @@ class LiveSession:
         self.pretrade_sha256 = pretrade_sha256
         self.broker = broker
         self._now = now_ns
+        self._guard = ClockGuard()
         self.orders: list[dict[str, Any]] = []
         self.marks: dict[str, float] = {}
         self.kill_state: dict[str, Any] = {"latched": False, "actor": "", "reason": ""}
@@ -485,6 +494,17 @@ class LiveSession:
         existing = self._find(client)
         if existing is not None:
             return _public_order(existing, venue=self.venue, replayed=True)
+        halted = _durable_denial(
+            self.state_dir,
+            symbol=cleaned,
+            side=order_side,
+            quantity=qty,
+            limit_price=limit,
+            client_order_id=client,
+            venue=self.venue,
+        )
+        if halted is not None:
+            return halted
         self._capture_baseline()
         self.marks[cleaned] = reference
         self.broker.set_mark(cleaned, reference)
@@ -789,7 +809,7 @@ class LiveSession:
 
     def _clock(self, at_ns: int | None) -> int:
         if at_ns is None:
-            return int(self._now())
+            return self._guard.order_ns(int(self._now()), time.monotonic_ns())
         if self.venue == "alpaca-live":
             raise LiveGateError(
                 "--at is refused for alpaca-live; the session clock is the wall clock"
@@ -890,7 +910,11 @@ class LiveSession:
             "live_pnl_claim": False,
             "research_evidence": False,
         }
-        _atomic_json(self.state_path, payload)
+        try:
+            _atomic_json(self.state_path, payload)
+        except OSError as exc:
+            note_write_failure(errno_code(exc.errno or 0))
+            raise
 
     def _audit(self, event: str, fields: dict[str, Any]) -> None:
         body: dict[str, Any] = {
@@ -904,15 +928,8 @@ class LiveSession:
         digest = hashlib.sha256(encoded).hexdigest()
         line = dict(body)
         line["event_hash"] = digest
-        self.audit_path.parent.mkdir(parents=True, exist_ok=True)
         encoded_line = (json.dumps(line, sort_keys=True) + "\n").encode("utf-8")
-        fd = os.open(str(self.audit_path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-        try:
-            os.write(fd, encoded_line)
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-        os.chmod(self.audit_path, 0o600)
+        _append_audit_bytes(self.audit_path, encoded_line)
         self.audit_head = digest
 
     @contextmanager
@@ -1038,7 +1055,13 @@ def open_session(
 def _default_broker(config: LiveConfig, *, transport: Any) -> Broker:
     if config.venue == "loopback":
         return LoopbackBroker(cash=float(config.starting_cash))
-    return AlpacaBroker(config.venue, alpaca_credentials(), transport=transport)
+    return AlpacaBroker(
+        config.venue,
+        alpaca_credentials(),
+        fallback=broker_fallback_credentials(),
+        reread_env=True,
+        transport=transport,
+    )
 
 
 def _hmac_for_engine(state_dir: Path) -> bytes:
@@ -1156,6 +1179,45 @@ def _public_order(row: dict[str, Any], *, venue: str, replayed: bool) -> dict[st
         "live_pnl_claim": False,
         "research_evidence": False,
     }
+
+
+def _append_audit_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            os.write(fd, payload)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        os.chmod(path, 0o600)
+    except OSError as exc:
+        note_write_failure(errno_code(exc.errno or 0))
+        raise
+
+
+def _durable_denial(
+    parent: Path,
+    *,
+    symbol: str,
+    side: str,
+    quantity: float,
+    limit_price: float,
+    client_order_id: str,
+    venue: str,
+) -> dict[str, Any] | None:
+    code = ensure_directories(configured_parents([parent]))
+    if code is None:
+        return None
+    return _denied(
+        reasons=(f"durable_{code}",),
+        symbol=symbol,
+        side=side,
+        quantity=quantity,
+        limit_price=limit_price,
+        client_order_id=client_order_id,
+        venue=venue,
+    )
 
 
 def _denied(
