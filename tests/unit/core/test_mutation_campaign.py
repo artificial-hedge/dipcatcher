@@ -8,6 +8,7 @@ import pytest
 from scripts import mutation_test as mt
 from scripts.mutation_campaign import (
     SUITES,
+    below_min_score,
     select_picks,
     stable_pytest_command,
     suites_by_name,
@@ -20,10 +21,10 @@ from scripts.mutation_campaign import (
 )
 
 
-def test_curated_campaign_is_thirty_picks() -> None:
-    picks = [pick for suite in SUITES for pick in suite.picks]
-    assert len(picks) == 30
-    assert len({(suite.target, pick.mutant_id) for suite in SUITES for pick in suite.picks}) == 30
+def test_curated_campaign_pins_seventy_mutants() -> None:
+    picks = [(suite.target, pick.mutant_id) for suite in SUITES for pick in suite.picks]
+    assert len(picks) == 70
+    assert len(set(picks)) == 70
     names = [suite.name for suite in SUITES]
     assert names == [
         "kill-switch",
@@ -31,7 +32,35 @@ def test_curated_campaign_is_thirty_picks() -> None:
         "order-fill-ledger",
         "paper-ledger",
         "broker-submit",
+        "reconcile-drift",
+        "order-lifecycle",
+        "risk-ceilings",
+        "daily-loss-floors",
+        "staleness",
+        "live-broker",
     ]
+    added = {
+        "reconcile-drift",
+        "order-lifecycle",
+        "risk-ceilings",
+        "daily-loss-floors",
+        "staleness",
+        "live-broker",
+    }
+    assert sum(len(suite.picks) for suite in SUITES if suite.name in added) == 40
+
+
+def test_mutation_make_target_fails_under_ninety_percent() -> None:
+    recipe = Path("deploy/mutation.mk").read_text(encoding="utf-8")
+    assert "mutation-campaign:" in recipe
+    assert "--min-score 0.90" in recipe
+    assert "deploy/mutation.mk" not in Path("Makefile").read_text(encoding="utf-8")
+
+
+def test_min_score_threshold_is_strict() -> None:
+    assert below_min_score(0.8999, 0.90)
+    assert not below_min_score(0.90, 0.90)
+    assert not below_min_score(0.80, None)
 
 
 def test_select_picks_rejects_a_drifted_operator() -> None:

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Line-pinned mutation campaign for the ledger, kernel, kill switch, and broker.
+"""Line-pinned mutation campaign for live-trading safety paths.
 
-mutmut and cosmic-ray are not locked dependencies. This runs about 30
-single-edit mutants from ``scripts/mutation_test.py`` without editing
-``uv.lock`` or the working tree. Each pick is pinned by id, line, and
-operator so a source move fails closed instead of scoring a different edit.
+mutmut and cosmic-ray are not locked dependencies. This runs the original
+30 mutants plus about 40 more from ``scripts/mutation_test.py`` without
+editing ``uv.lock`` or the working tree. Each pick is pinned by id, line,
+and operator so a source move fails closed instead of scoring a different edit.
 
 A mutation score is a test-suite diagnostic, not market evidence.
 """
@@ -146,6 +146,121 @@ SUITES: tuple[Suite, ...] = (
             "tests/property/test_submit_idempotency_invariants.py",
         ),
     ),
+    Suite(
+        name="reconcile-drift",
+        target="src/quant_fund/execution/order_recon.py",
+        picks=_picks(
+            (
+                ("M0033", 299, "negation-insertion"),
+                ("M0069", 299, "boolop-swap"),
+                ("M0099", 299, "comparison-swap"),
+                ("M0100", 299, "comparison-swap"),
+                ("M0101", 309, "comparison-swap"),
+                ("M0102", 309, "comparison-swap"),
+                ("M0114", 310, "comparison-swap"),
+                ("M0115", 310, "comparison-swap"),
+            )
+        ),
+        selectors=(
+            "tests/property/test_position_reconcile_invariants.py",
+            "tests/unit/execution/test_reconcile_drift_boundaries.py",
+        ),
+    ),
+    Suite(
+        name="order-lifecycle",
+        target="src/quant_fund/formal/order_lifecycle.py",
+        picks=_picks(
+            (
+                ("M0005", 119, "negation-insertion"),
+                ("M0042", 119, "comparison-swap"),
+                ("M0043", 119, "comparison-swap"),
+                ("M0094", 169, "comparison-swap"),
+                ("M0058", 171, "negation-removal"),
+                ("M0070", 215, "comparison-swap"),
+                ("M0098", 217, "comparison-swap"),
+                ("M0100", 222, "comparison-swap"),
+            )
+        ),
+        selectors=(
+            "tests/formal/test_order_lifecycle.py::test_hand_traces_for_races_restarts_and_duplicate_fills",
+            "tests/formal/test_order_lifecycle.py::test_python_twin_enumerates_without_safety_violations",
+            "tests/formal/test_lifecycle_boundaries.py",
+        ),
+    ),
+    Suite(
+        name="risk-ceilings",
+        target="src/quant_fund/portfolio/risk_gate.py",
+        # M0055 flips ``value > limit`` to ``>=`` on the early return. Equality
+        # still returns False: a zero breach is not above the slack. It stays
+        # in the score.
+        picks=_picks(
+            (
+                ("M0003", 23, "negation-removal"),
+                ("M0055", 23, "comparison-swap"),
+                ("M0056", 23, "comparison-swap"),
+                ("M0027", 25, "comparison-swap"),
+                ("M0028", 25, "comparison-swap"),
+                ("M0021", 128, "negation-insertion"),
+                ("M0022", 130, "negation-insertion"),
+                ("M0023", 132, "negation-insertion"),
+            )
+        ),
+        selectors=(
+            "tests/unit/risk/test_risk_gate.py",
+            "tests/unit/risk/test_risk_gate_slack.py",
+        ),
+    ),
+    Suite(
+        name="daily-loss-floors",
+        target="src/quant_fund/pretrade/engine.py",
+        picks=_picks(
+            (
+                ("M0088", 408, "boolop-swap"),
+                ("M0193", 408, "comparison-swap"),
+                ("M0194", 408, "comparison-swap"),
+                ("M0195", 408, "comparison-swap"),
+            )
+        ),
+        selectors=(
+            "tests/unit/pretrade/test_kernel_boundaries.py::test_nav_on_the_daily_floor_trips_and_just_above_does_not",
+            "tests/unit/pretrade/test_engine.py::test_backward_session_roll_does_not_rebase_loss_floors",
+            "tests/unit/pretrade/test_daily_loss_floor_boundaries.py",
+        ),
+    ),
+    Suite(
+        name="staleness",
+        target="src/quant_fund/portfolio/risk_gate.py",
+        picks=_picks(
+            (
+                ("M0049", 113, "negation-insertion"),
+                ("M0073", 113, "comparison-swap"),
+                ("M0074", 113, "comparison-swap"),
+                ("M0050", 115, "negation-insertion"),
+                ("M0075", 115, "comparison-swap"),
+                ("M0076", 115, "comparison-swap"),
+            )
+        ),
+        selectors=("tests/unit/risk/test_risk_gate.py",),
+    ),
+    Suite(
+        name="live-broker",
+        target="src/quant_fund/live/brokers.py",
+        picks=_picks(
+            (
+                ("M0085", 340, "numeric-perturb"),
+                ("M0120", 256, "comparison-swap"),
+                ("M0121", 256, "comparison-swap"),
+                ("M0123", 261, "comparison-swap"),
+                ("M0124", 261, "comparison-swap"),
+                ("M0058", 605, "comparison-swap"),
+            )
+        ),
+        selectors=(
+            "tests/unit/live/test_live_safety_branches.py::test_loopback_rejects_cash_position_and_side_without_raising",
+            "tests/unit/live/test_prod_broker_errors.py",
+            "tests/unit/live/test_broker_reject_boundaries.py",
+        ),
+    ),
 )
 
 
@@ -274,6 +389,11 @@ def format_campaign(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def below_min_score(score: float, minimum: float | None) -> bool:
+    """True when a threshold is set and the score is under it."""
+    return minimum is not None and score < minimum
+
+
 def suites_by_name(names: Sequence[str] | None) -> tuple[Suite, ...]:
     """Resolve ``--only`` names. Empty means every suite."""
     if not names:
@@ -296,9 +416,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="suite name to run; repeatable. Default is every suite.",
     )
     parser.add_argument("--timeout", type=float, default=TIMEOUT_S)
+    parser.add_argument(
+        "--min-score",
+        type=float,
+        default=None,
+        help="fail when the overall score is below this threshold in [0, 1]",
+    )
     args = parser.parse_args(argv)
     if args.timeout <= 0:
         raise mt.MutationTestError(f"--timeout must be > 0, got {args.timeout}")
+    if args.min_score is not None and not 0.0 <= args.min_score <= 1.0:
+        raise mt.MutationTestError(f"--min-score must be in [0, 1], got {args.min_score}")
     selected = suites_by_name(args.only)
     reports: list[mt.CampaignReport] = []
     for suite in selected:
@@ -312,7 +440,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     counts = payload["totals"]["counts"]
-    if counts["error"] or counts["timeout"]:
+    failed = bool(counts["error"] or counts["timeout"])
+    if below_min_score(float(payload["totals"]["score"]), args.min_score):
+        print(f"min-score gate: FAIL (>= {args.min_score:.2%})", flush=True)
+        failed = True
+    elif args.min_score is not None:
+        print(f"min-score gate: PASS (>= {args.min_score:.2%})", flush=True)
+    if failed:
         return 1
     return 0
 
