@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,6 +29,18 @@ def scan_paths(paths: list[Path], *, rules: set[str] | None = None) -> LeakageRe
             # An empty rule set scans nothing — refuse rather than emit a
             # clean report for code that was never checked (fail-closed).
             raise ValueError("empty leakage rule set")
+    # Each file builds an AST and drops it. Collecting that garbage 10k
+    # times costs more than one collection after the report is assembled.
+    was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        return _scan_paths_unchecked(paths, rules)
+    finally:
+        if was_enabled:
+            gc.enable()
+
+
+def _scan_paths_unchecked(paths: list[Path], rules: set[str] | None) -> LeakageReport:
     files = collect_py_files(paths)
     findings: list[LeakageFinding] = []
     for path in files:

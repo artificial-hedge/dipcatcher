@@ -16,6 +16,7 @@ from quant_fund.models.mamba2_ssd import bench_mamba2_ssd
 from quant_fund.models.rwkv7 import bench_rwkv7
 from quant_fund.models.titans_memory import bench_titans_memory
 from quant_fund.models.xlstm_mlstm import bench_xlstm_mlstm
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -58,7 +59,7 @@ def bench_mamba2_ssd_family() -> dict[str, float]:
 
 def bench_xlstm_mlstm_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("xlstm_mlstm", bench_xlstm_mlstm(seed=_SEED + 961)))
+        return _floats(_finite_blob("xlstm_mlstm", call_bench(bench_xlstm_mlstm, seed=_SEED + 961)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:

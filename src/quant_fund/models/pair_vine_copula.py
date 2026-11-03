@@ -38,6 +38,20 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize as opt
 from scipy import stats as sstats
+
+try:
+    from numba import njit
+except ImportError:  # pragma: no cover - numba is a required dependency
+
+    def njit(*_args: object, **_kwargs: object) -> object:  # type: ignore[no-redef]
+        def _deco(fn: object) -> object:
+            return fn
+
+        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+            return _args[0]
+        return _deco
+
+
 from scipy.special import gammaln
 
 if TYPE_CHECKING:
@@ -337,12 +351,9 @@ def _t_hinv(w: Array, v: Array, rho: float, nu: float) -> Array:
     return np.asarray(sstats.t.cdf(rho * y + z * scale, df=nu), dtype=np.float64)
 
 
-def _t_logpdf(u: Array, v: Array, rho: float, nu: float) -> float:
-    uu = _clip(u)
-    vv = _clip(v)
-    x = sstats.t.ppf(uu, df=nu)
-    y = sstats.t.ppf(vv, df=nu)
-    n = x.shape[0]
+def _t_copula_logpdf_scores(x: Array, y: Array, rho: float, nu: float) -> float:
+    """t-copula log-density from normal-space scores already transformed at ``nu``."""
+    n = int(x.shape[0])
     r2 = rho * rho
     # Joint bivariate t log-density
     d = (x * x + y * y - 2.0 * rho * x * y) / ((1.0 - r2) * nu)
@@ -359,19 +370,38 @@ def _t_logpdf(u: Array, v: Array, rho: float, nu: float) -> float:
     return float(joint - ll_marg_x - ll_marg_y)
 
 
+def _t_logpdf(u: Array, v: Array, rho: float, nu: float) -> float:
+    uu = _clip(u)
+    vv = _clip(v)
+    x = sstats.t.ppf(uu, df=nu)
+    y = sstats.t.ppf(vv, df=nu)
+    return _t_copula_logpdf_scores(x, y, rho, nu)
+
+
 def _t_fit(u: Array, v: Array) -> dict[str, float]:
     tau = _kendall_tau_pair(u, v)
     rho_init = _rho_from_tau(tau)
     n = u.shape[0]
     best = (-np.inf, rho_init, 8.0)
 
+    clipped_u = _clip(u)
+    clipped_v = _clip(v)
     for nu_val in np.geomspace(3.0, 30.0, 15):
         nu_f = float(nu_val)
+        # Scores depend on nu only. Reusing them across the rho line search
+        # is the same likelihood with one Student-t quantile per grid point.
+        x_nu = np.asarray(sstats.t.ppf(clipped_u, df=nu_f), dtype=np.float64)
+        y_nu = np.asarray(sstats.t.ppf(clipped_v, df=nu_f), dtype=np.float64)
 
-        def nll(r: float, nu_fix: float = nu_f) -> float:
+        def nll(
+            r: float,
+            nu_fix: float = nu_f,
+            x_fix: Array = x_nu,
+            y_fix: Array = y_nu,
+        ) -> float:
             if not (-0.998 < r < 0.998):
                 return 1e12
-            return -_t_logpdf(u, v, r, nu_fix)
+            return -_t_copula_logpdf_scores(x_fix, y_fix, r, nu_fix)
 
         res = opt.minimize_scalar(nll, bounds=(-0.997, 0.997), method="bounded")
         if -res.fun > best[0]:
@@ -1503,6 +1533,63 @@ def gas_copula_logpdf(u: Array, v: Array, rho: float) -> float:
     return _gaussian_logpdf(u, v, rho)
 
 
+@njit(cache=True)
+def _gas_filter_nb(
+    x: np.ndarray,
+    y: np.ndarray,
+    omega: float,
+    alpha: float,
+    beta: float,
+    k0: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, bool]:
+    """GAS(1,1) filter plus Gaussian-copula log-likelihood.
+
+    Same clipping as the scalar recursion: rho in [-0.998, 0.998], score
+    in [-20, 20], kappa in [-10, 10]. ``x`` and ``y`` are normal scores.
+    """
+    t_obs = x.shape[0]
+    rho = np.empty(t_obs, dtype=np.float64)
+    kappa = np.empty(t_obs, dtype=np.float64)
+    scores = np.empty(t_obs, dtype=np.float64)
+    loglik = 0.0
+    k_prev = k0
+    for t in range(t_obs):
+        kappa[t] = k_prev
+        th = math.tanh(k_prev)
+        if th > 0.998:
+            th = 0.998
+        elif th < -0.998:
+            th = -0.998
+        rho[t] = th
+        r2 = th * th
+        one_m = 1.0 - r2
+        if one_m < 1.0e-6:
+            one_m = 1.0e-6
+        xx = x[t] * x[t]
+        yy = y[t] * y[t]
+        xy = x[t] * y[t]
+        score = th - th * (xx + yy) / one_m + xy * (1.0 + r2) / one_m
+        if score > 20.0:
+            score = 20.0
+        elif score < -20.0:
+            score = -20.0
+        scores[t] = score
+        k_next = omega + alpha * score + beta * k_prev
+        if k_next > 10.0:
+            k_next = 10.0
+        elif k_next < -10.0:
+            k_next = -10.0
+        if k_next != k_next:
+            return rho, kappa, scores, loglik, False
+        denom = 1.0 - r2
+        if denom <= 0.0:
+            return rho, kappa, scores, loglik, False
+        q = (xx - 2.0 * th * xy + yy) / denom
+        loglik += -0.5 * math.log(denom) - 0.5 * q + 0.5 * (xx + yy)
+        k_prev = k_next
+    return rho, kappa, scores, loglik, True
+
+
 def gas_copula_filter(
     u: Array,
     omega: float,
@@ -1530,10 +1617,6 @@ def gas_copula_filter(
     m = _as_finite_matrix(u, min_cols=2)
     if m.shape[1] != 2:
         m = m[:, :2]
-    T = m.shape[0]
-    rho = np.empty(T, dtype=np.float64)
-    kappa = np.empty(T, dtype=np.float64)
-    scores = np.empty(T, dtype=np.float64)
 
     if kappa0 is None:
         corr = float(
@@ -1544,19 +1627,13 @@ def gas_copula_filter(
     else:
         k0 = float(np.clip(kappa0, -4.0, 4.0))
 
-    k_prev = float(k0)
-    for t in range(T):
-        kappa[t] = k_prev
-        rho[t] = float(np.clip(np.tanh(k_prev), -0.998, 0.998))
-        s_t = float(gas_copula_score_gaussian(m[t : t + 1, 0], m[t : t + 1, 1], float(rho[t]))[0])
-        scores[t] = s_t
-        k_next = omega + alpha * s_t + beta * k_prev
-        # Clip kappa to prevent runaway
-        k_next = float(np.clip(k_next, -10.0, 10.0))
-        if not np.isfinite(k_next):
-            raise ValueError(f"GAS recursion diverged at t={t}")
-        k_prev = k_next
-
+    x = np.ascontiguousarray(sstats.norm.ppf(_clip(m[:, 0])), dtype=np.float64)
+    y = np.ascontiguousarray(sstats.norm.ppf(_clip(m[:, 1])), dtype=np.float64)
+    rho, kappa, scores, _ll, ok = _gas_filter_nb(
+        x, y, float(omega), float(alpha), float(beta), float(k0)
+    )
+    if not ok:
+        raise ValueError("GAS recursion diverged")
     return rho, kappa, scores
 
 
@@ -1590,6 +1667,8 @@ def gas_copula_fit(
     )
     corr = float(np.clip(corr, -0.98, 0.98))
     kappa_init = math.atanh(corr) if abs(corr) < 0.999 else math.copysign(3.0, corr)
+    x = np.ascontiguousarray(sstats.norm.ppf(_clip(m[:, 0])), dtype=np.float64)
+    y = np.ascontiguousarray(sstats.norm.ppf(_clip(m[:, 1])), dtype=np.float64)
 
     def nll(theta: Array) -> float:
         om = float(theta[0])
@@ -1597,18 +1676,8 @@ def gas_copula_fit(
         be = float(theta[2])
         if abs(be) >= 0.97:
             return 1e12
-        try:
-            rho_p, _, _ = gas_copula_filter(m, om, al, be, kappa0=kappa_init)
-        except ValueError:
-            return 1e12
-        ll = 0.0
-        for t in range(T):
-            rt = float(np.clip(rho_p[t], -0.998, 0.998))
-            ll_t = gas_copula_logpdf(m[t : t + 1, 0], m[t : t + 1, 1], rt)
-            if not np.isfinite(ll_t):
-                return 1e12
-            ll += ll_t
-        if not np.isfinite(ll):
+        _rho, _kappa, _scores, ll, ok = _gas_filter_nb(x, y, om, al, be, kappa_init)
+        if not ok or not math.isfinite(ll):
             return 1e12
         return -ll
 

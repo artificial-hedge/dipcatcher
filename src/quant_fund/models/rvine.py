@@ -645,43 +645,34 @@ def rvine_sample(n: int, spec: RVineSpec, rng: np.random.Generator) -> np.ndarra
     order = np.diag(spec.matrix)  # original labels per vine position
     u2 = rng.random((n, d))
 
-    out = np.zeros((n, d), dtype=float)
-    vdirect = np.zeros((d, d), dtype=float)
-    vindirect = np.zeros((d, d), dtype=float)
-    for row in range(n):
-        for i in range(d):
-            vdirect[i, i] = u2[row, i]
-        vindirect[0, 0] = vdirect[0, 0]
-        for i in range(1, d):
-            for k in range(i - 1, -1, -1):
-                f = fam[k, i]
-                p = par[k, i]
-                m = int(maxmat[k, i])
+    # One inverse-Rosenblatt sweep over the whole sample. The dimension
+    # recursion is unchanged; h and hinv already accept a column.
+    vdirect = [[np.zeros(n) for _ in range(d)] for _ in range(d)]
+    vindirect = [[np.zeros(n) for _ in range(d)] for _ in range(d)]
+    for i in range(d):
+        vdirect[i][i] = u2[:, i]
+    vindirect[0][0] = vdirect[0][0]
+    for i in range(1, d):
+        for k in range(i - 1, -1, -1):
+            f = fam[k, i]
+            p = par[k, i]
+            m = int(maxmat[k, i])
+            if int(mat[k, i]) == m:
+                cond = vdirect[k][m - 1]
+            else:
+                cond = vindirect[k][m - 1]
+            # hinv1(cond, w): y s.t. h(y|cond)=w  -> _hinv_eval(w, cond)
+            drawn = _hinv_eval(np.asarray(vdirect[k + 1][i]), np.asarray(cond), f, p)
+            vdirect[k][i] = np.asarray(drawn, dtype=float).reshape(n)
+            if i + 1 < d and cind[k + 1, i]:
+                # hfunc2(a, b) = h(a|b) -> _h_eval(a, b)
                 if int(mat[k, i]) == m:
-                    cond = vdirect[k, m - 1]
+                    left = vdirect[k][m - 1]
                 else:
-                    cond = vindirect[k, m - 1]
-                # hinv1(cond, w): y s.t. h(y|cond)=w  -> _hinv_eval(w, cond)
-                vdirect[k, i] = _hinv_eval(
-                    np.asarray([vdirect[k + 1, i]]), np.asarray([cond]), f, p
-                )[0]
-                if i + 1 < d and cind[k + 1, i]:
-                    # hfunc2(a, b) = h(a|b) -> _h_eval(a, b)
-                    if int(mat[k, i]) == m:
-                        vindirect[k + 1, i] = _h_eval(
-                            np.asarray([vdirect[k, m - 1]]),
-                            np.asarray([vdirect[k, i]]),
-                            f,
-                            p,
-                        )[0]
-                    else:
-                        vindirect[k + 1, i] = _h_eval(
-                            np.asarray([vindirect[k, m - 1]]),
-                            np.asarray([vdirect[k, i]]),
-                            f,
-                            p,
-                        )[0]
-        out[row, :] = vdirect[0, :]
+                    left = vindirect[k][m - 1]
+                pushed = _h_eval(np.asarray(left), np.asarray(vdirect[k][i]), f, p)
+                vindirect[k + 1][i] = np.asarray(pushed, dtype=float).reshape(n)
+    out = np.column_stack([vdirect[0][i] for i in range(d)])
     # peel position i holds var order[i]; restore caller order
     ix = np.argsort(order[::-1])
     return out[:, ix]

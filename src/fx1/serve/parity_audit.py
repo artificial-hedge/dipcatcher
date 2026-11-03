@@ -362,7 +362,7 @@ def _start_hook_sink() -> tuple[str, list[tuple[dict[str, str], bytes]], Any]:
             pass
 
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _Sink)
-    _threading.Thread(target=srv.serve_forever, daemon=True).start()
+    _threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
     return f"http://127.0.0.1:{srv.server_address[1]}", hits, srv
 
 

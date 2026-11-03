@@ -16,6 +16,7 @@ from quant_fund.models.dpr_retriever import bench_dpr_retriever
 from quant_fund.models.hyde_retrieval import bench_hyde_retrieval
 from quant_fund.models.reranker_crossenc import bench_reranker_crossenc
 from quant_fund.models.rrf_fusion import bench_rrf_fusion
+from quant_fund.research.scorecard_budget import call_bench
 
 _FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
 _SEED = 20261231
@@ -67,7 +68,9 @@ def bench_dpr_retriever_family() -> dict[str, float]:
 
 def bench_colbert_late_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("colbert_late", bench_colbert_late(seed=_SEED + 860)))
+        return _floats(
+            _finite_blob("colbert_late", call_bench(bench_colbert_late, seed=_SEED + 860))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:

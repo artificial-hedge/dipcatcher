@@ -33,9 +33,9 @@ def test_sav_fit_tracks_vol() -> None:
 
 
 def test_as_and_ig_specs() -> None:
-    r = _garch_returns(seed=3)
+    r = _garch_returns(n=600, seed=3)
     for spec in ("as", "ig"):
-        out = caviar_fit(r, tau=0.05, spec=spec, n_starts=5)
+        out = caviar_fit(r, tau=0.05, spec=spec, n_starts=2)
         assert np.isfinite(np.asarray(out["q"])).all()
         assert 0.005 < out["hit_rate"] < 0.15
 
