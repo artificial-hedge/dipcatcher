@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import threading
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -28,9 +29,11 @@ from quant_fund.live.brokers import (
     map_broker_status,
 )
 from quant_fund.live.config import LiveConfig
-from quant_fund.live.errors import LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
 from quant_fund.live.ledger import LedgerFill, LiveLedger
 from quant_fund.live.session import open_session
+from quant_fund.observe.logging import set_log_sink
+from quant_fund.observe.metrics import render_prometheus, reset_metrics
 
 ROOT = Path(__file__).resolve().parents[3]
 PRETRADE = ROOT / "configs" / "pretrade_risk.yaml"
@@ -82,6 +85,107 @@ def _buy(session: Any, **overrides: object) -> dict[str, Any]:
     }
     payload.update(overrides)
     return session.submit(**payload)
+
+
+_ORDER_SUBMITS = "dipcatcher_live_order_submits_total"
+_ORDER_RESULTS = "dipcatcher_live_order_results_total"
+_FILL_RECORDS = "dipcatcher_live_fill_records_total"
+_PRETRADE_DENIALS = "dipcatcher_live_pretrade_denials_total"
+_KILL_TRANSITIONS = "dipcatcher_live_kill_switch_transitions_total"
+_ORDER_RECOVERY = "dipcatcher_live_order_recovery_attempts_total"
+_TELEMETRY_ACTOR = "telemetry-actor-sentinel"
+_TELEMETRY_REASON = "telemetry-reason-sentinel"
+_TELEMETRY_CLIENT = "dc-telemetry-sensitive"
+_TELEMETRY_URL = "https://telemetry.invalid/private/orders"
+_TELEMETRY_CREDENTIAL = "telemetry-credential-canary"
+_TELEMETRY_HEADER = "APCA-API-SECRET-KEY=telemetry-header-canary"
+_TELEMETRY_RAW_ERROR = (
+    f"telemetry-raw-exception {_TELEMETRY_URL} {_TELEMETRY_CREDENTIAL} {_TELEMETRY_HEADER}"
+)
+_FORBIDDEN_LOG_FIELDS = frozenset(
+    {
+        "client_order_id",
+        "symbol",
+        "actor",
+        "reason",
+        "url",
+        "headers",
+        "qty",
+        "quantity",
+        "price",
+        "limit_price",
+        "filled_quantity",
+        "fill_price",
+    }
+)
+_SENSITIVE_LOG_VALUES = (
+    _TELEMETRY_ACTOR,
+    _TELEMETRY_REASON,
+    _TELEMETRY_CLIENT,
+    "AAPL",
+    "telemetry-raw-exception",
+    _TELEMETRY_URL,
+    _TELEMETRY_CREDENTIAL,
+    _TELEMETRY_HEADER,
+    "response lost",
+    "lookup failed",
+)
+
+
+@pytest.fixture(autouse=True)
+def _telemetry_sink(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[dict[str, Any]]]:
+    monkeypatch.setenv("DIPCATCHER_OBSERVE", "1")
+    reset_metrics()
+    sink: list[dict[str, Any]] = []
+    set_log_sink(sink)
+    try:
+        yield sink
+    finally:
+        set_log_sink(None)
+        reset_metrics()
+
+
+def _metric_samples(name: str) -> list[tuple[dict[str, str], int]]:
+    samples: list[tuple[dict[str, str], int]] = []
+    for line in render_prometheus().splitlines():
+        if not line.startswith(f"{name}{{"):
+            continue
+        raw_labels, separator, raw_value = line[len(name) + 1 :].partition("} ")
+        assert separator
+        labels: dict[str, str] = {}
+        for item in raw_labels.split(","):
+            key, separator, value = item.partition("=")
+            assert separator
+            labels[key] = value.removeprefix('"').removesuffix('"')
+        samples.append((labels, int(raw_value)))
+    return samples
+
+
+def _counter(name: str, **labels: object) -> int:
+    expected = {key: str(value) for key, value in labels.items()}
+    return sum(value for actual, value in _metric_samples(name) if actual == expected)
+
+
+def _recovery_outcomes(venue: str) -> dict[str, int]:
+    outcomes: dict[str, int] = {}
+    for labels, value in _metric_samples(_ORDER_RECOVERY):
+        if labels.get("venue") != venue:
+            continue
+        assert set(labels) == {"venue", "outcome"}
+        outcomes[labels["outcome"]] = value
+    return outcomes
+
+
+def _events(logs: list[dict[str, Any]], event: str) -> list[dict[str, Any]]:
+    return [record for record in logs if record.get("event") == event]
+
+
+def _assert_safe_logs(logs: list[dict[str, Any]]) -> None:
+    for record in logs:
+        assert _FORBIDDEN_LOG_FIELDS.isdisjoint(record)
+    serialized = json.dumps(logs, sort_keys=True)
+    for sentinel in _SENSITIVE_LOG_VALUES:
+        assert sentinel not in serialized
 
 
 def test_paper_adapter_still_refuses_a_live_endpoint() -> None:
@@ -407,6 +511,188 @@ def _gateway(tmp: Path, *, pretrade: Path, broker: Any = None) -> Any:
     )
 
 
+def test_loopback_telemetry_counts_replay_and_duplicate_fill_once(
+    tmp_path: Path, _telemetry_sink: list[dict[str, Any]]
+) -> None:
+    session = _open(tmp_path)
+    session.arm(actor=_TELEMETRY_ACTOR)
+    filled = _buy(
+        session,
+        actor=_TELEMETRY_ACTOR,
+        client_order_id=_TELEMETRY_CLIENT,
+    )
+    assert filled["status"] == "filled"
+    replayed = _buy(
+        session,
+        actor=_TELEMETRY_ACTOR,
+        client_order_id=_TELEMETRY_CLIENT,
+    )
+    assert replayed["replayed"] is True
+    session.reconcile(at_ns=TS + 1)
+
+    assert _counter(_ORDER_SUBMITS, venue="loopback") == 1
+    assert _counter(_ORDER_RESULTS, venue="loopback", status="filled") == 1
+    assert _counter(_FILL_RECORDS, venue="loopback", verdict="accepted") == 1
+    assert _counter(_FILL_RECORDS, venue="loopback", verdict="duplicate_fill") == 0
+    assert _metric_samples(_ORDER_RECOVERY) == []
+
+    submits = _events(_telemetry_sink, "live_order_submit")
+    results = _events(_telemetry_sink, "live_order_result")
+    fills = _events(_telemetry_sink, "live_order_fill_recorded")
+    assert len(submits) == 1
+    assert submits[0]["venue"] == "loopback"
+    assert len(results) == 1
+    assert results[0]["status"] == "filled"
+    assert len(fills) == 1
+    assert fills[0]["verdict"] == "accepted"
+    assert _events(_telemetry_sink, "live_order_recovery") == []
+    _assert_safe_logs(_telemetry_sink)
+
+
+def test_denial_and_kill_switch_telemetry_is_transition_only_and_redacted(
+    tmp_path: Path, _telemetry_sink: list[dict[str, Any]]
+) -> None:
+    session = _open(tmp_path)
+    session.arm(actor=_TELEMETRY_ACTOR)
+    denied = _buy(
+        session,
+        actor=_TELEMETRY_ACTOR,
+        client_order_id=_TELEMETRY_CLIENT,
+        limit_price=110.0,
+    )
+    assert denied["broker_called"] is False
+    assert "price_collar" in denied["reasons"]
+
+    session.kill(actor=_TELEMETRY_ACTOR, reason=_TELEMETRY_REASON, at_ns=TS + 1)
+    session.kill(actor=_TELEMETRY_ACTOR, reason=_TELEMETRY_REASON, at_ns=TS + 2)
+    killed = _buy(
+        session,
+        actor=_TELEMETRY_ACTOR,
+        client_order_id="dc-killed-sensitive",
+        at_ns=TS + 3,
+    )
+    assert "kill_switch" in killed["reasons"]
+    session.reset_kill(actor=_TELEMETRY_ACTOR, reason=_TELEMETRY_REASON, at_ns=TS + 4)
+    session.reset_kill(actor=_TELEMETRY_ACTOR, reason=_TELEMETRY_REASON, at_ns=TS + 5)
+
+    assert (
+        _counter(
+            _PRETRADE_DENIALS,
+            venue="loopback",
+            kind="order",
+            primary_reason="price_collar",
+        )
+        == 1
+    )
+    assert (
+        _counter(
+            _PRETRADE_DENIALS,
+            venue="loopback",
+            kind="order",
+            primary_reason="kill_switch",
+        )
+        == 1
+    )
+    assert _counter(_KILL_TRANSITIONS, venue="loopback", state="latched") == 1
+    assert _counter(_KILL_TRANSITIONS, venue="loopback", state="reset") == 1
+    assert _metric_samples(_ORDER_SUBMITS) == []
+    assert _metric_samples(_ORDER_RESULTS) == []
+
+    denials = _events(_telemetry_sink, "live_pretrade_denied")
+    assert [(row["kind"], row["primary_reason"]) for row in denials] == [
+        ("order", "price_collar"),
+        ("order", "kill_switch"),
+    ]
+    transitions = _events(_telemetry_sink, "live_kill_switch_changed")
+    assert [row["state"] for row in transitions] == ["latched", "reset"]
+    assert _events(_telemetry_sink, "live_order_submit") == []
+    assert _events(_telemetry_sink, "live_order_result") == []
+    _assert_safe_logs(_telemetry_sink)
+
+
+def test_broker_rejection_telemetry_has_no_fill_or_pretrade_denial(
+    tmp_path: Path, _telemetry_sink: list[dict[str, Any]]
+) -> None:
+    broker = _RejectingBroker(cash=1_000_000.0)
+    session = _gateway(tmp_path, pretrade=PRETRADE, broker=broker)
+    session.arm(actor=_TELEMETRY_ACTOR)
+    rejected = _buy(
+        session,
+        actor=_TELEMETRY_ACTOR,
+        client_order_id=_TELEMETRY_CLIENT,
+    )
+    assert rejected["status"] == "rejected"
+
+    assert _counter(_ORDER_SUBMITS, venue="loopback") == 1
+    assert _counter(_ORDER_RESULTS, venue="loopback", status="rejected") == 1
+    assert _metric_samples(_FILL_RECORDS) == []
+    assert _metric_samples(_PRETRADE_DENIALS) == []
+    assert _metric_samples(_ORDER_RECOVERY) == []
+
+    assert len(_events(_telemetry_sink, "live_order_submit")) == 1
+    results = _events(_telemetry_sink, "live_order_result")
+    assert len(results) == 1
+    assert results[0]["status"] == "rejected"
+    assert _events(_telemetry_sink, "live_order_fill_recorded") == []
+    assert _events(_telemetry_sink, "live_pretrade_denied") == []
+    assert _events(_telemetry_sink, "live_order_recovery") == []
+    _assert_safe_logs(_telemetry_sink)
+
+
+def test_lost_response_telemetry_distinguishes_later_recovery(
+    tmp_path: Path, _telemetry_sink: list[dict[str, Any]]
+) -> None:
+    broker = _LosingBroker()
+    first = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    first.arm(actor=_TELEMETRY_ACTOR)
+    with pytest.raises(LiveGateError, match="stays inflight"):
+        _buy(
+            first,
+            actor=_TELEMETRY_ACTOR,
+            client_order_id=_TELEMETRY_CLIENT,
+        )
+
+    assert _counter(_ORDER_SUBMITS, venue="alpaca-paper") == 1
+    assert _counter(_ORDER_RESULTS, venue="alpaca-paper", status="response_lost") == 1
+    initial_recovery = _recovery_outcomes("alpaca-paper")
+    assert len(initial_recovery) == 1
+    assert set(initial_recovery.values()) == {1}
+
+    broker.lose_recover = False
+    second = open_session(
+        _config(tmp_path, venue="alpaca-paper"),
+        PRETRADE,
+        state_dir=tmp_path,
+        now_ns=_clock,
+        broker=broker,
+    )
+    assert second.orders[0]["status"] == "accepted"
+
+    recoveries = _recovery_outcomes("alpaca-paper")
+    assert len(recoveries) == 2
+    assert set(recoveries.values()) == {1}
+    assert set(initial_recovery) < set(recoveries)
+    assert _counter(_ORDER_SUBMITS, venue="alpaca-paper") == 1
+    assert _counter(_ORDER_RESULTS, venue="alpaca-paper", status="response_lost") == 1
+    assert len(_metric_samples(_ORDER_RESULTS)) == 1
+
+    assert len(_events(_telemetry_sink, "live_order_submit")) == 1
+    results = _events(_telemetry_sink, "live_order_result")
+    assert len(results) == 1
+    assert results[0]["status"] == "response_lost"
+    recovery_logs = _events(_telemetry_sink, "live_order_recovery")
+    assert len(recovery_logs) == 2
+    assert recovery_logs[0]["outcome"] != recovery_logs[1]["outcome"]
+    assert {row["outcome"] for row in recovery_logs} == set(recoveries)
+    _assert_safe_logs(_telemetry_sink)
+
+
 def test_lost_broker_response_stays_inflight_until_it_can_be_canceled(tmp_path: Path) -> None:
     broker = _LosingBroker()
     first = open_session(
@@ -708,6 +994,12 @@ def test_two_sessions_do_not_overwrite_each_others_orders(tmp_path: Path) -> Non
     assert errors == []
     stored = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
     assert {row["client_order_id"] for row in stored["orders"]} == {"dc-race-1", "dc-race-2"}
+
+
+class _RejectingBroker(LoopbackBroker):
+    def submit(self, order: LiveOrder) -> BrokerAck:
+        del order
+        raise BrokerRejected(_TELEMETRY_RAW_ERROR)
 
 
 class _LosingBroker:

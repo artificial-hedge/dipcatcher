@@ -43,6 +43,15 @@ from quant_fund.live.gateway_arm import (
 )
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
 from quant_fund.live.risk_memory import export_pretrade, restore_pretrade
+from quant_fund.observe.logging import log_event
+from quant_fund.observe.metrics import (
+    record_live_fill_record,
+    record_live_kill_switch_transition,
+    record_live_order_recovery,
+    record_live_order_result,
+    record_live_order_submit,
+    record_live_pretrade_denial,
+)
 from quant_fund.pretrade.codes import KIND_CANCEL, KIND_ORDER
 from quant_fund.pretrade.config import PretradeConfig
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
@@ -261,10 +270,14 @@ class LiveSession:
             who = _actor(actor)
             why = _reason(reason)
             ts = self._clock(at_ns)
+            was_latched = bool(self.kill_state["latched"])
             self.engine.trip(who, why, ts)
             self.kill_state = {"latched": True, "actor": who, "reason": why}
             self._persist()
             self._audit("kill", {"actor": who, "reason": why})
+            if not was_latched:
+                log_event("live_kill_switch_changed", venue=self.venue, state="latched")
+                record_live_kill_switch_transition(venue=self.venue, state="latched")
             return {
                 "ok": True,
                 "kill_latched": True,
@@ -277,10 +290,14 @@ class LiveSession:
             who = _actor(actor)
             why = _reason(reason)
             ts = self._clock(at_ns)
+            was_latched = bool(self.kill_state["latched"])
             self.engine.reset(who, why, ts)
             self.kill_state = {"latched": False, "actor": who, "reason": why}
             self._persist()
             self._audit("reset", {"actor": who, "reason": why})
+            if was_latched:
+                log_event("live_kill_switch_changed", venue=self.venue, state="reset")
+                record_live_kill_switch_transition(venue=self.venue, state="reset")
             return {
                 "ok": True,
                 "kill_latched": False,
@@ -361,6 +378,17 @@ class LiveSession:
                     limit_price=float(row["limit_price"]),
                     client_order_id=str(row["client_order_id"]),
                     venue=self.venue,
+                )
+                log_event(
+                    "live_pretrade_denied",
+                    venue=self.venue,
+                    kind="cancel",
+                    side=str(row["side"]),
+                    reasons=list(decision.reasons),
+                    primary_reason=decision.reasons[0],
+                )
+                record_live_pretrade_denial(
+                    venue=self.venue, kind="cancel", primary_reason=decision.reasons[0]
                 )
                 self._audit(
                     "deny",
@@ -513,6 +541,17 @@ class LiveSession:
                 client_order_id=client,
                 venue=self.venue,
             )
+            log_event(
+                "live_pretrade_denied",
+                venue=self.venue,
+                kind="order",
+                side=order_side,
+                reasons=list(decision.reasons),
+                primary_reason=decision.reasons[0],
+            )
+            record_live_pretrade_denial(
+                venue=self.venue, kind="order", primary_reason=decision.reasons[0]
+            )
             self._audit(
                 "deny", {"actor": who, "client_order_id": client, "reasons": list(decision.reasons)}
             )
@@ -531,6 +570,13 @@ class LiveSession:
         )
         ack = self._send(placeholder, live_order)
         self._apply_ack(placeholder, ack, ts)
+        log_event(
+            "live_order_result",
+            venue=self.venue,
+            side=order_side,
+            status=str(placeholder["status"]),
+        )
+        record_live_order_result(venue=self.venue, status=str(placeholder["status"]))
         self._persist()
         self._audit(
             "submit", {"actor": who, "client_order_id": client, "status": placeholder["status"]}
@@ -538,6 +584,8 @@ class LiveSession:
         return _public_order(placeholder, venue=self.venue, replayed=False)
 
     def _send(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
+        log_event("live_order_submit", venue=self.venue, side=order.side)
+        record_live_order_submit(venue=self.venue)
         try:
             return self.broker.submit(order)
         except BrokerRejected as exc:
@@ -550,13 +598,21 @@ class LiveSession:
                 fills=(),
                 reason=str(exc),
             )
-        except LiveGateError:
+        except LiveGateError as exc:
             row["status"] = "not_acknowledged"
             row["reason"] = "broker credentials are not set"
             self._persist()
+            log_event(
+                "live_order_result",
+                venue=self.venue,
+                side=order.side,
+                status="not_acknowledged",
+                error_type=type(exc).__name__,
+            )
+            record_live_order_result(venue=self.venue, status="not_acknowledged")
             raise
-        except Exception:
-            recovered = self._safe_recover(order.client_order_id)
+        except Exception as exc:
+            recovered = self._safe_recover(order.client_order_id, trigger="submit_error")
             if recovered is not None:
                 return recovered
             # A lost response is not proof the broker rejected the order.
@@ -564,15 +620,44 @@ class LiveSession:
             row["status"] = "inflight"
             row["reason"] = "broker response lost; order remains recoverable"
             self._persist()
+            log_event(
+                "live_order_result",
+                venue=self.venue,
+                side=order.side,
+                status="response_lost",
+                error_type=type(exc).__name__,
+            )
+            record_live_order_result(venue=self.venue, status="response_lost")
             raise LiveGateError(
                 "broker response lost; the order stays inflight until recovery succeeds"
             ) from None
 
-    def _safe_recover(self, client_order_id: str) -> BrokerAck | None:
+    def _safe_recover(self, client_order_id: str, *, trigger: str) -> BrokerAck | None:
         try:
-            return self.broker.recover(client_order_id)
-        except Exception:
+            ack = self.broker.recover(client_order_id)
+        except Exception as exc:
+            log_event(
+                "live_order_recovery",
+                venue=self.venue,
+                outcome="error",
+                trigger=trigger,
+                error_type=type(exc).__name__,
+            )
+            record_live_order_recovery(venue=self.venue, outcome="error")
             return None
+        if ack is None:
+            log_event("live_order_recovery", venue=self.venue, outcome="not_found", trigger=trigger)
+            record_live_order_recovery(venue=self.venue, outcome="not_found")
+            return None
+        log_event(
+            "live_order_recovery",
+            venue=self.venue,
+            outcome="recovered",
+            trigger=trigger,
+            status=map_broker_status(ack.status),
+        )
+        record_live_order_recovery(venue=self.venue, outcome="recovered")
+        return ack
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
         row["broker_order_id"] = ack.broker_order_id
@@ -602,6 +687,15 @@ class LiveSession:
             fill_time_ns=fill.fill_time_ns if fill.fill_time_ns > 0 else ts,
         )
         verdict = self.ledger.record_fill(ledger_fill)
+        if verdict != "duplicate_fill":
+            log_event(
+                "live_order_fill_recorded",
+                level="warning" if verdict in {"orphan_fill", "out_of_order_fill"} else "info",
+                venue=self.venue,
+                side=fill.side,
+                verdict=verdict,
+            )
+            record_live_fill_record(venue=self.venue, verdict=verdict)
         if verdict in {"duplicate_fill", "orphan_fill"}:
             return verdict
         if fill.client_order_id in self._engine_noted or verdict == "replaced_provisional":
@@ -773,7 +867,7 @@ class LiveSession:
         for row in self.orders:
             if row["status"] != "inflight":
                 continue
-            ack = self._safe_recover(str(row["client_order_id"]))
+            ack = self._safe_recover(str(row["client_order_id"]), trigger="inflight")
             if ack is None:
                 continue
             changed = True
