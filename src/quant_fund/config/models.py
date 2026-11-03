@@ -168,6 +168,8 @@ class QuantileConfig(StrictConfigModel):
     @field_validator("levels")
     @classmethod
     def sorted_open_unit(cls, v: list[float]) -> list[float]:
+        if not v:
+            raise ValueError("quantiles must be non-empty")
         if any(not np.isfinite(x) or x <= 0 or x >= 1 for x in v):
             raise ValueError("quantiles must be in (0, 1)")
         if v != sorted(v) or len(set(v)) != len(v):
