@@ -227,6 +227,7 @@ class LiveSession:
             "armed": self._arm is not None,
             "actor": None if self._arm is None else self._arm.get("actor"),
             "kill_latched": bool(self.kill_state["latched"]),
+            "halt_reason": str(self.kill_state["reason"]) if self.kill_state["latched"] else "",
             "credentials_present": _credentials_present(self.broker),
             "orders": len(self.orders),
             "computed_cash": self.ledger.computed_cash,
@@ -435,6 +436,7 @@ class LiveSession:
         with self._lock():
             self._recover_inflight()
             self._require_trading()
+            self._refuse_book_halt()
             _actor(actor)
             ts = self._clock(at_ns)
             account = self.broker.account()
@@ -484,6 +486,7 @@ class LiveSession:
         who = _actor(actor)
         ts = self._clock(at_ns)
         self._require_trading()
+        self._refuse_book_halt()
         cleaned = _symbol(symbol)
         order_side = _side(side)
         qty = _positive(quantity, "quantity")
@@ -853,6 +856,43 @@ class LiveSession:
         if changed:
             self._persist()
 
+    def _require_broker_book(self) -> bool:
+        """Latch when the broker book is missing or disagrees. True means halt."""
+        if self.venue == "alpaca-live":
+            return False
+        try:
+            account = self.broker.account()
+        except (OSError, LiveGateError, ValueError):
+            self._latch_book("broker account snapshot could not be fetched; no new orders")
+            return True
+        conflict = _book_conflict(
+            account,
+            self.ledger,
+            cash_tolerance=self.config.cash_tolerance,
+            position_tolerance=self.config.position_tolerance,
+        )
+        if conflict is None:
+            return False
+        self._latch_book(conflict)
+        return True
+
+    def _latch_book(self, reason: str) -> None:
+        if self.kill_state["latched"]:
+            return
+        self.kill_state = {"latched": True, "actor": "startup", "reason": reason}
+        self._persist()
+
+    def _refuse_book_halt(self) -> None:
+        if not self.kill_state["latched"]:
+            return
+        reason = str(self.kill_state["reason"])
+        if reason.startswith("broker ") and "no new orders" in reason:
+            raise LiveGateError(reason)
+
+    def _sync_loopback_if_clear(self, book_halted: bool) -> None:
+        if self.venue == "loopback" and not book_halted:
+            self._sync_account(self._now())
+
     def _require_trading(self) -> None:
         if self._arm is None:
             raise LiveGateError("session is not armed; run live arm")
@@ -1078,8 +1118,7 @@ class LiveSession:
         self._build_engine()
         for symbol, price in self.marks.items():
             self.broker.set_mark(symbol, price)
-        if self.venue == "loopback":
-            self._sync_account(self._now())
+        self._sync_loopback_if_clear(self._require_broker_book())
         if self.kill_state["latched"]:
             self.engine.trip(
                 str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
@@ -1226,6 +1265,30 @@ def _quote_times(stored: dict[str, Any]) -> dict[str, int]:
             raise LiveGateError(f"quote clock for {symbol} is not usable; no order sent")
         parsed[_symbol(str(symbol))] = stamp
     return parsed
+
+
+def _book_conflict(
+    account: BrokerAccount,
+    ledger: LiveLedger,
+    *,
+    cash_tolerance: float,
+    position_tolerance: float,
+) -> str | None:
+    if not math.isfinite(account.cash) or not math.isfinite(account.equity):
+        return "broker account snapshot is not usable; no new orders"
+    if abs(account.cash - ledger.computed_cash) > cash_tolerance:
+        return "broker positions disagree with the local ledger (cash); no new orders"
+    symbols = set(account.positions) | set(ledger.computed_positions)
+    for symbol in sorted(symbols):
+        broker_qty = float(account.positions.get(symbol, 0.0))
+        ledger_qty = float(ledger.computed_positions.get(symbol, 0.0))
+        if (
+            not math.isfinite(broker_qty)
+            or not math.isfinite(ledger_qty)
+            or abs(broker_qty - ledger_qty) > position_tolerance
+        ):
+            return f"broker positions disagree with the local ledger ({symbol}); no new orders"
+    return None
 
 
 def _state_collections(
