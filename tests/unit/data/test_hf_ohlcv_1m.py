@@ -6,6 +6,7 @@ The checked-in fixture is a vendor-schema slice. Network tests are marked
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -442,6 +443,78 @@ def test_stream_https_caps_bytes_and_maps_404(tmp_path: Path) -> None:
             max_bytes=100,
             timeout=1.0,
         )
+
+
+def test_stream_https_replaces_cache_atomically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class _Body:
+        def __init__(self) -> None:
+            self._done = False
+
+        def read(self, n: int) -> bytes:
+            if self._done:
+                return b""
+            self._done = True
+            return b"complete-cache"
+
+        def __enter__(self) -> _Body:
+            return self
+
+        def __exit__(self, *_: object) -> bool:
+            return False
+
+    dest = tmp_path / "month.parquet"
+    dest.write_bytes(b"previous-cache")
+    seen_before_replace: list[bytes] = []
+    real_replace = os.replace
+
+    def spy_replace(src: object, dst: object) -> None:
+        seen_before_replace.append(Path(dst).read_bytes())
+        real_replace(src, dst)  # type: ignore[arg-type]
+
+    monkeypatch.setattr("quant_fund.data.adapters.hf_ohlcv_1m.os.replace", spy_replace)
+    stream_https(
+        "https://example.invalid/month.parquet",
+        dest,
+        opener=lambda *_a, **_k: _Body(),
+        max_bytes=100,
+        timeout=1.0,
+    )
+    assert seen_before_replace == [b"previous-cache"]
+    assert dest.read_bytes() == b"complete-cache"
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_stream_https_interruption_leaves_no_partial_cache(tmp_path: Path) -> None:
+    class _InterruptedBody:
+        def __init__(self) -> None:
+            self._calls = 0
+
+        def read(self, n: int) -> bytes:
+            self._calls += 1
+            if self._calls == 1:
+                return b"partial"
+            raise KeyboardInterrupt
+
+        def __enter__(self) -> _InterruptedBody:
+            return self
+
+        def __exit__(self, *_: object) -> bool:
+            return False
+
+    dest = tmp_path / "month.parquet"
+    dest.write_bytes(b"previous-cache")
+    with pytest.raises(KeyboardInterrupt):
+        stream_https(
+            "https://example.invalid/month.parquet",
+            dest,
+            opener=lambda *_a, **_k: _InterruptedBody(),
+            max_bytes=100,
+            timeout=1.0,
+        )
+    assert not dest.exists()
+    assert not list(tmp_path.glob("*.tmp"))
 
 
 def test_security_master_and_empty_actions(tmp_path: Path) -> None:
