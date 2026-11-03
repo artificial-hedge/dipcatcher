@@ -7,7 +7,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.live.errors import LiveGateError
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig, load_pretrade_config
 
@@ -36,6 +35,8 @@ def load_live_config(path: str | Path) -> LiveConfig:
     Missing, unreadable, and invalid files raise ``LiveGateError``. The message
     does not include the file path or the file body.
     """
+    from quant_fund.config.yaml_safe import load_yaml_document
+
     try:
         text = Path(path).read_text(encoding="utf-8")
     except FileNotFoundError:

@@ -16,8 +16,6 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from quant_fund.config.yaml_safe import load_yaml_document
-
 
 class LimitConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -125,6 +123,8 @@ def load_pretrade_config(path: str | Path, *, hmac_key: bytes) -> tuple[Pretrade
     Fails closed: unsafe YAML constructors are not used, extra keys are
     rejected, and a short HMAC key is rejected.
     """
+    from quant_fund.config.yaml_safe import load_yaml_document
+
     text = Path(path).read_text(encoding="utf-8")
     raw = load_yaml_document(text)
     if not isinstance(raw, dict):

@@ -21,12 +21,6 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from quant_fund.execution.quote_gate import (
-    QuoteHalt,
-    _whole_ns,
-    note_quote,
-    require_fresh_quote,
-)
 from quant_fund.live.brokers import (
     AlpacaBroker,
     Broker,
@@ -868,6 +862,8 @@ class LiveSession:
             raise LiveBrokerRefused(ALPACA_LIVE_REFUSAL)
 
     def _note_mark(self, symbol: str, now_ns: int) -> None:
+        from quant_fund.execution.quote_gate import QuoteHalt, note_quote
+
         try:
             note_quote(
                 symbol=symbol,
@@ -881,6 +877,8 @@ class LiveSession:
         self._quote_ns[symbol] = now_ns
 
     def _gate_quote(self, symbol: str, now_ns: int, quote_ts_ns: int | None) -> None:
+        from quant_fund.execution.quote_gate import QuoteHalt, note_quote, require_fresh_quote
+
         max_age = int(self.engine._max_ref_age)
         stored = self._quote_ns.get(symbol)
         try:
@@ -1217,6 +1215,8 @@ def _require_state_identity(stored: dict[str, Any], venue: str) -> None:
 
 
 def _quote_times(stored: dict[str, Any]) -> dict[str, int]:
+    from quant_fund.execution.quote_gate import _whole_ns
+
     raw = stored.get("quote_ns", {})
     if not isinstance(raw, dict):
         raise LiveGateError("stored quote times are malformed")

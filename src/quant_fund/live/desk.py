@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from quant_fund.execution.quote_gate import QuoteHalt, note_quote, require_fresh_quote
 from quant_fund.formal.order_lifecycle import TERMINAL, Book, check_trace, step
 from quant_fund.live.arming import (
     Arming,
@@ -839,6 +838,8 @@ class LiveDesk:
         return count >= int(self.config.limits.max_messages_per_window)
 
     def _gate_quote(self, symbol: str, ts_ns: int, *, new_tick: bool) -> None:
+        from quant_fund.execution.quote_gate import QuoteHalt, note_quote, require_fresh_quote
+
         max_age = int(self.config.limits.max_reference_age_ns)
         previous = self.mark_ts.get(symbol)
         try:

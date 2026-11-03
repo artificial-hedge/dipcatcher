@@ -19,7 +19,6 @@ from typing import Any
 import typer
 
 from quant_fund.cli._app import app
-from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.live.arming import ENV_ROOT, ArmingError
 from quant_fund.live.desk import LiveDesk, LiveDeskError
 
@@ -137,6 +136,8 @@ def _stamp(ts_ns: int | None) -> int:
 
 
 def _gateway_file(path: Path | None) -> bool:
+    from quant_fund.config.yaml_safe import load_yaml_document
+
     if path is None or not path.exists():
         return False
     raw = load_yaml_document(path.read_text(encoding="utf-8"))
