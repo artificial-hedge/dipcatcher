@@ -255,3 +255,20 @@ def test_diffusion_forecaster_is_deterministic(diffusion_forecaster: dict[str, f
     # The DiffPTS / NGBoost / TORF fits and every MC sampling pass are seeded,
     # so a fresh shrunk run reproduces the fixture bit-for-bit.
     assert bench_diffusion_forecaster() == diffusion_forecaster
+
+
+def test_extra_conformal_adapter_emits_finite_scores() -> None:
+    """The adapter must read the module's ``synthetic_`` observation keys.
+
+    A KeyError used to collapse the family to ``{}``, which the research
+    scorecard reports as not executed.
+    """
+    from quant_fund.research.benches_w17 import bench_extra_conformal
+
+    blob = bench_extra_conformal()
+    assert blob
+    assert "xc_coverage" in blob
+    assert "xc_harm_coverage_gap" in blob
+    assert family_blob_has_finite_observation(blob)
+    assert family_blob_forbidden_metrics_absent(blob)
+    assert all(np.isfinite(v) for v in blob.values())
