@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from quant_fund.calendars.sessions import Session
+from quant_fund.calendars.sessions import Session, validate_date_range
 
 
 class CryptoCalendar:
@@ -27,6 +27,7 @@ class CryptoCalendar:
         return Session(date=d, open_utc=open_utc, close_utc=open_utc + timedelta(days=1))
 
     def sessions(self, start: date, end: date) -> list[Session]:
+        validate_date_range(start, end)
         out: list[Session] = []
         cur = start
         while cur <= end:

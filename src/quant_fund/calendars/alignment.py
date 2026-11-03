@@ -22,6 +22,7 @@ from quant_fund.calendars.sessions import (
     SessionIndex,
     TradingCalendar,
     require_aware,
+    validate_date_range,
 )
 
 _Schema = dict[str, pl.DataType | type[pl.DataType]]
@@ -86,6 +87,7 @@ def session_grid(
     """
     if bar_size <= timedelta(0):
         raise ValueError("bar_size must be positive")
+    validate_date_range(start, end)
     sessions = calendar.sessions(start, end)
     schema = grid_schema(calendar.tz.key or "UTC")
     rows: list[dict[str, object]] = []
@@ -180,12 +182,7 @@ def assign_bars(
 
 
 def grid_invariants(frame: pl.DataFrame) -> list[str]:
-    """Validate a grid frame: returns a list of violation strings (empty = clean).
-
-    Checks the invariants the property tests assert: every bar inside its
-    session, tiling without gaps or overlaps, no duplicate slots, monotone
-    per-session indexing.
-    """
+    """Validate bar tiling, complete session identities, and calendar ordering."""
     errors: list[str] = []
     if frame.is_empty():
         return errors
@@ -200,25 +197,77 @@ def grid_invariants(frame: pl.DataFrame) -> list[str]:
     )
     if bad_bounds.height:
         errors.append(f"{bad_bounds.height} bars outside/empty within their session")
-    ordered = frame.sort("session_open_utc", "bar_index")
-    for (_,), session_bars in ordered.group_by(["session_open_utc"], maintain_order=True):
+
+    date_opens = (
+        frame.group_by("calendar", "session_date")
+        .agg(pl.col("session_open_utc").n_unique().alias("open_count"))
+        .filter(pl.col("open_count") > 1)
+    )
+    for calendar, session_date in date_opens.select("calendar", "session_date").iter_rows():
+        errors.append(
+            f"calendar {calendar!r} session_date {session_date!r} "
+            "has multiple session_open_utc values"
+        )
+
+    open_dates = (
+        frame.group_by("calendar", "session_open_utc")
+        .agg(pl.col("session_date").n_unique().alias("date_count"))
+        .filter(pl.col("date_count") > 1)
+    )
+    for calendar, session_open in open_dates.select("calendar", "session_open_utc").iter_rows():
+        errors.append(
+            f"calendar {calendar!r} session_open_utc {session_open!r} "
+            "has multiple session_date values"
+        )
+
+    session_keys = ["calendar", "session_date", "session_open_utc"]
+    inconsistent_closes = (
+        frame.group_by(session_keys)
+        .agg(pl.col("session_close_utc").n_unique().alias("close_count"))
+        .filter(pl.col("close_count") > 1)
+    )
+    for calendar, session_date, session_open in inconsistent_closes.select(
+        session_keys
+    ).iter_rows():
+        errors.append(
+            f"session {(calendar, session_date, session_open)!r} "
+            "has inconsistent session_close_utc values"
+        )
+
+    ordered = frame.sort([*session_keys, "bar_index"])
+    for (calendar, session_date, session_open), session_bars in ordered.group_by(
+        session_keys, maintain_order=True
+    ):
+        label = f"{calendar}:{session_date} ({session_open!r})"
         starts = session_bars["bar_open_utc"].to_list()
         ends = session_bars["bar_close_utc"].to_list()
         indices = session_bars["bar_index"].to_list()
-        opens = session_bars["session_open_utc"].to_list()
         closes = session_bars["session_close_utc"].to_list()
         if indices != list(range(len(indices))):
-            errors.append(f"non-contiguous bar_index in session {opens[0]!r}")
+            errors.append(f"non-contiguous bar_index in session {label}")
             continue
-        if starts[0] != opens[0]:
-            errors.append(f"session {opens[0]!r} first bar does not open at session open")
+        if starts[0] != session_open:
+            errors.append(f"session {label} first bar does not open at session open")
         if ends[-1] != closes[-1]:
-            errors.append(f"session {opens[0]!r} last bar does not end at session close")
+            errors.append(f"session {label} last bar does not end at session close")
         for prev_end, next_start in zip(ends[:-1], starts[1:], strict=True):
             if prev_end != next_start:
-                errors.append(f"gap/overlap inside session {opens[0]!r}")
+                errors.append(f"gap/overlap inside session {label}")
                 break
-    dupes = frame.group_by("session_open_utc", "bar_index").len().filter(pl.col("len") > 1)
+
+    dupes = frame.group_by([*session_keys, "bar_index"]).len().filter(pl.col("len") > 1)
     if dupes.height:
         errors.append(f"{dupes.height} duplicate (session, bar_index) slots")
+
+    for (calendar,), calendar_bars in frame.sort("calendar", "bar_open_utc").group_by(
+        "calendar", maintain_order=True
+    ):
+        starts = calendar_bars["bar_open_utc"].to_list()
+        ends = calendar_bars["bar_close_utc"].to_list()
+        previous_end = ends[0]
+        for start, end in zip(starts[1:], ends[1:], strict=True):
+            if start < previous_end:
+                errors.append(f"overlapping bars across sessions in calendar {calendar!r}")
+                break
+            previous_end = end
     return errors
