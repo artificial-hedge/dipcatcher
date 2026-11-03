@@ -624,10 +624,10 @@ def _probe_live_attach(workdir: Path) -> dict[str, bool]:
     try:
         rid = _submit_bg(ctx.client)
         t, box = _replay_async(ctx.client, f"/v1/responses/{rid}?stream=true&timeout_s=20")
-        time.sleep(0.3)  # the follow loop emits the queued prelude + keepalives
+        time.sleep(1.0)  # the follow loop emits the queued prelude + keepalives
         sleeper_rel.set()  # free the worker → queued → in_progress (inside the gate)
         assert backend.entered.wait(timeout=10.0), "worker never entered the backend"
-        time.sleep(0.3)  # a pass emits in_progress then keepalives again
+        time.sleep(1.0)  # a pass emits in_progress then keepalives again
         backend.gate.set()  # complete lands → terminal frame → stream ends
         t.join(timeout=20.0)
         g = box[0]

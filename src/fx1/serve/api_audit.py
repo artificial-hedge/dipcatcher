@@ -8120,10 +8120,8 @@ def _probe_backend_probes(  # NOSONAR
     out["batch_cancel_terminal_409"] = (
         fb.post(f"/v1/batches/{bterm['id']}/cancel").status_code == 409
     )
-    # cooperative cancel: a gated backend holds the worker mid-batch;
-    # cancel lands 'cancelling', the batch finishes 'cancelled' with the
-    # lines completed so far written to the output file
     gate_ev = _threading.Event()
+    entered = _threading.Event()
 
     class _GateBackend(_OiBackend):
         def complete(
@@ -8132,6 +8130,7 @@ def _probe_backend_probes(  # NOSONAR
             *,
             sampling: SamplingParams | None = None,
         ) -> str:
+            entered.set()
             gate_ev.wait(10)
             return super().complete(messages, sampling=sampling)
 
@@ -8141,6 +8140,7 @@ def _probe_backend_probes(  # NOSONAR
         "/v1/batches",
         json={"input_file_id": gid, "endpoint": "/v1/chat/completions"},
     )
+    assert entered.wait(10)
     gcc = gapp.post(f"/v1/batches/{gcb.json()['id']}/cancel")
     gate_ev.set()
     gterm = _wait_batch(gapp, gcb.json()["id"])
