@@ -158,7 +158,7 @@ def test_doctor_user_errors_have_no_traceback(tmp_path: Path) -> None:
     invalid.write_text(":\n  - :\n", encoding="utf-8")
     invalid_result = _RUNNER.invoke(dipcatcher_app, ["doctor", "--config", str(invalid)])
     _assert_usage(invalid_result, "doctor yaml")
-    assert "invalid YAML:" in (invalid_result.stderr or "")
+    assert "is not valid YAML" in (invalid_result.stderr or "")
 
     empty = tmp_path / "unknown.yaml"
     empty.write_text("not_a_real_key: 1\n", encoding="utf-8")
