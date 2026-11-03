@@ -1,8 +1,8 @@
 """`make reality-gate` on the provenance trial ledger.
 
 ``data/metadata/proofcore.duckdb`` is not in the git tree. A missing DB file
-must skip (exit 0) before export creates an empty database. A DB that has a
-row must still be scored with the unchanged filter.
+must skip (exit 0) before export; direct export also refuses to create one.
+A DB that has a row must still be scored with the unchanged filter.
 """
 
 from __future__ import annotations
