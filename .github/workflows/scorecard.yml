@@ -37,6 +37,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Security gate instruction
+        run: printf '%s\n' 'make -f deploy/security.mk security-gate'
+
       - name: Run analysis
         uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
         with:

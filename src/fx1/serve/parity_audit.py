@@ -37,10 +37,9 @@ product defect, not a transport detail.
   SDK's exception classes (KeyError/ValueError/BackendNotConfiguredError/
   NotImplementedError/Fx1HonestyError), auth faults are
   ``HarnessAuthError``, transport faults ``HarnessTransportError``.
-- *In-flight cap* — ``max_inflight`` (env ``FX1_API_MAX_INFLIGHT``, default
-  16) bounds concurrent heavy requests: saturation is an honest 503 with
-  ``Retry-After``, cheap routes stay responsive, the slot releases
-  cleanly, ``max_inflight<1`` fails app construction.
+- *In-flight cap* — ``max_inflight`` (``FX1_API_MAX_INFLIGHT``, default 16)
+  bounds concurrent heavy requests with an honest 503 and ``Retry-After``.
+  Cheap routes stay responsive, the slot releases, and ``max_inflight<1`` fails.
 
 Sealed ``parity_audit.v1`` (fx1-side receipt).
 """
@@ -57,6 +56,7 @@ import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -2972,7 +2972,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     out["client_submit_callback_url"] = (
         jid_cb == "cb1"
         and cb_seen[0].get("callback_url") == "https://hooks.test/x"
-        and cb_seen[0].get("callback_secret") == "whsec-t"
+        and secrets_equal(cb_seen[0].get("callback_secret"), "whsec-t")
     )
 
     # --- job SSE stream: client parses event frames --------------------------

@@ -17,9 +17,9 @@ from pathlib import Path
 from typing import Any
 
 import typer
-import yaml
 
 from quant_fund.cli._app import app
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.live.arming import ENV_ROOT, ArmingError
 from quant_fund.live.desk import LiveDesk, LiveDeskError
 
@@ -139,7 +139,7 @@ def _stamp(ts_ns: int | None) -> int:
 def _gateway_file(path: Path | None) -> bool:
     if path is None or not path.exists():
         return False
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    raw = load_yaml_document(path.read_text(encoding="utf-8"))
     return isinstance(raw, dict) and "starting_cash" in raw and "pretrade_config" in raw
 
 

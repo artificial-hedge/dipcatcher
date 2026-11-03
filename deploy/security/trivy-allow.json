@@ -1,0 +1,50 @@
+{
+  "schema": "dipcatcher.trivy_allow/1",
+  "entries": [
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2025-69720",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-119373",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-16742",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-54369",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-76642",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-78408",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-78409",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-78410",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    },
+    {
+      "expiry": "2027-02-02",
+      "id": "CVE-2026-9538",
+      "reason": "No fixed package version on the runtime images as of 2026-11-02."
+    }
+  ]
+}

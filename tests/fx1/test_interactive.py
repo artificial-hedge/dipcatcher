@@ -16,6 +16,7 @@ from typer.testing import CliRunner
 
 from fx1.interactive import actions, orb, profiles, shell, wizard
 from fx1.interactive.app import app as fxi_app
+from fx1.secret_guard import secrets_equal
 from fx1.serve.backends import MOONSHOT_API_URL, HostedK3Backend
 
 RUNNER = CliRunner()
@@ -117,6 +118,7 @@ def test_legacy_key_schema_read_compat(isolated_store: Path) -> None:
         json.dumps({"profiles": {"fx1": {"key": SECRET_FX1, "env_var": "MOONSHOT_API_KEY"}}}),
         encoding="utf-8",
     )
+    os.chmod(store, 0o600)
     assert profiles.resolve_endpoint("fx1") == (SECRET_FX1, MOONSHOT_API_URL)
     rows = {row["model"]: row for row in profiles.list_models()}
     assert rows["fx1"]["status"] == "set"
@@ -415,7 +417,7 @@ def test_chat_one_shot_uses_stored_endpoint() -> None:
     )
     assert code == 0
     assert outputs == ["fake-reply"]
-    assert made[0].api_key == SECRET_LITE
+    assert secrets_equal(made[0].api_key, SECRET_LITE)
     assert made[0].model == "fx1-lite"  # fx1/fx1-lite are model names
     assert made[0].api_url == ALT_BASE
     assert made[0].calls == [[{"role": "user", "content": "hello"}]]

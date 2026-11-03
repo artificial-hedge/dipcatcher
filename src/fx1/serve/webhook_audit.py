@@ -68,6 +68,7 @@ from fx1.serve.webhooks import (
     deliver_signed,
     sign_webhook,
     verify_webhook,
+    webhook_signature,
 )
 
 if TYPE_CHECKING:
@@ -431,7 +432,7 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
     out["sig_timestamp_present_fresh"] = (
         isinstance(ts, str) and ts.isdigit() and abs(time.time() - float(ts)) < 60
     )
-    recomputed = sign_webhook(_SECRET, ts or "", hit.body)
+    recomputed = webhook_signature(_SECRET, ts or "", hit.body)
     out["sig_recomputed_matches"] = bool(sig) and hmac_mod.compare_digest(recomputed, sig or "")
     out["sig_verifies_at_sink"] = verify_webhook(_SECRET, ts, sig, hit.body)
     out["sig_wrong_secret_fails"] = not verify_webhook("whsec-other", ts, sig, hit.body)
@@ -445,9 +446,11 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
         sig,
         hit.body,
         now=time.time() + 600.0,  # 10 min past delivery > 300s tolerance
-    )
+    ) and not verify_webhook(_SECRET, ts, sig, hit.body)
+    alt_ts = str(int(time.time()) - 5)
+    alt_sig = sign_webhook(_SECRET, alt_ts, hit.body)
     out["sig_freshness_explicit_disable"] = verify_webhook(
-        _SECRET, ts, sig, hit.body, tolerance_s=-1.0, now=time.time() + 10**9
+        _SECRET, alt_ts, alt_sig, hit.body, tolerance_s=-1.0, now=time.time() + 10**9
     )
     out["sig_malformed_inputs_fail"] = (
         not verify_webhook(_SECRET, ts, "nonsense", hit.body)

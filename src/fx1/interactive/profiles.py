@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import urlparse
 
+from fx1.secret_guard import protect_keystore, refuse_world_readable
 from fx1.serve.backends import MOONSHOT_API_URL, hosted_api_url_problem
 
 MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
@@ -90,6 +91,7 @@ def _load(path: Path | None = None) -> dict[str, dict[str, str]]:
     path = path or store_path()
     if not path.is_file():
         return {}
+    refuse_world_readable(path)
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError, UnicodeError) as exc:
@@ -106,7 +108,9 @@ def _load(path: Path | None = None) -> dict[str, dict[str, str]]:
 
 def _save(payload: dict[str, dict[str, str]], path: Path | None = None) -> Path:
     path = path or store_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name == "posix":
+        os.chmod(path.parent, 0o700)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".credentials-", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -117,6 +121,7 @@ def _save(payload: dict[str, dict[str, str]], path: Path | None = None) -> Path:
         if os.path.exists(tmp):
             os.unlink(tmp)
     os.chmod(path, _MODE_0600)
+    protect_keystore(path)
     return path
 
 

@@ -37,7 +37,8 @@ def log_event(event: str, **fields: Any) -> None:
 
     Secret field names are replaced with ``[redacted]``. Other string
     values are scrubbed for URL userinfo, DSNs, secret query parameters,
-    bearer tokens, and known key prefixes.
+    bearer tokens, and known key prefixes. The serialized line is scrubbed
+    again so a secret that survives a field cannot reach stderr.
     """
     if not observe_enabled():
         return
@@ -53,4 +54,5 @@ def log_event(event: str, **fields: Any) -> None:
     if _sink is not None:
         _sink.append(record)
         return
-    sys.stderr.write(json.dumps(record, sort_keys=True, default=str) + "\n")
+    line = json.dumps(record, sort_keys=True, default=str)
+    sys.stderr.write(redact_text(line) + "\n")

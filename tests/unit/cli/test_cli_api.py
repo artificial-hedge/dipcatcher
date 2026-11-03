@@ -417,16 +417,20 @@ def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
 
     monkeypatch.setattr(controls.hmac, "compare_digest", recording_compare)
     monkeypatch.setenv("QUANT_API_KEY", "secret-test-key")
+    monkeypatch.delenv("QUANT_API_READ_KEY", raising=False)
     client = TestClient(app)
     short = client.get("/doctor", headers={"X-API-Key": "x"})
     longer = client.get("/doctor", headers={"X-API-Key": "wrong-key"})
     assert short.status_code == 401
     assert longer.status_code == 401
-    assert len(calls) == 2
+    assert len(calls) == 4
     expected = hashlib.sha256(b"secret-test-key").digest()
+    stand_in = hashlib.sha256(b"absent-api-key").digest()
     assert calls[0] == (hashlib.sha256(b"x").digest(), expected)
-    assert calls[1] == (hashlib.sha256(b"wrong-key").digest(), expected)
-    assert len(calls[0][0]) == len(calls[0][1]) == len(calls[1][0]) == 32
+    assert calls[1] == (hashlib.sha256(b"x").digest(), stand_in)
+    assert calls[2] == (hashlib.sha256(b"wrong-key").digest(), expected)
+    assert calls[3] == (hashlib.sha256(b"wrong-key").digest(), stand_in)
+    assert len(calls[0][0]) == len(calls[0][1]) == len(calls[2][0]) == 32
 
 
 def test_drift_endpoint_fails_closed_on_invalid_research_artifact(

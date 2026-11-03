@@ -34,6 +34,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Security gate instruction
+        run: printf '%s\n' 'make -f deploy/security.mk security-gate'
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:

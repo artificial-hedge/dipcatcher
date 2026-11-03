@@ -358,6 +358,10 @@ class AlpacaBroker:
         self._timeout = timeout_s
         self._marks: dict[str, float] = {}
 
+    def __repr__(self) -> str:
+        state = "set" if self._credentials else "unset"
+        return f"AlpacaBroker(venue={self.venue!r}, credential={state})"
+
     @property
     def credentials_present(self) -> bool:
         return self._credentials is not None

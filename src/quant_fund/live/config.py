@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.live.errors import LiveGateError
 from quant_fund.pretrade.config import PretradeConfig, SessionConfig, load_pretrade_config
 
@@ -43,8 +43,8 @@ def load_live_config(path: str | Path) -> LiveConfig:
     except OSError:
         raise LiveGateError("live config is unreadable") from None
     try:
-        raw = yaml.safe_load(text)
-    except yaml.YAMLError:
+        raw = load_yaml_document(text)
+    except ValueError:
         raise LiveGateError("live config is invalid") from None
     if not isinstance(raw, dict):
         raise LiveGateError("live config must be a YAML mapping")
@@ -84,7 +84,7 @@ def load_gateway_pretrade(
         loaded, _, _ = load_pretrade_config(path, hmac_key=hmac_key)
     except LiveGateError:
         raise
-    except (OSError, ValueError, yaml.YAMLError):
+    except (OSError, ValueError):
         raise LiveGateError("pretrade config is invalid") from None
     if config.calendar == "continuous":
         loaded = loaded.model_copy(

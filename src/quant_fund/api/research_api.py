@@ -21,14 +21,19 @@ Evidence roots (all read-only, resolved at app construction):
 ``<data_root>`` defaults to ``$RESEARCH_API_DATA_ROOT``, then
 ``$QUANT_DATA_ROOT``, then ``<repo>/data``.
 
-Secure default: ``/health`` is the only unauthenticated route. When
-``RESEARCH_API_KEY`` is set every other route requires ``X-API-Key`` or
-``Authorization: Bearer``; when it is unset only loopback clients are served.
-An app built with ``ResearchApiSettings.from_env`` reads that variable on
-each request. An explicit ``api_key`` is a test override and is not taken
-from the environment. The service holds no credentials and exposes no
-trading surface, but it must still never be bound to a non-loopback
-interface without ``RESEARCH_API_KEY``.
+Secure default: ``/health`` and ``/ready`` are the only unauthenticated
+routes. ``/health`` is liveness. ``/ready`` is readiness: it is 200 only when
+the evidence roots are directories and the process is accepting work, and
+503 otherwise. ``RESEARCH_API_KEY`` is the admin key and
+``RESEARCH_API_READ_KEY`` is the read key. When either is set, every other
+route requires ``X-API-Key`` or ``Authorization: Bearer``. The admin key
+authorizes every method. The read key authorizes GET, HEAD, and OPTIONS.
+When both are unset only loopback clients are served. An app built with
+``ResearchApiSettings.from_env`` reads the admin key on each request. An
+explicit ``api_key`` is a test override and is not taken from the
+environment. The read key is always the environment variable. The service
+holds no credentials and exposes no trading surface, but it must still
+never be bound to a non-loopback interface without ``RESEARCH_API_KEY``.
 """
 
 from __future__ import annotations
@@ -53,20 +58,20 @@ from quant_fund.api.http_controls import (
     apply_security_headers,
     attach_body_limit,
     buffer_capped_body,
+    credential_refusal,
     enforce_closed_cors,
     install_plain_errors,
     ip_rate_response,
     key_rate_response,
-    keys_match,
     nonempty_env,
     reject_declared_body,
+    reject_deep_json,
 )
 from quant_fund.api.lifecycle import acceptance_block, service_lifespan
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-_PUBLIC_PATHS = frozenset({"/health"})
-_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
+_PUBLIC_PATHS = frozenset({"/health", "/ready"})
 _RUN_ID_RE = re.compile(r"^[0-9a-f]{64}$")
 _RECEIPT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 _ARTIFACT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_./-]{0,255}$")
@@ -386,7 +391,7 @@ class _JsonDocCache:
         error: str | None
         try:
             parsed = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as exc:
             payload, error = None, f"invalid_json:{type(exc).__name__}"
         else:
             if isinstance(parsed, dict):
@@ -414,27 +419,26 @@ def _int_or_none(value: object) -> int | None:
 def research_ready(cfg: ResearchApiSettings) -> JSONResponse:
     """Directory presence, plus the process drain and kill-switch file."""
     blocked = acceptance_block()
+    checks = _evidence_checks(cfg)
     if blocked is not None:
         return JSONResponse(
             status_code=503,
             content={
                 "status": "not_ready",
+                "service": "dipcatcher-research-api",
+                "claim": "research_only",
                 "checks": {"accepting_work": False},
                 "report": {"accepting_work": blocked},
             },
         )
-    checks = {
-        "data_root": cfg.data_root.is_dir(),
-        "receipts_dir": cfg.receipts_dir.is_dir(),
-        "verifier_dir": cfg.verifier_dir.is_dir(),
-        "artifacts_dir": cfg.artifacts_dir.is_dir(),
-    }
     ready = all(checks.values())
     state = "ready" if ready else "not_ready"
     return JSONResponse(
         status_code=200 if ready else 503,
         content={
             "status": state,
+            "service": "dipcatcher-research-api",
+            "claim": "research_only",
             "checks": checks,
             "report": {"accepting_work": "ok" if ready else "directories"},
         },
@@ -450,6 +454,23 @@ def research_api_key(cfg: ResearchApiSettings) -> str | None:
     return None
 
 
+def _evidence_checks(cfg: ResearchApiSettings) -> dict[str, bool]:
+    """Directory presence for the readiness probe. No branch, no evidence read."""
+    return {
+        "data_root": cfg.data_root.is_dir(),
+        "receipts_dir": cfg.receipts_dir.is_dir(),
+        "verifier_dir": cfg.verifier_dir.is_dir(),
+        "artifacts_dir": cfg.artifacts_dir.is_dir(),
+    }
+
+
+_RESEARCH_UNSET_DETAIL = (
+    "RESEARCH_API_KEY is unset; non-localhost clients are "
+    "refused. Set RESEARCH_API_KEY and send X-API-Key, or "
+    "bind to 127.0.0.1 only."
+)
+
+
 async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiSettings) -> Any:
     """Auth, body cap, and rate limit for one research-API request."""
     rejection = reject_declared_body(request, MAX_BODY_BYTES)
@@ -457,35 +478,29 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
         return rejection
     attach_body_limit(request, MAX_BODY_BYTES)
     await buffer_capped_body(request)
+    deep = reject_deep_json(request)
+    if deep is not None:
+        return deep
     path = request.url.path
     if path in _PUBLIC_PATHS:
         return await call_next(request)
     limited = ip_rate_response(request, "RESEARCH_API")
     if limited is not None:
         return limited
-    expected = research_api_key(cfg)
-    if expected:
-        from quant_fund.utils.api_auth import presented_api_key
+    refusal = credential_refusal(
+        request,
+        research_api_key(cfg),
+        nonempty_env("RESEARCH_API_READ_KEY"),
+        _RESEARCH_UNSET_DETAIL,
+    )
+    if refusal is not None:
+        return refusal
+    from quant_fund.utils.api_auth import presented_api_key
 
-        presented = presented_api_key(request.headers)
-        if not presented or not keys_match(presented, expected):
-            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
-        limited_key = key_rate_response(request, "RESEARCH_API", presented)
-        if limited_key is not None:
-            return limited_key
-        return await call_next(request)
-    host = (request.client.host if request.client else "") or ""
-    if host not in _LOOPBACK_HOSTS:
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": (
-                    "RESEARCH_API_KEY is unset; non-localhost clients are "
-                    "refused. Set RESEARCH_API_KEY and send X-API-Key, or "
-                    "bind to 127.0.0.1 only."
-                )
-            },
-        )
+    presented = presented_api_key(request.headers) or ""
+    limited_key = key_rate_response(request, "RESEARCH_API", presented)
+    if limited_key is not None:
+        return limited_key
     return await call_next(request)
 
 
@@ -507,7 +522,9 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
 
     app = FastAPI(
         title="dipcatcher research API",
-        version=__version__,
+        version="0",
+        docs_url=None,
+        redoc_url=None,
         description=(
             "Read-only access to research runs, sealed receipts, verifier "
             "acceptance history, and benchmark results. No trading, order, "
@@ -526,7 +543,7 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
 
     @app.middleware("http")
     async def research_api_auth(request: Request, call_next: Any) -> Any:
-        """Loopback-only by default; X-API-Key or Bearer when RESEARCH_API_KEY is set."""
+        """Loopback-only by default; admin or read key via X-API-Key or Bearer."""
         try:
             response = await _research_dispatch(request, call_next, cfg)
         except RequestBodyTooLarge:

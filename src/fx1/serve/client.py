@@ -74,9 +74,7 @@ Transport = Callable[
     "tuple[int, Mapping[str, str], bytes]",
 ]
 
-# Patch three-state: an omitted kwarg keeps the declared policy while
-# an explicit ``None`` sends the JSON-null that clears the bound.
-_UNSET: Any = object()
+_UNSET: Any = object()  # omitted patch keeps policy; explicit None clears it
 
 
 class HarnessTransportError(RuntimeError):
@@ -313,8 +311,7 @@ class HarnessClient:
         self._headers = {"X-API-Key": api_key} if api_key else {}
         self._timeout_s = timeout_s
         self._transport = transport or _urllib_transport
-        self._max_retries = max_retries
-        self._retry_backoff_s = retry_backoff_s
+        self._max_retries, self._retry_backoff_s = max_retries, retry_backoff_s
         self._retry_writes = retry_writes
         self._max_retry_wait_s = max_retry_wait_s
         self._sleep = sleep
@@ -323,8 +320,11 @@ class HarnessClient:
         self._clock = clock
         self._last_api_version: str | None = None
         self._last_response_headers: dict[str, str] = {}
-        self._cb_failures = 0
-        self._cb_open_until = 0.0
+        self._cb_failures, self._cb_open_until = 0, 0.0
+
+    def __repr__(self) -> str:
+        flag = "set" if self._headers.get("X-API-Key") else "unset"
+        return f"HarnessClient(credential={flag})"
 
     # ---- transport ----------------------------------------------------
 

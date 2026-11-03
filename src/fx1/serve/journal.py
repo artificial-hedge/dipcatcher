@@ -45,6 +45,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from fx1.secret_guard import guard_keystore, is_keystore_path, protect_keystore
+
 # A stuck holder must not park a request or a writer forever.
 _LOCK_WAIT_S = 30.0
 
@@ -55,6 +57,23 @@ def _require_wait(wait_s: float) -> float:
     if not math.isfinite(float(wait_s)) or float(wait_s) <= 0.0:
         raise ValueError("lock wait must be a positive finite number of seconds")
     return float(wait_s)
+
+
+def _append_durable(path: Path, line: bytes) -> None:
+    """Append one journal line. Keystores are created mode 0600."""
+    if os.name == "posix" and is_keystore_path(path):
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            os.write(fd, line)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        protect_keystore(path)
+        return
+    with path.open("ab") as fh:
+        fh.write(line)
+        fh.flush()
+        os.fsync(fh.fileno())
 
 
 def _line_bytes(seq: int, chain: str, payload: dict[str, Any]) -> bytes:
@@ -170,10 +189,7 @@ class JobJournal:
             # An interrupted write/fsync may already have changed the file.
             # Do not reuse its sequence until recovery establishes the tail.
             self._append_blocked = True
-            with self.path.open("ab") as fh:
-                fh.write(line)
-                fh.flush()
-                os.fsync(fh.fileno())
+            _append_durable(self.path, line)
             if creates_file:
                 _fsync_parent(self.path.parent)
             self._chain = hashlib.sha256(line).hexdigest()
@@ -191,6 +207,7 @@ class JobJournal:
         """
         with self._exclusive():
             self._append_blocked = True
+            guard_keystore(self.path)
             out = ReplayResult(payloads=[])
             seq = 0
             chain = "0" * 64
@@ -245,6 +262,7 @@ class JobJournal:
                 fh.flush()
                 os.fsync(fh.fileno())
             os.replace(tmp, self.path)
+            protect_keystore(self.path)
             # The path now names the new journal.  If directory fsync fails,
             # its crash durability is uncertain and the old sequence state no
             # longer describes the file, so fail closed until replay.

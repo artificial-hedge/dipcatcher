@@ -1003,6 +1003,10 @@ class HostedK3Backend(_UsageTracker):
         self._api_url = resolved_url
         self._timeout_s = timeout_s
 
+    def __repr__(self) -> str:
+        state = "set" if self._api_key else "unset"
+        return f"HostedK3Backend(credential={state})"
+
     def complete(
         self,
         messages: list[dict[str, Any]],
@@ -1269,6 +1273,10 @@ class OpenAICompatBackend(_UsageTracker):
         self._api_key = key
         self._model = mdl
         self._timeout_s = resolved_timeout
+
+    def __repr__(self) -> str:
+        state = "set" if self._api_key else "unset"
+        return f"OpenAICompatBackend(credential={state})"
 
     def complete(
         self,
@@ -1626,6 +1634,10 @@ class LocalFx1Backend(_UsageTracker):
         self._proc: subprocess.Popen[bytes] | None = None
         # Guards spawn/close so a shared backend is safe under complete_many.
         self._engine_lock = threading.Lock()
+
+    def __repr__(self) -> str:
+        state = "set" if self._api_key else "unset"
+        return f"LocalFx1Backend(credential={state})"
 
     @staticmethod
     def _shares_env_checkpoint(root: Path) -> bool:

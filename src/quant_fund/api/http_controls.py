@@ -90,14 +90,168 @@ def is_loopback_host(host: str) -> bool:
     return host in _LOOPBACK_HOSTS
 
 
-def keys_match(provided: str, expected: str) -> bool:
-    """Compare API keys by SHA-256 digest so the compare length is fixed."""
+_STAND_IN_KEY = "absent-api-key"
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+_READ_DENIED_DETAIL = "read key cannot modify"
+_FAILED_PRESENTED = b"presented-unencodable"
+_FAILED_EXPECTED = b"expected-unencodable"
+_JSON_MAX_DEPTH = 32
+
+
+def _sha256_key(value: str, failed: bytes) -> bytes:
     try:
-        left = hashlib.sha256(provided.encode("utf-8")).digest()
-        right = hashlib.sha256(expected.encode("utf-8")).digest()
+        return hashlib.sha256(value.encode("utf-8")).digest()
     except UnicodeEncodeError:
-        return False
+        return hashlib.sha256(failed).digest()
+
+
+def keys_match(provided: str, expected: str) -> bool:
+    """Compare API keys by SHA-256 digest so the compare length is fixed.
+
+    An unencodable string still reaches ``compare_digest``. It does not match
+    a key that encoded, and it does not return before the compare.
+    """
+    left = _sha256_key(provided, _FAILED_PRESENTED)
+    right = _sha256_key(expected, _FAILED_EXPECTED)
     return hmac.compare_digest(left, right)
+
+
+def auth_decision(provided: str | None, expected: str | None) -> str:
+    """Return ``ok``, ``unauthorized``, or ``forbidden`` after one digest compare.
+
+    A missing header and an unset server key still run ``keys_match``, so a
+    401 and a 403 do the same digest work.
+    """
+    configured = bool(expected)
+    presented = provided if provided else _STAND_IN_KEY
+    reference = expected if expected else _STAND_IN_KEY
+    matched = keys_match(presented, reference)
+    if configured and bool(provided) and matched:
+        return "ok"
+    if configured:
+        return "unauthorized"
+    return "forbidden"
+
+
+def _presented(value: str | None) -> str:
+    if value:
+        return value
+    return _STAND_IN_KEY
+
+
+def _configured_match(provided: str | None, expected: str | None) -> bool:
+    """Digest both sides, then accept only a configured key that was sent."""
+    matched = keys_match(_presented(provided), _presented(expected))
+    if not expected:
+        return False
+    if not provided:
+        return False
+    return matched
+
+
+def scoped_auth_decision(
+    method: str,
+    provided: str | None,
+    admin_key: str | None,
+    read_key: str | None,
+) -> str:
+    """Return ``ok``, ``unauthorized``, ``forbidden``, or ``read_denied``.
+
+    The admin key authorizes every method. The read key authorizes safe
+    methods only. Both digests run before the decision, including when a key
+    is unset and when the admin key matches.
+    """
+    admin_ok = _configured_match(provided, admin_key)
+    read_ok = _configured_match(provided, read_key)
+    if admin_ok:
+        return "ok"
+    if read_ok and method.upper() in _SAFE_METHODS:
+        return "ok"
+    if read_ok:
+        return "read_denied"
+    if admin_key or read_key:
+        return "unauthorized"
+    return "forbidden"
+
+
+def credential_refusal(
+    request: Request,
+    admin_key: str | None,
+    read_key: str | None,
+    unset_detail: str,
+) -> JSONResponse | None:
+    """401, 403, or None when the request may proceed."""
+    from quant_fund.utils.api_auth import presented_api_key
+
+    decision = scoped_auth_decision(
+        request.method,
+        presented_api_key(request.headers),
+        admin_key,
+        read_key,
+    )
+    if decision == "ok":
+        return None
+    if decision == "read_denied":
+        return JSONResponse(status_code=403, content={"detail": _READ_DENIED_DETAIL})
+    if decision != "forbidden":
+        return auth_rejection("unauthorized", unset_detail=unset_detail)
+    if is_loopback_host(client_host(request)):
+        return None
+    return auth_rejection("forbidden", unset_detail=unset_detail)
+
+
+def auth_rejection(decision: str, *, unset_detail: str) -> JSONResponse:
+    """401 when a key is configured. 403 when the server key is unset."""
+    if decision == "forbidden":
+        return JSONResponse(status_code=403, content={"detail": unset_detail})
+    return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
+
+
+def serve_banner_kwargs() -> dict[str, bool]:
+    """Uvicorn flags that omit the server and date banners."""
+    return {"server_header": False, "date_header": False}
+
+
+def _json_string_step(byte: int, escaped: bool) -> tuple[bool, bool]:
+    """Advance one byte inside a JSON string. Returns (in_string, escaped)."""
+    if escaped:
+        return True, False
+    if byte == 0x5C:
+        return True, True
+    if byte == 0x22:
+        return False, False
+    return True, False
+
+
+def json_nesting_too_deep(payload: bytes, max_depth: int = _JSON_MAX_DEPTH) -> bool:
+    """True when raw JSON nesting exceeds ``max_depth``.
+
+    The scan is iterative. A document that would blow the parser's recursion
+    limit is rejected before a route reads it.
+    """
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in payload:
+        if in_string:
+            in_string, escaped = _json_string_step(byte, escaped)
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > max_depth:
+                return True
+        elif byte in (0x7D, 0x5D) and depth:
+            depth -= 1
+    return False
+
+
+def reject_deep_json(request: Request) -> JSONResponse | None:
+    payload = getattr(request.state, "bounded_body", b"")
+    if isinstance(payload, bytes) and payload and json_nesting_too_deep(payload):
+        return JSONResponse(status_code=400, content={"detail": "JSON document is too deep"})
+    return None
 
 
 def nonempty_env(name: str) -> str | None:
@@ -231,19 +385,24 @@ async def buffer_capped_body(request: Request) -> None:
     """
     original = request._receive
     if original is empty_receive:
+        request.state.bounded_body = b""
         return
     chunks: list[bytes] = []
     while True:
         message = await original()
         if message.get("type") != "http.request":
-            _replace_receive(request, b"".join(chunks), original, message)
+            payload = b"".join(chunks)
+            request.state.bounded_body = payload
+            _replace_receive(request, payload, original, message)
             return
         body = message.get("body", b"") or b""
         if body:
             chunks.append(body)
         if not message.get("more_body", False):
             break
-    _replace_receive(request, b"".join(chunks), original, None)
+    payload = b"".join(chunks)
+    request.state.bounded_body = payload
+    _replace_receive(request, payload, original, None)
 
 
 def _replace_receive(
@@ -275,6 +434,11 @@ def apply_security_headers(response: Any, scheme: str) -> None:
     )
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Cache-Control"] = "no-store"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    for banner in ("server", "x-powered-by"):
+        if banner in response.headers:
+            del response.headers[banner]
     if scheme == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 

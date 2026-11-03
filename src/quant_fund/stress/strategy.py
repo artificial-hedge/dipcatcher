@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
-import yaml
 from numpy.typing import NDArray
 
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.utils.path_safety import PathSafetyError, contained_path
 
 _MAPPINGS = frozenset({"return", "duration"})
@@ -111,7 +111,7 @@ def strategy_from_mapping(
 
 def load_strategy(path: Path) -> ResearchStrategy:
     """Load a YAML strategy file."""
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    raw = load_yaml_document(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError(f"strategy file must be a mapping: {path}")
     return strategy_from_mapping(cast(dict[str, Any], raw), base_dir=path.parent)
