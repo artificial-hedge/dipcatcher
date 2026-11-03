@@ -112,6 +112,20 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+
+try:
+    from numba import njit
+except ImportError:  # pragma: no cover - numba is a required dependency
+
+    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
+        def _deco(fn: Any) -> Any:
+            return fn
+
+        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+            return _args[0]
+        return _deco
+
+
 from numpy.typing import NDArray
 
 from quant_fund.models.path_signatures import (
@@ -376,6 +390,53 @@ def dyadic_refine(path: Array | Sequence[Sequence[float]], level: int) -> Array:
     return np.asarray(refined, dtype=float)
 
 
+@njit(cache=True)
+def _goursat_pde2(a: np.ndarray) -> Any:
+    """Second-order Goursat cell rule, one anti-diagonal at a time."""
+    m_a, m_b = a.shape
+    kernel = np.ones((m_a + 1, m_b + 1))
+    for s in range(m_a + m_b - 1):
+        i_lo = max(0, s - m_b + 1)
+        i_hi = min(m_a - 1, s)
+        for i in range(i_lo, i_hi + 1):
+            j = s - i
+            aa = a[i, j]
+            below = kernel[i + 1, j]
+            left = kernel[i, j + 1]
+            corner = kernel[i, j]
+            upd = (below + left) * (1.0 + 0.5 * aa + aa * aa / 12.0) - corner * (
+                1.0 - aa * aa / 12.0
+            )
+            if not np.isfinite(upd):
+                return np.nan
+            kernel[i + 1, j + 1] = upd
+    return kernel[m_a, m_b]
+
+
+@njit(cache=True)
+def _goursat_pde1(a: np.ndarray, eps: float) -> tuple[Any, int]:
+    """First-order cell rule. Flag 1 is a vanishing denominator, 2 a non-finite cell."""
+    m_a, m_b = a.shape
+    kernel = np.ones((m_a + 1, m_b + 1))
+    for s in range(m_a + m_b - 1):
+        i_lo = max(0, s - m_b + 1)
+        i_hi = min(m_a - 1, s)
+        for i in range(i_lo, i_hi + 1):
+            j = s - i
+            aa = a[i, j]
+            denom = 1.0 - 0.5 * aa
+            if abs(denom) < eps:
+                return np.nan, 1
+            below = kernel[i + 1, j]
+            left = kernel[i, j + 1]
+            corner = kernel[i, j]
+            upd = (below + left - corner * (1.0 - 0.5 * aa)) / denom
+            if not np.isfinite(upd):
+                return np.nan, 2
+            kernel[i + 1, j + 1] = upd
+    return kernel[m_a, m_b], 0
+
+
 def _goursat_solve(a_increments: Array, scheme: str) -> float:
     """Solve the Goursat PDE on the grid defined by two increment sequences.
 
@@ -395,36 +456,21 @@ def _goursat_solve(a_increments: Array, scheme: str) -> float:
     A non-finite cell value (e.g. the pde1 denominator crossing zero on
     large increments) raises ArithmeticError — fail-closed.
     """
-    m_a, m_b = a_increments.shape
-    kernel = np.ones((m_a + 1, m_b + 1), dtype=float)
-    for s in range(m_a + m_b - 1):
-        i_lo = max(0, s - m_b + 1)
-        i_hi = min(m_a - 1, s)
-        ii = np.arange(i_lo, i_hi + 1)
-        jj = s - ii
-        a = a_increments[ii, jj]
-        below = kernel[ii + 1, jj]
-        left = kernel[ii, jj + 1]
-        corner = kernel[ii, jj]
-        if scheme == "pde2":
-            upd = (below + left) * (1.0 + 0.5 * a + a * a / 12.0) - corner * (1.0 - a * a / 12.0)
-        else:
-            denom = 1.0 - 0.5 * a
-            if float(np.min(np.abs(denom))) < _EPS_DENOM:
-                raise ArithmeticError(
-                    "pde1 cell rule hit a vanishing denominator (1 − a/2 ≈ 0); "
-                    "refine dyadically or use scheme='pde2'"
-                )
-            upd = (below + left - corner * (1.0 - 0.5 * a)) / denom
-        if not bool(np.all(np.isfinite(upd))):
-            raise ArithmeticError(
-                f"{scheme} cell update produced non-finite values on diagonal {s}"
-            )
-        kernel[ii + 1, jj + 1] = upd
-    value = float(kernel[m_a, m_b])
-    if not math.isfinite(value):
-        raise ArithmeticError("Goursat solve returned a non-finite kernel value")
-    return value
+    grid = np.ascontiguousarray(a_increments, dtype=np.float64)
+    if scheme == "pde2":
+        value = float(_goursat_pde2(grid))
+        if not math.isfinite(value):
+            raise ArithmeticError("pde2 cell update produced non-finite values")
+        return value
+    value, flag = _goursat_pde1(grid, _EPS_DENOM)
+    if flag == 1:
+        raise ArithmeticError(
+            "pde1 cell rule hit a vanishing denominator (1 − a/2 ≈ 0); "
+            "refine dyadically or use scheme='pde2'"
+        )
+    if flag != 0 or not math.isfinite(float(value)):
+        raise ArithmeticError("pde1 cell update produced non-finite values")
+    return float(value)
 
 
 def signature_kernel_pde(

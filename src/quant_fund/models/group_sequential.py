@@ -50,11 +50,16 @@ Composition: numpy + scipy.
 
 from __future__ import annotations
 
+from math import pi, sqrt
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy import stats as _stats
+from scipy.signal import fftconvolve
 
 FloatArray = NDArray[np.float64]
+
+_INV_SQRT_2PI = 1.0 / sqrt(2.0 * pi)
 
 
 def alpha_use(t: FloatArray, alpha: float, *, kind: str = "obrien_fleming") -> FloatArray:
@@ -98,9 +103,26 @@ def _propagate(
     lo_new = min(float(grid[0]) * mu_scale - 10.0 * sd, -10.0)
     n_new = int(np.ceil((hi_new - lo_new) / h)) + 1
     grid_new = lo_new + h * np.arange(n_new)
-    kern = _stats.norm.pdf((grid_new[:, None] - grid[None, :] * mu_scale) / sd) / sd
-    dens_new = (kern * dens[None, :] * h).sum(axis=1)
-    return np.asarray(grid_new), np.asarray(dens_new)
+    # Gaussian transition on the scaled lattice, then linear interpolation
+    # onto ``grid_new``. Same integral as norm.pdf; the lattice spacing is
+    # much finer than the transition sd, so the interpolation error is
+    # negligible next to the boundary tolerance.
+    du = h * mu_scale
+    radius = int(np.ceil(12.0 * sd / du)) if du > 0 else 10**9
+    if radius <= 2_000_000:
+        lags = np.arange(-radius, radius + 1, dtype=np.float64) * du
+        kernel = np.exp(-0.5 * (lags / sd) ** 2) * (_INV_SQRT_2PI / sd)
+        conv = fftconvolve(dens * h, kernel, mode="same")
+        dens_new = np.interp(grid_new, grid * mu_scale, conv, left=0.0, right=0.0)
+        return np.asarray(grid_new), np.asarray(dens_new, dtype=np.float64)
+    scaled = grid * mu_scale
+    weight = dens * h * (_INV_SQRT_2PI / sd)
+    dens_new = np.zeros(n_new, dtype=np.float64)
+    for start in range(0, scaled.shape[0], 256):
+        sl = slice(start, start + 256)
+        z = (grid_new[:, None] - scaled[sl][None, :]) / sd
+        dens_new += np.exp(-0.5 * z * z) @ weight[sl]
+    return np.asarray(grid_new), dens_new
 
 
 def gs_boundaries(

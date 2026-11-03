@@ -112,6 +112,34 @@ def mmd_u(x: FloatArray, y: FloatArray, sigma: float | None = None) -> float:
     return float(kxx.sum() / (m * (m - 1)) + kyy.sum() / (n * (n - 1)) - 2.0 * kxy.sum() / (m * n))
 
 
+def _mmd_scan_stats(k: FloatArray, min_seg: int) -> FloatArray:
+    """MMD_u^2 at every admissible split, from one Gram.
+
+    A 2-D prefix sum turns each contiguous block sum into four lookups,
+    so the scan is one vectorized pass instead of a Python slice per
+    candidate. The statistic matches ``_mmd_u_from_gram`` on [0, t) | [t, n).
+    """
+    n = int(k.shape[0])
+    stat = np.full(n, np.nan)
+    if n < 2 * min_seg or min_seg < 2:
+        return stat
+    prefix = np.zeros((n + 1, n + 1), dtype=float)
+    prefix[1:, 1:] = np.cumsum(np.cumsum(k, axis=0), axis=1)
+    diag = np.empty(n + 1, dtype=float)
+    diag[0] = 0.0
+    diag[1:] = np.cumsum(np.diag(k))
+    ts = np.arange(min_seg, n - min_seg + 1, dtype=np.int64)
+    sxx = prefix[ts, ts] - diag[ts]
+    syy = prefix[n, n] - prefix[ts, n] - prefix[n, ts] + prefix[ts, ts] - (diag[n] - diag[ts])
+    cross = prefix[ts, n] - prefix[ts, ts]
+    left = ts.astype(float)
+    right = (n - ts).astype(float)
+    stat[ts] = (
+        sxx / (left * (left - 1.0)) + syy / (right * (right - 1.0)) - 2.0 * cross / (left * right)
+    )
+    return stat
+
+
 def mmd_scan(
     x: FloatArray, min_seg: int = 20, sigma: float | None = None
 ) -> tuple[int, FloatArray]:
@@ -121,13 +149,9 @@ def mmd_scan(
     x[:t] | x[t:]; indices outside [min_seg, n-min_seg] carry nan.
     """
     v = _check_series(x, 2 * min_seg)
-    n = v.shape[0]
     if sigma is None:
         sigma = median_bandwidth(v)
-    stat = np.full(n, np.nan)
-    k = _full_gram(v, sigma)
-    for t in range(min_seg, n - min_seg + 1):
-        stat[t] = _mmd_u_from_gram(k, 0, t, n)
+    stat = _mmd_scan_stats(_full_gram(v, sigma), min_seg)
     best = int(np.nanargmax(stat))
     return best, stat
 
@@ -165,11 +189,8 @@ def permutation_threshold(
     maxima = np.empty(n_perm)
     for b in range(n_perm):
         perm = rng.permutation(v.shape[0])
-        k = _full_gram(v[perm], sigma)
-        s = np.empty(v.shape[0])
-        for t in range(min_seg, v.shape[0] - min_seg + 1):
-            s[t] = _mmd_u_from_gram(k, 0, t, v.shape[0])
-        maxima[b] = np.nanmax(s[min_seg : v.shape[0] - min_seg + 1])
+        stat = _mmd_scan_stats(_full_gram(v[perm], sigma), min_seg)
+        maxima[b] = np.nanmax(stat)
     return float(np.quantile(maxima, 1.0 - alpha))
 
 
@@ -198,21 +219,15 @@ def binseg_detect(
         if hi - lo < 2 * min_seg:
             continue
         seg = v[lo:hi]
-        k = _full_gram(seg, sigma)
-        stat = np.full(hi - lo, np.nan)
-        for t in range(min_seg, hi - lo - min_seg + 1):
-            stat[t] = _mmd_u_from_gram(k, 0, t, hi - lo)
+        stat = _mmd_scan_stats(_full_gram(seg, sigma), min_seg)
         t_star = int(np.nanargmax(stat))
         s_star = float(stat[t_star])
         # permutation threshold on this segment
         maxima = np.empty(n_perm)
         for b in range(n_perm):
             perm = rng.permutation(hi - lo)
-            kp = _full_gram(seg[perm], sigma)
-            sb = np.empty(hi - lo)
-            for t in range(min_seg, hi - lo - min_seg + 1):
-                sb[t] = _mmd_u_from_gram(kp, 0, t, hi - lo)
-            maxima[b] = sb[min_seg : hi - lo - min_seg + 1].max()
+            sb = _mmd_scan_stats(_full_gram(seg[perm], sigma), min_seg)
+            maxima[b] = np.nanmax(sb)
         if s_star <= float(np.quantile(maxima, 1.0 - alpha)):
             continue
         cp = lo + t_star
