@@ -39,6 +39,7 @@ from quant_fund.live.gateway_arm import (
     disarm_session,
     load_hmac_key,
     read_arm,
+    write_hmac_key,
     zero_audit_head,
 )
 from quant_fund.live.ledger import LedgerFill, LiveLedger, ledger_fill_from_dict
@@ -1019,9 +1020,12 @@ def open_session(
 ) -> LiveSession:
     """Open or create the session directory for ``config``."""
     root = Path(state_dir) if state_dir is not None else Path(config.state_dir)
-    root.mkdir(parents=True, exist_ok=True)
-    key = load_hmac_key(root / "hmac.key")
+    key_path = root / "hmac.key"
+    key = load_hmac_key(key_path) if key_path.exists() else secrets.token_bytes(32)
     pretrade, digest, _signature = load_gateway_pretrade(config, config_path, hmac_key=key)
+    root.mkdir(parents=True, exist_ok=True)
+    if not key_path.exists():
+        write_hmac_key(key_path, key)
     clock = now_ns or _wall_ns
     if broker is None:
         broker = _default_broker(config, transport=transport)

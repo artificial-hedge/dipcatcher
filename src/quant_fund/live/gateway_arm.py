@@ -46,15 +46,10 @@ def _read_object(path: Path) -> dict[str, Any]:
     return raw
 
 
-def load_hmac_key(path: Path) -> bytes:
-    """Return the on-disk HMAC key, creating a 32-byte key the first time."""
-    if path.exists():
-        data = path.read_bytes()
-        if len(data) < 16:
-            raise LiveGateError("live integrity key is unusable")
-        return data
+def write_hmac_key(path: Path, data: bytes) -> None:
+    if len(data) < 16:
+        raise LiveGateError("live integrity key is unusable")
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = os.urandom(32)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     try:
         os.write(fd, data)
@@ -66,6 +61,17 @@ def load_hmac_key(path: Path) -> bytes:
     else:
         os.close(fd)
     os.chmod(path, 0o600)
+
+
+def load_hmac_key(path: Path) -> bytes:
+    """Return the on-disk HMAC key, creating a 32-byte key the first time."""
+    if path.exists():
+        data = path.read_bytes()
+        if len(data) < 16:
+            raise LiveGateError("live integrity key is unusable")
+        return data
+    data = os.urandom(32)
+    write_hmac_key(path, data)
     return data
 
 

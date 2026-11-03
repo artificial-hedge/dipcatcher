@@ -97,6 +97,7 @@ reach into the broker and cancel working orders. Use `cancel` for that, then
 broker snapshot. A drift alarm means the books differ. Idempotent re-delivery
 of a fill id does not change cash or position.
 
+Pretrade configuration is validated before new state or key files are created.
 State lives under `state_dir` (default `data/live/default`, gitignored): arm
 file, integrity key, order state, and a hash-chained audit log. Those files
 are mode `0600`. Do not commit them.
