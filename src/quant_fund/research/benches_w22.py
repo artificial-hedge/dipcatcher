@@ -71,5 +71,5 @@ def bench_signature_martingale_test() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_smt_core_bench(seed=_SMT_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

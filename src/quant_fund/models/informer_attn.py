@@ -70,11 +70,17 @@ def _full_attn(torch: Any, q: Any, k: Any, v: Any) -> Any:
     return torch.softmax(q @ k.transpose(1, 2) / np.sqrt(d), dim=-1) @ v
 
 
-def bench_informer_attn(seed: int = 97) -> dict[str, float]:
+def bench_informer_attn(
+    seed: int = 97,
+    *,
+    n: int = 3000,
+    win: int = 128,
+    steps: int = 400,
+    batch: int = 128,
+) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     torch = _torch()
     torch.manual_seed(seed)
-    win, n = 128, 3000
     xs_np, y = synth_sparse_signal(n, win, rng)
     tr = int(n * 0.8)
     xs = torch.tensor(xs_np, dtype=torch.float32)
@@ -93,7 +99,7 @@ def bench_informer_attn(seed: int = 97) -> dict[str, float]:
                 torch.nn.init.normal_(p, std=0.1)
         opt = torch.optim.Adam(mods.parameters(), lr=lr)
         for _ in range(steps):
-            idx = torch.randint(0, tr, (128,))
+            idx = torch.randint(0, tr, (batch,))
             xb = xs[idx].unsqueeze(-1)
             q, k, v = wq(xb), wk(xb), wv(xb)
             h = attn_fn(q, k, v)
@@ -114,8 +120,8 @@ def bench_informer_attn(seed: int = 97) -> dict[str, float]:
         return mae, float((measure > measure.median()).float().mean())
 
     u = win // 4
-    mae_ps, budget = run(lambda q, k, v: _probsparse_attn(torch, q, k, v, u), 400, 3e-3)
-    mae_full, _ = run(lambda q, k, v: _full_attn(torch, q, k, v), 400, 3e-3)
+    mae_ps, budget = run(lambda q, k, v: _probsparse_attn(torch, q, k, v, u), steps, 3e-3)
+    mae_full, _ = run(lambda q, k, v: _full_attn(torch, q, k, v), steps, 3e-3)
 
     xr = np.hstack([xs_np[:, -8:], np.ones((n, 1))])
     wr = np.asarray(

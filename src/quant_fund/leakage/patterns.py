@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from functools import lru_cache
 
 _TOKEN_FALLBACK: frozenset[str] = frozenset({"sharpe", "sortino", "calmar", "pnl", "nav"})
 
@@ -65,6 +66,48 @@ def _alias_pattern(alias: str) -> re.Pattern[str]:
     return re.compile(rf"(?<![a-z0-9]){re.escape(alias)}(?![a-z0-9])")
 
 
+@lru_cache(maxsize=4)
+def _compiled_aliases(
+    tokens: tuple[str, ...],
+) -> tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]:
+    """One compiled pattern set per token set. Callers pass a sorted key."""
+    return tuple(
+        (token, tuple(_alias_pattern(alias) for alias in _aliases_for(token))) for token in tokens
+    )
+
+
+def _alias_needles(tokens: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(alias for token in tokens for alias in _aliases_for(token))
+
+
+@lru_cache(maxsize=4)
+def _matcher_key(tokens: frozenset[str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    ordered = tuple(sorted(tokens))
+    # Touch the compiled cache so the first scan pays compile once.
+    _compiled_aliases(ordered)
+    return ordered, _alias_needles(ordered)
+
+
+def _prepare(text: str) -> str | None:
+    """Normalized text, or None when no forbidden alias can occur.
+
+    An alias match requires the alias as a substring of the normalized
+    text, so a miss here is a miss for every rule that uses these aliases.
+    """
+    if not text:
+        return None
+    if text.isascii():
+        # ASCII has no format characters. casefold covers the evasion of
+        # uppercase tokens without NFKC.
+        norm = text.casefold()
+    else:
+        norm = _normalize(text)
+    _ordered, needles = _matcher_key(FORBIDDEN_HEADLINE_TOKENS)
+    if any(needle in norm for needle in needles):
+        return norm
+    return None
+
+
 def _normalize(text: str) -> str:
     # NFKC, then strip Cf (format) characters: zero-width spaces/joiners are
     # an evasion channel (ADVERSARIAL §1a-F3: "sha\u200brpe").
@@ -76,6 +119,11 @@ def _aliases_for(token: str) -> tuple[str, ...]:
     return _TOKEN_ALIASES.get(token, (token,))
 
 
+def _patterns() -> tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]:
+    ordered, _needles = _matcher_key(FORBIDDEN_HEADLINE_TOKENS)
+    return _compiled_aliases(ordered)
+
+
 def find_forbidden_token_mentions(text: str) -> list[str]:
     """Forbidden tokens MENTIONED in *text* (no numeric-proximity requirement).
 
@@ -83,12 +131,14 @@ def find_forbidden_token_mentions(text: str) -> list[str]:
     arrives at runtime, spelled-out claims) where a digit literal may be
     absent by construction.
     """
-    norm = _normalize(text)
-    return sorted(
+    norm = _prepare(text)
+    if norm is None:
+        return []
+    return [
         token
-        for token in FORBIDDEN_HEADLINE_TOKENS
-        if any(_alias_pattern(alias).search(norm) for alias in _aliases_for(token))
-    )
+        for token, patterns in _patterns()
+        if any(pattern.search(norm) for pattern in patterns)
+    ]
 
 
 def find_spelled_out_headline(text: str) -> list[str]:
@@ -97,11 +147,12 @@ def find_spelled_out_headline(text: str) -> list[str]:
     Same proximity window as the digit matcher; the numeric evidence is an
     English number word (``two``, ``twelve``, ``half a million``...).
     """
-    norm = _normalize(text)
+    norm = _prepare(text)
+    if norm is None:
+        return []
     hits: set[str] = set()
-    for token in FORBIDDEN_HEADLINE_TOKENS:
-        for alias in _aliases_for(token):
-            pattern = _alias_pattern(alias)
+    for token, patterns in _patterns():
+        for pattern in patterns:
             for match in pattern.finditer(norm):
                 lo = max(0, match.start() - PROXIMITY_WINDOW)
                 hi = min(len(norm), match.end() + PROXIMITY_WINDOW)
@@ -113,30 +164,55 @@ def find_spelled_out_headline(text: str) -> list[str]:
     return sorted(hits)
 
 
-def find_forbidden_headline(text: str) -> list[str]:
-    """Return the forbidden tokens headlined in *text* (empty = clean)."""
-    norm = _normalize(text)
+def _proximity_headline_hits(
+    norm: str,
+    compiled: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...],
+) -> set[str]:
+    """Tokens whose alias sits within ``PROXIMITY_WINDOW`` of a numeric literal."""
     hits: set[str] = set()
-    for token in FORBIDDEN_HEADLINE_TOKENS:
-        for alias in _aliases_for(token):
-            pattern = _alias_pattern(alias)
+    for token, patterns in compiled:
+        for pattern in patterns:
+            matched = False
             for match in pattern.finditer(norm):
                 lo = max(0, match.start() - PROXIMITY_WINDOW)
                 hi = min(len(norm), match.end() + PROXIMITY_WINDOW)
                 if _NUMERIC_RE.search(norm, lo, hi):
                     hits.add(token)
+                    matched = True
                     break
-            if token in hits:
+            if matched:
                 break
-    # Second stage: paragraph numeric-density check — a paragraph that names a
-    # forbidden token and cites >= 2 numbers is a headline even when each
-    # individual number sits outside the proximity window.
+    return hits
+
+
+def _paragraph_headline_hits(
+    norm: str,
+    compiled: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...],
+    hits: set[str],
+) -> None:
+    """Paragraph density: a token plus at least two numerics, outside the window.
+
+    A paragraph that names a forbidden token and cites >= 2 numbers is a
+    headline even when each individual number sits outside the proximity window.
+    """
+    if len(hits) >= len(compiled):
+        return
     for paragraph in re.split(r"\n\s*\n|\n", norm):
-        paragraph_hits = {
-            token
-            for token in FORBIDDEN_HEADLINE_TOKENS
-            if any(_alias_pattern(alias).search(paragraph) for alias in _aliases_for(token))
-        }
-        if paragraph_hits and len(_NUMERIC_RE.findall(paragraph)) >= 2:
-            hits.update(paragraph_hits)
+        if len(_NUMERIC_RE.findall(paragraph)) < 2:
+            continue
+        for token, patterns in compiled:
+            if token in hits:
+                continue
+            if any(pattern.search(paragraph) for pattern in patterns):
+                hits.add(token)
+
+
+def find_forbidden_headline(text: str) -> list[str]:
+    """Return the forbidden tokens headlined in *text* (empty = clean)."""
+    norm = _prepare(text)
+    if norm is None:
+        return []
+    compiled = _patterns()
+    hits = _proximity_headline_hits(norm, compiled)
+    _paragraph_headline_hits(norm, compiled, hits)
     return sorted(hits)

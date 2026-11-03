@@ -49,7 +49,7 @@ def bench_kpss() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_KPSS_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -60,7 +60,7 @@ def bench_ers_dfgls() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_DFGLS_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -71,7 +71,7 @@ def bench_ng_perron() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_NG_PERRON_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -84,7 +84,7 @@ def bench_phillips_perron() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_PHILLIPS_PERRON_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -97,7 +97,7 @@ def bench_zivot_andrews() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_ZIVOT_ANDREWS_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -110,5 +110,5 @@ def bench_lee_strazicich() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_core(seed=_LEE_STRAZICICH_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

@@ -56,7 +56,7 @@ def bench_gee() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GEE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -70,7 +70,7 @@ def bench_lmm() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_LMM_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -84,7 +84,7 @@ def bench_interrater() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_INTERRATER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -96,7 +96,7 @@ def bench_isolation_forest() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ISOLATION_FOREST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -110,7 +110,7 @@ def bench_hegy() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HEGY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -124,6 +124,6 @@ def bench_mice() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MICE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

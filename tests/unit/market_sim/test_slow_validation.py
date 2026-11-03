@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from quant_fund.market_sim.config import EcologyConfig
 from quant_fund.market_sim.harness import mean_reversion_weight, stress_strategy
 from quant_fund.market_sim.honesty import diagnostic_keys_ok
 from quant_fund.market_sim.stylized import run_stylized_validation
@@ -21,7 +22,7 @@ _FACTS = (
 @pytest.mark.slow
 @pytest.mark.synthetic
 def test_stylized_validation_reports_every_fact() -> None:
-    report = run_stylized_validation()
+    report = run_stylized_validation(EcologyConfig())
     assert report["research_only"] is True
     assert report["live_pnl_claim"] is False
     assert report["data_source"] == "SYNTHETIC"

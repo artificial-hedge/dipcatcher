@@ -50,11 +50,46 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import integrate, stats
 from scipy.special import gamma as _gamma
+
+if TYPE_CHECKING:
+    from numba import njit
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
+
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
+
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
+
+
+@njit(cache=True)
+def _conv_prefix(w: np.ndarray, z: np.ndarray) -> np.ndarray:
+    """``np.convolve(w, z[p], mode='full')[:n]`` for every path."""
+    n_paths, n = z.shape
+    nw = w.shape[0]
+    out = np.empty((n_paths, n))
+    for p in range(n_paths):
+        for i in range(n):
+            j_hi = i + 1
+            if j_hi > nw:
+                j_hi = nw
+            s = 0.0
+            for j in range(j_hi):
+                s += w[j] * z[p, i - j]
+            out[p, i] = s
+    return out
+
 
 Array = NDArray[np.float64]
 
@@ -281,7 +316,7 @@ def rbergomi_simulate(
     z1 = rng.standard_normal((n_paths, n_steps))
     z2 = rng.standard_normal((n_paths, n_steps))
     # W^H_n = Σ_{k<=n} w_{n-k} · z1_k  (w already /sqrt(dt))
-    wh = np.stack([np.convolve(w, z1[p, :], mode="full")[:n_steps] for p in range(n_paths)])
+    wh = _conv_prefix(np.ascontiguousarray(w, dtype=np.float64), np.ascontiguousarray(z1))
     tt = np.arange(1, n_steps + 1) * dt
     v = xi0 * np.exp(eta * wh - 0.5 * eta * eta * tt ** (2.0 * h))
     v = np.concatenate([np.full((n_paths, 1), xi0), v], axis=1)

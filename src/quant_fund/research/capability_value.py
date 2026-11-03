@@ -551,6 +551,128 @@ class SyntheticTrajectory:
             raise ValueError("signal_matrix and true_edge_matrix must have the same shape")
 
 
+def _synthetic_args(
+    n_periods: int,
+    n_signals: int,
+    n_persistent_edge: int,
+    edge_strength: float,
+    noise_std: float,
+) -> None:
+    if n_persistent_edge > n_signals:
+        raise ValueError("n_persistent_edge cannot exceed n_signals")
+    if n_periods < 30:
+        raise ValueError("n_periods must be >= 30 for meaningful evaluation")
+    if edge_strength <= 0:
+        raise ValueError("edge_strength must be positive")
+    if noise_std <= 0:
+        raise ValueError("noise_std must be positive")
+
+
+def _synthetic_true_edge(
+    rng: np.random.Generator,
+    n_periods: int,
+    n_signals: int,
+    n_persistent_edge: int,
+    edge_strength: float,
+) -> Array:
+    """Persistent edge streams as AR(1); the rest stay exact zeros."""
+    true_edge = np.zeros((n_periods, n_signals), dtype=float)
+    for k in range(n_persistent_edge):
+        eps = rng.normal(0, 1.0, size=n_periods)
+        true_edge[0, k] = eps[0]
+        for t in range(1, n_periods):
+            true_edge[t, k] = edge_strength * true_edge[t - 1, k] + eps[t]
+        # Normalize to unit variance, then restore the planted scale.
+        std_k = float(np.std(true_edge[:, k], ddof=1))
+        if std_k > _SS:
+            true_edge[:, k] /= std_k
+            true_edge[:, k] *= edge_strength
+    for k in range(n_persistent_edge, n_signals):
+        true_edge[:, k] = 0.0
+    return true_edge
+
+
+def _window_ics(window: Array) -> tuple[float, float]:
+    """Mean lag-1 correlation and mean level of one trial window."""
+    if window.shape[0] >= 3:
+        # Pearson lag-1 on every column. Same statistic as
+        # scipy.stats.pearsonr(col[:-1], col[1:]), one pass.
+        col_std = np.std(window, axis=0)
+        active = col_std > _SS
+        ic = np.where(active, np.clip(np.mean(window, axis=0), -1.0, 1.0), 0.0)
+        left = window[:-1]
+        right = window[1:]
+        lag_ok = active & (np.std(left, axis=0) > _SS) & (np.std(right, axis=0) > _SS)
+        xc = left - np.mean(left, axis=0)
+        yc = right - np.mean(right, axis=0)
+        numer = np.sum(xc * yc, axis=0)
+        denom = np.sqrt(np.sum(xc * xc, axis=0) * np.sum(yc * yc, axis=0))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            corr = np.where(denom > 0.0, numer / denom, 0.0)
+        rank_ic = np.where(lag_ok & np.isfinite(corr), corr, 0.0)
+        return float(np.mean(rank_ic)), float(np.mean(ic))
+    return 0.0, 0.0
+
+
+def _synthetic_trials(signal_matrix: Array, t: int, rng: np.random.Generator) -> list[TrialRecord]:
+    """Trials up to period ``t``, on a rolling window of 60."""
+    trials: list[TrialRecord] = []
+    for past_t in range(max(0, t - 60), t):
+        past_date = datetime(2020, 1, 1, tzinfo=UTC)
+        lookback = min(past_t + 1, 60)
+        start = max(0, past_t + 1 - lookback)
+        window = signal_matrix[start : past_t + 1, :]
+        avg_rank_ic, avg_ic = _window_ics(window)
+        # Decision: some trials "accepted" based on signal strength.
+        decision = "accepted" if avg_rank_ic > 0.01 and rng.random() < 0.35 else "rejected"
+        trials.append(
+            TrialRecord(
+                submission_date=past_date.isoformat(),
+                rank_ic=avg_rank_ic,
+                ic=avg_ic,
+                decision=decision,
+                factor_id=f"F{past_t:03d}",
+            )
+        )
+    return trials
+
+
+def _synthetic_frontier(
+    signal_matrix: Array,
+    t: int,
+    n_signals: int,
+    asset_ids: list[str],
+    trials: list[TrialRecord],
+) -> Frontier:
+    """Top-3 signals at ``t``, weighted by their recent mean / std."""
+    recent = signal_matrix[max(0, t - 30) : t, :]
+    means = np.mean(recent, axis=0)
+    stds = np.std(recent, axis=0, ddof=1)
+    scores_for_frontier = np.zeros(n_signals, dtype=float)
+    for k_idx in range(n_signals):
+        if stds[k_idx] > _SS:
+            scores_for_frontier[k_idx] = means[k_idx] / stds[k_idx]
+    top_idx = np.argsort(-scores_for_frontier)[:3]
+    f_weights: dict[str, float] = {}
+    total_score = 0.0
+    for idx in top_idx:
+        score = max(float(scores_for_frontier[idx]), _SS)
+        f_weights[asset_ids[idx]] = score
+        total_score += score
+    if total_score > _SS:
+        f_weights = {k: v / total_score for k, v in f_weights.items()}
+    return Frontier(
+        weights=f_weights,
+        signal_metrics={
+            "mean_rank_ic": float(np.mean([tr.rank_ic for tr in trials])),
+            "accept_rate": float(
+                np.mean([tr.decision == "accepted" for tr in trials]) if trials else 0.0
+            ),
+        },
+        regime_context={"t": t},
+    )
+
+
 def make_synthetic_trajectory(
     *,
     n_periods: int = 120,
@@ -589,124 +711,24 @@ def make_synthetic_trajectory(
     SyntheticTrajectory
         Seeded trajectory with signal_matrix, true_edge_matrix, and state snapshots.
     """
-    if n_persistent_edge > n_signals:
-        raise ValueError("n_persistent_edge cannot exceed n_signals")
-    if n_periods < 30:
-        raise ValueError("n_periods must be >= 30 for meaningful evaluation")
-    if edge_strength <= 0:
-        raise ValueError("edge_strength must be positive")
-    if noise_std <= 0:
-        raise ValueError("noise_std must be positive")
-
+    _synthetic_args(n_periods, n_signals, n_persistent_edge, edge_strength, noise_std)
     rng = np.random.default_rng(seed)
-
-    # Generate persistent edge streams as AR(1) processes
-    true_edge = np.zeros((n_periods, n_signals), dtype=float)
-    for k in range(n_persistent_edge):
-        eps = rng.normal(0, 1.0, size=n_periods)
-        true_edge[0, k] = eps[0]
-        for t in range(1, n_periods):
-            true_edge[t, k] = edge_strength * true_edge[t - 1, k] + eps[t]
-        # Normalize to unit variance
-        std_k = float(np.std(true_edge[:, k], ddof=1))
-        if std_k > _SS:
-            true_edge[:, k] /= std_k
-            true_edge[:, k] *= edge_strength
-
-    # Generate pure noise streams
-    for k in range(n_persistent_edge, n_signals):
-        true_edge[:, k] = 0.0  # no true edge
-
-    # Observable signal = true edge + observation noise
+    true_edge = _synthetic_true_edge(rng, n_periods, n_signals, n_persistent_edge, edge_strength)
+    # Observable signal = true edge + observation noise.
     noise = rng.normal(0, noise_std, size=(n_periods, n_signals))
     signal_matrix = true_edge + noise
 
-    # Build state snapshots along the trajectory
+    # Hist uses a rolling window of 60 (not 20): trajectory_signal_provider
+    # maps len(hist) -> evaluation window with a 30-row floor, and the
+    # disciplined Cap's purged CV needs >= 45 rows — a 20-cap made every
+    # swap anchor collapse to the same clamped window (zero delta variance)
+    # and structurally starved the disciplined Cap.
     states: list[ResearchState] = []
-    # Build simple equal-weight frontier from a candidate set of "assets"
     asset_ids = [f"A{k:02d}" for k in range(n_signals)]
-
     for t in range(1, n_periods):
-        # Hist: trials simulated up to period t.  Rolling window of 60 (not 20):
-        # trajectory_signal_provider maps len(hist) -> evaluation window with a
-        # 30-row floor, and the disciplined Cap's purged CV needs >= 45 rows —
-        # a 20-cap made every swap anchor collapse to the same clamped window
-        # (zero delta variance) and structurally starved the disciplined Cap.
-        trials: list[TrialRecord] = []
-        for past_t in range(max(0, t - 60), t):
-            past_date = datetime(2020, 1, 1, tzinfo=UTC)
-            # Simulate a trial: check signal auto-correlation in-sample
-            lookback = min(past_t + 1, 60)
-            start = max(0, past_t + 1 - lookback)
-            window = signal_matrix[start : past_t + 1, :]
-            rank_ic_vals: list[float] = []
-            ic_vals: list[float] = []
-            if window.shape[0] >= 3:
-                for k in range(n_signals):
-                    col = window[:, k]
-                    if np.std(col) > _SS and len(col) > 1:
-                        from scipy.stats import pearsonr
-
-                        # Simple lookback signal strength as pseudo decision
-                        r_val = float(np.mean(col))
-                        ic_vals.append(min(max(r_val, -1.0), 1.0))
-                        if np.std(col[:-1]) > _SS and np.std(col[1:]) > _SS:
-                            r, _ = pearsonr(col[:-1], col[1:])
-                            rank_ic_vals.append(r if np.isfinite(r) else 0.0)
-                        else:
-                            rank_ic_vals.append(0.0)
-                    else:
-                        ic_vals.append(0.0)
-                        rank_ic_vals.append(0.0)
-                avg_rank_ic = float(np.mean(rank_ic_vals)) if rank_ic_vals else 0.0
-            else:
-                avg_rank_ic = 0.0
-
-            # Decision: some trials "accepted" based on signal strength
-            decision = "accepted" if avg_rank_ic > 0.01 and rng.random() < 0.35 else "rejected"
-            trials.append(
-                TrialRecord(
-                    submission_date=past_date.isoformat(),
-                    rank_ic=avg_rank_ic,
-                    ic=float(np.mean(ic_vals)) if ic_vals else 0.0,
-                    decision=decision,
-                    factor_id=f"F{past_t:03d}",
-                )
-            )
-
-        # Frontier: build from signals that look strongest at t
-        recent = signal_matrix[max(0, t - 30) : t, :]
-        means = np.mean(recent, axis=0)
-        stds = np.std(recent, axis=0, ddof=1)
-        scores_for_frontier = np.zeros(n_signals, dtype=float)
-        for k_idx in range(n_signals):
-            if stds[k_idx] > _SS:
-                scores_for_frontier[k_idx] = means[k_idx] / stds[k_idx]
-
-        # Top 3 become the frontier
-        top_k = 3
-        top_idx = np.argsort(-scores_for_frontier)[:top_k]
-        f_weights: dict[str, float] = {}
-        total_score = 0.0
-        for idx in top_idx:
-            s = max(float(scores_for_frontier[idx]), _SS)
-            f_weights[asset_ids[idx]] = s
-            total_score += s
-        if total_score > _SS:
-            f_weights = {k: v / total_score for k, v in f_weights.items()}
-
-        frontier = Frontier(
-            weights=f_weights,
-            signal_metrics={
-                "mean_rank_ic": float(np.mean([tr.rank_ic for tr in trials])),
-                "accept_rate": float(
-                    np.mean([tr.decision == "accepted" for tr in trials]) if trials else 0.0
-                ),
-            },
-            regime_context={"t": t},
-        )
-
-        # Cap: we assign the same Cap throughout (caller swaps them externally)
+        trials = _synthetic_trials(signal_matrix, t, rng)
+        frontier = _synthetic_frontier(signal_matrix, t, n_signals, asset_ids, trials)
+        # Cap: the same Cap throughout (caller swaps them externally).
         cap = Capabilities(
             rules={
                 "ranking": "oos_proper_purged",
@@ -718,7 +740,6 @@ def make_synthetic_trajectory(
                 "label": "synthetic_base",
             }
         )
-
         states.append(
             ResearchState(
                 hist=tuple(trials),

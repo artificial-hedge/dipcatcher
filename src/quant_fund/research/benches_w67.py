@@ -62,7 +62,7 @@ def bench_nested_sampling() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_NESTED_SAMPLING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -76,7 +76,7 @@ def bench_smc_samplers() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SMC_SAMPLERS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -90,7 +90,7 @@ def bench_synthetic_likelihood() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SYNTHETIC_LIKELIHOOD_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -104,7 +104,7 @@ def bench_state_dependent_lp() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_STATE_DEPENDENT_LP_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -118,7 +118,7 @@ def bench_moment_inequalities() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MOMENT_INEQUALITIES_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -130,6 +130,6 @@ def bench_euler_risk() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EULER_RISK_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

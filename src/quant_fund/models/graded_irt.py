@@ -58,6 +58,63 @@ def _grm_probs(theta: float, a_j: float, b_j: FloatArray) -> FloatArray:
     return np.asarray(cum[:-1] - cum[1:], dtype=np.float64)
 
 
+def _grm_selected_nll(probs: FloatArray, chosen: IntArray) -> float:
+    picked = probs[np.arange(chosen.shape[0]), chosen]
+    return float(-np.sum(np.log(np.maximum(picked, 1e-12))))
+
+
+def _grm_item_nll(idx: int, params: FloatArray, th: FloatArray, resp: IntArray) -> float:
+    a_j = float(params[0])
+    b_j = np.sort(params[1:])
+    cum = expit(a_j * (th[:, None] - b_j[None, :]))
+    bounds = np.concatenate(
+        [np.ones((th.shape[0], 1)), cum, np.zeros((th.shape[0], 1))],
+        axis=1,
+    )
+    return _grm_selected_nll(bounds[:, :-1] - bounds[:, 1:], resp[:, idx])
+
+
+def _grm_update_persons(
+    theta: FloatArray,
+    a: FloatArray,
+    b_sorted: FloatArray,
+    resp: IntArray,
+    n_persons: int,
+    n_items: int,
+) -> None:
+    for i in range(n_persons):
+
+        def pnll(t: FloatArray, i_: int = i, b_now: FloatArray = b_sorted) -> float:
+            theta_i = float(np.asarray(t, dtype=np.float64).reshape(-1)[0])
+            cum = expit(np.multiply(a.reshape(-1, 1), theta_i - b_now))
+            bounds = np.concatenate(
+                [np.ones((n_items, 1)), cum, np.zeros((n_items, 1))],
+                axis=1,
+            )
+            return _grm_selected_nll(bounds[:, :-1] - bounds[:, 1:], resp[i_])
+
+        res = minimize(pnll, x0=np.array([theta[i]]), method="Nelder-Mead")
+        theta[i] = float(res.x[0])
+
+
+def _grm_update_items(
+    theta: FloatArray, a: FloatArray, b: FloatArray, resp: IntArray, n_items: int
+) -> None:
+    for j in range(n_items):
+
+        def jnll(v: FloatArray, j_: int = j, th_: FloatArray = theta) -> float:
+            return _grm_item_nll(j_, v, th_, resp)
+
+        res = minimize(
+            jnll,
+            x0=np.concatenate([[a[j]], np.sort(b[j])]),
+            method="Nelder-Mead",
+            options={"maxiter": 200},
+        )
+        a[j] = max(float(res.x[0]), 0.05)
+        b[j] = np.sort(res.x[1:])
+
+
 def grm_jml(
     resp: IntArray,
     *,
@@ -75,52 +132,18 @@ def grm_jml(
     # per-item boundaries: init evenly around 0
     b = np.tile(np.linspace(-1.5, 1.5, k_cat - 1), (n_i, 1))
 
-    def item_nll(idx: int, params: FloatArray, th: FloatArray) -> float:
-        a_j = params[0]
-        b_j = np.sort(params[1:])
-        ll = 0.0
-        for i in range(n_p):
-            probs = _grm_probs(th[i], a_j, b_j)
-            p = max(probs[r[i, idx]], 1e-12)
-            ll -= np.log(p)
-        return float(ll)
-
     for _ in range(n_iter):
         # person update: MLE theta per person
-        for i in range(n_p):
-
-            def pnll(t: float, i_: int = i) -> float:
-                ll = 0.0
-                for j in range(n_i):
-                    probs = _grm_probs(t, a[j], np.sort(b[j]))
-                    p = max(probs[r[i_, j]], 1e-12)
-                    ll -= np.log(p)
-                return float(ll)
-
-            res = minimize(pnll, x0=np.array([theta[i]]), method="Nelder-Mead")
-            theta[i] = float(res.x[0])
+        _grm_update_persons(theta, a, np.sort(b, axis=1), r, n_p, n_i)
         theta -= theta.mean()
         sd = theta.std()
         if sd > 1e-8:
             theta /= sd
-        # item update
-        for j in range(n_i):
-
-            def jnll(v: FloatArray, j_: int = j, th_: FloatArray = theta) -> float:
-                return item_nll(j_, v, th_)
-
-            res = minimize(
-                jnll,
-                x0=np.concatenate([[a[j]], np.sort(b[j])]),
-                method="Nelder-Mead",
-                options={"maxiter": 200},
-            )
-            a[j] = max(float(res.x[0]), 0.05)
-            b[j] = np.sort(res.x[1:])
+        _grm_update_items(theta, a, b, r, n_i)
     # final loglik
     ll = 0.0
     for j in range(n_i):
-        ll -= item_nll(j, np.concatenate([[a[j]], np.sort(b[j])]), theta)
+        ll -= _grm_item_nll(j, np.concatenate([[a[j]], np.sort(b[j])]), theta, r)
     return {
         "theta": theta,
         "a": a,
@@ -156,16 +179,22 @@ def pcm_jml(
     theta = np.zeros(n_p)
     d = np.tile(np.linspace(-1.0, 1.0, k_cat - 1), (n_i, 1))
 
+    def _pcm_selected_nll(steps: FloatArray, chosen: IntArray) -> float:
+        csum = np.cumsum(steps, axis=1)
+        logits = np.concatenate([np.zeros((steps.shape[0], 1)), csum], axis=1)
+        logits = logits - np.max(logits, axis=1, keepdims=True)
+        weights = np.exp(logits)
+        probs = weights / np.sum(weights, axis=1, keepdims=True)
+        picked = probs[np.arange(chosen.shape[0]), chosen]
+        return float(-np.sum(np.log(np.maximum(picked, 1e-12))))
+
     for _ in range(n_iter):
         for i in range(n_p):
 
-            def pnll(t: float, i_: int = i) -> float:
-                ll = 0.0
-                for j in range(n_i):
-                    probs = _pcm_probs(t, d[j])
-                    p = max(probs[r[i_, j]], 1e-12)
-                    ll -= np.log(p)
-                return float(ll)
+            def pnll(t: FloatArray, i_: int = i) -> float:
+                theta_i = float(np.asarray(t, dtype=np.float64).reshape(-1)[0])
+                steps = theta_i - d
+                return _pcm_selected_nll(steps, r[i_])
 
             res = minimize(pnll, x0=np.array([theta[i]]), method="Nelder-Mead")
             theta[i] = float(res.x[0])
@@ -176,12 +205,8 @@ def pcm_jml(
         for j in range(n_i):
 
             def jnll(v: FloatArray, j_: int = j, th_: FloatArray = theta) -> float:
-                ll = 0.0
-                for i in range(n_p):
-                    probs = _pcm_probs(th_[i], np.sort(v))
-                    p = max(probs[r[i, j_]], 1e-12)
-                    ll -= np.log(p)
-                return float(ll)
+                steps = th_[:, None] - np.sort(v)[None, :]
+                return _pcm_selected_nll(steps, r[:, j_])
 
             res = minimize(jnll, x0=d[j], method="Nelder-Mead", options={"maxiter": 200})
             d[j] = np.sort(res.x)

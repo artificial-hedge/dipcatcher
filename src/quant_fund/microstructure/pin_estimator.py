@@ -41,6 +41,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize
+from scipy.special import gammaln
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -91,17 +92,65 @@ def log_likelihood_day(
     )
 
 
+def _log_likelihood_days(
+    buys: NDArray[np.float64],
+    sells: NDArray[np.float64],
+    alpha: float,
+    delta: float,
+    mu: float,
+    eps: float,
+) -> NDArray[np.float64] | None:
+    """Vectorized Lin-Ke log-likelihood, one row per day.
+
+    Same factorization as ``log_likelihood_day``. A non-finite day
+    (every mixture weight zero, or a non-finite factorial term) returns
+    None so the optimizer rejects the point.
+    """
+    if eps <= 0.0 or mu < 0.0:
+        return None
+    ratio = 1.0 + mu / eps
+    if ratio <= 0.0:
+        return None
+    log_eps = math.log(eps)
+    log_ratio = math.log(ratio)
+
+    def _log(x: float) -> float:
+        return math.log(x) if x > 0.0 else -math.inf
+
+    t0 = _log(1.0 - alpha)
+    t1 = _log(alpha) + _log(1.0 - delta) - mu
+    t2 = _log(alpha) + _log(delta) - mu
+    terms = np.stack(
+        (
+            np.full(buys.shape, t0, dtype=float),
+            t1 + buys * log_ratio,
+            t2 + sells * log_ratio,
+        ),
+        axis=0,
+    )
+    finite = np.isfinite(terms)
+    safe = np.where(finite, terms, -np.inf)
+    mx = np.max(safe, axis=0)
+    if not bool(np.all(np.isfinite(mx))):
+        return None
+    shifted = np.where(finite, safe - mx, -np.inf)
+    mix = mx + np.log(np.sum(np.exp(shifted), axis=0))
+    ll = -2.0 * eps + (buys + sells) * log_eps - gammaln(buys + 1.0) - gammaln(sells + 1.0) + mix
+    if not bool(np.all(np.isfinite(ll))):
+        return None
+    return np.asarray(ll, dtype=float)
+
+
 def neg_log_likelihood(params: NDArray[np.float64], days: NDArray[np.float64]) -> float:
     alpha, delta, mu, eps = (float(p) for p in params)
     if eps <= 0 or not (0 <= alpha <= 1) or not (0 <= delta <= 1) or mu < 0:
         return 1e12
-    total = 0.0
-    for row in days:
-        ll = log_likelihood_day(row[0], row[1], alpha, delta, mu, eps)
-        if not math.isfinite(ll):
-            return 1e12
-        total += ll
-    return -total
+    if not math.isfinite(mu) or not math.isfinite(eps):
+        return 1e12
+    ll = _log_likelihood_days(days[:, 0], days[:, 1], alpha, delta, mu, eps)
+    if ll is None:
+        return 1e12
+    return float(-np.sum(ll))
 
 
 @dataclass(frozen=True)

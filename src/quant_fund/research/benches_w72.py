@@ -52,7 +52,7 @@ def bench_factor_analysis() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FACTOR_ANALYSIS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -66,7 +66,7 @@ def bench_slice_sampling() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SLICE_SAMPLING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -80,7 +80,7 @@ def bench_kuiper() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_KUIPER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -92,7 +92,7 @@ def bench_p_spline() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_P_SPLINE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -106,7 +106,7 @@ def bench_thin_plate() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_THIN_PLATE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -120,6 +120,6 @@ def bench_james_stein() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_JAMES_STEIN_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

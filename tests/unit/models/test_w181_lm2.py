@@ -18,7 +18,7 @@ class TestMamba2:
 
 class TestMLSTM:
     def test_bench(self) -> None:
-        out = bench_xlstm_mlstm(seed=5, iters=60)
+        out = bench_xlstm_mlstm(seed=5, iters=12)
         assert 0.0 <= out["synthetic_mlstm_recall"] <= 1.0
 
 

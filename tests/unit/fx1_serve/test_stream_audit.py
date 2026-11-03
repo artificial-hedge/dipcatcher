@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-from fx1.serve.stream_audit import _ENV_KEYS, stream_audit, stream_audit_bench
+from fx1.serve.stream_audit import _ENV_KEYS, stream_audit_bench
 from quant_fund.research.receipt_v2 import verify_receipt_payload
+from tests.unit.fx1_serve.audit_session import run_with_clean_env
 
 
 @pytest.fixture(autouse=True)
@@ -14,23 +17,26 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(name, raising=False)
 
 
-def test_all_probes_hold() -> None:
-    results = stream_audit()
+@pytest.fixture(scope="session")
+def stream_bench() -> dict[str, Any]:
+    return run_with_clean_env(stream_audit_bench, _ENV_KEYS)
+
+
+def test_all_probes_hold(stream_bench: dict[str, Any]) -> None:
+    results = stream_bench["claim"]["results"]
     for name, ok in results.items():
         assert ok is True, f"probe {name} failed"
 
 
-def test_receipt_verifies() -> None:
-    blob = stream_audit_bench()
-    assert blob["claim"]["ok"] is True
-    verdict = verify_receipt_payload(blob)
+def test_receipt_verifies(stream_bench: dict[str, Any]) -> None:
+    assert stream_bench["claim"]["ok"] is True
+    verdict = verify_receipt_payload(stream_bench)
     assert verdict["valid"] is True
 
 
-def test_receipt_deterministic() -> None:
-    a = stream_audit_bench()
-    b = stream_audit_bench()
-    assert a["receipt_sha256"] == b["receipt_sha256"]
+def test_receipt_deterministic(stream_bench: dict[str, Any]) -> None:
+    second = stream_audit_bench()
+    assert stream_bench["receipt_sha256"] == second["receipt_sha256"]
 
 
 def test_empty_audit_result_is_not_success(monkeypatch: pytest.MonkeyPatch) -> None:

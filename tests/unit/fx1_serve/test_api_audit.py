@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
 import fx1.serve.api as api_mod
 from fx1.harness import Harness
-from fx1.serve.api_audit import api_audit, api_audit_bench
+from fx1.serve.api_audit import api_audit_bench
 from quant_fund.research.receipt_v2 import verify_receipt_payload
+from tests.unit.fx1_serve.audit_session import run_with_clean_env
+
+_AUDIT_ENV = ("FX1_API_KEY", "MOONSHOT_API_KEY", "FX1_CHECKPOINT_DIR")
 
 
 def _client() -> TestClient:
@@ -20,27 +25,30 @@ def _client() -> TestClient:
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("FX1_API_KEY", "MOONSHOT_API_KEY", "FX1_CHECKPOINT_DIR"):
+    for name in _AUDIT_ENV:
         monkeypatch.delenv(name, raising=False)
 
 
-def test_all_probes_hold() -> None:
-    results = api_audit()
+@pytest.fixture(scope="session")
+def api_bench() -> dict[str, Any]:
+    return run_with_clean_env(api_audit_bench, _AUDIT_ENV)
+
+
+def test_all_probes_hold(api_bench: dict[str, Any]) -> None:
+    results = api_bench["claim"]["results"]
     for name, ok in results.items():
         assert ok is True, f"probe {name} failed"
 
 
-def test_receipt_verifies() -> None:
-    blob = api_audit_bench()
-    assert blob["claim"]["ok"] is True
-    verdict = verify_receipt_payload(blob)
+def test_receipt_verifies(api_bench: dict[str, Any]) -> None:
+    assert api_bench["claim"]["ok"] is True
+    verdict = verify_receipt_payload(api_bench)
     assert verdict["valid"] is True
 
 
-def test_receipt_deterministic() -> None:
-    a = api_audit_bench()
-    b = api_audit_bench()
-    assert a["receipt_sha256"] == b["receipt_sha256"]
+def test_receipt_deterministic(api_bench: dict[str, Any]) -> None:
+    second = api_audit_bench()
+    assert api_bench["receipt_sha256"] == second["receipt_sha256"]
 
 
 def test_commands_match_registry() -> None:
@@ -64,9 +72,8 @@ def test_config_containment_over_http() -> None:
     assert resp.status_code == 422
 
 
-def test_verify_receipt_route() -> None:
-    blob = api_audit_bench()
-    resp = _client().post("/receipts/verify", json={"receipt": blob})
+def test_verify_receipt_route(api_bench: dict[str, Any]) -> None:
+    resp = _client().post("/receipts/verify", json={"receipt": api_bench})
     assert resp.status_code == 200
     assert resp.json()["valid"] is True
 

@@ -168,7 +168,7 @@ def bench_gslice() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -224,7 +224,7 @@ def bench_neural_sde() -> dict[str, float]:
         return _finite_blob(mapped)
     except ImportError:
         return {}
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -257,7 +257,7 @@ def bench_stocbench() -> dict[str, float]:
         )
         mapped = {k: float(v) for k, v in raw.items()}
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -278,7 +278,7 @@ def bench_agentic_lob() -> dict[str, float]:
         raw = _agentic_lob_core_bench(seed=_ALOB_SEED)
         mapped = {k: float(v) for k, v in raw.items()}
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -346,7 +346,7 @@ def bench_fase_eval() -> dict[str, float]:
         )
         mapped = {k: float(v) for k, v in raw.items()}
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -375,5 +375,5 @@ def bench_kit_paths() -> dict[str, float]:
         )
         mapped = {k: float(v) for k, v in raw.items() if isinstance(v, (int, float))}
         return _finite_blob(mapped)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

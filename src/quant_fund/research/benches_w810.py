@@ -262,7 +262,7 @@ def bench_leakage_redteam() -> dict[str, float]:
             "blindspot_contrast": float(study.blind_spot_contrast[0]),
             "data_source_syn": 1.0,
         }
-    except (ValueError, RuntimeError, FloatingPointError, AttributeError, KeyError):
+    except (ValueError, RuntimeError, FloatingPointError, AttributeError):
         return {}
 
 

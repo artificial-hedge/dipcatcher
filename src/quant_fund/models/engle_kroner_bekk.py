@@ -33,29 +33,65 @@ within ~15% RMSE relative error.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize as _opt
 
+if TYPE_CHECKING:
+    from numba import njit
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
+
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
+
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
+
+
 FloatArray = NDArray[np.float64]
+
+
+@njit(cache=True)
+def _h_path_nb(
+    e: np.ndarray, cc: np.ndarray, a: np.ndarray, b: np.ndarray, s0: np.ndarray
+) -> np.ndarray:
+    """Diagonal BEKK filter. A = diag(a), B = diag(b)."""
+    t, k = e.shape
+    h = np.empty((t, k, k))
+    for r in range(k):
+        for c in range(k):
+            h[0, r, c] = s0[r, c]
+    for i in range(1, t):
+        for r in range(k):
+            for c in range(k):
+                ee = e[i - 1, r] * e[i - 1, c]
+                acc = cc[r, c] + a[r] * ee * a[c] + b[r] * h[i - 1, r, c] * b[c]
+                acc_t = cc[c, r] + a[c] * ee * a[r] + b[c] * h[i - 1, c, r] * b[r]
+                h[i, r, c] = 0.5 * (acc + acc_t)
+    return h
 
 
 def _h_path(e: FloatArray, c: FloatArray, a: FloatArray, b: FloatArray) -> FloatArray:
     """Filter the H_t path for diagonal BEKK(1,1)."""
-    t, k = e.shape
-    h = np.empty((t, k, k))
-    cc = c.T @ c
+    k = e.shape[1]
+    cc = np.asarray(c.T @ c, dtype=np.float64)
     s0 = np.cov(e.T) + 1e-8 * np.eye(k)
     # prediction convention: H_t conditions on F_{t-1} (e_{t-1}),
     # so the nll pairs e_t with its genuine one-step forecast.
-    h[0] = s0
-    aa = np.diag(a)
-    bb = np.diag(b)
-    for i in range(1, t):
-        ee = np.outer(e[i - 1], e[i - 1])
-        h_i = cc + aa.T @ ee @ aa + bb.T @ h[i - 1] @ bb
-        h[i] = 0.5 * (h_i + h_i.T)
-    return h
+    return _h_path_nb(
+        np.ascontiguousarray(e, dtype=np.float64),
+        np.ascontiguousarray(cc),
+        np.ascontiguousarray(a, dtype=np.float64),
+        np.ascontiguousarray(b, dtype=np.float64),
+        np.ascontiguousarray(s0, dtype=np.float64),
+    )
 
 
 def _cc_target(a: FloatArray, b: FloatArray, s0: FloatArray) -> FloatArray | None:
@@ -83,17 +119,15 @@ def _nll(theta: FloatArray, e: FloatArray, k: int) -> float:
     except np.linalg.LinAlgError:
         return 1e12
     h = _h_path(e, c, a, b)
-    ll = 0.0
-    sign_logdet = np.linalg.slogdet
-    for i in range(e.shape[0]):
-        s, ld = sign_logdet(h[i])
-        if s <= 0:
-            return 1e12
-        try:
-            quad = float(e[i] @ np.linalg.solve(h[i], e[i]))
-        except np.linalg.LinAlgError:
-            return 1e12
-        ll += ld + quad
+    sign, ld = np.linalg.slogdet(h)
+    if np.any(sign <= 0):
+        return 1e12
+    try:
+        solved = np.linalg.solve(h, e[..., None])[..., 0]
+    except np.linalg.LinAlgError:
+        return 1e12
+    quad = np.einsum("ti,ti->t", e, solved)
+    ll = float(np.sum(ld + quad))
     return float(0.5 * ll + 0.5 * e.shape[0] * k * np.log(2.0 * np.pi))
 
 

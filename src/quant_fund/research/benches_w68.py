@@ -62,7 +62,7 @@ def bench_vix_replication() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_VIX_REPLICATION_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -74,7 +74,7 @@ def bench_mala() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MALA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -88,7 +88,7 @@ def bench_functional_pca() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FUNCTIONAL_PCA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -102,7 +102,7 @@ def bench_particle_gibbs() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PARTICLE_GIBBS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -114,7 +114,7 @@ def bench_ripley_k() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RIPLEY_K_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -128,6 +128,6 @@ def bench_synchrosqueezing() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SYNCHROSQUEEZING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

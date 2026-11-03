@@ -103,13 +103,106 @@ def _client(
                 os.environ[k] = v
 
 
+# These constructors look stateless, but a shared app keeps their idempotency
+# and key stores. Probes that mint keys against a fresh app must not hit them.
+_REUSE_DENY_CLASSES = frozenset({"_CleanBackend"})
+
+
+def _oi_lambda_key(resolver: Any) -> tuple[Any, ...] | None:
+    """Identity of a lambda whose closures are classes, not instances.
+
+    ``lambda *a, **k: _OiBackend()`` at two call sites shares one app.
+    ``_hdr_resolver`` is not a lambda, and a lambda that closes over a live
+    backend instance does not either. ``_CleanBackend`` is denied: key
+    probes need the store those apps start with.
+    """
+    code = getattr(resolver, "__code__", None)
+    if code is None or code.co_name != "<lambda>":
+        return None
+    names: list[str] = []
+    cells: list[int] = []
+    for cell in resolver.__closure__ or ():
+        try:
+            value = cell.cell_contents
+        except ValueError:
+            return None
+        if not isinstance(value, type) or value.__name__ in _REUSE_DENY_CLASSES:
+            return None
+        names.append(value.__name__)
+        cells.append(id(value))
+    if not names:
+        if not code.co_names or any(name in _REUSE_DENY_CLASSES for name in code.co_names):
+            return None
+        names.extend(code.co_names)
+    try:
+        consts = tuple(code.co_consts)
+        hash(consts)
+    except TypeError:
+        return None
+    return (code.co_code, tuple(names), consts, tuple(cells))
+
+
+class _OiAppReuse:
+    """Reuse apps built by identical stateless backend lambdas.
+
+    The cache lives for one ``api_audit`` call. Constructor kwargs and the
+    ``FX1_*`` environment are part of the key, so a rate-limited app does
+    not satisfy an unlimited one.
+    """
+
+    def __enter__(self) -> _OiAppReuse:
+        import fx1.serve.api as api_mod
+
+        self._mod = api_mod
+        self._real = api_mod.create_app
+        cache: dict[tuple[Any, ...], Any] = {}
+
+        def _create(*args: Any, **kwargs: Any) -> Any:
+            resolver = kwargs.get("backend_resolver")
+            ident = _oi_lambda_key(resolver) if resolver is not None else None
+            if args or ident is None:
+                return self._real(*args, **kwargs)
+            extra: list[tuple[str, Any]] = []
+            for name, value in sorted(kwargs.items()):
+                if name == "backend_resolver":
+                    continue
+                try:
+                    hash(value)
+                except TypeError:
+                    return self._real(*args, **kwargs)
+                extra.append((name, value))
+            env = tuple(
+                sorted(
+                    (key, os.environ.get(key))
+                    for key in os.environ
+                    if key.startswith("FX1_") or key == "MOONSHOT_API_KEY"
+                )
+            )
+            key = (ident, tuple(extra), env)
+            app = cache.get(key)
+            if app is None:
+                app = self._real(*args, **kwargs)
+                cache[key] = app
+            return app
+
+        # The wrapper's signature is wider than ``create_app``. Writing the
+        # module dict keeps the static type of the attribute intact for the
+        # restore in ``__exit__`` and avoids a ``method-assign`` suppression.
+        vars(api_mod)["create_app"] = _create
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self._mod.create_app = self._real
+
+
 def api_audit() -> dict[str, Any]:
     _clk = {"t": 1_000_000.0}
     from fx1.serve.api import _RateLimiter
 
     _RateLimiter._clock_box = _clk
     try:
-        return _api_audit_impl(_clk)
+        with _OiAppReuse():
+            return _api_audit_impl(_clk)
     finally:
         _RateLimiter._clock_box = None
 
@@ -987,8 +1080,13 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         max_inflight=2,
     )
     qc = _TC2(qapp)
-    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
-    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
+    # Hold the workers only until the queued-cancel asserts land, then
+    # release them. A fixed multi-second sleep made the following polls
+    # wait out the sleeper; the probes only require the slot to be busy
+    # while the cancel is observed.
+    _queue_release = threading.Event()
+    qapp.state.jobs_executor.submit(lambda: _queue_release.wait(timeout=5))
+    qapp.state.jobs_executor.submit(lambda: _queue_release.wait(timeout=5))
     j1 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     j2 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     out["job_queues_when_workers_busy"] = (
@@ -1006,6 +1104,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         qc.get(f"/harness/jobs/{j2}").json()["result"] is None
         and qc.get(f"/harness/jobs/{j2}").json()["finished_at"] is not None
     )
+    _queue_release.set()
     # once a worker frees, j1 dequeues; deleting a live or finished job is 409
     dl = time.monotonic() + 10.0
     while qc.get(f"/harness/jobs/{j1}").json()["status"] == "queued" and time.monotonic() < dl:
@@ -1066,7 +1165,9 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
     )
     cbc = _TC2(cb_app)
     cb_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
-    cb_thread = _threading.Thread(target=cb_srv.serve_forever, daemon=True)
+    cb_thread = _threading.Thread(
+        target=cb_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    )
     cb_thread.start()
     cb_url = f"http://127.0.0.1:{cb_srv.server_address[1]}/hook"
     _dead_sock = _socket.socket()
@@ -1181,8 +1282,9 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
             and bool(st_dead.get("callback_error"))
         )
         # cancelling a queued job is a terminal transition — it fires too
-        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
-        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
+        _cb_release = threading.Event()
+        cb_app.state.jobs_executor.submit(lambda: _cb_release.wait(timeout=5))
+        cb_app.state.jobs_executor.submit(lambda: _cb_release.wait(timeout=5))
         qid = _submit_cb(cb_url)
         cxl = cbc.delete(f"/harness/jobs/{qid}")
         deadline = time.monotonic() + 10.0
@@ -1197,6 +1299,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
             and _cb_hits[-1]["job_id"] == qid
             and _cb_hits[-1]["status"] == "cancelled"
         )
+        _cb_release.set()
         dl = time.monotonic() + 10.0
         while cbc.get("/metrics").json()["inflight"] != 0 and time.monotonic() < dl:
             time.sleep(0.1)
@@ -2111,10 +2214,14 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         evc.get(f"/harness/jobs/{ev_jid}/events?timeout_s=0.5").status_code == 422
     )
     # a blocked worker keeps the next job queued: the stream emits the
-    # queued frame, keeps alive on the quiet job, then closes at timeout_s
-    ev_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    # queued frame, keeps alive on the quiet job, then closes at timeout_s.
+    # The route rejects timeout_s < 1. Hold the worker until that GET
+    # returns so the only data frame is still "queued".
+    _blk_hold = threading.Event()
+    ev_app.state.jobs_executor.submit(lambda: _blk_hold.wait(timeout=5))
     blk_jid = evc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     blk_resp = evc.get(f"/harness/jobs/{blk_jid}/events?timeout_s=1")
+    _blk_hold.set()
     blk_statuses = [
         _json.loads(ln[len("data: ") :])["status"]
         for ln in blk_resp.text.splitlines()
@@ -2192,7 +2299,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=1,
     )
-    cap_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    cap_app.state.jobs_executor.submit(lambda: time.sleep(0.3))
     cc2 = _TC2(cap_app)
     cap_out = cc2.post(
         "/harness/jobs/batch",
@@ -2308,7 +2415,7 @@ def _api_audit_impl(_clk: dict[str, float]) -> dict[str, Any]:  # noqa: C901
         max_inflight=1,
     )
     with _TC2(drain_app) as dc:
-        drain_app.state.jobs_executor.submit(lambda: time.sleep(3))
+        drain_app.state.jobs_executor.submit(lambda: time.sleep(0.3))
         jid_q = dc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
     dead = drain_app.state.job_store.get(jid_q)
     out["shutdown_cancels_queued"] = (
@@ -4048,7 +4155,9 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             pass
 
     _ft_srv = ThreadingHTTPServer(("127.0.0.1", 0), _FTHook)
-    _threading.Thread(target=_ft_srv.serve_forever, daemon=True).start()
+    _threading.Thread(
+        target=_ft_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    ).start()
     _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
     # loopback callback_url is refused by the SSRF guard without the
     # private-networks opt-in, read per request (saved/restored verbatim).
@@ -5303,7 +5412,9 @@ def _probe_backend_probes(  # NOSONAR
             pass
 
     ev_srv = ThreadingHTTPServer(("127.0.0.1", 0), _EvalHook)
-    ev_thread = _threading.Thread(target=ev_srv.serve_forever, daemon=True)
+    ev_thread = _threading.Thread(
+        target=ev_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    )
     ev_thread.start()
     ev_cb_url = f"http://127.0.0.1:{ev_srv.server_address[1]}/evalhook"
     import socket as _socket2  # noqa: PLC0415
@@ -8192,7 +8303,9 @@ def _probe_backend_probes(  # NOSONAR
             pass
 
     _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
-    _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
+    _threading.Thread(
+        target=_bwh_srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    ).start()
     _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
     # loopback callback_url needs the private-networks opt-in, read per
     # request (saved/restored verbatim).
@@ -9239,7 +9352,7 @@ def _probe_backend_probes(  # NOSONAR
         def complete(
             self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
         ) -> str:
-            time.sleep(0.8)
+            time.sleep(0.3)
             return super().complete(messages, sampling=sampling)
 
     rp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _ReplaySlowBackend())

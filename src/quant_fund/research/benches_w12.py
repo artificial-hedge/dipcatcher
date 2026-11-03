@@ -277,7 +277,7 @@ def bench_rwcv() -> dict[str, float]:
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
         return mapped
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 

@@ -61,7 +61,7 @@ def bench_edf_tests() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EDF_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -75,7 +75,7 @@ def bench_normality_tests() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_NORM_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -89,7 +89,7 @@ def bench_scale_homogeneity() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SCALE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -103,7 +103,7 @@ def bench_score_scale() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SCORE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -115,7 +115,7 @@ def bench_het_regressions() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HET_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -129,6 +129,6 @@ def bench_serial_diagnostics() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SERIAL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
