@@ -51,6 +51,20 @@ def test_sign_lag1() -> None:
     assert _sign_lag1(alt) < 0
 
 
+def test_measure_sim_depth_key_error_is_not_dropped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from quant_fund.microstructure.sim_real_ledger import measure_sim
+    from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator
+
+    def boom(self: ZILobSimulator, side: str, level: int) -> int:
+        raise KeyError((side, level))
+
+    monkeypatch.setattr(ZILobSimulator, "depth_at", boom)
+    with pytest.raises(KeyError):
+        measure_sim(ZILobConfig(seed=1), None, horizon=1)
+
+
 def test_measure_sim_smoke() -> None:
     from quant_fund.microstructure.sim_real_ledger import measure_sim
 
