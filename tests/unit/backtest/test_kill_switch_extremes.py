@@ -87,14 +87,15 @@ def test_flatten_requires_human_and_reject_auto_flag() -> None:
     assert blocked.may_flatten(False) is False
     assert blocked.may_flatten(True) is False
 
-    # Wrong state: never flatten even with human auth.
-    for state in (ENABLED, HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS):
+    # Wrong state: never flatten even with human auth. FLATTEN is paper-file only.
+    for state in (ENABLED, HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, "FLATTEN"):
         sw = KillSwitch(KillSwitchConfig(state=state, allow_auto_flatten=False))
         assert sw.may_flatten(True) is False
 
 
 def test_valid_states_cover_documented_machine() -> None:
     assert (
-        frozenset({ENABLED, HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL}) == VALID_STATES
+        frozenset({ENABLED, HALT_NEW_ORDERS, CANCEL_OPEN_ORDERS, FLATTEN_OPTIONAL, "FLATTEN"})
+        == VALID_STATES
     )
     assert VALID_STATES - {ENABLED} == BLOCKING_STATES

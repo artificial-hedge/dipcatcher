@@ -123,11 +123,13 @@ condition 2 or claims live performance. "Deployment" here means three
 research/simulation surfaces:
 
 1. **Research harness (local or container).** `make sync` installs the locked
-   environment. `Dockerfile` builds the research API image (non-root uid
-   10001, loopback bind on :8000 by default, `/health` healthcheck, immutable
-   `uv sync --frozen`); `docker/research-api.Dockerfile` builds the research
-   API variant on :8010 (`python -m quant_fund.api.research_api`). CI builds
-   the image and waits for its healthcheck.
+   environment. `Dockerfile` builds the lab API image (non-root uid 10001,
+   loopback bind on :8000 by default, `/health` healthcheck, `SIGTERM` stop,
+   immutable `uv sync --frozen`); `docker/research-api.Dockerfile` builds the
+   read-only research API on :8010 (`python -m quant_fund.api.research_api`).
+   Start, stop, rollback, the kill-switch file, and where logs go are in
+   [PRODUCTION_RUNBOOK.md](PRODUCTION_RUNBOOK.md). CI builds the image and
+   waits for its healthcheck.
 2. **fx-1 harness service.** `uv run fx1 harness serve --host … --port …`;
    launch, `--state-dir` durability, managed keys, drain, and the
    failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). Release
