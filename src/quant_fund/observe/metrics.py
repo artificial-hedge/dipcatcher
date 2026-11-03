@@ -31,6 +31,111 @@ METRIC_HELP = {
     ),
 }
 
+_COUNTER_HELP = {
+    "dipcatcher_live_order_submits_total": (
+        "Operational telemetry for live order submissions; not a live P&L claim."
+    ),
+    "dipcatcher_live_order_results_total": (
+        "Operational telemetry for live order results; not a live P&L claim."
+    ),
+    "dipcatcher_live_fill_records_total": (
+        "Operational telemetry for fill records, which are not unique economic executions; "
+        "not a live P&L claim."
+    ),
+    "dipcatcher_live_pretrade_denials_total": (
+        "Operational telemetry for pre-trade denials, with one primary reason per decision; "
+        "not a live P&L claim."
+    ),
+    "dipcatcher_live_kill_switch_transitions_total": (
+        "Operational telemetry for live kill-switch transitions; not a live P&L claim."
+    ),
+    "dipcatcher_live_order_recovery_attempts_total": (
+        "Operational telemetry for live order recovery attempts; not a live P&L claim."
+    ),
+}
+
+_COUNTER_LABELS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
+    "dipcatcher_live_order_submits_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+    ),
+    "dipcatcher_live_order_results_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        (
+            "status",
+            (
+                "accepted",
+                "filled",
+                "partially_filled",
+                "canceled",
+                "rejected",
+                "not_acknowledged",
+                "expired",
+                "replaced",
+                "done_for_day",
+                "pending_cancel",
+                "pending_replace",
+                "suspended",
+                "unmapped",
+                "response_lost",
+            ),
+        ),
+    ),
+    "dipcatcher_live_fill_records_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        (
+            "verdict",
+            ("accepted", "out_of_order_fill", "replaced_provisional", "orphan_fill"),
+        ),
+    ),
+    "dipcatcher_live_pretrade_denials_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        ("kind", ("order", "cancel")),
+        (
+            "primary_reason",
+            (
+                "kill_switch",
+                "stale_data",
+                "non_finite",
+                "market_closed",
+                "halted",
+                "max_order_quantity",
+                "max_order_notional",
+                "price_collar",
+                "position_quantity",
+                "position_notional",
+                "gross_exposure",
+                "net_exposure",
+                "concentration",
+                "duplicate_order",
+                "order_rate",
+                "message_rate",
+                "reg_sho",
+                "pattern_day_trader",
+                "good_faith_violation",
+                "daily_loss",
+                "trailing_drawdown",
+                "internal_error",
+                "buying_power",
+                "state_full",
+                "unknown_symbol",
+                "non_monotonic_time",
+                "manual_kill",
+                "other",
+            ),
+        ),
+    ),
+    "dipcatcher_live_kill_switch_transitions_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        ("state", ("latched", "reset")),
+    ),
+    "dipcatcher_live_order_recovery_attempts_total": (
+        ("venue", ("loopback", "drop", "shadow", "alpaca-paper", "alpaca-live")),
+        ("outcome", ("recovered", "not_found", "error")),
+    ),
+}
+
+_ALL_METRIC_HELP = {**METRIC_HELP, **_COUNTER_HELP}
+
 
 class _Histogram:
     def __init__(self) -> None:
@@ -56,6 +161,7 @@ class _Registry:
         self.histograms: dict[str, _Histogram] = {}
         self.errors: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
+        self.counters: dict[str, dict[tuple[str, ...], int]] = {}
 
     def observe(self, stage: str, seconds: float) -> None:
         if stage not in STAGES:
@@ -79,6 +185,17 @@ class _Registry:
         with self._lock:
             self.gauges[name] = float(value)
 
+    def counter(self, name: str, values: tuple[str, ...]) -> None:
+        labels = _COUNTER_LABELS.get(name)
+        if labels is None or len(values) != len(labels):
+            raise ValueError(f"cannot record counter {name}")
+        for (label, allowed), value in zip(labels, values, strict=True):
+            if value not in allowed:
+                raise ValueError(f"invalid {label} for {name}")
+        with self._lock:
+            series = self.counters.setdefault(name, {})
+            series[values] = series.get(values, 0) + 1
+
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             histograms = {
@@ -93,6 +210,7 @@ class _Registry:
                 "histograms": histograms,
                 "errors": dict(self.errors),
                 "gauges": dict(self.gauges),
+                "counters": {name: dict(series) for name, series in self.counters.items()},
             }
 
     def reset(self) -> None:
@@ -100,6 +218,7 @@ class _Registry:
             self.histograms.clear()
             self.errors.clear()
             self.gauges.clear()
+            self.counters.clear()
 
 
 REGISTRY = _Registry()
@@ -134,6 +253,39 @@ def set_simulation_state(*, pnl: float, gross_exposure: float, net_exposure: flo
     REGISTRY.gauge("dipcatcher_simulation_pnl", pnl)
     REGISTRY.gauge("dipcatcher_simulation_gross_exposure", gross_exposure)
     REGISTRY.gauge("dipcatcher_simulation_net_exposure", net_exposure)
+
+
+def _record_live_counter(name: str, values: tuple[str, ...]) -> None:
+    if not observe_enabled():
+        return
+    REGISTRY.counter(name, values)
+
+
+def record_live_order_submit(*, venue: str) -> None:
+    _record_live_counter("dipcatcher_live_order_submits_total", (venue,))
+
+
+def record_live_order_result(*, venue: str, status: str) -> None:
+    _record_live_counter("dipcatcher_live_order_results_total", (venue, status))
+
+
+def record_live_fill_record(*, venue: str, verdict: str) -> None:
+    _record_live_counter("dipcatcher_live_fill_records_total", (venue, verdict))
+
+
+def record_live_pretrade_denial(*, venue: str, kind: str, primary_reason: str) -> None:
+    _record_live_counter(
+        "dipcatcher_live_pretrade_denials_total",
+        (venue, kind, primary_reason),
+    )
+
+
+def record_live_kill_switch_transition(*, venue: str, state: str) -> None:
+    _record_live_counter("dipcatcher_live_kill_switch_transitions_total", (venue, state))
+
+
+def record_live_order_recovery(*, venue: str, outcome: str) -> None:
+    _record_live_counter("dipcatcher_live_order_recovery_attempts_total", (venue, outcome))
 
 
 def histogram_quantile_upper(stage: str, quantile: float) -> float:
@@ -191,6 +343,16 @@ def render_prometheus() -> str:
         if name in snap["gauges"]:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
+    for name, labels in _COUNTER_LABELS.items():
+        series = snap["counters"].get(name)
+        if not series:
+            continue
+        _help(lines, name, "counter")
+        for values in sorted(series):
+            label_text = ",".join(
+                f'{label}="{value}"' for (label, _), value in zip(labels, values, strict=True)
+            )
+            lines.append(f"{name}{{{label_text}}} {series[values]}")
     text = "\n".join(lines)
     if text:
         text += "\n"
@@ -198,7 +360,7 @@ def render_prometheus() -> str:
 
 
 def _help(lines: list[str], name: str, metric_type: str) -> None:
-    lines.append(f"# HELP {name} {METRIC_HELP[name]}")
+    lines.append(f"# HELP {name} {_ALL_METRIC_HELP[name]}")
     lines.append(f"# TYPE {name} {metric_type}")
 
 
