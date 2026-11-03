@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 from zoneinfo import ZoneInfo
 
 from quant_fund.live.brokers import (
@@ -90,6 +90,36 @@ _WORKING = frozenset(
     }
 )
 _STATE_SCHEMA = "live_session.v1"
+_RETRY_BUDGET = 3
+_RETRY_DELAYS = (0.01, 0.02)
+_RETRY_HTTP = ("HTTP 429", "HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504")
+
+
+def _retry_sleep(delay: float) -> None:
+    """Backoff between transient broker attempts. Tests replace this."""
+    time.sleep(delay)
+
+
+def _retry_delay(attempt: int) -> float:
+    index = attempt if attempt < len(_RETRY_DELAYS) else len(_RETRY_DELAYS) - 1
+    return _RETRY_DELAYS[index]
+
+
+def _retryable_reject(exc: BrokerRejected) -> bool:
+    text = str(exc)
+    return any(code in text for code in _RETRY_HTTP)
+
+
+def _rejected_ack(order: LiveOrder, reason: str) -> BrokerAck:
+    return BrokerAck(
+        client_order_id=order.client_order_id,
+        broker_order_id="",
+        status="rejected",
+        filled_quantity=0.0,
+        fill_price=None,
+        fills=(),
+        reason=reason,
+    )
 
 
 def _actor(actor: str) -> str:
@@ -288,14 +318,20 @@ class LiveSession:
                 "research_evidence": False,
             }
 
-    def mark(self, *, symbol: str, price: float, actor: str) -> dict[str, Any]:
+    def mark(
+        self, *, symbol: str, price: float, actor: str, at_ns: int | None = None
+    ) -> dict[str, Any]:
         with self._lock():
             self._require_trading()
             _actor(actor)
             cleaned = _symbol(symbol)
             number = _positive(price, "mark")
+            ts = self._clock(at_ns)
+            if self._quote_moves_backward(cleaned, ts):
+                raise LiveGateError("mark timestamp is older than the stored quote")
             self.marks[cleaned] = number
             self.broker.set_mark(cleaned, number)
+            self._sync_account(ts)
             self._persist()
             return {
                 "ok": True,
@@ -318,7 +354,7 @@ class LiveSession:
         at_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
-            self._recover_inflight()
+            self._prepare_submit(client_order_id=client_order_id)
             return self._submit_locked(
                 symbol=symbol,
                 side=side,
@@ -347,6 +383,21 @@ class LiveSession:
                 raise LiveGateError("order is not in this session")
             if row["status"] in _TERMINAL:
                 return _public_order(row, venue=self.venue, replayed=True)
+            if self._quote_is_stale(str(row["symbol"]), ts):
+                denied = _denied(
+                    reasons=("stale_data",),
+                    symbol=str(row["symbol"]),
+                    side=str(row["side"]),
+                    quantity=float(row["quantity"]),
+                    limit_price=float(row["limit_price"]),
+                    client_order_id=str(row["client_order_id"]),
+                    venue=self.venue,
+                )
+                self._audit(
+                    "deny",
+                    {"client_order_id": row["client_order_id"], "reasons": ["stale_data"]},
+                )
+                return denied
             self._sync_account(ts)
             decision = self.engine.decide(
                 self._view(row, float(row["limit_price"]), ts, KIND_CANCEL),
@@ -383,41 +434,12 @@ class LiveSession:
     def reconcile(self, *, at_ns: int | None = None) -> dict[str, Any]:
         with self._lock():
             self._recover_inflight()
-            self._require_trading()
-            ts = self._clock(at_ns)
-            self._capture_baseline()
-            mapping = {
-                str(row["broker_order_id"]): str(row["client_order_id"])
-                for row in self.orders
-                if row["broker_order_id"]
-            }
-            page = self.broker.fills(broker_to_client=mapping)
-            seen: set[str] = set()
-            duplicate_in_batch = False
-            ordered = sorted(page.fills, key=lambda fill: (fill.fill_time_ns, fill.fill_id))
-            for fill in ordered:
-                if fill.fill_id in seen:
-                    duplicate_in_batch = True
-                seen.add(fill.fill_id)
-                self._record_fill(fill, ts)
-            account = self.broker.account()
-            self.ledger.declare(cash=account.cash, positions=account.positions)
-            report = self.ledger.reconcile()
-            report["fills_truncated"] = page.truncated
-            report["duplicate_in_batch"] = duplicate_in_batch
-            if page.truncated or duplicate_in_batch:
-                report["ok"] = False
-            self._project_fills_onto_orders()
-            report["venue"] = self.venue
-            self._sync_account(ts)
-            self._persist()
-            self._audit("reconcile", {"ok": bool(report["ok"])})
-            return report
+            return self._reconcile_locked(at_ns)
 
     def flatten(self, *, actor: str, at_ns: int | None = None) -> dict[str, Any]:
         """Post a limit at the stored mark for every open position. No market orders."""
         with self._lock():
-            self._recover_inflight()
+            self._prepare_submit(client_order_id=None)
             self._require_trading()
             _actor(actor)
             account = self.broker.account()
@@ -486,6 +508,22 @@ class LiveSession:
         if existing is not None:
             return _public_order(existing, venue=self.venue, replayed=True)
         self._capture_baseline()
+        if self._quote_is_stale(cleaned, ts):
+            denied = _denied(
+                reasons=("stale_data",),
+                symbol=cleaned,
+                side=order_side,
+                quantity=qty,
+                limit_price=limit,
+                client_order_id=client,
+                venue=self.venue,
+            )
+            self._audit(
+                "deny",
+                {"actor": who, "client_order_id": client, "reasons": ["stale_data"]},
+            )
+            self._persist()
+            return denied
         self.marks[cleaned] = reference
         self.broker.set_mark(cleaned, reference)
         self._sync_account(ts, reset_session=not self.orders)
@@ -519,7 +557,7 @@ class LiveSession:
             self._persist()
             return denied
         self.orders.append(placeholder)
-        self.ledger.note_order(client, expects_fill=False)
+        self.ledger.note_order(client, expects_fill=False, quantity=qty)
         self._persist()
         live_order = LiveOrder(
             client_order_id=client,
@@ -537,36 +575,116 @@ class LiveSession:
         )
         return _public_order(placeholder, venue=self.venue, replayed=False)
 
+    def _prepare_submit(self, *, client_order_id: str | None) -> None:
+        """Adopt broker fills before a new order when a halt or an inflight order is open."""
+        pending = self._open_needs_reconcile()
+        self._recover_inflight()
+        if self._is_replay(client_order_id):
+            return
+        if pending or self._open_needs_reconcile():
+            self._reconcile_locked(None, ts=self._adoption_clock())
+
+    def _open_needs_reconcile(self) -> bool:
+        if self.kill_state.get("latched"):
+            return True
+        return any(str(row["status"]) == "inflight" for row in self.orders)
+
+    def _is_replay(self, client_order_id: str | None) -> bool:
+        if not client_order_id:
+            return False
+        return self._find(client_order_id) is not None
+
+    def _adoption_clock(self) -> int:
+        """Clock for a pre-submit reconcile. Never moves a stored quote backward."""
+        stamp = int(self._now())
+        mark_ts = int(self.engine.book.mark_ts)
+        if mark_ts > stamp:
+            stamp = mark_ts
+        for sid in self._sids.values():
+            sym = self.engine.book.syms[sid]
+            if sym.ref_ok and int(sym.ref_ts) > stamp:
+                stamp = int(sym.ref_ts)
+        return stamp
+
+    def _reconcile_locked(self, at_ns: int | None, *, ts: int | None = None) -> dict[str, Any]:
+        """Broker fills page. Caller holds the process lock."""
+        self._require_trading()
+        stamp = self._clock(at_ns) if ts is None else ts
+        self._capture_baseline()
+        mapping = {
+            str(row["broker_order_id"]): str(row["client_order_id"])
+            for row in self.orders
+            if row["broker_order_id"]
+        }
+        page = self.broker.fills(broker_to_client=mapping)
+        seen: set[str] = set()
+        duplicate_in_batch = False
+        ordered = sorted(page.fills, key=lambda fill: (fill.fill_time_ns, fill.fill_id))
+        for fill in ordered:
+            if fill.fill_id in seen:
+                duplicate_in_batch = True
+            seen.add(fill.fill_id)
+            self._record_fill(fill, stamp)
+        account = self.broker.account()
+        self.ledger.declare(cash=account.cash, positions=account.positions)
+        report = self.ledger.reconcile()
+        report["fills_truncated"] = page.truncated
+        report["duplicate_in_batch"] = duplicate_in_batch
+        if page.truncated or duplicate_in_batch:
+            report["ok"] = False
+        self._project_fills_onto_orders()
+        report["venue"] = self.venue
+        self._sync_account(stamp)
+        self._persist()
+        self._audit("reconcile", {"ok": bool(report["ok"])})
+        return report
+
     def _send(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
+        for attempt in range(_RETRY_BUDGET):
+            ack = self._send_once(row, order)
+            if ack is not None:
+                return ack
+            recovered = self._safe_recover(order.client_order_id)
+            if recovered is not None:
+                return recovered
+            if attempt + 1 >= _RETRY_BUDGET:
+                break
+            _retry_sleep(_retry_delay(attempt))
+        self._lose_response(row)
+
+    def _send_once(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck | None:
+        """One broker submit. None means recover, then retry if the budget allows."""
         try:
             return self.broker.submit(order)
         except BrokerRejected as exc:
-            return BrokerAck(
-                client_order_id=order.client_order_id,
-                broker_order_id="",
-                status="rejected",
-                filled_quantity=0.0,
-                fill_price=None,
-                fills=(),
-                reason=str(exc),
-            )
+            if _retryable_reject(exc):
+                return None
+            return _rejected_ack(order, str(exc))
         except LiveGateError:
-            row["status"] = "not_acknowledged"
-            row["reason"] = "broker credentials are not set"
-            self._persist()
+            self._mark_unacked(row)
             raise
+        except (TimeoutError, ConnectionError):
+            return None
         except Exception:
             recovered = self._safe_recover(order.client_order_id)
             if recovered is not None:
                 return recovered
-            # A lost response is not proof the broker rejected the order.
-            # Leave it inflight so a later open can find it and cancel it.
-            row["status"] = "inflight"
-            row["reason"] = "broker response lost; order remains recoverable"
-            self._persist()
-            raise LiveGateError(
-                "broker response lost; the order stays inflight until recovery succeeds"
-            ) from None
+            self._lose_response(row)
+
+    def _mark_unacked(self, row: dict[str, Any]) -> None:
+        row["status"] = "not_acknowledged"
+        row["reason"] = "broker credentials are not set"
+        self._persist()
+
+    def _lose_response(self, row: dict[str, Any]) -> NoReturn:
+        # A lost response is not proof the broker rejected the order.
+        # Leave it inflight so a later open can find it and cancel it.
+        row["status"] = "inflight"
+        row["reason"] = "broker response lost; order remains recoverable"
+        self._persist()
+        raise LiveGateError(
+            "broker response lost; the order stays inflight until recovery succeeds"
+        )
 
     def _safe_recover(self, client_order_id: str) -> BrokerAck | None:
         try:
@@ -575,23 +693,31 @@ class LiveSession:
             return None
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
+        # Fills land before the row becomes terminal, so this ack's prints apply
+        # and a later print on the terminal row does not. Filled quantity is
+        # updated first so working exposure does not reserve shares already filled.
         row["broker_order_id"] = ack.broker_order_id
-        status = map_broker_status(ack.status)
-        row["status"] = status
         row["filled_quantity"] = float(ack.filled_quantity)
         row["fill_price"] = ack.fill_price
         row["reason"] = ack.reason
+        for fill in ack.fills:
+            self._record_fill(fill, ts)
+        status = map_broker_status(ack.status)
+        row["status"] = status
         if status == "unmapped" and not row["reason"]:
             row["reason"] = f"unmapped broker status {ack.status}"
         expects = ack.status in {"filled", "partially_filled"}
         row["expects_fill"] = expects
         self.ledger.set_expects_fill(str(row["client_order_id"]), expects)
-        for fill in ack.fills:
-            self._record_fill(fill, ts)
 
     def _record_fill(self, fill: BrokerFill, ts: int) -> str:
         if fill.side not in {"buy", "sell"}:
             raise LiveGateError("broker fill side is not buy or sell")
+        if not self.ledger.has_fill(fill.fill_id):
+            row = self._find(fill.client_order_id)
+            if row is not None and str(row["status"]) in _TERMINAL:
+                self._latch_broker_fault("fill_after_terminal", fill.fill_id, ts)
+                return "fill_after_terminal"
         ledger_fill = LedgerFill(
             fill_id=fill.fill_id,
             client_order_id=fill.client_order_id,
@@ -599,10 +725,13 @@ class LiveSession:
             side=fill.side,
             quantity=fill.quantity,
             price=fill.price,
-            fill_time_ns=fill.fill_time_ns if fill.fill_time_ns > 0 else ts,
+            fill_time_ns=self._fill_stamp(fill, ts),
         )
         verdict = self.ledger.record_fill(ledger_fill)
-        if verdict in {"duplicate_fill", "orphan_fill"}:
+        if verdict in {"orphan_fill", "overfill"}:
+            self._latch_broker_fault(verdict, fill.fill_id, ts)
+            return verdict
+        if verdict == "duplicate_fill":
             return verdict
         if fill.client_order_id in self._engine_noted or verdict == "replaced_provisional":
             self._sync_account(ts)
@@ -610,6 +739,54 @@ class LiveSession:
             self._engine_from_fill(fill, ts)
             self._engine_noted.add(fill.client_order_id)
         return verdict
+
+    def _fill_stamp(self, fill: BrokerFill, ts: int) -> int:
+        """Keep a future print from pushing the ledger watermark past this decision."""
+        stamp = int(fill.fill_time_ns) if int(fill.fill_time_ns) > 0 else ts
+        horizon = ts + int(self.pretrade.limits.max_mark_age_ns)
+        if stamp > horizon:
+            return ts
+        return stamp
+
+    def _latch_broker_fault(self, verdict: str, fill_id: str, ts: int) -> None:
+        """Stop new orders when broker truth is an unknown, excess, or late fill."""
+        if self.kill_state["latched"]:
+            return
+        reason = f"{verdict} {fill_id}"
+        self.engine.trip("broker", reason, ts)
+        self.kill_state = {"latched": True, "actor": "broker", "reason": reason}
+
+    def _quote_is_stale(self, symbol: str, ts: int) -> bool:
+        """True when the stored quote is older than ``ts`` allows. Does not refresh it.
+
+        A timestamp inside the current window, including a loopback ``--at``
+        earlier than the wall clock, still refreshes on submit. Only an aged
+        quote is refused, so submit cannot launder it by rewriting the mark.
+        """
+        book = self.engine.book
+        if int(book.mark_ts) != 0 and ts > int(book.mark_deadline):
+            return True
+        return self._symbol_quote_is_stale(symbol, ts)
+
+    def _symbol_quote_is_stale(self, symbol: str, ts: int) -> bool:
+        sid = self._sids.get(symbol)
+        if sid is None:
+            return False
+        sym = self.engine.book.syms[sid]
+        if not sym.ref_ok:
+            return False
+        if ts < int(sym.ref_ts):
+            return True
+        return ts > int(sym.deadline)
+
+    def _quote_moves_backward(self, symbol: str, ts: int) -> bool:
+        sid = self._sids.get(symbol)
+        if sid is None:
+            return False
+        sym = self.engine.book.syms[sid]
+        if not sym.ref_ok:
+            return False
+        return ts < int(sym.ref_ts)
 
     def _engine_from_fill(self, fill: BrokerFill, ts: int) -> None:
         account = self.broker.account()
@@ -697,6 +874,8 @@ class LiveSession:
         """Copy reconciled fills onto the order row so cancel sees a filled order."""
         grouped: dict[str, list[LedgerFill]] = {}
         for fill in self.ledger.fills():
+            if not self.ledger.was_applied(fill.fill_id):
+                continue
             grouped.setdefault(fill.client_order_id, []).append(fill)
         for row in self.orders:
             fills = grouped.get(str(row["client_order_id"]))
@@ -767,19 +946,25 @@ class LiveSession:
         )
         self._baseline_from_broker = True
 
-    def _recover_inflight(self) -> None:
+    def _recover_inflight(self) -> bool:
+        """Recover inflight orders. False when none were inflight or a lookup failed."""
         ts = self._now()
         changed = False
+        failed = False
+        saw = False
         for row in self.orders:
             if row["status"] != "inflight":
                 continue
+            saw = True
             ack = self._safe_recover(str(row["client_order_id"]))
             if ack is None:
+                failed = True
                 continue
             changed = True
             self._apply_ack(row, ack, ts)
         if changed:
             self._persist()
+        return saw and not failed
 
     def _require_trading(self) -> None:
         if self._arm is None:
@@ -868,7 +1053,9 @@ class LiveSession:
     def _replay(self, fills: list[Any]) -> None:
         for row in self.orders:
             self.ledger.note_order(
-                str(row["client_order_id"]), expects_fill=bool(row["expects_fill"])
+                str(row["client_order_id"]),
+                expects_fill=bool(row["expects_fill"]),
+                quantity=float(row["quantity"]),
             )
         for item in fills:
             if not isinstance(item, dict):
@@ -962,7 +1149,16 @@ class LiveSession:
             self.engine.trip(
                 str(self.kill_state["actor"]), str(self.kill_state["reason"]), self._now()
             )
-        self._recover_inflight()
+        was_pending = self._open_needs_reconcile()
+        recovered = self._recover_inflight()
+        self._reconcile_after_reload(was_pending, recovered)
+
+    def _reconcile_after_reload(self, was_pending: bool, recovered: bool) -> None:
+        """Pull the fills page after a restart once the broker answers, or while halted."""
+        if self._arm is None:
+            return
+        if self.kill_state.get("latched") or (was_pending and recovered):
+            self._reconcile_locked(None, ts=self._adoption_clock())
 
     def _build_engine(self) -> None:
         """New engine, then the persisted rings and a fill replay for settlement."""
@@ -987,6 +1183,8 @@ class LiveSession:
     def _replay_fills_into_engine(self, ts: int) -> None:
         positions: dict[str, float] = {}
         for fill in self.ledger.fills():
+            if not self.ledger.was_applied(fill.fill_id):
+                continue
             signed = fill.quantity if fill.side == "buy" else -fill.quantity
             before = positions.get(fill.symbol, 0.0)
             after = before + signed
@@ -1055,28 +1253,60 @@ def _credentials_present(broker: Broker) -> bool:
     return True
 
 
+def _line_is_torn(raw_line: str) -> bool:
+    try:
+        json.loads(raw_line)
+    except json.JSONDecodeError:
+        return True
+    return False
+
+
 def _verify_audit(path: Path) -> str:
     head = zero_audit_head()
     if not path.exists():
         return head
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        if not raw_line.strip():
-            continue
-        parsed = json.loads(raw_line)
-        if not isinstance(parsed, dict):
-            raise LiveGateError("audit log line is not an object")
-        row = dict(parsed)
-        event_hash = row.pop("event_hash", None)
-        if row.get("prev_hash") != head:
-            raise LiveGateError("audit log chain does not match")
-        if row.get("live_pnl_claim") is not False or row.get("research_evidence") is not False:
-            raise LiveGateError("audit log claims live profit or research evidence")
-        encoded = json.dumps(row, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        digest = hashlib.sha256(encoded).hexdigest()
-        if digest != event_hash:
-            raise LiveGateError("audit log line was modified")
-        head = digest
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if lines and _line_is_torn(lines[-1]):
+        lines = lines[:-1]
+        _rewrite_lines(path, lines)
+    for raw_line in lines:
+        head = _audit_head(raw_line, head)
     return head
+
+
+def _rewrite_lines(path: Path, lines: list[str]) -> None:
+    """Replace a journal with its intact prefix. The torn tail is not replayed."""
+    payload = "".join(f"{line}\n" for line in lines).encode()
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, payload)
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, path)
+    os.chmod(path, 0o600)
+
+
+def _audit_head(raw_line: str, head: str) -> str:
+    try:
+        parsed = json.loads(raw_line)
+    except json.JSONDecodeError as exc:
+        raise LiveGateError("audit log line is truncated") from exc
+    if not isinstance(parsed, dict):
+        raise LiveGateError("audit log line is not an object")
+    row = dict(parsed)
+    event_hash = row.pop("event_hash", None)
+    if row.get("prev_hash") != head:
+        raise LiveGateError("audit log chain does not match")
+    if row.get("live_pnl_claim") is not False or row.get("research_evidence") is not False:
+        raise LiveGateError("audit log claims live profit or research evidence")
+    encoded = json.dumps(row, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    digest = hashlib.sha256(encoded).hexdigest()
+    if digest != event_hash:
+        raise LiveGateError("audit log line was modified")
+    return digest
 
 
 def _require_state_identity(stored: dict[str, Any], venue: str) -> None:

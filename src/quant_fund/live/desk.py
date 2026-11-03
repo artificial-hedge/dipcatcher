@@ -270,6 +270,8 @@ class LiveDesk:
         self._clock(ts_ns)
         symbol = _symbol(symbol)
         _price(px)
+        if self._quote_is_older(symbol, ts_ns):
+            raise LiveDeskError("mark timestamp is older than the stored quote")
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -310,6 +312,8 @@ class LiveDesk:
             )
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
+        if self._mark_is_stale(symbol, ts_ns):
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -757,6 +761,18 @@ class LiveDesk:
         count = sum(1 for stamp in self.rate_message_ts if ts_ns - stamp <= window)
         return count >= int(self.config.limits.max_messages_per_window)
 
+    def _mark_is_stale(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        if prior is None:
+            return False
+        if ts_ns < prior:
+            return True
+        return ts_ns > prior + int(self.config.limits.max_mark_age_ns)
+
+    def _quote_is_older(self, symbol: str, ts_ns: int) -> bool:
+        prior = self.mark_ts.get(symbol)
+        return prior is not None and ts_ns < prior
+
     def _going_backwards(self, ts_ns: int) -> bool:
         last = int(self.engine.book.last_ts)
         return last != 0 and ts_ns < last
@@ -1054,27 +1070,14 @@ class LiveDesk:
             if self.journal_hash != _ZERO:
                 return "journal missing"
             return None
-        prev = _ZERO
-        last = _ZERO
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
         except OSError as exc:
             return f"journal unreadable: {exc}"
-        for line_no, line in enumerate(lines, start=1):
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                return f"journal break at line {line_no}"
-            if not isinstance(row, dict) or row.get("prev") != prev:
-                return f"journal break at line {line_no}"
-            digest = _digest({"kind": row.get("kind"), "payload": row.get("payload"), "prev": prev})
-            if row.get("event_hash") != digest:
-                return f"journal hash mismatch at line {line_no}"
-            prev = digest
-            last = digest
-        if last != self.journal_hash:
-            return "journal head does not match the desk snapshot"
-        return None
+        if lines and _torn_json(lines[-1]):
+            lines = lines[:-1]
+            _rewrite_lines(path, lines)
+        return _journal_problem(lines, self.journal_hash)
 
     def _scan_outbound(self) -> None:
         outbound = self.root / "outbound"
@@ -1182,6 +1185,60 @@ def _cancel_ticket(order: DeskOrder) -> dict[str, object]:
 def _digest(body: Mapping[str, object]) -> str:
     encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(encoded.encode()).hexdigest()
+
+
+def _journal_problem(lines: list[str], expected: str) -> str | None:
+    """Walk the chain. A torn last line is dropped; a bad earlier line still freezes."""
+    body = list(lines)
+    if body and _torn_json(body[-1]):
+        body = body[:-1]
+    prev = _ZERO
+    last = _ZERO
+    for line_no, line in enumerate(body, start=1):
+        digest, problem = _journal_link(line, line_no, prev)
+        if problem is not None:
+            return problem
+        prev = digest
+        last = digest
+    if last != expected:
+        return "journal head does not match the desk snapshot"
+    return None
+
+
+def _torn_json(line: str) -> bool:
+    try:
+        json.loads(line)
+    except json.JSONDecodeError:
+        return True
+    return False
+
+
+def _rewrite_lines(path: Path, lines: list[str]) -> None:
+    """Drop a torn tail so the next append chains from the last intact line."""
+    payload = "".join(f"{line}\n" for line in lines).encode()
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, payload)
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, path)
+    os.chmod(path, 0o600)
+
+
+def _journal_link(line: str, line_no: int, prev: str) -> tuple[str, str | None]:
+    try:
+        row = json.loads(line)
+    except json.JSONDecodeError:
+        return "", f"journal break at line {line_no}"
+    if not isinstance(row, dict) or row.get("prev") != prev:
+        return "", f"journal break at line {line_no}"
+    digest = _digest({"kind": row.get("kind"), "payload": row.get("payload"), "prev": prev})
+    if row.get("event_hash") != digest:
+        return "", f"journal hash mismatch at line {line_no}"
+    return digest, None
 
 
 def _append_line(path: Path, row: Mapping[str, object]) -> None:

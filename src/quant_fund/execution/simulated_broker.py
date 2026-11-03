@@ -124,6 +124,9 @@ class SimulatedBroker:
     # legacy files retain their counters so a resumed run remains cumulative.
     _prior_order_count: int = field(default=0, repr=False)
     _prior_fill_count: int = field(default=0, repr=False)
+    # First admission of each order_id. Not serialized; from_state rebuilds it
+    # from history so a resumed book still refuses a second fill.
+    _acks: dict[str, OrderRecord] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         initial_cash = float(self.initial_cash)
@@ -142,6 +145,44 @@ class SimulatedBroker:
         if kind == "fill":
             return f"fill-{uuid4().hex[:12]}"
         return f"{self.slot}-{uuid4().hex[:10]}"
+
+    def _remember(self, record: OrderRecord) -> OrderRecord:
+        """Keep the first admission of this order id and return ``record`` itself.
+
+        A later bar fill or reject uses the same helper. ``setdefault`` leaves
+        the original acknowledgement in place, and the caller still receives
+        the record for this call.
+        """
+        self._acks.setdefault(record.order.order_id, record)
+        return record
+
+    def _existing_ack(self, order_id: str) -> OrderRecord | None:
+        """Return the first admission of ``order_id``.
+
+        A working id that has no stored admission is the backstop: ``submit``
+        used to own that branch. Keeping it here leaves ``submit`` inside its
+        complexity pin.
+        """
+        prior = self._acks.get(order_id)
+        if prior is not None:
+            return prior
+        if order_id in self.open_orders:
+            raise ValueError(f"order {order_id!r} is already working")
+        return None
+
+    def _reindex_acks(self) -> None:
+        """Rebuild the idempotency map after ``from_state``.
+
+        The first history row for an id is the original acknowledgement.
+        A working order with no history row, as in a legacy state file, is
+        reserved too so a resume cannot overwrite it.
+        """
+        indexed: dict[str, OrderRecord] = {}
+        for record in self.history:
+            indexed.setdefault(record.order.order_id, record)
+        for order_id, order in self.open_orders.items():
+            indexed.setdefault(order_id, OrderRecord(order=order, slot=self.slot))
+        self._acks = indexed
 
     def nav(self, prices: dict[str, float] | None = None) -> float:
         px = prices or self.last_marks
@@ -222,9 +263,16 @@ class SimulatedBroker:
         Orders carrying ``limit_price`` fill only when the bar's range
         touches the limit (``bar_open/high/low`` required); otherwise they
         rest in ``open_orders`` and can be swept later via ``process_bar``.
+
+        A repeated ``order_id`` returns the first record and does not fill,
+        reject, or replace the working order, even when the retry names a
+        different side or size. ``Order`` has no separate client id;
+        ``order_id`` is the idempotency key. A later cancel or bar fill stays
+        on the book, and the retry still returns that first record.
         """
-        if order.order_id in self.open_orders:
-            raise ValueError(f"order {order.order_id!r} is already working")
+        prior = self._existing_ack(order.order_id)
+        if prior is not None:
+            return prior
         if not np.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
@@ -233,7 +281,7 @@ class SimulatedBroker:
             )
             self.reject_count += 1
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
         if price is None or not np.isfinite(float(price)) or float(price) <= 0:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
@@ -242,7 +290,7 @@ class SimulatedBroker:
             )
             self.reject_count += 1
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
         if (
             not np.isfinite(float(adv_dollars))
             or float(adv_dollars) <= 0
@@ -262,7 +310,7 @@ class SimulatedBroker:
             )
             self.reject_count += 1
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
 
         try:
             self.kill.assert_new_orders_allowed()
@@ -275,7 +323,7 @@ class SimulatedBroker:
             )
             self.reject_count += 1
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
 
         if not self.allow_capital:
             # Shadow: record intent only — never move cash.
@@ -283,7 +331,7 @@ class SimulatedBroker:
             rec = OrderRecord(order=acked, reject_reason=None, slot=self.slot)
             self.open_orders[order.order_id] = acked
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
 
         # Limit orders are only executable when the bar's range touched the
         # limit; without bar context they rest in the book (never fill blind).
@@ -317,7 +365,7 @@ class SimulatedBroker:
         self.open_orders[order.order_id] = acked
         rec = OrderRecord(order=acked, reject_reason=None, slot=self.slot)
         self.history.append(rec)
-        return rec
+        return self._remember(rec)
 
     def cancel_order(self, order_id: str) -> OrderRecord:
         """Cancel a working order. Fails closed on unknown/filled ids."""
@@ -469,7 +517,7 @@ class SimulatedBroker:
             )
             self.reject_count += 1
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
         current_shares = self.shares.get(order.security_id, 0.0)
         current_w = (current_shares * price) / max(nav_use, 1e-12)
         projected = dict(self.shares)
@@ -503,7 +551,7 @@ class SimulatedBroker:
                 slot=self.slot,
             )
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
 
         costs = total_cost(exec_qty, price, adv_dollars, sigma, self.config.costs)
         total = float(costs["total"])
@@ -522,7 +570,7 @@ class SimulatedBroker:
                 slot=self.slot,
             )
             self.history.append(rec)
-            return rec
+            return self._remember(rec)
 
         # Validate decision_price before any state moves: a late raise would
         # leave cash/shares mutated with no fill to account for it.
@@ -561,7 +609,7 @@ class SimulatedBroker:
         rec = OrderRecord(order=filled, fill=fill, slot=self.slot)
         self.history.append(rec)
         self.mark({order.security_id: float(price)})
-        return rec
+        return self._remember(rec)
 
     def target_to_orders(
         self,
@@ -754,4 +802,5 @@ class SimulatedBroker:
 
         marks = state.get("last_marks") or {}
         broker.mark({str(k): float(v) for k, v in marks.items()})
+        broker._reindex_acks()
         return broker
