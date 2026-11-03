@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, date, datetime, time, timedelta
+from typing import cast
 from zoneinfo import ZoneInfo
 
 import polars as pl
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -80,8 +82,8 @@ def test_grid_tiles_every_session_without_gaps(
     assert grid_invariants(grid) == []
     # Local-label columns must be tz-aware in the exchange zone; UTC columns UTC.
     if grid.height:
-        assert grid["bar_open_local"].dtype.time_zone == calendar.tz.key
-        assert grid["bar_open_utc"].dtype.time_zone == "UTC"
+        assert grid["bar_open_local"].dtype == pl.Datetime("us", calendar.tz.key)
+        assert grid["bar_open_utc"].dtype == pl.Datetime("us", "UTC")
 
 
 @given(
@@ -231,3 +233,123 @@ def test_grid_assignment_round_trip_consistency() -> None:
     assert m["bar_open_utc"] == row["bar_open_utc"]
     assert m["bar_close_utc"] == row["bar_close_utc"]
     assert math.floor((ts - m["session_open_utc"]).total_seconds() / 300) == row["bar_index"]
+
+
+INVALID_RANGE_LABELS = [
+    pytest.param(datetime(2024, 1, 2), id="naive-datetime"),
+    pytest.param(datetime(2024, 1, 2, tzinfo=UTC), id="aware-datetime"),
+    pytest.param("2024-01-02", id="string"),
+]
+
+
+@pytest.mark.parametrize("calendar", [XNYS, FX, CRYPTO], ids=lambda calendar: calendar.name)
+def test_sessions_reject_inverted_range(calendar: TradingCalendar) -> None:
+    with pytest.raises(ValueError, match="start"):
+        calendar.sessions(date(2024, 1, 3), date(2024, 1, 2))
+
+
+@pytest.mark.parametrize("calendar", [XNYS, FX, CRYPTO], ids=lambda calendar: calendar.name)
+def test_session_grid_rejects_inverted_range(calendar: TradingCalendar) -> None:
+    with pytest.raises(ValueError, match="start"):
+        session_grid(calendar, date(2024, 1, 3), date(2024, 1, 2), timedelta(minutes=5))
+
+
+@pytest.mark.parametrize("calendar", [XNYS, FX, CRYPTO], ids=lambda calendar: calendar.name)
+@pytest.mark.parametrize("bad_label", INVALID_RANGE_LABELS)
+def test_sessions_reject_non_date_range_labels(
+    calendar: TradingCalendar, bad_label: object
+) -> None:
+    valid_label = date(2024, 1, 2)
+    for start, end in ((bad_label, valid_label), (valid_label, bad_label)):
+        with pytest.raises(TypeError, match="date"):
+            calendar.sessions(cast(date, start), cast(date, end))
+
+
+@pytest.mark.parametrize("calendar", [XNYS, FX, CRYPTO], ids=lambda calendar: calendar.name)
+@pytest.mark.parametrize("bad_label", INVALID_RANGE_LABELS)
+def test_session_grid_rejects_non_date_range_labels(
+    calendar: TradingCalendar, bad_label: object
+) -> None:
+    valid_label = date(2024, 1, 2)
+    for start, end in ((bad_label, valid_label), (valid_label, bad_label)):
+        with pytest.raises(TypeError, match="date"):
+            session_grid(calendar, cast(date, start), cast(date, end), timedelta(minutes=5))
+
+
+def test_xnys_weekend_only_direct_and_grid_ranges_are_empty() -> None:
+    saturday, sunday = date(2024, 1, 6), date(2024, 1, 7)
+    assert XNYS.sessions(saturday, sunday) == []
+    grid = session_grid(XNYS, saturday, sunday, timedelta(minutes=5))
+    assert grid.is_empty()
+    assert grid_invariants(grid) == []
+
+
+def test_grid_invariants_rejects_overlapping_sessions_for_same_calendar() -> None:
+    base = session_grid(XNYS, date(2024, 1, 2), date(2024, 1, 2), timedelta(minutes=5))
+    offset = timedelta(hours=1)
+    timestamp_columns = [
+        "session_open_utc",
+        "session_close_utc",
+        "bar_open_utc",
+        "bar_close_utc",
+        "bar_open_local",
+        "bar_close_local",
+    ]
+    overlapping = base.with_columns(
+        pl.lit(date(2024, 1, 3)).alias("session_date"),
+        *[pl.col(column) + offset for column in timestamp_columns],
+    )
+
+    errors = grid_invariants(pl.concat([base, overlapping]))
+
+    assert any("overlap" in error.lower() for error in errors), errors
+
+
+def test_grid_invariants_rejects_shared_open_with_multiple_session_dates() -> None:
+    base = session_grid(XNYS, date(2024, 1, 2), date(2024, 1, 2), timedelta(minutes=5))
+    other_date = base.with_columns(pl.lit(date(2024, 1, 3)).alias("session_date"))
+
+    errors = grid_invariants(pl.concat([base, other_date]))
+
+    assert any(
+        "session_date" in error
+        and "session_open_utc" in error
+        and ("multiple" in error or "inconsistent" in error)
+        for error in errors
+    ), errors
+
+
+def test_grid_invariants_rejects_inconsistent_session_close_within_identity() -> None:
+    base = session_grid(XNYS, date(2024, 1, 2), date(2024, 1, 2), timedelta(minutes=5))
+    inconsistent = base.with_columns(
+        pl.when(pl.col("bar_index") == 0)
+        .then(pl.col("session_close_utc") - timedelta(minutes=5))
+        .otherwise(pl.col("session_close_utc"))
+        .alias("session_close_utc")
+    )
+
+    errors = grid_invariants(inconsistent)
+
+    assert any(
+        "session_close_utc" in error and ("multiple" in error or "inconsistent" in error)
+        for error in errors
+    ), errors
+
+
+def test_grid_invariants_allows_distinct_calendars_sharing_open() -> None:
+    base = session_grid(XNYS, date(2024, 1, 2), date(2024, 1, 2), timedelta(minutes=5))
+    other_calendar = base.with_columns(pl.lit("OTHER").alias("calendar"))
+
+    assert grid_invariants(pl.concat([base, other_calendar])) == []
+
+
+def test_grid_invariants_allows_contiguous_fx_sessions() -> None:
+    grid = session_grid(FX, date(2024, 1, 2), date(2024, 1, 3), timedelta(hours=1))
+    bounds = (
+        grid.select("session_date", "session_open_utc", "session_close_utc")
+        .unique()
+        .sort("session_open_utc")
+    )
+    assert bounds.height == 2
+    assert bounds["session_close_utc"][0] == bounds["session_open_utc"][1]
+    assert grid_invariants(grid) == []

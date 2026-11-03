@@ -70,6 +70,15 @@ class TradingCalendar(Protocol):
         ...
 
 
+def validate_date_range(start: date, end: date) -> None:
+    """Require plain date labels in a non-inverted closed range."""
+    for name, value in (("start", start), ("end", end)):
+        if isinstance(value, datetime) or not isinstance(value, date):
+            raise TypeError(f"{name} must be a date, not {type(value).__name__}")
+    if end < start:
+        raise ValueError(f"end must not be before start: {start} > {end}")
+
+
 def require_aware(ts: datetime, *, name: str = "timestamp") -> datetime:
     """Fail closed on naive datetimes; return the instant in UTC."""
     if not isinstance(ts, datetime):
