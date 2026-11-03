@@ -12,14 +12,31 @@ from __future__ import annotations
 
 import hashlib
 import os
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 
-from fx1.secret_guard import refuse_world_readable
 from quant_fund.audit.errors import AuditError, SignatureUnavailableError
 
 _PUB_LEN = 32
 _SIG_LEN = 64
+
+
+def _refuse_world_readable(path: Path) -> None:
+    """Raise when a POSIX key file is readable by users other than the owner.
+
+    The harness cannot import ``fx1.secret_guard``, so this check stays local.
+    The error names the file, never its contents. Non-POSIX hosts have no
+    other-read bit.
+    """
+    if os.name != "posix":
+        return
+    try:
+        mode = path.stat().st_mode
+    except OSError:
+        return
+    if stat.S_IMODE(mode) & stat.S_IROTH:
+        raise PermissionError(f"{path.name} is world-readable")
 
 
 @dataclass(frozen=True)
@@ -78,7 +95,7 @@ class Ed25519Signer:
     def from_path(cls, path: Path) -> Ed25519Signer:
         target = Path(path)
         try:
-            refuse_world_readable(target)
+            _refuse_world_readable(target)
         except PermissionError as exc:
             raise AuditError("signing key file is world-readable") from exc
         text = target.read_text(encoding="utf-8").strip()
