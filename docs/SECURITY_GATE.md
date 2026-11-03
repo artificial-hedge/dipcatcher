@@ -111,6 +111,9 @@ the CLI actor, the optimize kind, the sensitive read, the chain, and the anchor.
 
 ## Owner steps this gate does not perform
 
+The ordered commands, expected digests, and remaining owner actions are in
+`docs/OWNER_RESIGN_CHECKLIST.md`.
+
 - Bump the crown `uv.lock` virtualenv pin past 21.14.12 for GHSA-cx6f-vjhg-g3cc.
 - Change the crown `Dockerfile` numeric `USER` and the JSON `HEALTHCHECK`.
 - Copy `docs/SECURITY_ENV.md` into `.env.example`, then restamp epochs and re-sign `gate_pins.sig`.
