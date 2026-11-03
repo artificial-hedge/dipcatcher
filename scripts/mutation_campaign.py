@@ -261,6 +261,23 @@ SUITES: tuple[Suite, ...] = (
             "tests/unit/live/test_broker_reject_boundaries.py",
         ),
     ),
+    Suite(
+        name="live-risk-limits",
+        target="src/quant_fund/live/risk_limits.py",
+        picks=_picks(
+            (
+                ("M0000", 54, "negation-insertion"),
+                ("M0001", 65, "negation-removal"),
+                ("M0006", 141, "negation-insertion"),
+                ("M0011", 77, "boolop-swap"),
+                ("M0024", 55, "const-bool-flip"),
+                ("M0025", 77, "comparison-swap"),
+                ("M0037", 130, "comparison-swap"),
+                ("M0044", 95, "comparison-swap"),
+            )
+        ),
+        selectors=("tests/unit/live/test_risk_limit_decisions.py",),
+    ),
 )
 
 

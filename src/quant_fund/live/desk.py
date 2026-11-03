@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -29,13 +30,20 @@ from quant_fund.live.arming import (
     write_arming,
 )
 from quant_fund.live.bridge import BridgeError, BrokerEvent, DropBridge, LoopbackBridge
+from quant_fund.live.risk_limits import (
+    install_ceilings,
+    loosened_names,
+    loss_reason,
+    precision_reasons,
+    structural_changes,
+)
 from quant_fund.pretrade.codes import (
     INTERNAL,
     KIND_CANCEL,
     KIND_ORDER,
     reason_names,
 )
-from quant_fund.pretrade.config import PretradeConfig, sign_config
+from quant_fund.pretrade.config import LimitConfig, PretradeConfig, sign_config
 from quant_fund.pretrade.engine import OrderView, PretradeEngine
 
 _EPS = 1e-8
@@ -140,9 +148,13 @@ class LiveDesk:
     _closed: bool = False
     _integrity_frozen: bool = False
     _settled_before: float = 0.0
+    controls: dict[str, tuple[bool, bool]] = field(default_factory=dict)
+    _limit_override: LimitConfig | None = None
+    _gate: Any = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         self._drop = DropBridge(self.root)
+        self._gate = threading.RLock()
 
     @classmethod
     def open(
@@ -241,13 +253,66 @@ class LiveDesk:
         return self._envelope(accepted=True, status="shadow")
 
     def kill(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
-        self._alive()
-        self._clock(ts_ns)
-        self.engine.trip(actor, reason, ts_ns)
-        self.halt_reason = reason
-        self._journal("kill", {"actor": actor, "reason": reason})
-        self._save()
-        return self._envelope(accepted=True, status="halted")
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            self.engine.trip(actor, reason, ts_ns)
+            self.halt_reason = reason
+            canceled = self._cancel_working(ts_ns)
+            still = self._working_ids()
+            self._journal("kill", {"actor": actor, "reason": reason, "canceled": canceled})
+            self._save()
+            report = self._envelope(accepted=not still, status="halted")
+            report["canceled"] = canceled
+            report["still_working"] = still
+            return report
+
+    def set_symbol_controls(
+        self,
+        symbol: str,
+        ts_ns: int,
+        *,
+        halted: bool | None = None,
+        locate_ok: bool | None = None,
+    ) -> dict[str, object]:
+        """Halt a name or clear its locate. The next order sees it without a restart."""
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            symbol = _symbol(symbol)
+            halt, locate = self._symbol_flags(symbol)
+            if halted is not None:
+                halt = bool(halted)
+            if locate_ok is not None:
+                locate = bool(locate_ok)
+            self.controls[symbol] = (halt, locate)
+            if symbol in self.marks:
+                self._project(ts_ns)
+            self._journal(
+                "symbol_controls", {"symbol": symbol, "halted": halt, "locate_ok": locate}
+            )
+            self._save()
+            return self._envelope(accepted=True, status="controls", halted=halt, locate_ok=locate)
+
+    def update_limits(
+        self, limits: LimitConfig, ts_ns: int, *, reauthorize: bool = False
+    ) -> dict[str, object]:
+        """Apply ceilings now. A looser ceiling needs ``reauthorize``."""
+        with self._gate:
+            self._alive()
+            self._require_funded()
+            self._clock(ts_ns)
+            structural = structural_changes(self.config.limits, limits)
+            if structural:
+                return self._limit_envelope(applied=False, structural=structural)
+            looser = loosened_names(self.config.limits, limits)
+            if looser and not reauthorize:
+                return self._limit_envelope(applied=False, loosened=looser)
+            self._apply_limits(limits)
+            self._latch_loss(ts_ns)
+            self._journal("limits", {"reauthorized": reauthorize, "loosened": list(looser)})
+            self._save()
+            return self._limit_envelope(applied=True, loosened=looser, reauthorized=reauthorize)
 
     def reset(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
         """Clear a halt. An integrity failure or an internal fault stays halted."""
@@ -266,19 +331,21 @@ class LiveDesk:
         return report
 
     def mark(self, symbol: str, px: float, ts_ns: int) -> dict[str, object]:
-        self._alive()
-        self._clock(ts_ns)
-        symbol = _symbol(symbol)
-        _price(px)
-        if self._quote_is_older(symbol, ts_ns):
-            raise LiveDeskError("mark timestamp is older than the stored quote")
-        self.marks[symbol] = px
-        self.mark_ts[symbol] = ts_ns
-        self._project(ts_ns)
-        self._collect_matured()
-        self._journal("mark", {"symbol": symbol, "px": px, "ts_ns": ts_ns})
-        self._save()
-        return self._envelope(accepted=True, status="marked")
+        with self._gate:
+            self._alive()
+            self._clock(ts_ns)
+            symbol = _symbol(symbol)
+            _price(px)
+            if self._quote_is_older(symbol, ts_ns):
+                raise LiveDeskError("mark timestamp is older than the stored quote")
+            self.marks[symbol] = px
+            self.mark_ts[symbol] = ts_ns
+            self._project(ts_ns)
+            self._latch_loss(ts_ns)
+            self._collect_matured()
+            self._journal("mark", {"symbol": symbol, "px": px, "ts_ns": ts_ns})
+            self._save()
+            return self._envelope(accepted=True, status="marked")
 
     def submit(
         self,
@@ -291,6 +358,19 @@ class LiveDesk:
         client_order_id: str | None = None,
     ) -> dict[str, object]:
         """Risk-check one limit order. Transmit only when the venue switch is on."""
+        with self._gate:
+            return self._submit_body(symbol, side, qty, px, ts_ns, client_order_id=client_order_id)
+
+    def _submit_body(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+        ts_ns: int,
+        *,
+        client_order_id: str | None = None,
+    ) -> dict[str, object]:
         self._alive()
         self._require_funded()
         self._clock(ts_ns)
@@ -321,6 +401,14 @@ class LiveDesk:
         decision = self.engine.decide(view, apply=False)
         self._collect_matured()
         reasons = list(decision.reasons)
+        reasons.extend(
+            precision_reasons(
+                qty,
+                px,
+                float(self.config.limits.qty_tick),
+                float(self.config.limits.price_tick),
+            )
+        )
         if self._rate_blocked(ts_ns, order=True) and "order_rate" not in reasons:
             reasons.append("order_rate")
         if self._duplicate(symbol, side, qty, px, ts_ns) and "duplicate_order" not in reasons:
@@ -503,6 +591,7 @@ class LiveDesk:
             }
         )
         self._sync_order(order)
+        self._note_loss(ts_ns)
         if event.synthetic:
             order.synthetic = True
         self._check_books()
@@ -567,6 +656,102 @@ class LiveDesk:
             trace_ok=self.trace_ok,
         )
 
+    def _symbol_flags(self, symbol: str) -> tuple[bool, bool]:
+        return self.controls.get(symbol, (False, True))
+
+    def _latch_loss(self, ts_ns: int) -> None:
+        if self.engine.book.killed:
+            return
+        nav = float(self.engine.book.nav)
+        if nav != nav or not nav > 0.0:
+            return
+        reason = loss_reason(
+            nav, float(self.engine.book.daily_floor), float(self.engine.book.dd_floor)
+        )
+        if not reason:
+            return
+        self.engine.trip("risk", reason, ts_ns)
+        self.halt_reason = reason
+        self._cancel_working(ts_ns)
+
+    def _note_loss(self, ts_ns: int) -> None:
+        nav = self._account_value()
+        if nav == nav and nav > 0.0:
+            self.engine.book.nav = nav
+            if nav > float(self.engine.book.peak):
+                self.engine.book.peak = nav
+                self.peak = nav
+                self.engine._recompute_floors()
+        self._latch_loss(ts_ns)
+
+    def _cancel_working(self, ts_ns: int) -> list[str]:
+        """Cancel every transmitted working order. Only confirmed cancels count."""
+        targets = [
+            order
+            for order in list(self.orders.values())
+            if order.lifecycle in {"new", "partial"} and order.transmitted
+        ]
+        for order in targets:
+            self._send(_cancel_ticket(order))
+        if targets and self.arming.venue == "loopback":
+            self.poll(ts_ns)
+        return [
+            order.order_id
+            for order in targets
+            if order.lifecycle not in {"new", "partial"} or not order.transmitted
+        ]
+
+    def _working_ids(self) -> list[str]:
+        return [
+            order.order_id
+            for order in self.orders.values()
+            if order.lifecycle in {"new", "partial"} and order.transmitted
+        ]
+
+    def _apply_limits(self, limits: LimitConfig) -> None:
+        install_ceilings(self.engine, limits)
+        self.config = self.config.model_copy(update={"limits": limits})
+        digest, signature = sign_config(self.config, self.hmac_key)
+        self.engine.config_sha256 = digest
+        self.engine.config_hmac_sha256 = signature
+        self._limit_override = limits
+
+    def _limit_envelope(
+        self,
+        *,
+        applied: bool,
+        loosened: tuple[str, ...] = (),
+        structural: tuple[str, ...] = (),
+        reauthorized: bool = False,
+    ) -> dict[str, object]:
+        status = "limits" if applied else "limits_refused"
+        return self._envelope(
+            accepted=applied,
+            status=status,
+            applied=applied,
+            loosened=list(loosened),
+            structural=list(structural),
+            reauthorized=reauthorized,
+        )
+
+    def _restore_controls(self, raw: Mapping[str, Any]) -> None:
+        payload = raw.get("symbol_controls") or {}
+        if not isinstance(payload, dict):
+            raise LiveDeskError("symbol controls are malformed")
+        for symbol, item in payload.items():
+            if not isinstance(item, dict):
+                raise LiveDeskError("symbol control is malformed")
+            self.controls[str(symbol)] = (
+                bool(item.get("halted")),
+                bool(item.get("locate_ok", True)),
+            )
+
+    def _restore_saved_limits(self, raw: Mapping[str, Any]) -> None:
+        payload = raw.get("limit_override")
+        if not isinstance(payload, dict):
+            return
+        self._apply_limits(LimitConfig.model_validate(payload))
+
     def _project(self, ts_ns: int) -> None:
         self.engine.refresh_session(ts_ns)
         symbols = set(self.positions) | set(self.reserved_qty) | set(self.marks)
@@ -576,7 +761,15 @@ class LiveDesk:
                 raise LiveDeskError("symbol table is full")
             pos = self.positions.get(symbol, 0.0) + self.reserved_qty.get(symbol, 0.0)
             ref = self.marks.get(symbol, float("nan"))
-            self.engine.set_symbol(sid, pos=pos, ref_px=ref, ref_ts_ns=self.mark_ts.get(symbol, 0))
+            halted, locate_ok = self._symbol_flags(symbol)
+            self.engine.set_symbol(
+                sid,
+                pos=pos,
+                ref_px=ref,
+                ref_ts_ns=self.mark_ts.get(symbol, 0),
+                halted=halted,
+                locate_ok=locate_ok,
+            )
         account = self._account_value()
         self.engine.update_account(nav=account, mark_ts_ns=ts_ns if account > 0.0 else 0)
         self.peak = float(self.engine.book.peak)
@@ -899,6 +1092,11 @@ class LiveDesk:
             "live_pnl_claim": False,
             "would_promote_live": False,
             "evidence_conditions": "blocked",
+            "symbol_controls": {
+                symbol: {"halted": halt, "locate_ok": locate}
+                for symbol, (halt, locate) in self.controls.items()
+            },
+            "limit_override": _limit_payload(self._limit_override),
         }
 
     def _load_without_snapshot(
@@ -978,6 +1176,8 @@ class LiveDesk:
         self.dupes = [_dupe(item) for item in list(raw.get("dupes", []))]
         self._restore_orders(raw)
         self._restore_engine(raw)
+        self._restore_controls(raw)
+        self._restore_saved_limits(raw)
         self._restore_trace()
         problem = self._verify_journal()
         if problem:
@@ -1144,6 +1344,12 @@ def _quantity(qty: float) -> None:
 def _price(px: float) -> None:
     if isinstance(px, bool) or px != px or px <= 0.0 or px == float("inf"):
         raise LiveDeskError("price must be finite and positive")
+
+
+def _limit_payload(limits: LimitConfig | None) -> dict[str, object] | None:
+    if limits is None:
+        return None
+    return limits.model_dump(mode="json")
 
 
 def _ticks(
