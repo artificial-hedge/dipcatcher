@@ -28,6 +28,7 @@ import numpy as np
 import polars as pl
 
 from quant_fund.config.models import AppConfig, FillConvention
+from quant_fund.execution.quote_gate import require_monotonic_event_times
 from quant_fund.execution.simulated_broker import OrderRecord, SimulatedBroker
 from quant_fund.metrics.analytics import (
     analytics_export_digest,
@@ -266,7 +267,7 @@ def build_scaled_challenger_weights(
 
 
 def _validate_bar_panel(bars: pl.DataFrame) -> None:
-    """Reject duplicate ``(event_time, security_id)`` rows.
+    """Reject duplicate keys and event times that step backward.
 
     ``_bar_maps`` otherwise keeps whichever row arrives last, so two conflicting
     prints for the same bar fill at different prices when the frame is reordered.
@@ -282,6 +283,7 @@ def _validate_bar_panel(bars: pl.DataFrame) -> None:
     )
     if duplicates.height:
         raise ValueError("duplicate bars for event_time/security_id")
+    require_monotonic_event_times(bars.get_column("event_time").to_list())
 
 
 def _validate_weight_panel(weights: pl.DataFrame) -> None:

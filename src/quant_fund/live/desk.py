@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from quant_fund.execution.quote_gate import QuoteHalt, note_quote, require_fresh_quote
 from quant_fund.formal.order_lifecycle import TERMINAL, Book, check_trace, step
 from quant_fund.live.arming import (
     Arming,
@@ -294,6 +295,7 @@ class LiveDesk:
         self._clock(ts_ns)
         symbol = _symbol(symbol)
         _price(px)
+        self._gate_quote(symbol, ts_ns, new_tick=True)
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -327,6 +329,7 @@ class LiveDesk:
             return self._idempotent_order(prior, symbol, side, qty, px)
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
+        self._gate_quote(symbol, ts_ns, new_tick=False)
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
@@ -803,6 +806,25 @@ class LiveDesk:
                 return True
         count = sum(1 for stamp in self.rate_message_ts if ts_ns - stamp <= window)
         return count >= int(self.config.limits.max_messages_per_window)
+
+    def _gate_quote(self, symbol: str, ts_ns: int, *, new_tick: bool) -> None:
+        max_age = int(self.config.limits.max_reference_age_ns)
+        previous = self.mark_ts.get(symbol)
+        try:
+            if new_tick:
+                note_quote(
+                    symbol=symbol,
+                    quote_ns=ts_ns,
+                    now_ns=ts_ns,
+                    max_age_ns=max_age,
+                    previous_ns=previous,
+                )
+            elif previous is not None:
+                require_fresh_quote(
+                    symbol=symbol, quote_ns=previous, now_ns=ts_ns, max_age_ns=max_age
+                )
+        except QuoteHalt as exc:
+            raise LiveDeskError(str(exc)) from exc
 
     def _going_backwards(self, ts_ns: int) -> bool:
         last = int(self.engine.book.last_ts)

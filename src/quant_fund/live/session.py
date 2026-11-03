@@ -21,6 +21,12 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from quant_fund.execution.quote_gate import (
+    QuoteHalt,
+    _whole_ns,
+    note_quote,
+    require_fresh_quote,
+)
 from quant_fund.live.brokers import (
     AlpacaBroker,
     Broker,
@@ -184,6 +190,7 @@ class LiveSession:
         self.orders: list[dict[str, Any]] = []
         self.marks: dict[str, float] = {}
         self.mark_ts: dict[str, int] = {}
+        self._quote_ns: dict[str, int] = {}
         self.kill_state: dict[str, Any] = {"latched": False, "actor": "", "reason": ""}
         self.ledger = LiveLedger(
             baseline_cash=float(config.starting_cash),
@@ -301,6 +308,8 @@ class LiveSession:
             _actor(actor)
             cleaned = _symbol(symbol)
             number = _positive(price, "mark")
+            now = self._clock(None)
+            self._note_mark(cleaned, now)
             self.marks[cleaned] = number
             self.mark_ts[cleaned] = self._now()
             self.broker.set_mark(cleaned, number)
@@ -324,6 +333,7 @@ class LiveSession:
         actor: str,
         client_order_id: str | None = None,
         at_ns: int | None = None,
+        quote_ts_ns: int | None = None,
     ) -> dict[str, Any]:
         with self._lock():
             self._recover_inflight()
@@ -336,6 +346,7 @@ class LiveSession:
                 actor=actor,
                 client_order_id=client_order_id,
                 at_ns=at_ns,
+                quote_ts_ns=quote_ts_ns,
             )
 
     def cancel(
@@ -474,6 +485,7 @@ class LiveSession:
         actor: str,
         client_order_id: str | None,
         at_ns: int | None,
+        quote_ts_ns: int | None = None,
     ) -> dict[str, Any]:
         who = _actor(actor)
         ts = self._clock(at_ns)
@@ -491,6 +503,7 @@ class LiveSession:
             return self._replay_client(existing, cleaned, order_side, qty, limit)
         if self.kill_state["latched"]:
             return self._deny_killed(who, client, cleaned, order_side, qty, limit)
+        self._gate_quote(cleaned, ts, quote_ts_ns)
         self._capture_baseline()
         self.marks[cleaned] = reference
         self.mark_ts[cleaned] = ts
@@ -842,6 +855,42 @@ class LiveSession:
         if self.venue == "alpaca-live":
             raise LiveBrokerRefused(ALPACA_LIVE_REFUSAL)
 
+    def _note_mark(self, symbol: str, now_ns: int) -> None:
+        try:
+            note_quote(
+                symbol=symbol,
+                quote_ns=now_ns,
+                now_ns=now_ns,
+                max_age_ns=int(self.engine._max_ref_age),
+                previous_ns=self._quote_ns.get(symbol),
+            )
+        except QuoteHalt as exc:
+            raise LiveGateError(str(exc)) from exc
+        self._quote_ns[symbol] = now_ns
+
+    def _gate_quote(self, symbol: str, now_ns: int, quote_ts_ns: int | None) -> None:
+        max_age = int(self.engine._max_ref_age)
+        stored = self._quote_ns.get(symbol)
+        try:
+            if quote_ts_ns is None:
+                if stored is not None:
+                    require_fresh_quote(
+                        symbol=symbol, quote_ns=stored, now_ns=now_ns, max_age_ns=max_age
+                    )
+                else:
+                    self._quote_ns[symbol] = now_ns
+                return
+            note_quote(
+                symbol=symbol,
+                quote_ns=quote_ts_ns,
+                now_ns=now_ns,
+                max_age_ns=max_age,
+                previous_ns=stored,
+            )
+            self._quote_ns[symbol] = quote_ts_ns
+        except QuoteHalt as exc:
+            raise LiveGateError(str(exc)) from exc
+
     def _clock(self, at_ns: int | None) -> int:
         if at_ns is None:
             return int(self._now())
@@ -880,6 +929,7 @@ class LiveSession:
         self.orders = []
         self.marks = {}
         self.mark_ts = {}
+        self._quote_ns = {}
         self.kill_state = {"latched": False, "actor": "", "reason": ""}
         _refuse_broker_venue(self.venue, self.broker)
         self._pretrade_blob = None
@@ -898,6 +948,7 @@ class LiveSession:
             str(symbol): _positive(float(price), "stored mark") for symbol, price in marks.items()
         }
         self.mark_ts = _stored_mark_times(stored.get("mark_ts"))
+        self._quote_ns = _quote_times(stored)
         self.kill_state = _kill_from_state(kill)
         _refuse_broker_venue(self.venue, self.broker)
         self._pretrade_blob = stored.get("pretrade")
@@ -943,6 +994,7 @@ class LiveSession:
             "baseline_from_broker": self._baseline_from_broker,
             "marks": dict(self.marks),
             "mark_ts": dict(self.mark_ts),
+            "quote_ns": dict(self._quote_ns),
             "orders": list(self.orders),
             "fills": [fill.as_dict() for fill in self.ledger.fills()],
             "kill": dict(self.kill_state),
@@ -1150,6 +1202,18 @@ def _require_state_identity(stored: dict[str, Any], venue: str) -> None:
     evidence = stored.get("research_evidence") is not False
     if profit or evidence:
         raise LiveGateError("session state must not claim research evidence or live profit")
+
+
+def _quote_times(stored: dict[str, Any]) -> dict[str, int]:
+    raw = stored.get("quote_ns", {})
+    if not isinstance(raw, dict):
+        raise LiveGateError("stored quote times are malformed")
+    parsed: dict[str, int] = {}
+    for symbol, stamp in raw.items():
+        if not _whole_ns(stamp):
+            raise LiveGateError(f"quote clock for {symbol} is not usable; no order sent")
+        parsed[_symbol(str(symbol))] = stamp
+    return parsed
 
 
 def _state_collections(
