@@ -165,6 +165,30 @@ def test_cash_drift_alarms(tmp_path: Path) -> None:
     assert report["live_pnl_claim"] is False
 
 
+@pytest.mark.parametrize("reopen", [False, True])
+def test_first_submit_does_not_rebase_existing_loss_floors(tmp_path: Path, reopen: bool) -> None:
+    session = _open(tmp_path)
+    _arm(session)
+    session.reconcile(at_ns=TS)
+    if reopen:
+        session = _open(tmp_path)
+    assert session.orders == []
+    assert session.engine.book.session_start == 1_000_000.0
+    assert session.engine.book.peak == 1_000_000.0
+    assert isinstance(session.broker, LoopbackBroker)
+    session.broker.cash = 900_000.0
+
+    denied = _buy(session, quantity=1.0, client_order_id="dc-loss-floor")
+
+    assert denied["ok"] is False
+    assert denied["broker_called"] is False
+    assert "daily_loss" in denied["reasons"]
+    assert "trailing_drawdown" in denied["reasons"]
+    assert session.orders == []
+    assert session.engine.book.session_start == 1_000_000.0
+    assert session.engine.book.peak == 1_000_000.0
+
+
 def test_saturday_rth_is_closed_and_continuous_is_open(tmp_path: Path) -> None:
     closed = open_session(
         _config(tmp_path / "rth"),
@@ -258,6 +282,31 @@ def test_alpaca_paper_posts_only_to_the_paper_host(tmp_path: Path) -> None:
     assert "SECRETVALUE" not in audit
     assert "SECRETVALUE" not in state
     assert "KEYID" not in audit
+
+
+def test_alpaca_paper_first_submit_captures_baseline_after_mark_reload(tmp_path: Path) -> None:
+    transport = _Script()
+
+    def open_paper() -> Any:
+        broker = AlpacaBroker("alpaca-paper", ("KEYID", "SECRETVALUE"), transport=transport)
+        return open_session(
+            _config(tmp_path, venue="alpaca-paper", starting_cash=100_000.0),
+            PRETRADE,
+            state_dir=tmp_path,
+            now_ns=_clock,
+            broker=broker,
+        )
+
+    session = open_paper()
+    _arm(session)
+    session.mark(symbol="AAPL", price=100.0, actor="ada")
+    session = open_paper()
+
+    result = _buy(session, quantity=1.0, client_order_id="dc-paper-baseline")
+
+    assert result["status"] == "filled"
+    assert session.engine.book.session_start == 1_000_000.0
+    assert session.engine.book.peak == 1_000_000.0
 
 
 def test_alpaca_live_host_is_not_the_paper_host() -> None:
