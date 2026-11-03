@@ -288,7 +288,7 @@ flowchart LR
   fx1_serve -->|3| fx1
   fx1_serve -->|3| fx1_cli
   fx1_serve -->|3| fx1_eval
-  fx1_serve -->|32| fx1_harness
+  fx1_serve -->|33| fx1_harness
   fx1_serve -->|3| fx1_honesty
   fx1_serve -->|6| fx1_modelcard
   fx1_serve -->|1| fx1_process_signals
@@ -318,7 +318,7 @@ flowchart LR
   quant_fund_api -->|1| quant_fund_metrics
   quant_fund_api -->|2| quant_fund_models
   quant_fund_api -->|1| quant_fund_monitoring
-  quant_fund_api -->|8| quant_fund_observe
+  quant_fund_api -->|9| quant_fund_observe
   quant_fund_api -->|3| quant_fund_pipeline
   quant_fund_api -->|1| quant_fund_portfolio
   quant_fund_api -->|3| quant_fund_research
@@ -369,6 +369,7 @@ flowchart LR
   quant_fund_cli -->|16| quant_fund_utils
   quant_fund_cli -->|1| quant_fund_validation
   quant_fund_compute -->|8| quant_fund_utils
+  quant_fund_config -->|1| quant_fund_api
   quant_fund_config -->|1| quant_fund_models
   quant_fund_config -->|7| quant_fund_utils
   quant_fund_data -->|1| quant_fund
@@ -376,7 +377,7 @@ flowchart LR
   quant_fund_data -->|2| quant_fund_microstructure
   quant_fund_data -->|1| quant_fund_proofcore
   quant_fund_data -->|16| quant_fund_schemas
-  quant_fund_data -->|24| quant_fund_utils
+  quant_fund_data -->|25| quant_fund_utils
   quant_fund_diffbacktest -->|1| quant_fund_metrics
   quant_fund_diffbacktest -->|6| quant_fund_utils
   quant_fund_execution -->|2| quant_fund_config
@@ -423,9 +424,11 @@ flowchart LR
   quant_fund_leakage -->|1| quant_fund_utils
   quant_fund_lightspeed -->|3| quant_fund_hedge_lab
   quant_fund_lightspeed -->|1| quant_fund_models
+  quant_fund_live -->|2| quant_fund_api
   quant_fund_live -->|1| quant_fund_config
   quant_fund_live -->|2| quant_fund_execution
   quant_fund_live -->|1| quant_fund_formal
+  quant_fund_live -->|2| quant_fund_observe
   quant_fund_live -->|10| quant_fund_pretrade
   quant_fund_live -->|1| quant_fund_utils
   quant_fund_market_sim -->|1| quant_fund
@@ -474,6 +477,7 @@ flowchart LR
   quant_fund_northset -->|1| quant_fund_utils
   quant_fund_observe -->|1| quant_fund_config
   quant_fund_observe -->|3| quant_fund_utils
+  quant_fund_paper -->|1| quant_fund_api
   quant_fund_paper -->|1| quant_fund_backtest
   quant_fund_paper -->|3| quant_fund_config
   quant_fund_paper -->|1| quant_fund_data
@@ -831,12 +835,12 @@ sequenceDiagram
 | `fx1.sdk_audit` | 1 |
 | `fx1.secret_guard` | 1 |
 | `fx1.selftest` | 1 |
-| `fx1.serve` | 64 |
+| `fx1.serve` | 65 |
 | `fx1.tail_audit` | 1 |
 | `fx1.train` | 14 |
 | `fx1.webresearch` | 4 |
 | `quant_fund` | 1 |
-| `quant_fund.api` | 16 |
+| `quant_fund.api` | 20 |
 | `quant_fund.audit` | 11 |
 | `quant_fund.backtest` | 18 |
 | `quant_fund.calendars` | 8 |
@@ -891,9 +895,9 @@ sequenceDiagram
 | `quant_fund.utils` | 17 |
 | `quant_fund.validation` | 14 |
 
-- Modules scanned: **13443**
+- Modules scanned: **13448**
 - Packages: **100**
-- Cross-package import edges: **434**
+- Cross-package import edges: **438**
 
 <!-- END GENERATED: coverage -->
 

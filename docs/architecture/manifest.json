@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13443,
+  "module_count": 13448,
   "module_edges": [
     {
       "dst": "fx1.interactive.concierge",
@@ -2755,6 +2755,10 @@
       "src": "fx1.serve.api_audit"
     },
     {
+      "dst": "fx1.serve.api_audit_reuse",
+      "src": "fx1.serve.api_audit"
+    },
+    {
       "dst": "fx1.serve.backends",
       "src": "fx1.serve.api_audit"
     },
@@ -2789,6 +2793,14 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.serve.api_audit"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.serve.api_audit_reuse"
+    },
+    {
+      "dst": "fx1.serve.api",
+      "src": "fx1.serve.api_audit_reuse"
     },
     {
       "dst": "fx1.serve.signing",
@@ -4287,6 +4299,10 @@
       "src": "quant_fund.api"
     },
     {
+      "dst": "quant_fund.api.http_controls",
+      "src": "quant_fund.api.admin_audit"
+    },
+    {
       "dst": "quant_fund.api.lifecycle",
       "src": "quant_fund.api.alerts"
     },
@@ -4307,6 +4323,10 @@
       "src": "quant_fund.api.app"
     },
     {
+      "dst": "quant_fund.api.admin_audit",
+      "src": "quant_fund.api.app"
+    },
+    {
       "dst": "quant_fund.api.http_controls",
       "src": "quant_fund.api.app"
     },
@@ -4316,6 +4336,10 @@
     },
     {
       "dst": "quant_fund.api.rate_limit",
+      "src": "quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.api.request_log",
       "src": "quant_fund.api.app"
     },
     {
@@ -4395,6 +4419,10 @@
       "src": "quant_fund.api.error_shape"
     },
     {
+      "dst": "quant_fund.api.rate_store",
+      "src": "quant_fund.api.http_controls"
+    },
+    {
       "dst": "quant_fund.utils.api_auth",
       "src": "quant_fund.api.http_controls"
     },
@@ -4419,7 +4447,15 @@
       "src": "quant_fund.api.lifecycle"
     },
     {
+      "dst": "quant_fund.api.admin_audit",
+      "src": "quant_fund.api.middleware_audit"
+    },
+    {
       "dst": "quant_fund.api.app",
+      "src": "quant_fund.api.middleware_audit"
+    },
+    {
+      "dst": "quant_fund.api.http_controls",
       "src": "quant_fund.api.middleware_audit"
     },
     {
@@ -4451,7 +4487,19 @@
       "src": "quant_fund.api.param_fuzz"
     },
     {
+      "dst": "quant_fund.api.json_logging",
+      "src": "quant_fund.api.request_log"
+    },
+    {
+      "dst": "quant_fund.observe.metrics",
+      "src": "quant_fund.api.request_log"
+    },
+    {
       "dst": "quant_fund",
+      "src": "quant_fund.api.research_api"
+    },
+    {
+      "dst": "quant_fund.api.admin_audit",
       "src": "quant_fund.api.research_api"
     },
     {
@@ -4464,6 +4512,14 @@
     },
     {
       "dst": "quant_fund.api.rate_limit",
+      "src": "quant_fund.api.research_api"
+    },
+    {
+      "dst": "quant_fund.api.request_log",
+      "src": "quant_fund.api.research_api"
+    },
+    {
+      "dst": "quant_fund.api.secret_files",
       "src": "quant_fund.api.research_api"
     },
     {
@@ -4536,6 +4592,10 @@
     },
     {
       "dst": "quant_fund.api.kill_file",
+      "src": "quant_fund.api.service_config"
+    },
+    {
+      "dst": "quant_fund.api.secret_files",
       "src": "quant_fund.api.service_config"
     },
     {
@@ -5971,6 +6031,10 @@
       "src": "quant_fund.config.inherit_audit"
     },
     {
+      "dst": "quant_fund.api.admin_audit",
+      "src": "quant_fund.config.loader"
+    },
+    {
       "dst": "quant_fund.config.models",
       "src": "quant_fund.config.loader"
     },
@@ -6312,6 +6376,10 @@
     },
     {
       "dst": "quant_fund.utils.path_safety",
+      "src": "quant_fund.data.lakehouse.query"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.data.lakehouse.query"
     },
     {
@@ -7639,6 +7707,10 @@
       "src": "quant_fund.live.config"
     },
     {
+      "dst": "quant_fund.api.admin_audit",
+      "src": "quant_fund.live.desk"
+    },
+    {
       "dst": "quant_fund.execution.quote_gate",
       "src": "quant_fund.live.desk"
     },
@@ -7687,6 +7759,10 @@
       "src": "quant_fund.live.risk_memory"
     },
     {
+      "dst": "quant_fund.api.admin_audit",
+      "src": "quant_fund.live.session"
+    },
+    {
       "dst": "quant_fund.execution.quote_gate",
       "src": "quant_fund.live.session"
     },
@@ -7712,6 +7788,14 @@
     },
     {
       "dst": "quant_fund.live.risk_memory",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.observe.logging",
+      "src": "quant_fund.live.session"
+    },
+    {
+      "dst": "quant_fund.observe.metrics",
       "src": "quant_fund.live.session"
     },
     {
@@ -14629,6 +14713,10 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.paper.forward_shadow"
+    },
+    {
+      "dst": "quant_fund.api.admin_audit",
+      "src": "quant_fund.paper.ledger"
     },
     {
       "dst": "quant_fund.execution.simulated_broker",
@@ -25716,6 +25804,10 @@
     },
     {
       "dst": "quant_fund.models.option_vae",
+      "src": "quant_fund.research.benches_w127"
+    },
+    {
+      "dst": "quant_fund.research.scorecard_budget",
       "src": "quant_fund.research.benches_w127"
     },
     {
@@ -37936,6 +38028,10 @@
     },
     {
       "dst": "quant_fund.models.xlstm_mlstm",
+      "src": "quant_fund.research.benches_w181"
+    },
+    {
+      "dst": "quant_fund.research.scorecard_budget",
       "src": "quant_fund.research.benches_w181"
     },
     {
@@ -62726,6 +62822,7 @@
     "fx1.serve.anthropic_sdk_audit",
     "fx1.serve.api",
     "fx1.serve.api_audit",
+    "fx1.serve.api_audit_reuse",
     "fx1.serve.attestation",
     "fx1.serve.attestation_audit",
     "fx1.serve.auth_audit",
@@ -62806,6 +62903,7 @@
     "fx1.webresearch.search",
     "quant_fund",
     "quant_fund.api",
+    "quant_fund.api.admin_audit",
     "quant_fund.api.alerts",
     "quant_fund.api.app",
     "quant_fund.api.error_shape",
@@ -62817,7 +62915,10 @@
     "quant_fund.api.ops_metrics",
     "quant_fund.api.param_fuzz",
     "quant_fund.api.rate_limit",
+    "quant_fund.api.rate_store",
+    "quant_fund.api.request_log",
     "quant_fund.api.research_api",
+    "quant_fund.api.secret_files",
     "quant_fund.api.serve",
     "quant_fund.api.service_config",
     "quant_fund.api.surface_pin",
@@ -76540,7 +76641,7 @@
     },
     {
       "dst": "fx1.harness",
-      "imports": 32,
+      "imports": 33,
       "src": "fx1.serve"
     },
     {
@@ -76575,7 +76676,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 184,
+      "imports": 186,
       "src": "fx1.serve"
     },
     {
@@ -76675,7 +76776,7 @@
     },
     {
       "dst": "quant_fund.api",
-      "imports": 23,
+      "imports": 34,
       "src": "quant_fund.api"
     },
     {
@@ -76710,7 +76811,7 @@
     },
     {
       "dst": "quant_fund.observe",
-      "imports": 8,
+      "imports": 9,
       "src": "quant_fund.api"
     },
     {
@@ -76989,6 +77090,11 @@
       "src": "quant_fund.compute"
     },
     {
+      "dst": "quant_fund.api",
+      "imports": 1,
+      "src": "quant_fund.config"
+    },
+    {
       "dst": "quant_fund.config",
       "imports": 7,
       "src": "quant_fund.config"
@@ -77035,7 +77141,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 24,
+      "imports": 25,
       "src": "quant_fund.data"
     },
     {
@@ -77329,6 +77435,11 @@
       "src": "quant_fund.lightspeed"
     },
     {
+      "dst": "quant_fund.api",
+      "imports": 2,
+      "src": "quant_fund.live"
+    },
+    {
       "dst": "quant_fund.config",
       "imports": 1,
       "src": "quant_fund.live"
@@ -77346,6 +77457,11 @@
     {
       "dst": "quant_fund.live",
       "imports": 20,
+      "src": "quant_fund.live"
+    },
+    {
+      "dst": "quant_fund.observe",
+      "imports": 2,
       "src": "quant_fund.live"
     },
     {
@@ -77632,6 +77748,11 @@
       "dst": "quant_fund.utils",
       "imports": 3,
       "src": "quant_fund.observe"
+    },
+    {
+      "dst": "quant_fund.api",
+      "imports": 1,
+      "src": "quant_fund.paper"
     },
     {
       "dst": "quant_fund.backtest",
@@ -78175,7 +78296,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 631,
+      "imports": 633,
       "src": "quant_fund.research"
     },
     {

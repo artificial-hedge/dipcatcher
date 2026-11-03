@@ -7,6 +7,7 @@ src/fx1/data/sources/adapters.py 2
 src/fx1/data/sources/ds_audit.py 1
 src/fx1/secret_guard.py 2
 src/fx1/serve/api_audit.py 2
+src/fx1/serve/api_audit_reuse.py 1
 src/fx1/serve/backends.py 1
 src/fx1/serve/journal_audit.py 12
 src/fx1/serve/module_entry.py 1
@@ -19,6 +20,7 @@ src/quant_fund/data/lakehouse/quality.py 1
 src/quant_fund/data/point_in_time.py 1
 src/quant_fund/execution/langevin_impact.py 1
 src/quant_fund/formal/traces.py 1
+src/quant_fund/hmm/discrete.py 1
 src/quant_fund/leakage/guard.py 8
 src/quant_fund/metrics/_bootstrap_kernels.py 1
 src/quant_fund/metrics/adaptive_eps.py 2

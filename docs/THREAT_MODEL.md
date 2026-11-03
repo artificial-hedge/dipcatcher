@@ -188,7 +188,7 @@ while the clock is strictly before the timestamp in
 `{NAME}_GRACE_UNTIL_FILE`. The runbook is in `docs/SECURITY_GATE.md`. An
 admin-key unsafe method appends a line to `QUANT_API_AUDIT_LOG` or
 `RESEARCH_API_AUDIT_LOG` when that variable is set, and always emits the
-same JSON through the `quant_fund.api.audit` logger. A rejected key on an
+same JSON through the audit logger in `quant_fund.api.admin_audit`. A rejected key on an
 unsafe method appends outcome `denied`. If the configured file cannot be
 opened, the mutation or the denial is 503 `audit log unavailable` and the
 route does not run. `GET` and `HEAD` of `/backtest/{id}`, and `GET` of
