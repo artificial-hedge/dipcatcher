@@ -9,6 +9,7 @@ limit is inside it; a value strictly above it is a breach.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 
 from quant_fund.pretrade.codes import (
     COLLAR,
@@ -56,21 +57,30 @@ def _abs(value: float) -> float:
 
 
 def pred_max_qty(view: HardView) -> int:
-    if view.qty > view.max_qty:
+    if not isfinite(view.qty) or not isfinite(view.max_qty) or view.qty > view.max_qty:
         return MAX_QTY
     return 0
 
 
 def pred_max_notional(view: HardView) -> int:
     basis = notional_basis(view.px, view.ref, view.ref_ok)
-    if view.qty * basis > view.max_notional:
+    order_n = view.qty * basis
+    if (
+        not isfinite(order_n)
+        or not isfinite(view.max_notional)
+        or (view.ref_ok and not isfinite(view.ref))
+        or order_n > view.max_notional
+    ):
         return MAX_NOTIONAL
     return 0
 
 
 def pred_collar(view: HardView) -> int:
-    if view.is_limit and view.ref_ok and (view.px > view.hi or view.px < view.lo):
-        return COLLAR
+    if view.is_limit and view.ref_ok:
+        if not isfinite(view.px) or not isfinite(view.hi) or not isfinite(view.lo):
+            return COLLAR
+        if view.px > view.hi or view.px < view.lo:
+            return COLLAR
     return 0
 
 
@@ -84,7 +94,12 @@ def _projected(view: HardView) -> tuple[float, float, float]:
 
 def pred_position_qty(view: HardView) -> int:
     new_pos, _, _ = _projected(view)
-    if new_pos > view.max_pos_qty or -new_pos > view.max_pos_qty:
+    if (
+        not isfinite(new_pos)
+        or not isfinite(view.max_pos_qty)
+        or new_pos > view.max_pos_qty
+        or -new_pos > view.max_pos_qty
+    ):
         return POSITION_QTY
     return 0
 
@@ -93,7 +108,12 @@ def pred_position_notional(view: HardView) -> int:
     if not view.ref_ok:
         return 0
     _, new_n, _ = _projected(view)
-    if new_n > view.max_pos_notional or -new_n > view.max_pos_notional:
+    if (
+        not isfinite(new_n)
+        or not isfinite(view.max_pos_notional)
+        or new_n > view.max_pos_notional
+        or -new_n > view.max_pos_notional
+    ):
         return POSITION_NOTIONAL
     return 0
 
@@ -103,7 +123,12 @@ def pred_gross(view: HardView) -> int:
         return 0
     _, new_n, old_n = _projected(view)
     gross_after = view.gross - _abs(old_n) + _abs(new_n)
-    if gross_after > view.max_gross or gross_after < 0.0:
+    if (
+        not isfinite(gross_after)
+        or not isfinite(view.max_gross)
+        or gross_after > view.max_gross
+        or gross_after < 0.0
+    ):
         return GROSS
     return 0
 
@@ -113,7 +138,12 @@ def pred_net(view: HardView) -> int:
         return 0
     _, new_n, old_n = _projected(view)
     net_after = view.net - old_n + new_n
-    if net_after > view.max_net or -net_after > view.max_net:
+    if (
+        not isfinite(net_after)
+        or not isfinite(view.max_net)
+        or net_after > view.max_net
+        or -net_after > view.max_net
+    ):
         return NET
     return 0
 
@@ -122,7 +152,8 @@ def pred_concentration(view: HardView) -> int:
     if not view.ref_ok:
         return 0
     _, new_n, _ = _projected(view)
-    if _abs(new_n) > view.name_limit:
+    abs_new = _abs(new_n)
+    if not isfinite(abs_new) or not isfinite(view.name_limit) or abs_new > view.name_limit:
         return CONCENTRATION
     return 0
 
