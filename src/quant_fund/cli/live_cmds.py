@@ -1,9 +1,9 @@
 """One ``dipcatcher live`` command for the desk and the broker gateway.
 
 No gateway config means the operator desk: shadow, a SYNTHETIC loopback, or
-a drop folder. A gateway file (``starting_cash`` plus ``pretrade_config``)
-selects the armed broker session. ``--root`` or ``--venue`` always means the
-desk. The Alpaca live host is refused by the gateway.
+a drop folder. Gateway-specific YAML fields select the armed broker session.
+Desk and gateway flags cannot be mixed, and an explicit file never falls back
+to the other schema. The Alpaca live host is refused by the gateway.
 """
 
 from __future__ import annotations
@@ -131,11 +131,37 @@ def _stamp(ts_ns: int | None) -> int:
     return time.time_ns() if ts_ns is None else ts_ns
 
 
+_GATEWAY_FIELDS = frozenset(
+    {
+        "venue",
+        "starting_cash",
+        "calendar",
+        "pretrade_config",
+        "state_dir",
+        "cash_tolerance",
+        "position_tolerance",
+    }
+)
+_PRETRADE_FIELDS = frozenset({"limits", "session"})
+
+
 def _gateway_file(path: Path | None) -> bool:
-    if path is None or not path.exists():
+    if path is None:
         return False
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return isinstance(raw, dict) and "starting_cash" in raw and "pretrade_config" in raw
+    if not path.is_file():
+        raise typer.BadParameter("config must be an existing file")
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        raise typer.BadParameter("config contains invalid YAML") from None
+    if not isinstance(raw, dict):
+        return False
+    keys = set(raw)
+    has_gateway = not keys.isdisjoint(_GATEWAY_FIELDS)
+    has_pretrade = not keys.isdisjoint(_PRETRADE_FIELDS)
+    if has_gateway and has_pretrade:
+        raise typer.BadParameter("config mixes desk and gateway schemas")
+    return has_gateway
 
 
 def _use_gateway(
@@ -149,12 +175,24 @@ def _use_gateway(
     at: str | None = None,
     client_order_id: str | None = None,
 ) -> bool:
-    """Desk flags win. Gateway flags or a gateway file select the broker session."""
-    if venue or root is not None:
-        return False
-    if state_dir is not None or actor.strip() or at or client_order_id or limit is not None:
+    """Select one schema, refusing mixed configurations and command flags."""
+    gateway_file = _gateway_file(config)
+    gateway_options = bool(state_dir is not None or at or client_order_id or limit is not None)
+    if gateway_file:
+        if venue or root is not None:
+            raise typer.BadParameter("desk and gateway options cannot be combined")
         return True
-    return _gateway_file(config)
+    if venue or root is not None:
+        if gateway_options:
+            raise typer.BadParameter("desk and gateway options cannot be combined")
+        return False
+    if gateway_options:
+        if config is not None:
+            raise typer.BadParameter("gateway options require a gateway config")
+        return True
+    if actor.strip() and config is None:
+        raise typer.BadParameter("--actor requires an explicit desk or gateway selection")
+    return False
 
 
 def _echo_gateway(payload: dict[str, Any]) -> None:
@@ -247,7 +285,7 @@ def live_arm(
     confirm_live_capital: str = typer.Option("", "--confirm-live-capital"),
     state_dir: Path | None = typer.Option(None, "--state-dir"),
 ) -> None:
-    """Arm the desk, or the gateway when ``--actor`` or a gateway file is set."""
+    """Arm the explicitly selected desk or gateway."""
     if _use_gateway(config, actor=actor, state_dir=state_dir, venue=venue, root=root):
 
         def action() -> dict[str, Any]:
