@@ -202,6 +202,10 @@ def test_hash_corruption_cannot_be_repaired(experiment):
         body = json.loads(db.execute("SELECT body FROM events WHERE seq=1").fetchone()[0])
         body["payload"]["execution"]["initial_nav"] *= 2
         db.execute("UPDATE events SET body=? WHERE seq=1", (json.dumps(body),))
+        db.execute(
+            "CREATE TRIGGER no_event_update BEFORE UPDATE ON events BEGIN "
+            "SELECT RAISE(ABORT, 'events are immutable'); END"
+        )
     with pytest.raises(ValueError, match="hash/sequence"):
         shadow.report(path, repair=True)
 
@@ -213,8 +217,120 @@ def test_retained_head_detects_truncated_journal(experiment):
     with sqlite3.connect(path) as db:
         db.execute("DROP TRIGGER no_event_delete")
         db.execute("DELETE FROM events WHERE seq=2")
+        db.execute(
+            "CREATE TRIGGER no_event_delete BEFORE DELETE ON events BEGIN "
+            "SELECT RAISE(ABORT, 'events are immutable'); END"
+        )
     with pytest.raises(ValueError, match="external head"):
         shadow.report(path, repair=True, expected_head=head)
+
+
+def test_repair_without_external_head_refuses_truncated_history(experiment):
+    path, *_ = experiment
+    shadow.record(path, "decide", decision(experiment))
+    with sqlite3.connect(path) as db:
+        old_head = db.execute("SELECT head FROM projection WHERE id=1").fetchone()[0]
+        db.execute("DROP TRIGGER no_event_delete")
+        db.execute("DELETE FROM events WHERE seq=2")
+        db.execute(
+            "CREATE TRIGGER no_event_delete BEFORE DELETE ON events BEGIN "
+            "SELECT RAISE(ABORT, 'events are immutable'); END"
+        )
+    with pytest.raises(ValueError, match="retained external head required"):
+        shadow.report(path, repair=True)
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT head FROM projection WHERE id=1").fetchone() == (old_head,)
+
+
+def test_projection_state_can_be_repaired_without_external_head(experiment):
+    path, *_ = experiment
+    shadow.record(path, "decide", decision(experiment))
+    expected = shadow.report(path)
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE projection SET state='{}'")
+    assert shadow.report(path, repair=True) == expected
+
+
+def test_new_journal_stamps_schema_version(experiment):
+    path, *_ = experiment
+    with sqlite3.connect(path) as db:
+        assert db.execute("PRAGMA user_version").fetchone() == (
+            journal.SHADOW_JOURNAL_SCHEMA_VERSION,
+        )
+
+
+def test_unversioned_legacy_journal_remains_readable(experiment):
+    path, *_ = experiment
+    with sqlite3.connect(path) as db:
+        db.execute("PRAGMA user_version=0")
+    assert shadow.report(path)["reconciled"] is True
+    with sqlite3.connect(path) as db:
+        assert db.execute("PRAGMA user_version").fetchone() == (0,)
+
+
+def test_unknown_journal_schema_version_fails_closed(experiment):
+    path, *_ = experiment
+    with sqlite3.connect(path) as db:
+        db.execute("PRAGMA user_version=99")
+    request = decision(experiment)
+    calls = (
+        lambda: shadow.report(path),
+        lambda: shadow.report(path, repair=True),
+        lambda: shadow.record(path, "decide", request),
+    )
+    for call in calls:
+        with pytest.raises(ValueError, match="unsupported shadow journal schema version: 99"):
+            call()
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT count(*) FROM events").fetchone() == (1,)
+
+
+def test_legacy_schema_requires_immutability_triggers(experiment):
+    path, *_ = experiment
+    with sqlite3.connect(path) as db:
+        db.execute("PRAGMA user_version=0")
+        db.execute("DROP TRIGGER no_event_delete")
+    with pytest.raises(ValueError, match="event immutability triggers"):
+        shadow.report(path)
+
+
+@pytest.mark.parametrize("schema", [None, True, 99])
+def test_unknown_manifest_schema_is_rejected(experiment, schema):
+    path, *_ = experiment
+    with sqlite3.connect(path) as db:
+        db.execute("DROP TRIGGER no_event_update")
+        body = json.loads(db.execute("SELECT body FROM events WHERE seq=1").fetchone()[0])
+        if schema is None:
+            body["payload"].pop("schema")
+        else:
+            body["payload"]["schema"] = schema
+        db.execute(
+            "UPDATE events SET body=?, hash=? WHERE seq=1",
+            (json.dumps(body), journal.digest(body)),
+        )
+        db.execute(
+            "CREATE TRIGGER no_event_update BEFORE UPDATE ON events BEGIN "
+            "SELECT RAISE(ABORT, 'events are immutable'); END"
+        )
+    with pytest.raises(ValueError, match="unsupported shadow manifest schema"):
+        shadow.report(path)
+
+
+def test_failed_freeze_leaves_no_canonical_database(experiment, monkeypatch):
+    path, spec, bars, _ = experiment
+    new_path = path.with_name("failed.sqlite")
+
+    def crash(*args, **kwargs):
+        raise RuntimeError("simulated freeze failure")
+
+    original = journal._append
+    monkeypatch.setattr(journal, "_append", crash)
+    with pytest.raises(RuntimeError, match="simulated freeze failure"):
+        shadow.freeze(spec, bars[:20], new_path)
+    assert not new_path.exists()
+    monkeypatch.setattr(journal, "_append", original)
+    shadow.freeze(spec, bars[:20], new_path)
+    assert new_path.is_file()
 
 
 def test_settlement_cannot_precede_decision_or_outcome(experiment):
