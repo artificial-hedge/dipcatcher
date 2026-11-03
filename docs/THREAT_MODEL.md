@@ -125,7 +125,7 @@ does not scan that process.
 - The default rate backend is in-process memory, so workers do not share buckets until `DIPCATCHER_RATE_BACKEND` is `sqlite` or `file` and `DIPCATCHER_RATE_STORE` points at the shared volume. A missing or unreadable store is 503 `rate store unavailable`. Loopback and remote peers use separate buckets on every backend.
 - The hash chain detects a torn, deleted, or reordered line. `scripts/anchor_audit_head.py` appends the head digest and the time to a separate anchors file. That line is unsigned. Signing it is an owner step, the same as `gate_pins.sig`. A rewrite of the log and the anchors file still verifies. `scripts/verify_audit_chain.py` checks the chain. `scripts/prod_backup.py` copies the chain and the anchors file. `gate_pins.sig` is not re-signed here.
 - The harness gaps in the pending section remain.
-- `.env.example` does not list the file, grace, audit-log, loopback-rate, audit max-byte, rate-backend, audit-reads, or anchors variables.
+- `.env.example` does not list the file, grace, audit-log, loopback-rate, audit max-byte, rate-backend, or audit-reads variables. `docs/SECURITY_ENV.md` has the names and the production values for the re-sign. The anchors path is a script argument, not an environment variable.
 
 ## Entrypoints
 
@@ -188,7 +188,7 @@ while the clock is strictly before the timestamp in
 `{NAME}_GRACE_UNTIL_FILE`. The runbook is in `docs/SECURITY_GATE.md`. An
 admin-key unsafe method appends a line to `QUANT_API_AUDIT_LOG` or
 `RESEARCH_API_AUDIT_LOG` when that variable is set, and always emits the
-same JSON through the `quant_fund.api.audit` logger. A rejected key on an
+same JSON through the audit logger in `quant_fund.api.admin_audit`. A rejected key on an
 unsafe method appends outcome `denied`. If the configured file cannot be
 opened, the mutation or the denial is 503 `audit log unavailable` and the
 route does not run. `GET` and `HEAD` of `/backtest/{id}`, and `GET` of

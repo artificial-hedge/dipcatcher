@@ -25,7 +25,7 @@ QUANT_API_RATE_PER_SEC=off
 RESEARCH_API_RATE_PER_SEC=off
 ```
 
-`deploy/compose.hardened.yml` does not pass those variables into the container. A rescan uses an uncommitted compose override. `0`, `off`, `false`, `no`, or an empty value disables the limit. Production keeps the default of 10 requests/second for a peer that is not loopback. `.env.example` is hash-pinned and does not list them. `docs/THREAT_MODEL.md` is the operator description.
+`deploy/compose.hardened.yml` does not pass those variables into the container. A rescan uses an uncommitted compose override. `0`, `off`, `false`, `no`, or an empty value disables the limit. Production keeps the default of 10 requests/second for a peer that is not loopback. `.env.example` is hash-pinned and does not list them. `docs/SECURITY_ENV.md` lists every security variable added from hardening2 through hardening5, with the production value, for the owner to copy at re-sign. `docs/THREAT_MODEL.md` is the operator description.
 
 ## Loopback rate limit
 
@@ -113,5 +113,5 @@ the CLI actor, the optimize kind, the sensitive read, the chain, and the anchor.
 
 - Bump the crown `uv.lock` virtualenv pin past 21.14.12 for GHSA-cx6f-vjhg-g3cc.
 - Change the crown `Dockerfile` numeric `USER` and the JSON `HEALTHCHECK`.
-- Restamp epochs and re-sign `gate_pins.sig`.
+- Copy `docs/SECURITY_ENV.md` into `.env.example`, then restamp epochs and re-sign `gate_pins.sig`.
 - Sign an audit anchor. `scripts/anchor_audit_head.py` writes the head digest unsigned.
