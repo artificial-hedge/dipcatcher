@@ -295,6 +295,7 @@ def adjust_prices(bars: pl.DataFrame, actions: pl.DataFrame) -> pl.DataFrame:
         (pl.col("close") / sf).alias("close_split_adjusted"),
         (pl.col("volume") * sf).alias("volume_split_adjusted"),
     )
+    out = out.sort("security_id", "event_time")
     # Total return = split-adjusted price return plus the cash dividend, both
     # per unit of prior wealth. `dividend` is cash per share on the ex-date's
     # raw basis. A split whose ex-date is after the previous bar leaves that

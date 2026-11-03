@@ -211,6 +211,54 @@ def test_dividend_total_return_closed_form() -> None:
     assert out["close_total_return"].to_list() == pytest.approx([100.0, 100.0])
 
 
+def test_total_return_is_independent_of_provider_row_order() -> None:
+    timestamps = [
+        datetime(2020, 1, 2, tzinfo=UTC),
+        datetime(2020, 1, 3, tzinfo=UTC),
+        datetime(2020, 1, 6, tzinfo=UTC),
+    ]
+    rows = [
+        ("A", timestamps[2], 12.0),
+        ("B", timestamps[1], 20.0),
+        ("A", timestamps[1], 11.0),
+        ("B", timestamps[0], 20.0),
+        ("A", timestamps[0], 10.0),
+    ]
+    bars = pl.DataFrame(
+        {
+            "security_id": [row[0] for row in rows],
+            "event_time": [row[1] for row in rows],
+            "open": [row[2] for row in rows],
+            "high": [row[2] + 1.0 for row in rows],
+            "low": [row[2] - 1.0 for row in rows],
+            "close": [row[2] for row in rows],
+            "volume": [1.0] * len(rows),
+        }
+    )
+    actions = pl.DataFrame(
+        {
+            "security_id": ["A"],
+            "event_time": [timestamps[1]],
+            "action_type": ["cash_dividend"],
+            "factor": [None],
+            "amount": [1.0],
+        }
+    )
+
+    out = adjust_prices(bars, actions)
+
+    assert out.select("security_id", "event_time").rows() == [
+        ("A", timestamps[0]),
+        ("A", timestamps[1]),
+        ("A", timestamps[2]),
+        ("B", timestamps[0]),
+        ("B", timestamps[1]),
+    ]
+    a_returns = out.filter(pl.col("security_id") == "A")["close_total_return"]
+    assert a_returns.to_list() == pytest.approx([10.0, 12.0, 12.0 * 12.0 / 11.0])
+    assert out.filter(pl.col("security_id") == "B")["close_total_return"].to_list() == [20.0, 20.0]
+
+
 def test_same_day_cash_and_special_dividends_do_not_explode_bars() -> None:
     bars = _bars_ab().filter(pl.col("security_id") == "A")
     actions = pl.DataFrame(

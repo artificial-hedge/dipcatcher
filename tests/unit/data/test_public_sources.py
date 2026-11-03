@@ -9,12 +9,12 @@ from quant_fund.data.sources.adapters import (
     BinancePublicDataSource,
     BinanceUsdtmPerpSource,
 )
-from quant_fund.data.sources.base import SourceError
+from quant_fund.data.sources.base import HttpClient, SourceError
 from quant_fund.data.sources.normalize import normalize_observations
 from quant_fund.data.sources.registry import get_source
 
 
-class FakeClient:
+class FakeClient(HttpClient):
     def __init__(self, payload=None, text=""):
         self.payload = payload
         self.text = text
@@ -62,7 +62,7 @@ def test_public_source_names_are_configurable_without_optional_imports():
         assert DataConfig.model_validate({"source": name}).source == name
 
 
-class FakeSeqClient:
+class FakeSeqClient(HttpClient):
     """Returns queued payloads in order; records every URL for cursor checks."""
 
     def __init__(self, payloads):
@@ -106,6 +106,45 @@ def test_perp_klines_paginate_forward_and_drop_in_progress():
     assert set(frame["source"].to_list()) == {"binance_usdtm_perp"}
 
 
+def test_perp_klines_fail_closed_when_max_pages_truncates():
+    client = FakeSeqClient(
+        [
+            [
+                _kline(1_577_836_800_000, 1_577_923_199_999),
+                _kline(1_577_923_200_000, 1_578_009_599_999),
+            ]
+        ]
+    )
+    with pytest.raises(SourceError, match=r"max_pages=1.*truncated"):
+        BinanceUsdtmPerpSource(client=client).fetch(
+            symbol="BTCUSDT", interval="1d", limit=2, max_pages=1, pause_seconds=0.0
+        )
+    assert len(client.urls) == 1
+
+
+def test_perp_klines_accept_full_page_bounded_by_end_time():
+    end_time = 1_577_923_200_001
+    client = FakeSeqClient(
+        [
+            [
+                _kline(1_577_836_800_000, 1_577_923_199_999),
+                _kline(1_577_923_200_000, 1_578_009_599_999),
+            ]
+        ]
+    )
+    frame = BinanceUsdtmPerpSource(client=client).fetch(
+        symbol="BTCUSDT",
+        interval="1d",
+        end_time=end_time,
+        limit=2,
+        max_pages=1,
+        pause_seconds=0.0,
+    )
+    assert frame.height == 2
+    assert len(client.urls) == 1
+    assert f"endTime={end_time}" in client.urls[0]
+
+
 def test_perp_klines_reject_bad_interval_and_limit():
     src = BinanceUsdtmPerpSource(client=FakeSeqClient([]))
     with pytest.raises(ValueError, match="interval"):
@@ -130,6 +169,22 @@ def test_funding_rate_paginates_and_normalizes():
     assert frame["value"].to_list() == [0.0001, -0.0002]
     assert "startTime=1577865600001" in client.urls[1]
     assert (frame["event_time"] == frame["available_time"]).all()
+
+
+def test_funding_rate_fail_closed_when_max_pages_truncates():
+    client = FakeSeqClient(
+        [
+            [
+                {"symbol": "BTCUSDT", "fundingTime": 1_577_836_800_000, "fundingRate": "0.0001"},
+                {"symbol": "BTCUSDT", "fundingTime": 1_577_865_600_000, "fundingRate": "-0.0002"},
+            ]
+        ]
+    )
+    with pytest.raises(SourceError, match=r"max_pages=1.*truncated"):
+        BinanceFundingRateSource(client=client).fetch(
+            symbol="BTCUSDT", limit=2, max_pages=1, pause_seconds=0.0
+        )
+    assert len(client.urls) == 1
 
 
 def test_funding_rate_rejects_non_finite():

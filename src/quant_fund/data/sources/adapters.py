@@ -72,7 +72,8 @@ def _paginated_klines(
     when a page is truncated mid-interval. ``max_pages`` bounds total requests.
     ``earliest_ms`` is the caller's listing floor used when ``start_time`` is
     ``None`` — it differs between spot and futures products and defaults to
-    the epoch so unspecified floors never silently truncate history.
+    the epoch so unspecified floors never silently truncate history. Exhausting
+    ``max_pages`` on a full page raises instead of returning truncated history.
     """
     if interval not in _BINANCE_INTERVALS:
         raise ValueError(f"unsupported Binance interval {interval!r}")
@@ -107,6 +108,10 @@ def _paginated_klines(
         cursor = next_cursor
         if pause_seconds > 0:
             time.sleep(pause_seconds)
+    else:
+        raise SourceError(
+            f"Binance klines request budget exhausted (max_pages={max_pages}); results truncated"
+        )
     return rows
 
 
@@ -338,6 +343,10 @@ class BinanceFundingRateSource(SourceAdapter):
             cursor = next_cursor
             if pause_seconds > 0:
                 time.sleep(pause_seconds)
+        else:
+            raise SourceError(
+                f"Binance funding request budget exhausted (max_pages={max_pages}); results truncated"
+            )
         if not normalized_rows:
             raise SourceError("Binance funding returned no rows")
         return normalize_observations(normalized_rows, source=self.name, revision_id="v1")
