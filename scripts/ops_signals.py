@@ -4,6 +4,8 @@
 The file is ``dipcatcher.prom``. A missing directory is skipped by the
 callers. This process does not stamp epochs or sign pins. Reconcile reads
 the same six corpora as ``owner_restamp`` and writes 1 when any tree moved.
+``refresh`` republishes reconcile plus the backup and canary sidecars so
+the series stay present.
 """
 
 from __future__ import annotations
@@ -109,12 +111,61 @@ def write_prom(directory: Path, updates: dict[str, int]) -> str | None:
     return None
 
 
+def read_state(directory: Path, name: str) -> int | None:
+    """An integer sidecar next to the prom file, or ``None``."""
+    located = signals_dir(directory)
+    if located is None:
+        return None
+    path = located / name
+    if path.is_symlink() or not path.is_file():
+        return None
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError):
+        return None
+    if not text.isdecimal():
+        return None
+    return int(text)
+
+
+def write_state(directory: Path, name: str, value: int) -> None:
+    """Remember one integer so a later refresh republishes the same gauge."""
+    located = signals_dir(directory)
+    if located is None or value < 0:
+        return
+    path = located / name
+    if path.is_symlink():
+        return
+    temporary = located / f".{name}.{os.getpid()}.tmp"
+    try:
+        temporary.write_text(f"{value}\n", encoding="utf-8")
+        os.replace(temporary, path)
+    except OSError:
+        return
+
+
+def refresh_gauges(directory: Path, drifted: list[str]) -> dict[str, int]:
+    """Gauges a timer republishes. A missing backup stamp stays 0."""
+    backup = read_state(directory, "backup.stamp")
+    canary = read_state(directory, "canary.state")
+    return {
+        "dipcatcher_reconcile_drift": reconcile_gauge(drifted),
+        "dipcatcher_backup_last_success_timestamp": 0 if backup is None else backup,
+        "dipcatcher_canary_abort": 1 if canary == 1 else 0,
+    }
+
+
 def publish(directory: str, updates: dict[str, int]) -> None:
     """Write when ``directory`` is set. A refused path is ignored."""
     raw = directory.strip()
     if not raw:
         return
-    write_prom(Path(raw), updates)
+    if write_prom(Path(raw), updates) is not None:
+        return
+    if "dipcatcher_backup_last_success_timestamp" in updates:
+        write_state(Path(raw), "backup.stamp", updates["dipcatcher_backup_last_success_timestamp"])
+    if "dipcatcher_canary_abort" in updates:
+        write_state(Path(raw), "canary.state", updates["dipcatcher_canary_abort"])
 
 
 def reconcile_gauge(drifted: list[str]) -> int:
@@ -124,7 +175,7 @@ def reconcile_gauge(drifted: list[str]) -> int:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Publish operator textfile gauges")
-    parser.add_argument("action", choices=("reconcile", "backup", "canary"))
+    parser.add_argument("action", choices=("reconcile", "backup", "canary", "refresh"))
     parser.add_argument("--dir", default=os.environ.get("DIPCATCHER_TEXTFILE_DIR", ""))
     parser.add_argument("--canary", choices=("0", "1"), default="0")
     parser.add_argument("--backup-unix", type=int, default=0)
@@ -132,7 +183,7 @@ def main(argv: list[str]) -> int:
     if not args.dir:
         sys.stderr.write("DIPCATCHER_TEXTFILE_DIR is unset\n")
         return 1
-    if args.action == "reconcile":
+    if args.action in {"reconcile", "refresh"}:
         from owner_restamp import drift_report, live_trees  # noqa: PLC0415
 
         from quant_fund.research.corpus_epoch import load_heads_pin  # noqa: PLC0415
@@ -143,7 +194,10 @@ def main(argv: list[str]) -> int:
         )
         drifted = report.get("drifted")
         names = drifted if isinstance(drifted, list) else []
-        updates = {"dipcatcher_reconcile_drift": reconcile_gauge([str(item) for item in names])}
+        if args.action == "refresh":
+            updates = refresh_gauges(Path(args.dir), [str(item) for item in names])
+        else:
+            updates = {"dipcatcher_reconcile_drift": reconcile_gauge([str(item) for item in names])}
     elif args.action == "backup":
         stamp = args.backup_unix or int(time.time())
         updates = {"dipcatcher_backup_last_success_timestamp": stamp}

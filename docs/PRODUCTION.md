@@ -245,6 +245,16 @@ Verified in this tree, by the drills in [`OPS_RUNBOOK_PROD.md`](OPS_RUNBOOK_PROD
 - [x] `make -f deploy/prod.mk prod-smoke` and
       `make -f deploy/prod.mk prod-dr-drill` still pass on this host.
       The measured RTO is in the disaster-recovery section of the ops runbook.
+- [x] `prod-rollback-drill` restores N after a broken N+1 fails the canary,
+      with the ledger digest unchanged. The measured time is in the ops runbook.
+- [x] Reconcile, backup age, and canary gauges are published by the jobs,
+      and `prod-signal-drill` shows those three alerts fire.
+- [x] `prod-redaction-audit` scans the soak and the rotation drill.
+      The measured soak and the empty finding list are in the ops runbook.
+- [x] Incident pages in `docs/incidents/` cover every alert and are linked
+      from the Prometheus annotations.
+- [x] `prod-order-load` holds pre-trade limits and the kill switch at 10x
+      the production request rate on the paper and loopback paths.
 
 Still the owner's. This slice does not do them:
 

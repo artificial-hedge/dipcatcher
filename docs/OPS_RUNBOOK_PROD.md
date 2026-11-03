@@ -472,10 +472,13 @@ The canary is one lab reader (`DIPCATCHER_WRITE_OWNER=0`). It is not a
 Caddy upstream.
 
 A passing probe recreates `lab-a`, `lab-b`, `research-a`, `research-b`,
-and `proxy`, then removes the canary. A failing probe removes only the
-canary. Exit 0 means the roll happened. Exit 1 means abort, or the roll
-command failed. `prod-smoke` is a separate drill and it always stops
-the stack. Do not point the canary at it.
+and `proxy`, then removes the canary. A failing probe removes the canary.
+Exit 0 means the roll happened. Exit 1 means abort, or the roll command
+failed. Set `DIPCATCHER_AUTO_ROLLBACK=1` to retag `dipcatcher:previous`
+and `dipcatcher-research-api:previous` back onto the running tags and
+recreate the fleet when the probe fails. `prod-rollback-drill` sets that
+and measures the time through the health gate. `prod-smoke` is a separate
+drill and it always stops the stack. Do not point the canary at it.
 
 ```bash
 make -f deploy/prod.mk prod-build
@@ -511,10 +514,13 @@ Textfile gauges are `dipcatcher_reconcile_drift`,
 after a verified copy. `prod-canary` writes abort `1` when the roll does
 not finish and `0` when it does. Reconcile is not published on a timer:
 `python scripts/ops_signals.py reconcile` reads the same six corpora as
-`owner_restamp` and does not stamp or sign. The directory is
-`DIPCATCHER_TEXTFILE_DIR` (default `/tmp/dipcatcher-ops7-textfile`).
-Absent series stay silent. Node-exporter reads that directory and
-publishes no port of its own.
+`owner_restamp` and does not stamp or sign. `refresh` republishes that
+gauge plus the backup stamp and the canary state. `prod-up` runs it, and
+`dipcatcher-ops-signals.timer` runs it every five minutes, so the three
+series are present. A missing backup stamp stays 0, which pages
+`DipcatcherBackupAge` until a ship writes a unix time. Node-exporter
+reads the directory and publishes no port of its own. Each alert's
+`runbook` annotation points at `docs/incidents/`.
 
 Measured on this host: 15 alerts, 15 fingerprints, 30 webhook posts.
 Each fingerprint was delivered once while firing and once when it
@@ -611,3 +617,86 @@ Measured on this host: 1200 seconds at concurrency 20, 2158990 requests,
 error rate 0. p50 was 10.164 ms and p99 was 31.884 ms. After the 120
 second warmup, lab-a RSS slope was -50.420 KiB/s and the open-descriptor
 slope was -0.000487 per second across 40 samples. `leak` was false.
+
+## Rollback drill
+
+`prod-rollback-drill` records the running image ids and the ledger digest,
+tags those images as previous, then builds a `/tmp` image whose entrypoint
+is `/bin/false`. That image is tagged as N+1. The canary never becomes
+healthy. With `DIPCATCHER_AUTO_ROLLBACK=1` the previous tags are restored
+and the fleet is recreated. Time-to-rollback includes that recreate and
+the health gate. The seeded `broker_state.json` digest must be unchanged.
+
+```bash
+make -f deploy/prod.mk prod-rollback-drill
+```
+
+Measured on this host: 14.273 seconds from the start of the retag through
+the health gate. The canary action was abort, `rollback_ok` was true, and
+the lab and research tags and the four API containers were back on the
+captured image ids. The ledger digest was
+`3d70cdcc0e854a49f1c350ad484e05356b372d8d0149a1551c6be9753de892e0` and it
+did not change.
+
+## Signal drill
+
+`prod-signal-drill` writes reconcile drift 1, backup timestamp 0, and
+canary abort 1 through `ops_signals.publish`, then runs `promtool test
+rules` on `alerts.yml` inside the pinned Prometheus image. The three
+alerts must be firing at 26 hours of evaluation time, which covers the
+5 minute backup-age `for` and `time() - 0 > 86400`.
+
+```bash
+make -f deploy/prod.mk prod-signal-drill
+```
+
+Measured on this host: promtool exit 0. The published gauges were
+reconcile drift 1, backup timestamp 0, and canary abort 1.
+DipcatcherReconcileDrift, DipcatcherBackupAge, and DipcatcherCanaryAbort
+were firing.
+
+## Order-path load
+
+`prod-order-load` reads `DIPCATCHER_RATE_LIMIT_RPS` from `deploy/prod.env`
+and drives 10 times that many decisions. The paper book must refuse an
+over-notional order and, once the kill file is `HALT_NEW_ORDERS`, refuse
+every later order. The loopback broker must refuse the over-notional
+order, keep the signed 20-order window, and accept nothing after the
+kill latch. The result is simulated paper.
+
+```bash
+make -f deploy/prod.mk prod-order-load
+```
+
+Measured on this host: the production rate in `deploy/prod.env` is 50
+requests/s, so the burst is 500 decisions. The paper book refused the
+over-notional order (`max_order_notional`) and rejected that path at
+418130.823 decisions/s over 0.001196 seconds, with zero accepted. After
+`HALT_NEW_ORDERS`, accepted orders were 0. The loopback broker refused
+the over-notional order, allowed 8 decisions inside the signed window,
+denied 481 for the order rate, accepted 0 after the kill latch, and held
+the position. Claims were 0. The evidence label is simulated-paper.
+
+## Redaction audit
+
+`prod-redaction-audit` runs the rotation drill and the 1200 second soak,
+then scans the log directory, metrics text, and Prometheus alert payload.
+A configured secret, an email address, an SSN-shaped number, a bearer
+token, or an account-style metrics label fails the command. The finding
+records the kind and the path.
+
+```bash
+make -f deploy/prod.mk prod-redaction-audit
+```
+
+Measured on this host: rotation exit 0 and soak exit 0. The soak was
+1200 seconds at concurrency 20, 1722954 requests, error rate 0. p50 was
+13.448 ms and p99 was 39.367 ms. After the warmup, lab-a RSS slope was
+10.180 KiB/s and the open-descriptor slope was -0.001318 per second
+across 40 samples. `leak` was false. The scan of the log directory, the
+metrics text, the alert payload, and the drill output had no findings.
+`alerts.json`, `metrics-lab-a.prom`, and `metrics-research-a.prom` were
+present.
+
+Incident pages for every alert are linked from the rule annotations and
+listed in `docs/incidents/README.md`.

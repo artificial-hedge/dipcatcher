@@ -146,6 +146,104 @@ def _up() -> int:
     return proc.returncode
 
 
+def _capture_evidence() -> None:
+    """Copy logs, metrics, and Prometheus alerts before the stack stops.
+
+    The metrics request reads the key inside the container. The key is not
+    an argument and is not written to the capture files on purpose.
+    """
+    log_dir = Path(os.environ.get("DIPCATCHER_LOG_DIR", "/tmp/dipcatcher-ops7-logs"))
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return
+    prom_port = os.environ.get("PROMETHEUS_PUBLISH_PORT", "9090").strip() or "9090"
+    _save_http(f"http://127.0.0.1:{prom_port}/api/v1/alerts", log_dir / "alerts.json")
+    _save_http(f"http://127.0.0.1:{prom_port}/api/v1/rules", log_dir / "alert-rules.json")
+    leaves = ("lab-a", "lab-b", "research-a", "research-b", "proxy", "prometheus")
+    for leaf in leaves:
+        _save_logs(_container(leaf), log_dir / f"docker-{leaf}.log")
+    _save_metrics("lab-a", "/run/secrets/quant_api_key", "/logs/metrics-lab-a.prom")
+    _save_metrics("research-a", "/run/secrets/research_api_key", "/logs/metrics-research-a.prom")
+
+
+def _write_bytes(path: Path, payload: bytes) -> None:
+    """Write ``payload``. The log directory is owned by uid 10001."""
+    try:
+        path.write_bytes(payload)
+        return
+    except OSError:
+        pass
+    sudo = os.environ.get("SUDO")
+    if sudo is None:
+        sudo = "sudo"
+    prefix = shlex.split(sudo.strip()) if sudo.strip() else []
+    if not prefix:
+        return
+    tmp = Path("/tmp") / f"dipcatcher-capture-{path.name}"
+    try:
+        tmp.write_bytes(payload)
+        subprocess.run([*prefix, "cp", str(tmp), str(path)], check=False, timeout=30)
+        subprocess.run([*prefix, "chmod", "644", str(path)], check=False, timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        return
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def _save_http(url: str, path: Path) -> None:
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = response.read()
+    except (OSError, urllib.error.URLError, TimeoutError):
+        return
+    _write_bytes(path, payload)
+
+
+def _save_logs(container: str, path: Path) -> None:
+    try:
+        proc = subprocess.run(
+            [*_docker(), "logs", container],
+            capture_output=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return
+    _write_bytes(path, proc.stdout + proc.stderr)
+
+
+def _save_metrics(leaf: str, secret_path: str, output_path: str) -> None:
+    script = (
+        "import os, pathlib, urllib.request\n"
+        "token = pathlib.Path(os.environ['DIPCATCHER_CAPTURE_SECRET']).read_text().splitlines()[0]\n"
+        "req = urllib.request.Request('http://127.0.0.1:9464/metrics',"
+        " headers={'Authorization': 'Bearer ' + token})\n"
+        "body = urllib.request.urlopen(req, timeout=5).read()\n"
+        "pathlib.Path(os.environ['DIPCATCHER_CAPTURE_OUT']).write_bytes(body)\n"
+    )
+    try:
+        subprocess.run(
+            [
+                *_docker(),
+                "exec",
+                "-e",
+                f"DIPCATCHER_CAPTURE_SECRET={secret_path}",
+                "-e",
+                f"DIPCATCHER_CAPTURE_OUT={output_path}",
+                _container(leaf),
+                "python",
+                "-c",
+                script,
+            ],
+            capture_output=True,
+            timeout=20,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return
+
+
 def _down() -> None:
     env = os.environ.copy()
     for name in ("MAKEFLAGS", "MFLAGS", "MAKELEVEL"):
@@ -190,6 +288,7 @@ def execute() -> dict[str, object]:
         stop.set()
         watcher.join(timeout=5)
         if started_here:
+            _capture_evidence()
             _down()
     decision = leak_decision(samples)
     ok = not decision["leak"] and report.get("error_rate") == 0 and report.get("requests", 0) > 0

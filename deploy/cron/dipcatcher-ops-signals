@@ -1,0 +1,7 @@
+# Republish reconcile drift, backup age, and canary abort.
+# Install:
+#   sudo cp deploy/cron/dipcatcher-ops-signals /etc/cron.d/dipcatcher-ops-signals
+# The textfile directory must match node-exporter. Do not put secrets here.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+*/5 * * * * root DIPCATCHER_TEXTFILE_DIR=/var/lib/dipcatcher/textfile /opt/dipcatcher/.venv/bin/python /opt/dipcatcher/scripts/ops_signals.py refresh

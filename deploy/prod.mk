@@ -16,6 +16,10 @@
 #   make -f deploy/prod.mk prod-alert-drill
 #   make -f deploy/prod.mk prod-rotate-drill
 #   make -f deploy/prod.mk prod-soak
+#   make -f deploy/prod.mk prod-rollback-drill
+#   make -f deploy/prod.mk prod-signal-drill
+#   make -f deploy/prod.mk prod-order-load
+#   make -f deploy/prod.mk prod-redaction-audit
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. prod-secrets writes them
 # to files under SECRET_DIR and does not print them. Containers read those
@@ -75,7 +79,7 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-certs prod-data prod-build prod-secrets
+.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-rollback-drill prod-signal-drill prod-order-load prod-redaction-audit prod-signals prod-certs prod-data prod-build prod-secrets
 
 ifeq ($(SUDO),)
 SHIP := $(ROOT)/.venv/bin/python
@@ -93,6 +97,7 @@ prod-up: prod-certs prod-data prod-preflight prod-build
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
 	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
 	@cd $(ROOT) && uv run --quiet python scripts/prod_secrets.py
+	cd $(ROOT) && uv run --quiet python scripts/ops_signals.py refresh
 	cd $(ROOT) && $(COMPOSE) up -d --no-build --remove-orphans
 
 prod-down:
@@ -171,6 +176,25 @@ prod-soak:
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
 	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
 	cd $(ROOT) && uv run --quiet python scripts/prod_soak.py
+
+prod-signals:
+	cd $(ROOT) && uv run --quiet python scripts/ops_signals.py refresh
+
+prod-rollback-drill:
+	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
+	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
+	cd $(ROOT) && DIPCATCHER_COMPOSE_PRESERVE='$(PRESERVE)' uv run --quiet python scripts/prod_rollback_drill.py
+
+prod-signal-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_signal_drill.py
+
+prod-order-load:
+	cd $(ROOT) && uv run --quiet python scripts/prod_order_load.py
+
+prod-redaction-audit:
+	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
+	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
+	cd $(ROOT) && uv run --quiet python scripts/redaction_audit.py drill
 
 prod-restore:
 	cd $(ROOT) && $(SUDO) $(ROOT)/.venv/bin/python scripts/paper_state_backup.py restore \

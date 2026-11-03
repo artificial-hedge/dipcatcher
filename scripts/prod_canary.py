@@ -149,6 +149,42 @@ def _keys_ok(env: Mapping[str, str]) -> bool:
     return bool(env.get("QUANT_API_KEY", "").strip() and env.get("RESEARCH_API_KEY", "").strip())
 
 
+def auto_rollback_enabled(env: Mapping[str, str]) -> bool:
+    """True when a failed canary should retag the previous images and recreate."""
+    return env.get("DIPCATCHER_AUTO_ROLLBACK", "").strip() == "1"
+
+
+def _image_pair(env: Mapping[str, str], current: str, previous: str) -> tuple[str, str]:
+    live = env.get(current, "").strip()
+    prior = env.get(previous, "").strip()
+    defaults = {
+        "LAB_IMAGE": "dipcatcher:local",
+        "LAB_PREVIOUS": "dipcatcher:previous",
+        "RESEARCH_IMAGE": "dipcatcher-research-api:latest",
+        "RESEARCH_PREVIOUS": "dipcatcher-research-api:previous",
+    }
+    return live or defaults[current], prior or defaults[previous]
+
+
+def rollback_commands(env: Mapping[str, str]) -> list[list[str]]:
+    """Retag both previous images and recreate the fleet. The canary stays out."""
+    docker = docker_argv(env)
+    lab, lab_prev = _image_pair(env, "LAB_IMAGE", "LAB_PREVIOUS")
+    research, research_prev = _image_pair(env, "RESEARCH_IMAGE", "RESEARCH_PREVIOUS")
+    return [
+        [*docker, "image", "inspect", lab_prev],
+        [*docker, "image", "inspect", research_prev],
+        [*docker, "tag", lab_prev, lab],
+        [*docker, "tag", research_prev, research],
+        [*compose_base(env), "up", "-d", "--no-build", "--force-recreate", *ROLL_SERVICES],
+    ]
+
+
+def apply_rollback(env: Mapping[str, str], run: Runner) -> bool:
+    """Run :func:`rollback_commands`. False when any command exits non-zero."""
+    return all(_code(run(argv)) == 0 for argv in rollback_commands(env))
+
+
 def execute(
     env: Mapping[str, str],
     run: Runner,
@@ -165,6 +201,8 @@ def execute(
         "checks": {},
         "ok": False,
         "removed": False,
+        "rollback_ok": False,
+        "rollback_seconds": 0.0,
     }
     started = run(
         [*base, "--profile", "canary", "up", "-d", "--no-deps", "--no-build", CANARY_SERVICE]
@@ -182,6 +220,10 @@ def execute(
         if action == "roll":
             rolled = run([*base, "up", "-d", "--no-build", "--force-recreate", *ROLL_SERVICES])
             report["ok"] = _code(rolled) == 0
+        elif auto_rollback_enabled(env):
+            started = time.monotonic()
+            report["rollback_ok"] = apply_rollback(env, run)
+            report["rollback_seconds"] = round(time.monotonic() - started, 3)
         return report
     finally:
         removed = run([*base, "--profile", "canary", "rm", "-sf", CANARY_SERVICE])

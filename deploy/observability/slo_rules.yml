@@ -66,6 +66,7 @@ groups:
           severity: page
         annotations:
           summary: HTTP error budget is burning.
+          runbook: docs/incidents/DipcatcherErrorBudgetBurn.md
       - alert: DipcatcherLatencyP99
         expr: dipcatcher:http_latency:p99_5m > 0.25
         for: 5m
@@ -73,6 +74,7 @@ groups:
           severity: page
         annotations:
           summary: HTTP p99 latency is above 0.25 seconds.
+          runbook: docs/incidents/DipcatcherLatencyP99.md
       - alert: DipcatcherErrorBudgetExhausted
         expr: dipcatcher:slo:error_budget_remaining_30d < 0
         for: 5m
@@ -80,3 +82,4 @@ groups:
           severity: page
         annotations:
           summary: The 30 day HTTP error budget is exhausted.
+          runbook: docs/incidents/DipcatcherErrorBudgetExhausted.md
