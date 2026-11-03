@@ -156,6 +156,20 @@ class SimulatedBroker:
         self._acks.setdefault(record.order.order_id, record)
         return record
 
+    def _existing_ack(self, order_id: str) -> OrderRecord | None:
+        """Return the first admission of ``order_id``.
+
+        A working id that has no stored admission is the backstop: ``submit``
+        used to own that branch. Keeping it here leaves ``submit`` inside its
+        complexity pin.
+        """
+        prior = self._acks.get(order_id)
+        if prior is not None:
+            return prior
+        if order_id in self.open_orders:
+            raise ValueError(f"order {order_id!r} is already working")
+        return None
+
     def _reindex_acks(self) -> None:
         """Rebuild the idempotency map after ``from_state``.
 
@@ -256,11 +270,9 @@ class SimulatedBroker:
         ``order_id`` is the idempotency key. A later cancel or bar fill stays
         on the book, and the retry still returns that first record.
         """
-        prior = self._acks.get(order.order_id)
+        prior = self._existing_ack(order.order_id)
         if prior is not None:
             return prior
-        if order.order_id in self.open_orders:
-            raise ValueError(f"order {order.order_id!r} is already working")
         if not np.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
