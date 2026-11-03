@@ -20,14 +20,18 @@ _FileStamp = tuple[int, int, int, int, int]
 _Snapshot = dict[Path, _FileStamp]
 
 
-def _receipt_sha(path: Path) -> str | None:
-    """Read one regular file, ignoring invalid input but not programming errors."""
+def _receipt_sha(path: Path) -> tuple[str | None, bool]:
+    """Read one regular file and report whether the read completed."""
     try:
-        doc = json.loads(path.read_bytes())
-    except (OSError, ValueError, RecursionError):
-        return None
+        raw = path.read_bytes()
+    except OSError:
+        return None, False
+    try:
+        doc = json.loads(raw)
+    except (ValueError, RecursionError):
+        return None, True
     sha = doc.get("receipt_sha256") if isinstance(doc, dict) else None
-    return sha if isinstance(sha, str) and SHA256_HEX.fullmatch(sha) else None
+    return (sha if isinstance(sha, str) and SHA256_HEX.fullmatch(sha) else None), True
 
 
 class ReceiptIndex:
@@ -50,6 +54,7 @@ class ReceiptIndex:
         self._lock = threading.Lock()
         self._key: _Snapshot | None = None
         self._cache: dict[Path, tuple[_FileStamp, str | None]] = {}
+        self._unreadable: set[Path] = set()
         self._by_sha: dict[str, Path] = {}
         self._items: tuple[tuple[str, Path], ...] = ()
         self._available = False
@@ -86,23 +91,28 @@ class ReceiptIndex:
             self._by_sha = {}
             self._items = ()
             self._cache = {}
+            self._unreadable = set()
             self._key = None
             return
-        if key == self._key:
+        if key == self._key and not self._unreadable:
             return
         cache: dict[Path, tuple[_FileStamp, str | None]] = {}
+        unreadable: set[Path] = set()
         by_sha: dict[str, Path] = {}
         for path, stamp in sorted(key.items(), key=lambda item: item[0].name):
             previous = self._cache.get(path)
-            if previous is not None and previous[0] == stamp:
+            if previous is not None and previous[0] == stamp and path not in self._unreadable:
                 sha = previous[1]
             else:
-                sha = _receipt_sha(path)
+                sha, read_completed = _receipt_sha(path)
+                if not read_completed:
+                    unreadable.add(path)
             cache[path] = (stamp, sha)
             if sha is not None:
                 by_sha.setdefault(sha, path)
         # Publish together under the caller's lock after the entire scan.
         self._cache = cache
+        self._unreadable = unreadable
         self._by_sha = by_sha
         self._items = tuple(by_sha.items())
         self._key = key
