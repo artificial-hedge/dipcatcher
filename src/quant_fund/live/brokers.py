@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import random
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -18,6 +19,7 @@ from datetime import datetime
 from typing import Any, Protocol, cast
 from urllib.parse import quote, urlencode
 
+from quant_fund.data.concurrent_io import call_with_retry
 from quant_fund.live.config import Venue
 from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
 
@@ -338,14 +340,39 @@ class AlpacaBroker:
         *,
         transport: Transport | None = None,
         timeout: float = 10.0,
+        recover_retries: int = 2,
+        recover_backoff_s: float = 0.25,
+        recover_max_backoff_s: float = 2.0,
+        recover_sleeper: Callable[[float], None] | None = None,
+        recover_rng: random.Random | None = None,
     ) -> None:
         if venue not in _HOSTS:
             raise LiveGateError("Alpaca venue must be alpaca-paper or alpaca-live")
+        if (
+            isinstance(recover_retries, bool)
+            or not isinstance(recover_retries, int)
+            or recover_retries < 0
+        ):
+            raise ValueError("recover_retries must be a non-negative integer")
+        if isinstance(recover_backoff_s, bool) or isinstance(recover_max_backoff_s, bool):
+            raise ValueError("recover backoff values must be finite and non-negative")
+        try:
+            backoff_s = float(recover_backoff_s)
+            max_backoff_s = float(recover_max_backoff_s)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("recover backoff values must be finite and non-negative") from exc
+        if not all(math.isfinite(value) and value >= 0.0 for value in (backoff_s, max_backoff_s)):
+            raise ValueError("recover backoff values must be finite and non-negative")
         self.venue = venue
         self.base = _HOSTS[venue]
         self._credentials = credentials
         self._transport = transport or urllib_transport
         self._timeout = float(timeout)
+        self._recover_retries = recover_retries
+        self._recover_backoff_s = backoff_s
+        self._recover_max_backoff_s = max_backoff_s
+        self._recover_sleeper = recover_sleeper
+        self._recover_rng = recover_rng
         self._marks: dict[str, float] = {}
 
     @property
@@ -408,11 +435,24 @@ class AlpacaBroker:
         # segment returns no order, so a lost POST cannot be found or canceled.
         query = urlencode({"client_order_id": client_order_id})
         path = f"/v2/orders:by_client_order_id?{query}"
-        payload, missing = self._request_optional(path)
+        payload, missing = call_with_retry(
+            lambda: self._request_optional(path),
+            retries=self._recover_retries,
+            backoff_s=self._recover_backoff_s,
+            max_backoff_s=self._recover_max_backoff_s,
+            retry_on=(TimeoutError, OSError),
+            sleeper=self._recover_sleeper,
+            rng=self._recover_rng,
+        )
         if missing:
             return None
         if not isinstance(payload, dict):
             raise BrokerRejected("broker order lookup was not an object")
+        recovered_id = payload.get("client_order_id")
+        if not isinstance(recovered_id, str) or recovered_id != client_order_id:
+            raise BrokerRejected(
+                "broker order lookup returned a foreign or malformed client_order_id"
+            )
         return self._ack(payload)
 
     def account(self) -> BrokerAccount:
