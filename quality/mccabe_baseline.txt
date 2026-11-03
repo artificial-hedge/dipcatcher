@@ -247,8 +247,6 @@ src/quant_fund/hmm/discrete.py:DiscreteHMM.__post_init__ 10
 src/quant_fund/labels/barriers.py:triple_barrier 13
 src/quant_fund/labels/engine.py:build_labels 12
 src/quant_fund/leakage/ast_scan.py:_check_lh003 12
-src/quant_fund/leakage/ast_scan.py:_check_lh009 10
-src/quant_fund/leakage/ast_scan.py:_check_lh014 10
 src/quant_fund/leakage/ast_scan.py:_fold_num 12
 src/quant_fund/leakage/cli.py:scan_cmd 10
 src/quant_fund/lightspeed/momentum.py:momentum_target_weights 34
@@ -506,7 +504,6 @@ src/quant_fund/models/glushkov_nfa.py:_build 23
 src/quant_fund/models/glushkov_nfa.py:_build.rec 19
 src/quant_fund/models/gmm_est.py:gmm_2step 11
 src/quant_fund/models/go_explore.py:bench_go_explore 10
-src/quant_fund/models/graded_irt.py:grm_jml 11
 src/quant_fund/models/grammar_fuzz.py:_valid 10
 src/quant_fund/models/graph_components.py:articulation 13
 src/quant_fund/models/graph_components.py:bridges 13
@@ -594,7 +591,6 @@ src/quant_fund/models/pagerank_topology.py:bench_pagerank 10
 src/quant_fund/models/pair_vine_copula.py:_mst_edges 11
 src/quant_fund/models/pair_vine_copula.py:_mst_ordering 15
 src/quant_fund/models/pair_vine_copula.py:_vine_logpdf_rows 17
-src/quant_fund/models/pair_vine_copula.py:gas_copula_fit 13
 src/quant_fund/models/pair_vine_copula.py:vine_fit 24
 src/quant_fund/models/palindromic_tree.py:build_eertree 10
 src/quant_fund/models/pareto_nbd.py:bench_pnbd 12
@@ -609,7 +605,6 @@ src/quant_fund/models/poststrat.py:raking 10
 src/quant_fund/models/power_law.py:pl_fit 12
 src/quant_fund/models/proof_number.py:proof_number_search 18
 src/quant_fund/models/quest.py:_spectral_support 17
-src/quant_fund/models/quest.py:quest_forward 17
 src/quant_fund/models/raft_election.py:run_raft 17
 src/quant_fund/models/rank_aggregation.py:mc3_ranking 11
 src/quant_fund/models/rave_mc.py:rave_mcts 15
@@ -792,7 +787,6 @@ src/quant_fund/research/calibration_eval.py:_score_cell 12
 src/quant_fund/research/calibration_eval.py:calibration_contract_errors 10
 src/quant_fund/research/calibration_eval.py:run_calibration_eval 22
 src/quant_fund/research/capability_value.py:capability_swap_evaluation 15
-src/quant_fund/research/capability_value.py:make_synthetic_trajectory 19
 src/quant_fund/research/capacity_overlay.py:capacity_v1_audit_errors 26
 src/quant_fund/research/capacity_overlay.py:vol_target_scales 14
 src/quant_fund/research/catalog/candle.py:candle_all_ic_p_unit_honesty_errors 10

@@ -185,7 +185,10 @@ class _OiAppReuse:
                 cache[key] = app
             return app
 
-        api_mod.create_app = _create  # type: ignore[method-assign]
+        # The wrapper's signature is wider than ``create_app``. Writing the
+        # module dict keeps the static type of the attribute intact for the
+        # restore in ``__exit__`` and avoids a ``method-assign`` suppression.
+        vars(api_mod)["create_app"] = _create
         return self
 
     def __exit__(self, *_exc: object) -> None:

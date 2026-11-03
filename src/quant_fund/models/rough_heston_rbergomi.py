@@ -50,24 +50,27 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import integrate, stats
 from scipy.special import gamma as _gamma
 
-try:
+if TYPE_CHECKING:
     from numba import njit
-except ImportError:  # pragma: no cover - numba is a required dependency
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
 
-    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
-        def _deco(fn: Any) -> Any:
-            return fn
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
 
-        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
-            return _args[0]
-        return _deco
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
 
 
 @njit(cache=True)

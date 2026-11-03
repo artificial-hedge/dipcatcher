@@ -123,21 +123,24 @@ import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
-try:
+if TYPE_CHECKING:
     from numba import njit
-except ImportError:  # pragma: no cover - numba is a required dependency
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
 
-    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
-        def _deco(fn: Any) -> Any:
-            return fn
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
 
-        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
-            return _args[0]
-        return _deco
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
 
 
 from numpy.typing import NDArray

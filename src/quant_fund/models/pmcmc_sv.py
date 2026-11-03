@@ -46,27 +46,106 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from math import exp, isfinite, log, pi, sqrt
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-try:
+if TYPE_CHECKING:
     from numba import njit
-except ImportError:  # pragma: no cover - numba is a required dependency
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
 
-    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
-        def _deco(fn: Any) -> Any:
-            return fn
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
 
-        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
-            return _args[0]
-        return _deco
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
 
 
 FloatArray = NDArray[np.float64]
 
 _Log2Pi = log(2.0 * pi)
+
+
+@njit(cache=True)
+def _sv_step_states(
+    parts: np.ndarray,
+    noise_row: np.ndarray,
+    work: np.ndarray,
+    mu: float,
+    one_minus_phi: float,
+    phi: float,
+    sigma_eta: float,
+    y2_t: float,
+    log2pi: float,
+) -> float:
+    """Propagate one bootstrap step. Returns the max observation log-density."""
+    n_particles = parts.shape[0]
+    mx = -1.0e300
+    for i in range(n_particles):
+        h = mu * one_minus_phi + phi * parts[i] + sigma_eta * noise_row[i]
+        parts[i] = h
+        ll = -0.5 * (log2pi + h + y2_t * math.exp(-h))
+        work[i] = ll
+        if ll > mx:
+            mx = ll
+    return mx
+
+
+@njit(cache=True)
+def _sv_reweight(w: np.ndarray, work: np.ndarray, mx: float) -> float:
+    """Multiply weights by the centered observation density. Returns their sum."""
+    n_particles = w.shape[0]
+    tot = 0.0
+    for i in range(n_particles):
+        wi = w[i] * math.exp(work[i] - mx)
+        w[i] = wi
+        tot += wi
+    return tot
+
+
+@njit(cache=True)
+def _sv_normalize(w: np.ndarray, inv_tot: float) -> float:
+    """Normalize weights in place. Returns the sum of squared weights."""
+    n_particles = w.shape[0]
+    ess_acc = 0.0
+    for i in range(n_particles):
+        w[i] *= inv_tot
+        ess_acc += w[i] * w[i]
+    return ess_acc
+
+
+@njit(cache=True)
+def _sv_resample(
+    parts: np.ndarray,
+    w: np.ndarray,
+    work: np.ndarray,
+    chosen: np.ndarray,
+    uniform: float,
+    inv_n: float,
+) -> None:
+    """Systematic resample. Weights reset to ``1/N``."""
+    n_particles = parts.shape[0]
+    c = 0.0
+    for i in range(n_particles):
+        c += w[i]
+        work[i] = c
+    j = 0
+    u0 = uniform * inv_n
+    last = n_particles - 1
+    for i in range(n_particles):
+        u = u0 + i * inv_n
+        while j < last and work[j] < u:
+            j += 1
+        chosen[i] = parts[j]
+    for i in range(n_particles):
+        parts[i] = chosen[i]
+        w[i] = inv_n
 
 
 @njit(cache=True)
@@ -100,46 +179,18 @@ def _sv_bootstrap_loglik(
     thresh = 0.5 * n_particles
     one_minus_phi = 1.0 - phi
     for t in range(n):
-        mx = -1.0e300
-        y2_t = y2[t]
-        for i in range(n_particles):
-            h = mu * one_minus_phi + phi * parts[i] + sigma_eta * noise[t, i]
-            parts[i] = h
-            ll = -0.5 * (log2pi + h + y2_t * math.exp(-h))
-            work[i] = ll
-            if ll > mx:
-                mx = ll
+        mx = _sv_step_states(
+            parts, noise[t], work, mu, one_minus_phi, phi, sigma_eta, y2[t], log2pi
+        )
         if mx != mx:  # NaN
             return np.nan
-        tot = 0.0
-        for i in range(n_particles):
-            wi = w[i] * math.exp(work[i] - mx)
-            w[i] = wi
-            tot += wi
+        tot = _sv_reweight(w, work, mx)
         if not (tot > 0.0) or tot != tot:
             return np.nan
-        inv_tot = 1.0 / tot
-        ess_acc = 0.0
-        for i in range(n_particles):
-            w[i] *= inv_tot
-            ess_acc += w[i] * w[i]
+        ess_acc = _sv_normalize(w, 1.0 / tot)
         loglik += mx + math.log(tot)
         if ess_acc > 0.0 and (1.0 / ess_acc) < thresh:
-            c = 0.0
-            for i in range(n_particles):
-                c += w[i]
-                work[i] = c
-            j = 0
-            u0 = uniforms[t] * inv_n
-            last = n_particles - 1
-            for i in range(n_particles):
-                u = u0 + i * inv_n
-                while j < last and work[j] < u:
-                    j += 1
-                chosen[i] = parts[j]
-            for i in range(n_particles):
-                parts[i] = chosen[i]
-                w[i] = inv_n
+            _sv_resample(parts, w, work, chosen, uniforms[t], inv_n)
     return loglik
 
 

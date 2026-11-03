@@ -34,23 +34,26 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize, minimize_scalar
 
-try:
+if TYPE_CHECKING:
     from numba import njit
-except ImportError:  # pragma: no cover - numba is a required dependency
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
 
-    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
-        def _deco(fn: Any) -> Any:
-            return fn
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
 
-        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
-            return _args[0]
-        return _deco
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
 
 
 Array = NDArray[np.float64]
@@ -258,13 +261,9 @@ def _gamma(tau: Array, xi: Array, y: Array, n: int) -> Array:
     return np.sum(terms, axis=1) - float(n)
 
 
-def quest_forward(tau: Array, n: int) -> QuestForward:
-    """Discretized QuEST map: population spectrum -> sample eigenvalue law.
-
-    ``tau`` is the ``p``-vector of population eigenvalues (nonnegative),
-    ``n`` the effective sample size. Returns the forward solution with
-    ``lam`` = the predicted sample eigenvalues (length ``p``, sorted).
-    """
+def _quest_population(
+    tau: Array, n: int
+) -> tuple[Array, int, int, float, Array, Array, int, Array]:
     n = int(n)
     if n <= 0:
         raise ValueError("quest requires a positive integer sample size")
@@ -280,17 +279,19 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
         raise ValueError("quest population spectrum is entirely zero")
     p = int(tau.size)
     c = p / float(n)
-
     tau_nonzero = tau[tau > 0]
     t, pw_counts = np.unique(tau_nonzero, return_counts=True)
     pw: Array = pw_counts.astype(np.float64)
     pzw = p - int(np.sum(pw))
-    pwt2 = pw * t * t
+    return tau, n, p, c, t, pw, pzw, pw * t * t
 
+
+def _quest_support(
+    tau: Array, t: Array, pw: Array, pzw: int, n: int, p: int, c: float
+) -> tuple[Array, Array, Array, Array, int]:
     supp, _omega, boundint = _spectral_support(tau, t, pw, pzw, n, p)
     u_fbar = np.asarray(supp, dtype=float)
     numint = u_fbar.shape[0]
-
     # Modified Stieltjes transform of the population law at support edges.
     m_lf_u_fbar = (1.0 / p) * np.sum(
         (pw * t).reshape(1, -1) / (t.reshape(1, -1) - u_fbar.reshape(-1, 1)),
@@ -299,8 +300,11 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
     endpoints = np.maximum(0.0, u_fbar - c * u_fbar * m_lf_u_fbar)
     if p == n:
         endpoints[0, 0] = 0.0
+    return u_fbar, endpoints, m_lf_u_fbar, np.asarray(boundint), numint
 
-    # Sample eigenvalue counts per interval.
+
+def _quest_numeig(numint: int, p: int, pzw: int, n: int, boundint: Array) -> Array:
+    """Sample eigenvalue counts per interval."""
     numeig = np.empty(numint, dtype=int)
     if numint == 1:
         numeig[0] = p - max(pzw, p - n)
@@ -310,8 +314,11 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
         for i in range(1, numint - 1):
             numeig[i] = int(pw1[i] - pw1[i - 1])
         numeig[numint - 1] = int(boundint[numint - 2, 3])
+    return numeig
 
-    # Grid points (sine-squared spacing) per interval.
+
+def _quest_grids(numint: int, numeig: Array, pw: Array, n: int, u_fbar: Array) -> list[Array]:
+    """Grid points (sine-squared spacing) per interval."""
     nxi0 = max(QUEST_MIN_GRID, min(int(np.sum(pw)), n))
     mult = int(np.ceil(nxi0 / min(int(np.sum(pw)), n)))
     xi_list: list[Array] = []
@@ -319,8 +326,13 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
         temp = int(numeig[i]) * mult
         frac = np.sin(np.pi / (2.0 * (temp + 1)) * np.arange(1, temp + 1)) ** 2
         xi_list.append(u_fbar[i, 0] + (u_fbar[i, 1] - u_fbar[i, 0]) * frac)
+    return xi_list
 
-    # Solve the MP equation for the imaginary part at each grid point.
+
+def _quest_imaginary(
+    numint: int, xi_list: list[Array], tau: Array, t: Array, pwt2: Array, n: int
+) -> list[NDArray[np.complex128]]:
+    """Solve the MP equation for the imaginary part at each grid point."""
     zxi_list: list[NDArray[np.complex128]] = []
     for i in range(numint):
         xi = xi_list[i]
@@ -337,8 +349,18 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
             QUEST_BISECTION_STEPS,
         )
         zxi_list.append(xi.astype(complex) + 1j * y)
+    return zxi_list
 
-    # Sample density in x-space via the Silverstein map.
+
+def _quest_density(
+    numint: int,
+    zxi_list: list[NDArray[np.complex128]],
+    t: Array,
+    pw: Array,
+    p: int,
+    c: float,
+) -> tuple[list[Array], list[Array], list[Array], list[Array], list[NDArray[np.complex128]]]:
+    """Sample density in x-space via the Silverstein map."""
     a = float(QUEST_POWER)
     x_list: list[Array] = []
     f_list: list[Array] = []
@@ -360,8 +382,34 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
         f_list.append(np.asarray(f, dtype=float))
         zeta_list.append(np.asarray(zeta, dtype=float))
         g_list.append(np.asarray(np.nan_to_num(g, nan=0.0), dtype=float))
+    return x_list, f_list, zeta_list, g_list, m_lf_zxi_list
 
-    # Discretized sample cdf: trapezoid over the zeta axis per interval.
+
+def _quest_discretize(
+    numint: int,
+    p: int,
+    pzw: int,
+    n: int,
+    numeig: Array,
+    endpoints: Array,
+    m_lf_u_fbar: Array,
+    x_list: list[Array],
+    zeta_list: list[Array],
+    g_list: list[Array],
+    m_lf_zxi_list: list[NDArray[np.complex128]],
+) -> tuple[
+    float,
+    Array,
+    Array,
+    list[Array],
+    list[Array],
+    list[NDArray[np.complex128]],
+    list[Array],
+    list[Array],
+    list[Array],
+]:
+    """Discretized sample cdf: trapezoid over the zeta axis per interval."""
+    a = float(QUEST_POWER)
     f0 = (1.0 / p) * max(pzw, p - n)
     fstart = f0 + np.concatenate([[0.0], np.cumsum(numeig[:-1])]) / p
     fend = f0 + np.cumsum(numeig) / p
@@ -397,8 +445,39 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
             )
         dis_g_raw.append(g_raw)
         dis_g_list_cum.append(fstart[i] + (fend[i] - fstart[i]) * g_raw / total)
+    return (
+        f0,
+        fstart,
+        fend,
+        dis_x_list,
+        dis_zeta_list,
+        dis_m_lf_list,
+        dis_g_list,
+        dis_g_raw,
+        dis_g_list_cum,
+    )
 
-    # Recover the sample eigenvalue quantiles by integrating x over dF.
+
+def _quest_quantiles(
+    numint: int,
+    p: int,
+    numeig: Array,
+    dis_zeta_list: list[Array],
+    dis_g_list_cum: list[Array],
+) -> tuple[
+    Array,
+    list[Array],
+    list[NDArray[np.intp]],
+    list[Array],
+    list[Array],
+    list[Array],
+    list[Array],
+    list[Array],
+    list[NDArray[np.intp]],
+    list[Array],
+]:
+    """Recover sample-eigenvalue quantiles by integrating x over dF."""
+    a = float(QUEST_POWER)
     f_vals_list: list[Array] = []
     f_idx_list: list[NDArray[np.intp]] = []
     x_f_list: list[Array] = []
@@ -440,10 +519,70 @@ def quest_forward(tau: Array, n: int) -> QuestForward:
         quant_list.append(quant)
         bins_list.append(np.asarray(bins, dtype=np.intp))
         integral_indic_list.append(indic)
+    return (
+        lam,
+        f_vals_list,
+        f_idx_list,
+        x_f_list,
+        x_f_mean_list,
+        x_f_diff_list,
+        f_diff_list,
+        quant_list,
+        bins_list,
+        integral_indic_list,
+    )
 
+
+def quest_forward(tau: Array, n: int) -> QuestForward:
+    """Discretized QuEST map: population spectrum -> sample eigenvalue law.
+
+    ``tau`` is the ``p``-vector of population eigenvalues (nonnegative),
+    ``n`` the effective sample size. Returns the forward solution with
+    ``lam`` = the predicted sample eigenvalues (length ``p``, sorted).
+    """
+    tau, n, p, c, t, pw, pzw, pwt2 = _quest_population(tau, n)
+    u_fbar, endpoints, m_lf_u_fbar, boundint, numint = _quest_support(tau, t, pw, pzw, n, p, c)
+    numeig = _quest_numeig(numint, p, pzw, n, boundint)
+    xi_list = _quest_grids(numint, numeig, pw, n, u_fbar)
+    zxi_list = _quest_imaginary(numint, xi_list, tau, t, pwt2, n)
+    x_list, f_list, zeta_list, g_list, m_lf_zxi_list = _quest_density(numint, zxi_list, t, pw, p, c)
+    (
+        f0,
+        fstart,
+        fend,
+        dis_x_list,
+        dis_zeta_list,
+        dis_m_lf_list,
+        dis_g_list,
+        dis_g_raw,
+        dis_g_list_cum,
+    ) = _quest_discretize(
+        numint,
+        p,
+        pzw,
+        n,
+        numeig,
+        endpoints,
+        m_lf_u_fbar,
+        x_list,
+        zeta_list,
+        g_list,
+        m_lf_zxi_list,
+    )
+    (
+        lam,
+        f_vals_list,
+        f_idx_list,
+        x_f_list,
+        x_f_mean_list,
+        x_f_diff_list,
+        f_diff_list,
+        quant_list,
+        bins_list,
+        integral_indic_list,
+    ) = _quest_quantiles(numint, p, numeig, dis_zeta_list, dis_g_list_cum)
     if not np.isfinite(lam).all() or np.any(lam < 0):
         raise ValueError("quest produced non-finite or negative sample eigenvalues")
-
     return QuestForward(
         p=p,
         n=n,

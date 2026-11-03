@@ -420,6 +420,41 @@ def _enqueue_children(node: ast.AST, parents: dict[int, ast.AST], todo: deque[as
                     todo.append(item)
 
 
+def _index_bucket(
+    node: ast.AST,
+    ntype: type[ast.AST],
+    buckets: dict[type[ast.AST], list[ast.AST]],
+    scope_lists: dict[int, _ScopeAssigns],
+    bucket_types: frozenset[type[ast.AST]],
+    add_ops: tuple[type[ast.operator], ...],
+) -> None:
+    """Drop the node in the rule bucket. String constants and Add/Mod only."""
+    if ntype not in bucket_types:
+        return
+    if ntype is ast.Constant:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            buckets[ntype].append(node)
+        return
+    if ntype is ast.BinOp:
+        if isinstance(node, ast.BinOp) and type(node.op) in add_ops:
+            buckets[ntype].append(node)
+        return
+    if ntype is ast.FunctionDef or ntype is ast.AsyncFunctionDef:
+        scope_lists[id(node)] = {}
+    buckets[ntype].append(node)
+
+
+def _mark_shift_ancestors(node: ast.AST, parents: dict[int, ast.AST], shift: set[int]) -> None:
+    """Mark ``node`` and its ancestors so a negative shift is visible upward."""
+    cur: ast.AST | None = node
+    while cur is not None:
+        cid = id(cur)
+        if cid in shift:
+            break
+        shift.add(cid)
+        cur = parents.get(cid)
+
+
 def _tree_index(tree: ast.AST) -> _Index:
     """BFS in ``ast.walk`` order, plus per-scope assigns and node buckets.
 
@@ -441,17 +476,7 @@ def _tree_index(tree: ast.AST) -> _Index:
     while todo:
         node = todo.popleft()
         ntype = type(node)
-        if ntype in bucket_types:
-            if ntype is ast.Constant:
-                if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                    buckets[ntype].append(node)
-            elif ntype is ast.BinOp:
-                if isinstance(node, ast.BinOp) and type(node.op) in add_ops:
-                    buckets[ntype].append(node)
-            else:
-                if ntype is ast.FunctionDef or ntype is ast.AsyncFunctionDef:
-                    scope_lists[id(node)] = {}
-                buckets[ntype].append(node)
+        _index_bucket(node, ntype, buckets, scope_lists, bucket_types, add_ops)
         _enqueue_children(node, parents, todo)
         if ntype is ast.Assign or ntype is ast.AnnAssign or ntype is ast.NamedExpr:
             _record_binds(node, parents, scope_lists, key)
@@ -461,13 +486,7 @@ def _tree_index(tree: ast.AST) -> _Index:
             and _call_might_contain_shift(node)
             and _shift_call_parts(node) is not None
         ):
-            cur: ast.AST | None = node
-            while cur is not None:
-                cid = id(cur)
-                if cid in shift:
-                    break
-                shift.add(cid)
-                cur = parents.get(cid)
+            _mark_shift_ancestors(node, parents, shift)
     index = _Index(parents, buckets, shift)
     if memo is not None:
         memo[key] = index
@@ -1179,6 +1198,56 @@ def _lh009_getattr_findings(node: ast.Call, module_assigns: _ScopeAssigns) -> li
     return []
 
 
+def _lh009_embedded_findings(
+    node: ast.Call, name: str, module_assigns: _ScopeAssigns
+) -> list[_Finding]:
+    """ADVERSARIAL §1a-E13: a parquet read hiding inside a SQL or eval string."""
+    for arg in node.args:
+        folded = _fold_str(arg, module_assigns, node.lineno)
+        if folded is not None and _SQL_PARQUET_RE.search(folded):
+            return [
+                _Finding(
+                    "LH009",
+                    node.lineno,
+                    node.col_offset,
+                    f"parquet read embedded in a {name}(...) string bypasses the PIT choke point",
+                )
+            ]
+    return []
+
+
+def _lh009_call_findings(
+    node: ast.Call, module_assigns: _ScopeAssigns, io_aliases: set[str]
+) -> list[_Finding]:
+    name = _call_name(node)
+    if name in _BLOCKED_IO_NAMES or name in io_aliases:
+        return [
+            _Finding(
+                "LH009",
+                node.lineno,
+                node.col_offset,
+                "direct parquet read outside the data layer bypasses the PIT choke point",
+            )
+        ]
+    if name == "history":
+        return [
+            _Finding(
+                "LH009",
+                node.lineno,
+                node.col_offset,
+                "PitVault.history() returns every version including future "
+                "known_at — audit-only API must not appear in strategy code paths",
+            )
+        ]
+    # ADVERSARIAL §1a-E12: getattr(pl, "read_" + "parquet")(path).
+    if name == "getattr" and len(node.args) >= 2:
+        return _lh009_getattr_findings(node, module_assigns)
+    # duckdb.sql("select * from read_parquet(...)"), conn.execute(...), eval/exec.
+    if name in _SQL_ENTRY_NAMES or name in _EVAL_NAMES:
+        return _lh009_embedded_findings(node, name, module_assigns)
+    return []
+
+
 def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
     # tests/** is exempt EXCEPT the seeded-leak fixture suite, which must stay
     # scannable (same carve-out as LH005, DESIGN.md §6.4).
@@ -1188,45 +1257,7 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
     module_assigns = _scope_assignments(tree)
     io_aliases = _blocked_io_aliases(tree)
     for node in _nodes(tree, ast.Call):
-        name = _call_name(node)
-        if name in _BLOCKED_IO_NAMES or name in io_aliases:
-            out.append(
-                _Finding(
-                    "LH009",
-                    node.lineno,
-                    node.col_offset,
-                    "direct parquet read outside the data layer bypasses the PIT choke point",
-                )
-            )
-        elif name == "history":
-            out.append(
-                _Finding(
-                    "LH009",
-                    node.lineno,
-                    node.col_offset,
-                    "PitVault.history() returns every version including future "
-                    "known_at — audit-only API must not appear in strategy code paths",
-                )
-            )
-        # ADVERSARIAL §1a-E12: getattr(pl, "read_" + "parquet")(path).
-        elif name == "getattr" and len(node.args) >= 2:
-            out.extend(_lh009_getattr_findings(node, module_assigns))
-        # ADVERSARIAL §1a-E13: duckdb.sql("select * from read_parquet(...)"),
-        # conn.execute(...), eval/exec of a generated call string.
-        elif name in _SQL_ENTRY_NAMES or name in _EVAL_NAMES:
-            for arg in node.args:
-                folded = _fold_str(arg, module_assigns, node.lineno)
-                if folded is not None and _SQL_PARQUET_RE.search(folded):
-                    out.append(
-                        _Finding(
-                            "LH009",
-                            node.lineno,
-                            node.col_offset,
-                            f"parquet read embedded in a {name}(...) string bypasses the "
-                            "PIT choke point",
-                        )
-                    )
-                    break
+        out.extend(_lh009_call_findings(node, module_assigns, io_aliases))
     return out
 
 
@@ -1620,13 +1651,9 @@ def _check_lh013(tree: ast.AST, path_str: str, source: str) -> list[_Finding]:
     return out
 
 
-def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list[_Finding]:
-    """Interprocedural-lite (ADVERSARIAL §1a-E2 shape): flag call sites of
-    functions whose own body produced a finding. Single-level, single-file:
-    cross-file helpers are the documented residual ceiling.
-    """
-    out: list[_Finding] = []
-    functions = _function_nodes(tree)
+def _lh014_leaky(
+    functions: list[ast.FunctionDef | ast.AsyncFunctionDef], findings: list[_Finding]
+) -> dict[str, set[str]]:
     leaky: dict[str, set[str]] = {}
     for func in functions:
         end = func.end_lineno or func.lineno
@@ -1635,27 +1662,44 @@ def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list
         hits.discard("LH014")
         if hits:
             leaky.setdefault(func.name, set()).update(hits)
+    return leaky
+
+
+def _lh014_callee(node: ast.Call) -> str | None:
+    """Bare ``helper()`` and dotted ``self.helper()`` share the helper's name."""
+    callee = node.func
+    if isinstance(callee, ast.Name):
+        return callee.id
+    if isinstance(callee, ast.Attribute):
+        return callee.attr
+    return None
+
+
+def _lh014_self_call(
+    functions: list[ast.FunctionDef | ast.AsyncFunctionDef], node: ast.Call, name: str
+) -> bool:
+    """A function calling its own name is not a second leak site."""
+    for func in functions:
+        if func.lineno <= node.lineno <= (func.end_lineno or func.lineno) and func.name == name:
+            return True
+    return False
+
+
+def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list[_Finding]:
+    """Interprocedural-lite (ADVERSARIAL §1a-E2 shape): flag call sites of
+    functions whose own body produced a finding. Single-level, single-file:
+    cross-file helpers are the documented residual ceiling.
+    """
+    out: list[_Finding] = []
+    functions = _function_nodes(tree)
+    leaky = _lh014_leaky(functions, findings)
     if not leaky:
         return out
     for node in _nodes(tree, ast.Call):
-        # `helper()` and `self.helper()`/`obj.helper()` alike — a leaky
-        # helper carries its finding through a dotted call too.
-        callee = node.func
-        if isinstance(callee, ast.Name):
-            name = callee.id
-        elif isinstance(callee, ast.Attribute):
-            name = callee.attr
-        else:
+        name = _lh014_callee(node)
+        if name is None or name not in leaky:
             continue
-        if name not in leaky:
-            continue
-        # skip recursive self-calls
-        enclosing = [
-            f
-            for f in functions
-            if f.lineno <= node.lineno <= (f.end_lineno or f.lineno) and f.name == name
-        ]
-        if enclosing:
+        if _lh014_self_call(functions, node, name):
             continue
         out.append(
             _Finding(

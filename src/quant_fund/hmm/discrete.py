@@ -13,23 +13,27 @@ are for longer sequences. Research only; not a live book.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
 
-try:
+if TYPE_CHECKING:
     from numba import njit
-except ImportError:  # pragma: no cover - numba is a required dependency
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
 
-    def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
-        def _deco(fn: Any) -> Any:
-            return fn
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
 
-        if len(_args) == 1 and callable(_args[0]) and not _kwargs:
-            return _args[0]
-        return _deco
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
 
 
 Array = NDArray[np.float64]
@@ -141,6 +145,35 @@ def _log_params(model: DiscreteHMM) -> tuple[Array, Array, Array]:
 
 
 @njit(cache=True)
+def _logsumexp_incoming(prev: np.ndarray, log_a: np.ndarray, j: int) -> float:
+    """Log-sum-exp of ``prev[i] + log_a[i, j]`` over the previous state."""
+    n = prev.shape[0]
+    m = prev[0] + log_a[0, j]
+    for i in range(1, n):
+        v = prev[i] + log_a[i, j]
+        if v > m:
+            m = v
+    acc = 0.0
+    for i in range(n):
+        acc += np.exp(prev[i] + log_a[i, j] - m)
+    return float(m + math.log(acc))
+
+
+@njit(cache=True)
+def _logsumexp_row(row: np.ndarray) -> float:
+    """Log-sum-exp of one state row."""
+    n = row.shape[0]
+    m = row[0]
+    for j in range(1, n):
+        if row[j] > m:
+            m = row[j]
+    acc = 0.0
+    for j in range(n):
+        acc += np.exp(row[j] - m)
+    return float(m + math.log(acc))
+
+
+@njit(cache=True)
 def _log_forward_nb(
     log_a: np.ndarray, log_b: np.ndarray, log_pi: np.ndarray, obs: np.ndarray
 ) -> tuple[np.ndarray, float]:
@@ -157,24 +190,10 @@ def _log_forward_nb(
         alpha[0, j] = log_pi[j] + log_b[j, o0]
     for t in range(1, t_len):
         ot = obs[t]
+        prev = alpha[t - 1]
         for j in range(n):
-            m = alpha[t - 1, 0] + log_a[0, j]
-            for i in range(1, n):
-                v = alpha[t - 1, i] + log_a[i, j]
-                if v > m:
-                    m = v
-            acc = 0.0
-            for i in range(n):
-                acc += np.exp(alpha[t - 1, i] + log_a[i, j] - m)
-            alpha[t, j] = m + np.log(acc) + log_b[j, ot]
-    m = alpha[t_len - 1, 0]
-    for j in range(1, n):
-        if alpha[t_len - 1, j] > m:
-            m = alpha[t_len - 1, j]
-    acc = 0.0
-    for j in range(n):
-        acc += np.exp(alpha[t_len - 1, j] - m)
-    return alpha, m + np.log(acc)
+            alpha[t, j] = _logsumexp_incoming(prev, log_a, j) + log_b[j, ot]
+    return alpha, _logsumexp_row(alpha[t_len - 1])
 
 
 @njit(cache=True)
