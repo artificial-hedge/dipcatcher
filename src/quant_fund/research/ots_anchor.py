@@ -45,6 +45,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.outbound import directory_child, read_http, repo_file, repo_relative
 
 OTS_DIR = Path("quality/timestamps/ots")
 OTS_MANIFEST = Path("quality/timestamps/ots_anchors.json")
@@ -282,9 +283,9 @@ def stamp_ots(
     """
     from quant_fund.utils.atomicio import atomic_write_bytes, atomic_write_text
 
-    root_path = Path(root)
+    root_path, target_path = repo_file(root, target)
     target_rel = Path(target)
-    digest = hash_bytes((root_path / target_rel).read_bytes())
+    digest = hash_bytes(target_path.read_bytes())
     digest_bytes = bytes.fromhex(digest)
     responses: list[bytes] = []
     for cal in calendars:
@@ -299,8 +300,7 @@ def stamp_ots(
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-                body = resp.read()
+            body = _exchange(req, timeout)
             # The response is a timestamp stream rooted at our digest —
             # reject anything that doesn't parse or carries no attestation.
             probe: list[dict[str, Any]] = []
@@ -320,11 +320,12 @@ def stamp_ots(
         else responses[0]
     )
     detached = OTS_MAGIC + bytes([OP_SHA256]) + digest_bytes + merged
-    ts_dir = root_path / OTS_DIR
+    ts_dir = repo_relative(root_path, OTS_DIR)
     ts_dir.mkdir(parents=True, exist_ok=True)
     name = target_rel.as_posix().replace("/", "__") + ".ots"
-    atomic_write_bytes(ts_dir / name, detached)
-    manifest_path = root_path / OTS_MANIFEST
+    token_path = directory_child(ts_dir, name)
+    atomic_write_bytes(token_path, detached)
+    manifest_path = repo_relative(root_path, OTS_MANIFEST)
     try:
         manifest = json.loads(manifest_path.read_text())
     except (OSError, ValueError):
@@ -337,7 +338,7 @@ def stamp_ots(
         manifest_path,
         json.dumps({"schema": OTS_SCHEMA, "anchors": anchors}, indent=2, sort_keys=True) + "\n",
     )
-    return ts_dir / name
+    return token_path
 
 
 DEFAULT_EXPLORER = "https://blockstream.info/api"
@@ -561,10 +562,15 @@ def verify_burial(header: bytes, successors: list[bytes]) -> dict[str, Any]:
     }
 
 
+def _exchange(req: urllib.request.Request, timeout: float | None = None) -> bytes:
+    """POST/GET one calendar or explorer URL. Redirects are refused."""
+    limit = 20.0 if timeout is None else float(timeout)
+    return read_http(req, timeout=limit)
+
+
 def _get(url: str, timeout: float) -> bytes:
     req = urllib.request.Request(url, headers={"Accept": "application/octet-stream"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
-        return bytes(resp.read())
+    return _exchange(req, timeout)
 
 
 def _fetch_header(height: int, *, explorer: str, timeout: float) -> bytes | None:
@@ -648,10 +654,10 @@ def upgrade_ots(
     errors: list[str] = []
     for name, entry in sorted(anchors.items()):
         label = str(entry.get("target", "")) or name
-        token_path = tdir / name
         declared = str(entry.get("sha256", ""))
         states: list[str] = []
         try:
+            token_path = directory_child(tdir, str(name))
             digest_bytes = bytes.fromhex(declared)
             atts = parse_ots(token_path.read_bytes(), digest_bytes)
         except (OtsError, ValueError, OSError) as exc:
@@ -735,7 +741,8 @@ def verify_ots(
     attestations: dict[str, list[str]] = {}
     for name, entry in sorted(anchors.items()):
         label = str(entry.get("target", "")) or name
-        token_path = tdir / name
+        token_path = directory_child(tdir, str(name))
+        target = repo_relative(root_path, str(entry.get("target", "")))
         if not token_path.is_file():
             errors.append(f"ots_missing:{name}")
             continue
@@ -745,7 +752,6 @@ def verify_ots(
         except (OtsError, ValueError) as exc:
             errors.append(f"ots_malformed:{name}:{exc}")
             continue
-        target = root_path / str(entry.get("target", ""))
         if not target.is_file():
             errors.append(f"anchor_target_missing:{label}")
             continue

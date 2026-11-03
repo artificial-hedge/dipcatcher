@@ -26,10 +26,10 @@ from typing import Any, cast
 
 import numpy as np
 import polars as pl
-import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from quant_fund.config.models import AppConfig, RobinhoodPlusVariant
+from quant_fund.config.yaml_safe import load_yaml_document
 from quant_fund.metrics.path_rankic import channel_rankic, mean_path_rankic
 from quant_fund.models.dlinear import dlinear_forecast
 from quant_fund.models.ranking import PUBLIC_FEATURES
@@ -82,7 +82,7 @@ class SotaProtocol(BaseModel):
 
 
 def load_sota_protocol(path: str | Path) -> SotaProtocol:
-    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    raw = load_yaml_document(Path(path).read_text(encoding="utf-8")) or {}
     if not isinstance(raw, dict):
         raise ValueError("sota protocol YAML must be a mapping")
     inherit = raw.pop("inherit", None)

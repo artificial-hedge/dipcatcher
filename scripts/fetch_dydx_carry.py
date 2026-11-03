@@ -27,6 +27,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import polars as pl
+from vendor_http import read_vendor
 
 BASE = "https://indexer.dydx.trade"
 
@@ -49,8 +50,7 @@ def _get(path: str, *, retries: int = 14) -> dict:
                 BASE + path,
                 headers={"User-Agent": "dipcatcher-research/1.0"},
             )
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.load(r)
+            return json.loads(read_vendor(req, timeout=30))
         except urllib.error.HTTPError as e:
             if 400 <= e.code < 500 and e.code != 429:
                 raise

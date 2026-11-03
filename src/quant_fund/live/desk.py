@@ -247,6 +247,9 @@ class LiveDesk:
         self.halt_reason = reason
         self._journal("kill", {"actor": actor, "reason": reason})
         self._save()
+        from quant_fund.api.admin_audit import note_process_mutation
+
+        note_process_mutation("kill-file", "halted")
         return self._envelope(accepted=True, status="halted")
 
     def reset(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
