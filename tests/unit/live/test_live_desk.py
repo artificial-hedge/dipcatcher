@@ -434,3 +434,18 @@ def test_cli_loopback_and_unarmed_drop(tmp_path: Path, monkeypatch: pytest.Monke
     )
     assert refused.exit_code == 1
     assert "SEND-LIVE-ORDERS" in refused.stdout
+
+
+def test_malformed_limit_override_refuses_to_reopen(tmp_path: Path) -> None:
+    desk = _open(tmp_path)
+    desk._save()
+    desk.close()
+    path = tmp_path / "desk" / "state.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["limit_override"] is None
+    reopened = _open(tmp_path)
+    reopened.close()
+    payload["limit_override"] = "wide-open"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(LiveDeskError, match="limit override"):
+        _open(tmp_path)

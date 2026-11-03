@@ -33,12 +33,18 @@ def test_blocking_states_raise_kill_switch_active(state: str) -> None:
     "bad",
     ["", "enabled", "HALT", "UNKNOWN", "DISABLED", " flatten ", "None"],
 )
-def test_invalid_state_fail_closed_blocks_orders(bad: str) -> None:
-    switch = KillSwitch(KillSwitchConfig(state=bad))
+def test_invalid_state_is_rejected_at_construction(bad: str) -> None:
+    with pytest.raises(KillSwitchActive, match="invalid"):
+        KillSwitch(KillSwitchConfig(state=bad))
+
+
+def test_invalid_assignment_preserves_the_stored_state() -> None:
+    switch = KillSwitch(KillSwitchConfig(state=HALT_NEW_ORDERS))
+    with pytest.raises(KillSwitchActive, match="invalid"):
+        switch.state = "NOT_A_STATE"
+    assert switch.state == HALT_NEW_ORDERS
     with pytest.raises(KillSwitchActive):
         switch.assert_new_orders_allowed()
-    assert switch.may_flatten(True) is False
-    assert switch.may_cancel_open_orders() is False
 
 
 def test_set_state_transitions_round_trip() -> None:
@@ -68,12 +74,13 @@ def test_set_state_transitions_round_trip() -> None:
     assert switch.may_flatten(True) is False
 
 
-def test_set_state_invalid_raises_and_preserves_prior() -> None:
+def test_unknown_set_state_halts_and_raises() -> None:
     switch = KillSwitch(KillSwitchConfig(state=ENABLED))
     with pytest.raises(KillSwitchActive, match="invalid"):
         switch.set_state("NOT_A_STATE")
-    assert switch.state == ENABLED
-    switch.assert_new_orders_allowed()
+    assert switch.state == HALT_NEW_ORDERS
+    with pytest.raises(KillSwitchActive):
+        switch.assert_new_orders_allowed()
 
 
 def test_flatten_requires_human_and_reject_auto_flag() -> None:
