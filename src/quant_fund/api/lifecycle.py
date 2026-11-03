@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Protocol
 
+from quant_fund.observe.write_halt import clear_write_halt, write_halt_reason
 from quant_fund.utils.operator_kill import orders_blocked_by_env
 
 _draining = threading.Event()
@@ -62,17 +63,22 @@ def reset_runtime_state() -> None:
     """Test helper. Clears the drain latch and the managed-service pointer."""
     disarm()
     _draining.clear()
+    clear_write_halt()
 
 
 def acceptance_block() -> str | None:
     """Why the process must not receive work. ``None`` means it may.
 
-    ``draining`` wins over the kill-switch file. The file is re-read on every
-    call so an operator can halt without a restart. The returned string is a
-    fixed code, never the file body.
+    ``draining`` wins over a failed durable write, and that wins over the
+    kill-switch file. The file is re-read on every call so an operator can
+    halt without a restart. The returned string is a fixed code, never the
+    file body.
     """
     if _draining.is_set():
         return "draining"
+    reason = write_halt_reason()
+    if reason is not None:
+        return f"durable_{reason}"
     return orders_blocked_by_env()
 
 

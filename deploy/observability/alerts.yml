@@ -111,3 +111,12 @@ groups:
         annotations:
           summary: The canary did not roll the stack.
           runbook: docs/incidents/DipcatcherCanaryAbort.md
+      # 1 means a ledger, journal, rate-store, or audit write did not land.
+      - alert: DipcatcherWriteHalt
+        expr: dipcatcher_write_halt == 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A ledger, journal, rate-store, or audit write did not land.
+          runbook: docs/incidents/DipcatcherWriteHalt.md

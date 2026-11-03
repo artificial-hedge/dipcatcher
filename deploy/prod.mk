@@ -20,6 +20,9 @@
 #   make -f deploy/prod.mk prod-signal-drill
 #   make -f deploy/prod.mk prod-order-load
 #   make -f deploy/prod.mk prod-redaction-audit
+#   make -f deploy/prod.mk prod-migrate-drill
+#   make -f deploy/prod.mk prod-disk-drill
+#   make -f deploy/prod.mk prod-time-drill
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. prod-secrets writes them
 # to files under SECRET_DIR and does not print them. Containers read those
@@ -79,7 +82,7 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-rollback-drill prod-signal-drill prod-order-load prod-redaction-audit prod-signals prod-certs prod-data prod-build prod-secrets
+.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-rollback-drill prod-signal-drill prod-order-load prod-redaction-audit prod-migrate-drill prod-disk-drill prod-time-drill prod-signals prod-certs prod-data prod-build prod-secrets
 
 ifeq ($(SUDO),)
 SHIP := $(ROOT)/.venv/bin/python
@@ -195,6 +198,15 @@ prod-redaction-audit:
 	@test -n "$$QUANT_API_KEY" || { echo "QUANT_API_KEY is required" >&2; exit 1; }
 	@test -n "$$RESEARCH_API_KEY" || { echo "RESEARCH_API_KEY is required" >&2; exit 1; }
 	cd $(ROOT) && uv run --quiet python scripts/redaction_audit.py drill
+
+prod-migrate-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_migrate_drill.py
+
+prod-disk-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_disk_drill.py
+
+prod-time-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_time_drill.py
 
 prod-restore:
 	cd $(ROOT) && $(SUDO) $(ROOT)/.venv/bin/python scripts/paper_state_backup.py restore \

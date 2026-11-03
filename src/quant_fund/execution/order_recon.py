@@ -243,6 +243,14 @@ class OrderFillLedger:
         self._counters["orders"] += 1
         return "accepted"
 
+    def drop_unpersisted(self, order_id: str) -> None:
+        """Forget an order whose durable write did not land."""
+        if self._orders.pop(order_id, None) is None:
+            return
+        count = int(self._counters["orders"])
+        if count > 0:
+            self._counters["orders"] = count - 1
+
     def cancel(self, order_id: str) -> str:
         """Cancel a working order. Allowed while the kill switch is tripped.
 

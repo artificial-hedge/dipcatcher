@@ -255,6 +255,15 @@ Verified in this tree, by the drills in [`OPS_RUNBOOK_PROD.md`](OPS_RUNBOOK_PROD
       from the Prometheus annotations.
 - [x] `prod-order-load` holds pre-trade limits and the kill switch at 10x
       the production request rate on the paper and loopback paths.
+- [x] `prod-migrate-drill` carries the ledger, journal, rate store, and
+      audit log across a config bump and back. A newer state schema fails
+      closed. The measured digests are in the ops runbook.
+- [x] `prod-disk-drill` rejects new paper orders when the ledger filesystem
+      is full or read-only, pages `DipcatcherWriteHalt`, and accepts again
+      when the write lands.
+- [x] `prod-time-drill` keeps the rate window, the HTTP bucket, and the
+      kill file honest across a wall-clock step, and pages
+      `DipcatcherDataStale` and `DipcatcherKillSwitchBlocking`.
 
 Still the owner's. This slice does not do them:
 

@@ -700,3 +700,62 @@ present.
 
 Incident pages for every alert are linked from the rule annotations and
 listed in `docs/incidents/README.md`.
+
+## Upgrade and downgrade
+
+`prod-migrate-drill` seeds a paper ledger, one loopback rate window, an
+audit log, and a synthetic journal line under config schema 1. N+1 writes
+`config.json` schema 2 and adds `rate_limit_rps`. The four state files are
+not rewritten. Downgrade writes schema 1 again. A `state_schema` this
+process does not know fails closed and leaves the bytes in place. The
+ledger is simulated paper.
+
+```bash
+make -f deploy/prod.mk prod-migrate-drill
+```
+
+Measured on this host: the four state digests were unchanged across the
+upgrade and the downgrade. The paper book resumed. A planted
+`state_schema` of 99 was refused with "newer than this process; refusing
+to rewrite state", and those digests stayed the same.
+
+## Disk full and read-only
+
+`prod-disk-drill` puts the ledger, journal, rate store, and audit log on
+a 256 KiB tmpfs. It fills that mount, submits a paper order, frees the
+space, remounts the mount read-only, and remounts it read-write. A failed
+probe or a failed checkpoint rejects the order, latches
+`dipcatcher_write_halt`, and does not replace the ledger. `DipcatcherWriteHalt`
+is the page alert. `DipcatcherDiskPressure` stays silent on a read-only
+filesystem, so it is not the signal for this fault.
+
+```bash
+make -f deploy/prod.mk prod-disk-drill
+```
+
+Measured on this host: the full mount rejected the order with
+`durable_enospc` and the ledger digest stayed
+`cc308438fae791e70317cec09b03798633f85ddf6c2eb473cf4dbd202808316a`.
+After the filler was removed, the next order was accepted and the digest
+was `db68bfe61db6d6ddadfe5e94c40d895c0666c422099274847dd7aba263a19278`.
+The read-only remount rejected with `durable_read_only` and left that
+digest in place. The read-write remount accepted again. promtool exit
+was 0 for `DipcatcherWriteHalt`.
+
+## Clock step
+
+`prod-time-drill` does not set the host clock. It steps the wall clock
+against a frozen monotonic clock. A forward step must not flush the
+pre-trade window or refill the HTTP bucket. A backward step reports the
+stale SLO instead of a negative age. The kill file stays latched.
+`DipcatcherDataStale` and `DipcatcherKillSwitchBlocking` are the page
+alerts.
+
+```bash
+make -f deploy/prod.mk prod-time-drill
+```
+
+Measured on this host: the HTTP bucket stayed empty across the wall
+jump, the signed window still denied the next order, the backward step
+set freshness to 86400 seconds, and the kill file still read
+`kill_switch:HALT_NEW_ORDERS`. promtool exit was 0.

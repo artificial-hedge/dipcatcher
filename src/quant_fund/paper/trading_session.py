@@ -34,6 +34,13 @@ from quant_fund.execution.order_recon import (
     Side,
     refuse_live_endpoint,
 )
+from quant_fund.observe.write_halt import (
+    DurableWriteError,
+    configured_parents,
+    ensure_directories,
+    errno_code,
+    note_write_failure,
+)
 from quant_fund.paper.broker_adapter import PaperBrokerAdapter
 from quant_fund.schemas.errors import KillSwitchActive
 from quant_fund.validation.live_readiness import format_readiness, live_readiness_report
@@ -235,6 +242,9 @@ class PaperTradingSession:
         refusal = self._pretrade(security_id, side, quantity)
         if refusal is not None:
             return _step("submit", "rejected", reason=refusal, order_id=order_id)
+        blocked = _durable_refusal(self._broker.state_path.parent)
+        if blocked is not None:
+            return _step("submit", "rejected", reason=blocked, order_id=order_id)
         order = Order(
             order_id=order_id,
             security_id=security_id,
@@ -253,9 +263,13 @@ class PaperTradingSession:
             side=side,
             quantity=quantity,
         )
-        if verdict == "accepted":
+        if verdict != "accepted":
+            return step
+        try:
             return self._commit(step)
-        return step
+        except DurableWriteError as exc:
+            self._broker.drop_accepted(order_id)
+            return _step("submit", "rejected", reason=f"durable_{exc.code}", order_id=order_id)
 
     def _op_fill(self, command: Mapping[str, Any]) -> dict[str, Any]:
         fill = Fill(
@@ -406,6 +420,21 @@ def _consistent(steps: list[dict[str, Any]], report: Mapping[str, Any]) -> bool:
         return False
     counters = report["counters"]
     return not any(counters[name] for name in _ANOMALY_COUNTERS)
+
+
+def _durable_refusal(parent: Path) -> str | None:
+    """Probe the ledger directory before the broker records the order."""
+    if not parent.exists():
+        try:
+            parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            code = errno_code(exc.errno or 0)
+            note_write_failure(code)
+            return f"durable_{code}"
+    blocked = ensure_directories(configured_parents([parent]))
+    if blocked is None:
+        return None
+    return f"durable_{blocked}"
 
 
 def _step(op: str, verdict: str, **extra: Any) -> dict[str, Any]:

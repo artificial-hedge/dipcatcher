@@ -21,6 +21,7 @@ tests:
               severity: page
               service: lab
             exp_annotations:
+              runbook: docs/incidents/DipcatcherErrorBudgetBurn.md
               summary: HTTP error budget is burning.
       - eval_time: 6h
         alertname: DipcatcherErrorBudgetExhausted
@@ -29,6 +30,7 @@ tests:
               severity: page
               service: lab
             exp_annotations:
+              runbook: docs/incidents/DipcatcherErrorBudgetExhausted.md
               summary: The 30 day HTTP error budget is exhausted.
   - interval: 1m
     input_series:
@@ -59,6 +61,7 @@ tests:
               severity: page
               service: lab
             exp_annotations:
+              runbook: docs/incidents/DipcatcherLatencyP99.md
               summary: HTTP p99 latency is above 0.25 seconds.
   - interval: 1m
     input_series:

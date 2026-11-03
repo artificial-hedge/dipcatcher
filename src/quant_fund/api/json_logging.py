@@ -10,7 +10,9 @@ import os
 import sys
 from contextvars import ContextVar, Token
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, NoReturn
+
+from quant_fund.observe.write_halt import DurableWriteError, errno_code, note_write_failure
 
 _SECRET_ENV_NAMES = (
     "AGENT_GW_TOKEN",
@@ -193,14 +195,21 @@ def append_audit_line(line: str) -> None:
     payload = (line + "\n").encode("utf-8")
     try:
         descriptor = _open_audit(raw, payload, limits)
-    except OSError:
-        return
+    except OSError as exc:
+        _refuse_audit(exc)
     try:
         os.write(descriptor, payload)
-    except OSError:
-        return
+    except OSError as exc:
+        _refuse_audit(exc)
     finally:
         os.close(descriptor)
+
+
+def _refuse_audit(exc: OSError) -> NoReturn:
+    """Latch new orders and surface the failed audit write."""
+    code = errno_code(exc.errno or 0)
+    note_write_failure(code)
+    raise DurableWriteError(code) from exc
 
 
 def json_log_config(level: str) -> dict[str, Any]:

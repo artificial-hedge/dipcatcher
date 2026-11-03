@@ -14,6 +14,7 @@ from collections.abc import Callable
 from typing import Any
 
 from quant_fund.observe.flags import STAGES, observe_enabled
+from quant_fund.observe.write_halt import write_halt_reason
 
 BUCKETS = (0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 _ERROR_STAGES = frozenset((*STAGES, "otel_export"))
@@ -37,6 +38,7 @@ METRIC_HELP = {
     "dipcatcher_kill_switch_info": (
         "Current operator kill code. The code label is a stable reader code, never the file body."
     ),
+    "dipcatcher_write_halt": ("1 when a ledger, journal, rate-store, or audit write did not land."),
     "dipcatcher_http_requests_total": (
         "HTTP responses by status code. Operational telemetry, not a research score."
     ),
@@ -235,6 +237,13 @@ def _append_operator_gauges(lines: list[str]) -> None:
     lines.append(f'dipcatcher_kill_switch_info{{code="{safe}"}} 1')
 
 
+def _append_write_halt(lines: list[str]) -> None:
+    """Emit the halt series only after a durable write has failed."""
+    if write_halt_reason() is None:
+        return
+    _emit_gauge(lines, "dipcatcher_write_halt", 1.0)
+
+
 def _unit_gauge(value: object) -> bool:
     return isinstance(value, float) and value in {0.0, 1.0}
 
@@ -283,6 +292,7 @@ def render_prometheus() -> str:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
     _append_operator_gauges(lines)
+    _append_write_halt(lines)
     _append_http(lines, snap)
     text = "\n".join(lines)
     if text:
