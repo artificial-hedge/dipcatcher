@@ -92,8 +92,8 @@ def test_filled_order_id_cannot_be_submitted_again(tmp_path) -> None:
     first = broker.submit(_broker_order("o1", 5.0), price=100.0, adv_dollars=1e9)
     assert first.order.status is OrderStatus.FILLED
     cash = broker.cash
-    with pytest.raises(ValueError, match="already submitted"):
-        broker.submit(_broker_order("o1", 5.0), price=100.0, adv_dollars=1e9)
+    again = broker.submit(_broker_order("o1", 5.0), price=100.0, adv_dollars=1e9)
+    assert again is first
     assert broker.cash == pytest.approx(cash)
     assert broker.shares["A"] == pytest.approx(5.0)
 

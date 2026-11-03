@@ -61,7 +61,7 @@ def _fill(
 
 
 def _ledger(**kw: float) -> OrderFillLedger:
-    return OrderFillLedger(endpoint_kind="paper", **kw)
+    return OrderFillLedger(endpoint_kind="paper", accept_orders=True, **kw)
 
 
 # -- endpoint refusal --

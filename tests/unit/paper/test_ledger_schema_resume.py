@@ -556,7 +556,7 @@ def test_reload_reads_a_published_frame_and_refuses_a_torn_one(tmp_path) -> None
     again = PaperLedger(tmp_path, "reload", load_existing=True)
     assert again.load_shadow_equity().height == 1
     (again.root / "orders.parquet").write_bytes(b"torn")
-    with pytest.raises(pl.exceptions.PolarsError):
+    with pytest.raises(ValueError, match="ledger file is unreadable: orders"):
         PaperLedger(tmp_path, "reload", load_existing=True)
 
 
@@ -661,6 +661,8 @@ def _champion() -> dict[str, object]:
         "cash": 1_000.0,
         "initial_cash": 1_000.0,
         "shares": {},
+        "open_orders": [],
+        "last_marks": {},
         "allow_capital": True,
     }
 

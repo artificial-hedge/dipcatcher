@@ -77,11 +77,12 @@ def test_submit_rejects_a_missing_market_price(tmp_path):
 
 def test_submit_refuses_an_order_id_that_is_already_working(tmp_path):
     broker = _broker(tmp_path)
-    broker.submit(_order(limit=50.0), price=100.0)
+    first = broker.submit(_order(limit=50.0), price=100.0)
     assert "o1" in broker.open_orders
 
-    with pytest.raises(ValueError, match="already working"):
-        broker.submit(_order(limit=50.0), price=100.0)
+    again = broker.submit(_order(limit=50.0), price=100.0)
+    assert again is first
+    assert list(broker.open_orders) == ["o1"]
 
 
 def test_buy_beyond_cash_is_rejected_without_moving_the_book(tmp_path):
@@ -379,21 +380,21 @@ def test_from_state_rejects_non_string_kill_state(tmp_path):
 def test_from_state_rejects_negative_receipt_baselines(tmp_path):
     cfg = _cfg(tmp_path)
     with pytest.raises(ValueError, match="receipt counts"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "n_orders": -1})
+        SimulatedBroker.from_state(cfg, {"cash": 1.0, "shares": {}, "n_orders": -1})
     with pytest.raises(ValueError, match="receipt counts"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "n_fills": -1})
+        SimulatedBroker.from_state(cfg, {"cash": 1.0, "shares": {}, "n_fills": -1})
 
 
 def test_from_state_rejects_a_non_list_history(tmp_path):
     cfg = _cfg(tmp_path)
     with pytest.raises(ValueError, match="history must be a list"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "history": {"order": {}}})
+        SimulatedBroker.from_state(cfg, {"cash": 1.0, "shares": {}, "history": {"order": {}}})
 
 
 def test_from_state_rejects_malformed_history_entries(tmp_path):
     cfg = _cfg(tmp_path)
     with pytest.raises(ValueError, match="history is invalid"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "history": [{"nope": 1}]})
+        SimulatedBroker.from_state(cfg, {"cash": 1.0, "shares": {}, "history": [{"nope": 1}]})
 
 
 def test_from_state_rejects_history_count_mismatch(tmp_path):
@@ -409,13 +410,15 @@ def test_from_state_rejects_history_count_mismatch(tmp_path):
 def test_from_state_rejects_non_list_open_orders(tmp_path):
     cfg = _cfg(tmp_path)
     with pytest.raises(ValueError, match="open_orders must be a list"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "open_orders": {"o1": {}}})
+        SimulatedBroker.from_state(cfg, {"cash": 1.0, "shares": {}, "open_orders": {"o1": {}}})
 
 
 def test_from_state_rejects_invalid_open_orders(tmp_path):
     cfg = _cfg(tmp_path)
     with pytest.raises(ValueError, match="open_orders are invalid"):
-        SimulatedBroker.from_state(cfg, {"cash": 1.0, "open_orders": [{"order_id": "o1"}]})
+        SimulatedBroker.from_state(
+            cfg, {"cash": 1.0, "shares": {}, "open_orders": [{"order_id": "o1"}]}
+        )
 
 
 def test_from_state_round_trips_a_resting_limit_order(tmp_path):

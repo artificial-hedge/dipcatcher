@@ -46,7 +46,7 @@ def test_flush_fsync_failure_keeps_the_previous_canonical_files(
     def fail_fsync(_fd: int) -> None:
         raise OSError("simulated ledger fsync failure")
 
-    monkeypatch.setattr("quant_fund.paper.ledger.os.fsync", fail_fsync)
+    monkeypatch.setattr("quant_fund.utils.atomicio.os.fsync", fail_fsync)
     ledger.record_shadow_equity({"event_time": "2024-01-02", "nav": 1.1})
     ledger.set_meta(note="must-not-publish")
     with pytest.raises(OSError, match="simulated ledger fsync failure"):
@@ -79,7 +79,7 @@ def test_checkpoint_replace_failure_leaves_the_last_resumable_state(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = tmp_path / "state.json"
-    run = PaperBrokerAdapter(state_path=path, starting_cash=1_000.0)
+    run = PaperBrokerAdapter(state_path=path, starting_cash=1_000.0, accept_orders=True)
     run.submit(Order(order_id="o1", security_id="SEC_A", side="BUY", quantity=1.0))
     run.apply_fill(
         Fill(

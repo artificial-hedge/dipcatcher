@@ -73,7 +73,9 @@ def test_loopback_restart_rebuilds_the_broker_from_durable_state(tmp_path: Path)
 
 def test_paper_crash_before_checkpoint_submits_once(tmp_path: Path) -> None:
     path = tmp_path / "paper.json"
-    run = PaperBrokerAdapter(state_path=path, endpoint_kind="paper", starting_cash=1_000.0)
+    run = PaperBrokerAdapter(
+        state_path=path, endpoint_kind="paper", starting_cash=1_000.0, accept_orders=True
+    )
     assert run.endpoint_kind == "paper"
     first = Order(order_id="o1", security_id="SEC_A", side="BUY", quantity=10.0)
     second = Order(order_id="o2", security_id="SEC_A", side="BUY", quantity=4.0)
@@ -92,7 +94,9 @@ def test_paper_crash_before_checkpoint_submits_once(tmp_path: Path) -> None:
 
 def test_paper_crash_after_fill_before_checkpoint_reapplies_once(tmp_path: Path) -> None:
     path = tmp_path / "paper.json"
-    run = PaperBrokerAdapter(state_path=path, endpoint_kind="paper", starting_cash=1_000.0)
+    run = PaperBrokerAdapter(
+        state_path=path, endpoint_kind="paper", starting_cash=1_000.0, accept_orders=True
+    )
     order = Order(order_id="o1", security_id="SEC_A", side="BUY", quantity=10.0)
     fill = Fill(
         fill_id="f1",
