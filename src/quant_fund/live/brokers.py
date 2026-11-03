@@ -440,13 +440,34 @@ class AlpacaBroker:
         )
 
     def fills(self, *, broker_to_client: dict[str, str]) -> FillPage:
-        payload = self._request(
-            "GET",
-            f"/v2/account/activities/FILL?page_size={_PAGE}&direction=desc",
-            None,
-        )
-        if not isinstance(payload, list):
-            raise BrokerRejected("broker fill list was not a list")
+        fills: list[BrokerFill] = []
+        page_token = ""
+        seen_tokens: set[str] = set()
+        truncated = False
+        while True:
+            query: dict[str, str | int] = {"page_size": _PAGE, "direction": "desc"}
+            if page_token:
+                query["page_token"] = page_token
+            payload = self._request(
+                "GET",
+                f"/v2/account/activities/FILL?{urlencode(query)}",
+                None,
+            )
+            if not isinstance(payload, list):
+                raise BrokerRejected("broker fill list was not a list")
+            fills.extend(self._decode_fills(payload, broker_to_client))
+            if len(payload) < _PAGE:
+                break
+            page_token = self._fill_page_token(payload)
+            if not page_token or page_token in seen_tokens:
+                truncated = True
+                break
+            seen_tokens.add(page_token)
+        fills.sort(key=lambda fill: (fill.fill_time_ns, fill.fill_id))
+        return FillPage(fills=tuple(fills), truncated=truncated)
+
+    @staticmethod
+    def _decode_fills(payload: list[Any], broker_to_client: dict[str, str]) -> list[BrokerFill]:
         fills: list[BrokerFill] = []
         for row in payload:
             if not isinstance(row, dict):
@@ -473,8 +494,13 @@ class AlpacaBroker:
                     fill_time_ns=_ns(when),
                 )
             )
-        fills.sort(key=lambda fill: (fill.fill_time_ns, fill.fill_id))
-        return FillPage(fills=tuple(fills), truncated=len(payload) >= _PAGE)
+        return fills
+
+    @staticmethod
+    def _fill_page_token(payload: list[Any]) -> str:
+        if not payload or not isinstance(payload[-1], dict):
+            return ""
+        return str(payload[-1].get("id") or "")
 
     def _ack(self, payload: dict[str, Any]) -> BrokerAck:
         raw_status = str(payload.get("status") or "")
