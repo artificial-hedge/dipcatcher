@@ -1,8 +1,9 @@
 """Shared HTTP controls for the lab API and the research evidence API.
 
-Body size, in-memory token buckets, a closed CORS default, and a 500
-response that carries no exception text. Loopback peers use a separate,
-higher token bucket than other peers.
+Body size, token buckets, a closed CORS default, and a 500 response that
+carries no exception text. Loopback peers use a separate, higher token
+bucket than other peers. The default bucket is in-process. ``sqlite`` and
+``file`` share one store across workers.
 """
 
 from __future__ import annotations
@@ -20,6 +21,14 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.requests import empty_receive
+
+from quant_fund.api.rate_store import (
+    backend_name,
+    shared_take,
+)
+from quant_fund.api.rate_store import (
+    rate_backend_env_names as _rate_backend_env_names,
+)
 
 MAX_BODY_BYTES = 64 * 1024
 BODY_TOO_LARGE_DETAIL = "request body exceeds the 64 KiB limit"
@@ -399,6 +408,11 @@ def _read_secret_file(path: Path) -> str:
     return lines[0]
 
 
+def rate_backend_env_names() -> tuple[str, ...]:
+    """Environment names for the shared rate-limit store."""
+    return _rate_backend_env_names()
+
+
 def loopback_rate_env_names() -> tuple[str, ...]:
     """Environment names for the separate loopback buckets."""
     return (
@@ -467,6 +481,21 @@ def _gate(prefix: str) -> _Gate:
     return gate
 
 
+def take_rate_token(prefix: str, identity: str, rate: float, burst: float) -> bool | None:
+    """Take one token. ``None`` means the selected store cannot be used.
+
+    ``memory`` keeps ``time.monotonic`` so one process can freeze its clock.
+    ``sqlite`` and ``file`` use ``time.time`` so two workers share a clock.
+    """
+    kind = backend_name()
+    if kind == "memory":
+        return _gate(prefix).allow(identity, rate, burst, time.monotonic())
+    store = os.environ.get("DIPCATCHER_RATE_STORE", "").strip()
+    if not store:
+        return None
+    return shared_take(kind, store, identity, rate, burst, time.time())
+
+
 def _too_many() -> JSONResponse:
     return JSONResponse(
         status_code=429,
@@ -475,23 +504,29 @@ def _too_many() -> JSONResponse:
     )
 
 
+def _token_response(allowed: bool | None) -> JSONResponse | None:
+    if allowed is None:
+        return JSONResponse(status_code=503, content={"detail": "rate store unavailable"})
+    if not allowed:
+        return _too_many()
+    return None
+
+
 def ip_rate_response(request: Request, prefix: str) -> JSONResponse | None:
     host = client_host(request)
     config = _rate_for_peer(prefix, host)
     if config is None:
         return None
     rate, burst = config
-    allowed = _gate(prefix).allow(f"{prefix}:ip:{host}", rate, burst, time.monotonic())
-    if allowed:
-        return None
-    return _too_many()
+    return _token_response(take_rate_token(prefix, f"{prefix}:ip:{host}", rate, burst))
 
 
 def key_rate_response(request: Request, prefix: str, key: str) -> JSONResponse | None:
     """Per-key bucket. The bucket id is a digest, not the key.
 
     Loopback and other peers keep separate buckets, so the higher loopback
-    limit is not the remote bucket with a new label.
+    limit is not the remote bucket with a new label. A shared store uses
+    that same identity.
     """
     host = client_host(request)
     config = _rate_for_peer(prefix, host)
@@ -503,10 +538,8 @@ def key_rate_response(request: Request, prefix: str, key: str) -> JSONResponse |
     except UnicodeEncodeError:
         return None
     scope = "loopback" if is_loopback_host(host) else "remote"
-    allowed = _gate(prefix).allow(f"{prefix}:key:{scope}:{digest}", rate, burst, time.monotonic())
-    if allowed:
-        return None
-    return _too_many()
+    identity = f"{prefix}:key:{scope}:{digest}"
+    return _token_response(take_rate_token(prefix, identity, rate, burst))
 
 
 def reject_bad_headers(request: Request) -> JSONResponse | None:

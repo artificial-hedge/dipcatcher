@@ -87,13 +87,20 @@ def _pop_names(saved: list[tuple[str, str | None]]) -> None:
 
 def middleware_audit() -> dict[str, Any]:
     from quant_fund.api.admin_audit import audit_log_env_names
-    from quant_fund.api.http_controls import key_file_env_names, loopback_rate_env_names
+    from quant_fund.api.http_controls import (
+        key_file_env_names,
+        loopback_rate_env_names,
+        rate_backend_env_names,
+    )
 
     results: dict[str, Any] = {}
     saved = _push_env("QUANT_API_KEY")
     saved_read = _push_env("QUANT_API_READ_KEY")
     saved_files = _push_names(
-        key_file_env_names() + loopback_rate_env_names() + audit_log_env_names()
+        key_file_env_names()
+        + loopback_rate_env_names()
+        + audit_log_env_names()
+        + rate_backend_env_names()
     )
     try:
         client = _client()

@@ -11,6 +11,7 @@ from quant_fund.api.app import app
 from quant_fund.api.http_controls import (
     keys_match,
     loopback_rate_config,
+    rate_backend_env_names,
     rate_config,
     reset_rate_gates,
 )
@@ -20,6 +21,8 @@ from quant_fund.api.research_api import ResearchApiSettings, create_app
 @pytest.fixture(autouse=True)
 def _clear_buckets(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_rate_gates()
+    for name in rate_backend_env_names():
+        monkeypatch.delenv(name, raising=False)
     # Hold the clock so a slow handler cannot refill the bucket mid-test.
     monkeypatch.setattr("quant_fund.api.http_controls.time.monotonic", lambda: 1_000.0)
 
