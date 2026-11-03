@@ -47,11 +47,11 @@ def test_schema_version_must_be_exactly_one(schema_version: object) -> None:
     assert data_manifest_contract_errors(manifest) == ["schema_version_not_1"]
 
 
-def test_schema_version_bool_compares_equal_to_one() -> None:
-    """Documented quirk: ``True == 1`` in Python, so a bool schema passes."""
+def test_schema_version_bool_is_not_one() -> None:
+    """A bool is not schema version 1, even though ``True == 1``."""
     manifest = _manifest()
     manifest["schema_version"] = True
-    assert data_manifest_contract_errors(manifest) == []
+    assert data_manifest_contract_errors(manifest) == ["schema_version_not_1"]
 
 
 @pytest.mark.parametrize("source", ["", None, 0])
@@ -115,6 +115,7 @@ def test_every_artifact_is_reported_not_just_the_first() -> None:
     manifest["artifacts"]["silver"] = {"sha256": "nope", "rows": -2, "columns": []}
     errors = data_manifest_contract_errors(manifest)
     assert errors == [
+        "artifact:silver:path_invalid",
         "artifact:silver:sha256_invalid",
         "artifact:silver:rows_invalid",
         "artifact:silver:columns_invalid",

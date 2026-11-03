@@ -310,10 +310,9 @@ def test_write_partitioned_bars_falls_back_to_security_id(tmp_path: Path) -> Non
     assert snapshot.files[0].symbol == "A"
 
 
-def test_write_partitioned_bars_accepts_an_empty_frame(tmp_path: Path) -> None:
-    snapshot = write_partitioned_bars(tmp_path, _bars().head(0), dataset="bars")
-    assert snapshot.files == ()
-    assert load_snapshot(tmp_path, snapshot.snapshot_id) == snapshot
+def test_write_partitioned_bars_rejects_an_empty_frame(tmp_path: Path) -> None:
+    with pytest.raises(DataContractError, match="non-empty frame"):
+        write_partitioned_bars(tmp_path, _bars().head(0), dataset="bars")
 
 
 def test_write_partitioned_bars_requires_utc_event_time(tmp_path: Path) -> None:
