@@ -31,6 +31,56 @@ METRIC_HELP = {
     ),
 }
 
+LIVE_DESK_PRETRADE_REASONS = frozenset(
+    {
+        "kill_switch",
+        "stale_data",
+        "non_finite",
+        "market_closed",
+        "halted",
+        "max_order_quantity",
+        "max_order_notional",
+        "price_collar",
+        "position_quantity",
+        "position_notional",
+        "gross_exposure",
+        "net_exposure",
+        "concentration",
+        "duplicate_order",
+        "order_rate",
+        "message_rate",
+        "reg_sho",
+        "pattern_day_trader",
+        "good_faith_violation",
+        "daily_loss",
+        "trailing_drawdown",
+        "internal_error",
+        "buying_power",
+        "state_full",
+        "unknown_symbol",
+        "non_monotonic_time",
+        "manual_kill",
+        "other",
+    }
+)
+_DESK_EVENTS = {
+    "order_submit": frozenset({"attempted", "failed"}),
+    "order_result": frozenset(
+        {"working", "acknowledged", "partial", "filled", "rejected", "canceled"}
+    ),
+    "fill": frozenset({"recorded", "orphan", "unapplied"}),
+    "pretrade_denial": LIVE_DESK_PRETRADE_REASONS,
+    "kill_switch": frozenset({"latched", "reset"}),
+    "bridge_fault": frozenset({"transmit", "poll", "orphan", "unapplied"}),
+}
+_DESK_VENUES = frozenset({"shadow", "loopback", "drop"})
+_ALL_METRIC_HELP = {
+    **METRIC_HELP,
+    "dipcatcher_live_desk_events_total": (
+        "Operational Live Desk events. Loopback records are SYNTHETIC; not a live P&L claim."
+    ),
+}
+
 
 class _Histogram:
     def __init__(self) -> None:
@@ -56,6 +106,7 @@ class _Registry:
         self.histograms: dict[str, _Histogram] = {}
         self.errors: dict[str, int] = {}
         self.gauges: dict[str, float] = {}
+        self.live_desk_events: dict[tuple[str, str, str], int] = {}
 
     def observe(self, stage: str, seconds: float) -> None:
         if stage not in STAGES:
@@ -79,6 +130,13 @@ class _Registry:
         with self._lock:
             self.gauges[name] = float(value)
 
+    def desk_event(self, event: str, outcome: str, venue: str) -> None:
+        if outcome not in _DESK_EVENTS.get(event, frozenset()) or venue not in _DESK_VENUES:
+            raise ValueError("cannot record live desk event")
+        with self._lock:
+            key = (event, outcome, venue)
+            self.live_desk_events[key] = self.live_desk_events.get(key, 0) + 1
+
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             histograms = {
@@ -93,6 +151,7 @@ class _Registry:
                 "histograms": histograms,
                 "errors": dict(self.errors),
                 "gauges": dict(self.gauges),
+                "live_desk_events": dict(self.live_desk_events),
             }
 
     def reset(self) -> None:
@@ -100,6 +159,7 @@ class _Registry:
             self.histograms.clear()
             self.errors.clear()
             self.gauges.clear()
+            self.live_desk_events.clear()
 
 
 REGISTRY = _Registry()
@@ -119,6 +179,12 @@ def record_error(stage: str) -> None:
     if not observe_enabled():
         return
     REGISTRY.error(stage)
+
+
+def record_live_desk_event(*, event: str, outcome: str, venue: str) -> None:
+    if not observe_enabled():
+        return
+    REGISTRY.desk_event(event, outcome, venue)
 
 
 def set_data_freshness(seconds: float) -> None:
@@ -191,6 +257,14 @@ def render_prometheus() -> str:
         if name in snap["gauges"]:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
+    desk_events = snap["live_desk_events"]
+    if desk_events:
+        _help(lines, "dipcatcher_live_desk_events_total", "counter")
+    for (event, outcome, venue), count in sorted(desk_events.items()):
+        lines.append(
+            "dipcatcher_live_desk_events_total"
+            f'{{event="{event}",outcome="{outcome}",venue="{venue}"}} {count}'
+        )
     text = "\n".join(lines)
     if text:
         text += "\n"
@@ -198,7 +272,7 @@ def render_prometheus() -> str:
 
 
 def _help(lines: list[str], name: str, metric_type: str) -> None:
-    lines.append(f"# HELP {name} {METRIC_HELP[name]}")
+    lines.append(f"# HELP {name} {_ALL_METRIC_HELP[name]}")
     lines.append(f"# TYPE {name} {metric_type}")
 
 

@@ -14,6 +14,7 @@ import json
 import os
 import uuid
 from collections.abc import Mapping
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -29,6 +30,8 @@ from quant_fund.live.arming import (
     write_arming,
 )
 from quant_fund.live.bridge import BridgeError, BrokerEvent, DropBridge, LoopbackBridge
+from quant_fund.observe.logging import log_event
+from quant_fund.observe.metrics import LIVE_DESK_PRETRADE_REASONS, record_live_desk_event
 from quant_fund.pretrade.codes import (
     INTERNAL,
     KIND_CANCEL,
@@ -243,10 +246,13 @@ class LiveDesk:
     def kill(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
         self._alive()
         self._clock(ts_ns)
+        was_killed = bool(self.engine.book.killed) or self._integrity_frozen
         self.engine.trip(actor, reason, ts_ns)
         self.halt_reason = reason
         self._journal("kill", {"actor": actor, "reason": reason})
         self._save()
+        if not was_killed and self.engine.book.killed:
+            _observe_desk("kill_switch", "latched", self.arming.venue)
         return self._envelope(accepted=True, status="halted")
 
     def reset(self, actor: str, reason: str, ts_ns: int) -> dict[str, object]:
@@ -257,10 +263,13 @@ class LiveDesk:
             raise LiveDeskError(self.halt_reason or "journal integrity failure")
         if int(self.engine.book.kill_reason) & INTERNAL:
             raise LiveDeskError("internal fault; start a new desk directory")
+        was_killed = bool(self.engine.book.killed)
         self.engine.reset(actor, reason, ts_ns)
         self.halt_reason = ""
         self._journal("reset", {"actor": actor, "reason": reason})
         self._save()
+        if was_killed and not self.engine.book.killed:
+            _observe_desk("kill_switch", "reset", self.arming.venue)
         report = self._envelope(accepted=True, status="reset")
         report["transmission_after_reset"] = self._transmits()
         return report
@@ -339,6 +348,7 @@ class LiveDesk:
             order.status = "denied"
             self._journal("deny", order.as_dict())
             self._save()
+            _observe_pretrade_denial(reasons, self.arming.venue)
             return self._envelope(
                 accepted=False,
                 status="denied",
@@ -360,9 +370,15 @@ class LiveDesk:
         self._step({"op": "submit", "order_id": order.order_id, "qty": qty})
         self._sync_order(order)
         order.transmitted = True
-        self._send(_ticket(order))
+        _observe_desk("order_submit", "attempted", self.arming.venue)
+        try:
+            self._send(_ticket(order))
+        except LiveDeskError:
+            _observe_desk("order_submit", "failed", self.arming.venue)
+            raise
         self._journal("transmit", order.as_dict())
         self._save()
+        _observe_desk("order_result", "working", self.arming.venue)
         if self.arming.venue == "loopback":
             self.poll(ts_ns)
             order = self.orders[order.order_id]
@@ -380,6 +396,7 @@ class LiveDesk:
         if order is None or order.lifecycle not in {"new", "partial"}:
             return self._envelope(accepted=False, status="unknown", transmitted=False)
         if self._going_backwards(ts_ns):
+            _observe_pretrade_denial(["non_monotonic_time"], self.arming.venue)
             return self._envelope(
                 accepted=False, status=order.status, reasons=["non_monotonic_time"]
             )
@@ -401,6 +418,7 @@ class LiveDesk:
         self._note_rate(ts_ns, order=False)
         if reasons or not decision.allowed:
             self._save()
+            _observe_pretrade_denial(reasons, self.arming.venue)
             return self._envelope(
                 accepted=False,
                 status=order.status,
@@ -423,14 +441,23 @@ class LiveDesk:
             events = self._events()
         except BridgeError as exc:
             self._freeze(str(exc))
+            _observe_desk("bridge_fault", "poll", "drop")
             return self._envelope(accepted=False, error=str(exc), applied=applied)
+        except OSError:
+            _observe_desk("bridge_fault", "poll", "drop")
+            raise
         for event in events:
             if event.event_id in self.seen:
                 continue
-            applied.append(self._apply_event(event, ts_ns))
+            result = self._apply_event(event, ts_ns)
+            applied.append(result)
             if self._integrity_frozen:
                 break
             self._save()
+            order = self.orders.get(event.order_id)
+            _observe_broker_event(
+                event, str(result["result"]), "" if order is None else order.status
+            )
         return self._envelope(accepted=True, applied=applied)
 
     def flatten(self, ts_ns: int) -> dict[str, object]:
@@ -547,6 +574,7 @@ class LiveDesk:
                 raise LiveDeskError("no bridge for the armed venue")
         except (BridgeError, OSError, LiveDeskError) as exc:
             self._latch(f"transmit failed: {exc}")
+            _observe_desk("bridge_fault", "transmit", self.arming.venue)
             raise LiveDeskError(str(exc)) from exc
 
     def _events(self) -> list[BrokerEvent]:
@@ -686,6 +714,7 @@ class LiveDesk:
         self._store(order)
         self._journal("deny", order.as_dict())
         self._save()
+        _observe_pretrade_denial(list(reasons), self.arming.venue)
         return self._envelope(
             accepted=False, status="denied", transmitted=False, order=order.as_dict()
         )
@@ -1141,6 +1170,38 @@ def _quantity(qty: float) -> None:
 def _price(px: float) -> None:
     if isinstance(px, bool) or px != px or px <= 0.0 or px == float("inf"):
         raise LiveDeskError("price must be finite and positive")
+
+
+def _observe_pretrade_denial(reasons: list[str], venue: str) -> None:
+    primary = reasons[0] if reasons else "other"
+    if primary not in LIVE_DESK_PRETRADE_REASONS:
+        primary = "other"
+    _observe_desk("pretrade_denial", primary, venue)
+
+
+def _observe_broker_event(event: BrokerEvent, result: str, status: str) -> None:
+    venue = "loopback" if event.synthetic else "drop"
+    if event.kind == "fill":
+        _observe_desk("fill", "recorded" if result == "fill" else result, venue)
+    if result in {"orphan", "unapplied"}:
+        _observe_desk("bridge_fault", result, venue)
+        return
+    outcome = {
+        "ack": "acknowledged",
+        "fill": "partial" if status == "partial" else "filled",
+        "reject": "rejected",
+        "cancel": "canceled",
+    }.get(result)
+    if outcome is not None:
+        _observe_desk("order_result", outcome, venue)
+
+
+def _observe_desk(event: str, outcome: str, venue: str) -> None:
+    # Telemetry must not change order handling or risk decisions.
+    with suppress(Exception):
+        record_live_desk_event(event=event, outcome=outcome, venue=venue)
+    with suppress(Exception):
+        log_event(f"live_desk_{event}", outcome=outcome, venue=venue)
 
 
 def _ticks(
