@@ -1126,7 +1126,7 @@ def _probe_hstream_miderr(ctx: _Ctx) -> dict[str, bool]:
 
 def _probe_v1_keepalive(wd: Path) -> dict[str, bool]:  # noqa: C901 — probe accumulator
     out: dict[str, bool] = {}
-    ka = _make_ctx(wd / "slow", _SlowBackend(0.4), sse_keepalive_s=0.05)
+    ka = _make_ctx(wd / "slow", _SlowBackend(0.2), sse_keepalive_s=0.05)
 
     rc = ka.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
     fc = _sse_frames(rc.text)
@@ -1196,7 +1196,7 @@ def _probe_v1_keepalive(wd: Path) -> dict[str, bool]:  # noqa: C901 — probe ac
 
     # mid-window fault: headers are already committed, so the failure is
     # an in-band frame in each leg's grammar — never a JSON 5xx.
-    fk = _make_ctx(wd / "fail", _SlowFailBackend(0.4), sse_keepalive_s=0.05)
+    fk = _make_ctx(wd / "fail", _SlowFailBackend(0.2), sse_keepalive_s=0.05)
     frc = fk.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
     frc_j = _json_datas(_sse_frames(frc.text))
     errs = [p for p in frc_j if p.get("error")]
@@ -1233,7 +1233,7 @@ def _probe_v1_keepalive(wd: Path) -> dict[str, bool]:  # noqa: C901 — probe ac
         and _KEEPALIVE not in rf.text
         and _data_frames(_sse_frames(rf.text))[-1].data == "[DONE]"
     )
-    ff = _make_ctx(wd / "ff", _SlowFailBackend(0.4), sse_keepalive_s=30.0)
+    ff = _make_ctx(wd / "ff", _SlowFailBackend(0.05), sse_keepalive_s=30.0)
     fj = ff.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
     out["v1grace_fault_json"] = (
         fj.status_code == 502
@@ -1540,7 +1540,7 @@ def _probe_replay_cancel_delete(workdir: Path) -> dict[str, bool]:
     ).json()
     rid2 = env2["id"]
     lines: list[str] = []
-    with ctx2.client.stream("GET", f"/v1/responses/{rid2}?stream=true&timeout_s=20") as s:
+    with ctx2.client.stream("GET", f"/v1/responses/{rid2}?stream=true&timeout_s=1") as s:
         it = s.iter_lines()
         blanks = 0
         for ln in it:  # read a prelude from the already-buffered response
@@ -1564,7 +1564,7 @@ def _probe_replay_cancel_delete(workdir: Path) -> dict[str, bool]:
     )
     # releasing the worker must not resurrect the deleted record
     backend2.gate.set()
-    time.sleep(0.8)
+    time.sleep(0.2)
     out["replay_deleted_stays_404"] = ctx2.client.get(f"/v1/responses/{rid2}").status_code == 404
     out["replay_deleted_replay_404"] = (
         ctx2.client.get(f"/v1/responses/{rid2}", params={"stream": "true"}).status_code == 404
@@ -1612,7 +1612,7 @@ def _probe_buffered_reads(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
         "/v1/responses", json={"model": "fx1", "input": "x", "background": True}
     ).json()
     rid = env["id"]
-    with ctx2.client.stream("GET", f"/v1/responses/{rid}?stream=true&timeout_s=20") as s:
+    with ctx2.client.stream("GET", f"/v1/responses/{rid}?stream=true&timeout_s=1") as s:
         it = s.iter_lines()
         for _ in range(7):
             try:
@@ -1766,9 +1766,9 @@ def stream_audit() -> dict[str, Any]:
             out.update(_probe_hstream_refusals(ctx_stream, ctx))
             ctx_gate = _make_ctx(wd / "e", _DirtyStreamBackend())
             out.update(_probe_hstream_gate(ctx_gate))
-            ctx_ka = _make_ctx(wd / "f", _SlowStreamBackend(0.5), sse_keepalive_s=0.05)
+            ctx_ka = _make_ctx(wd / "f", _SlowStreamBackend(0.2), sse_keepalive_s=0.05)
             out.update(_probe_hstream_keepalive(ctx_ka))
-            ctx_ka2 = _make_ctx(wd / "g", _FailStreamBackend(), sse_keepalive_s=0.05)
+            ctx_ka2 = _make_ctx(wd / "g", _FailStreamBackend(0.2), sse_keepalive_s=0.05)
             out.update(_probe_hstream_miderr(ctx_ka2))
             out.update(_probe_v1_keepalive(wd / "v1ka"))
             ctx_fail = _make_ctx(wd / "h", _FailBackend())
