@@ -451,6 +451,21 @@ def test_canary_rolls_or_aborts() -> None:
     assert failed["ok"] is False
     assert failed["removed"] is False
     assert "--preserve-env=DIPCATCHER_LAB_DATA" in preserved[0]
+    waits: list[float] = []
+    module.time.sleep = waits.append
+    state = {"n": 0}
+
+    def _wait(argv: list[str]) -> _Done:
+        if "inspect" in argv:
+            state["n"] += 1
+            return _Done(0, "starting\n" if state["n"] == 1 else "healthy\n")
+        if "exec" in argv:
+            return _Done(0, json.dumps({"health": 200, "small": 405, "large": 413}))
+        return _Done()
+
+    waited = module.execute(env, _wait, attempts=3)
+    assert waited["ok"] is True
+    assert waits == [1]
 
 
 def test_compose_units_and_host_guide() -> None:

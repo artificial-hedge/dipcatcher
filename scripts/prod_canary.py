@@ -18,6 +18,7 @@ import os
 import shlex
 import subprocess
 import sys
+import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
@@ -156,7 +157,7 @@ def execute(
     """Bring the canary up, probe it, roll or abort, then remove it."""
     if not _keys_ok(env):
         return {"error": _KEY_ERROR, "ok": False}
-    pause = sleep or (lambda _seconds: None)
+    pause = time.sleep if sleep is None else sleep
     base = compose_base(env)
     report: dict[str, object] = {
         "action": "abort",
