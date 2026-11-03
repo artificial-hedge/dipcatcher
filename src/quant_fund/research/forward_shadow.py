@@ -360,6 +360,35 @@ def _settle(
     return outputs
 
 
+def _apply_rebuild_event(
+    manifest: dict[str, Any], state: dict[str, Any], event: dict[str, Any]
+) -> None:
+    """Fold one journal event into ``state``. Unknown kinds fail closed."""
+    payload, kind = event["payload"], event["kind"]
+    if kind == "failure":
+        state["failures"] += 1
+        return
+    if payload["session"] != state["cursor"]:
+        raise ValueError("shadow session sequence mismatch")
+    if kind in {"decision", "missed"}:
+        if state["pending"] is not None:
+            raise ValueError("previous decision is not settled")
+        state["pending"] = payload
+        state["bars"] = [*state["bars"], payload["bar"]][-max(manifest["history"] + 1, 2) :]
+        state["missed"] += int(kind == "missed")
+        return
+    if kind != "settlement":
+        raise ValueError("unknown shadow event")
+    if state["pending"] is None:
+        raise ValueError("settlement has no previously committed decision")
+    actual = _settle(manifest, state, payload["prices"])
+    if canonical(actual) != canonical(payload["outcomes"]):
+        raise ValueError("cash/position/fill reconciliation mismatch")
+    state["books"] = {name: value["state"] for name, value in actual.items()}
+    state["pending"] = None
+    state["cursor"] += 1
+
+
 def rebuild(events: list[dict[str, Any]]) -> dict[str, Any]:
     manifest = events[0]["payload"]
     if type(manifest.get("schema")) is not int or manifest["schema"] != 1:
@@ -372,29 +401,7 @@ def rebuild(events: list[dict[str, Any]]) -> dict[str, Any]:
         if event["recorded_at"] < last_recorded:
             raise ValueError("journal recording times moved backwards")
         last_recorded = event["recorded_at"]
-        payload, kind = event["payload"], event["kind"]
-        if kind == "failure":
-            state["failures"] += 1
-            continue
-        if payload["session"] != state["cursor"]:
-            raise ValueError("shadow session sequence mismatch")
-        if kind in {"decision", "missed"}:
-            if state["pending"] is not None:
-                raise ValueError("previous decision is not settled")
-            state["pending"] = payload
-            state["bars"] = [*state["bars"], payload["bar"]][-max(manifest["history"] + 1, 2) :]
-            state["missed"] += int(kind == "missed")
-        elif kind == "settlement":
-            if state["pending"] is None:
-                raise ValueError("settlement has no previously committed decision")
-            actual = _settle(manifest, state, payload["prices"])
-            if canonical(actual) != canonical(payload["outcomes"]):
-                raise ValueError("cash/position/fill reconciliation mismatch")
-            state["books"] = {name: value["state"] for name, value in actual.items()}
-            state["pending"] = None
-            state["cursor"] += 1
-        else:
-            raise ValueError("unknown shadow event")
+        _apply_rebuild_event(manifest, state, event)
     return state
 
 

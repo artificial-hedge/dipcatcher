@@ -243,8 +243,6 @@ src/quant_fund/hmm/discrete.py:DiscreteHMM.__post_init__ 10
 src/quant_fund/labels/barriers.py:triple_barrier 13
 src/quant_fund/labels/engine.py:build_labels 12
 src/quant_fund/leakage/ast_scan.py:_check_lh003 12
-src/quant_fund/leakage/ast_scan.py:_check_lh009 10
-src/quant_fund/leakage/ast_scan.py:_check_lh014 10
 src/quant_fund/leakage/ast_scan.py:_fold_num 12
 src/quant_fund/leakage/cli.py:scan_cmd 10
 src/quant_fund/lightspeed/momentum.py:momentum_target_weights 34
@@ -953,7 +951,6 @@ src/quant_fund/research/fleet_eval.py:fleet_v1_audit_errors 34
 src/quant_fund/research/fleet_eval.py:run_distribution_fleet 21
 src/quant_fund/research/fleet_race.py:fleet_race 26
 src/quant_fund/research/forward_shadow.py:freeze 16
-src/quant_fund/research/forward_shadow.py:rebuild 11
 src/quant_fund/research/forward_shadow.py:record 18
 src/quant_fund/research/forward_shadow.py:record.build 12
 src/quant_fund/research/fuzz_drill.py:_mutations 28

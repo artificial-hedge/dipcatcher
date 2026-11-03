@@ -141,6 +141,20 @@ def _log_params(model: DiscreteHMM) -> tuple[Array, Array, Array]:
 
 
 @njit(cache=True)
+def _logsumexp_last(row: np.ndarray) -> float:
+    """Log-sum-exp of one state row. Same reduction as the forward tail."""
+    n = row.shape[0]
+    m = row[0]
+    for j in range(1, n):
+        if row[j] > m:
+            m = row[j]
+    acc = 0.0
+    for j in range(n):
+        acc += np.exp(row[j] - m)
+    return float(m + np.log(acc))
+
+
+@njit(cache=True)
 def _log_forward_nb(
     log_a: np.ndarray, log_b: np.ndarray, log_pi: np.ndarray, obs: np.ndarray
 ) -> tuple[np.ndarray, float]:
@@ -167,14 +181,7 @@ def _log_forward_nb(
             for i in range(n):
                 acc += np.exp(alpha[t - 1, i] + log_a[i, j] - m)
             alpha[t, j] = m + np.log(acc) + log_b[j, ot]
-    m = alpha[t_len - 1, 0]
-    for j in range(1, n):
-        if alpha[t_len - 1, j] > m:
-            m = alpha[t_len - 1, j]
-    acc = 0.0
-    for j in range(n):
-        acc += np.exp(alpha[t_len - 1, j] - m)
-    return alpha, m + np.log(acc)
+    return alpha, _logsumexp_last(alpha[t_len - 1])
 
 
 @njit(cache=True)

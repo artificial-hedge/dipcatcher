@@ -396,6 +396,20 @@ def _emit_gauge(lines: list[str], name: str, value: float) -> None:
     lines.append(f"{name} {_num(value)}")
 
 
+def _append_live_counters(lines: list[str], snap: dict[str, Any]) -> None:
+    """Emit labeled live counters. Empty series stay out of the exposition."""
+    for name, labels in _COUNTER_LABELS.items():
+        series = snap["counters"].get(name)
+        if not series:
+            continue
+        _help(lines, name, "counter")
+        for values in sorted(series):
+            label_text = ",".join(
+                f'{label}="{value}"' for (label, _), value in zip(labels, values, strict=True)
+            )
+            lines.append(f"{name}{{{label_text}}} {series[values]}")
+
+
 def render_prometheus() -> str:
     """Prometheus text exposition 0.0.4 for the in-process registry."""
     snap = REGISTRY.snapshot()
@@ -435,16 +449,7 @@ def render_prometheus() -> str:
             _help(lines, name, "gauge")
             lines.append(f"{name} {_num(snap['gauges'][name])}")
     _append_operator_gauges(lines)
-    for name, labels in _COUNTER_LABELS.items():
-        series = snap["counters"].get(name)
-        if not series:
-            continue
-        _help(lines, name, "counter")
-        for values in sorted(series):
-            label_text = ",".join(
-                f'{label}="{value}"' for (label, _), value in zip(labels, values, strict=True)
-            )
-            lines.append(f"{name}{{{label_text}}} {series[values]}")
+    _append_live_counters(lines, snap)
     _append_http(lines, snap)
     text = "\n".join(lines)
     if text:

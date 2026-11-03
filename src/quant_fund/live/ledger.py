@@ -359,6 +359,27 @@ class LiveLedger:
         )
         return "replaced_provisional"
 
+    def _forget_provisional(self, fill_id: str) -> None:
+        """Remove one provisional print and unwind its book effect."""
+        prior = self._fills.pop(fill_id)
+        self._superseded.setdefault(fill_id, []).append(prior)
+        self._order.remove(fill_id)
+        self._applied.discard(fill_id)
+        bucket = self._by_order.get(prior.client_order_id, [])
+        if fill_id in bucket:
+            bucket.remove(fill_id)
+        if prior.client_order_id in self._expects:
+            self._unwind(prior)
+        if self._last_ns.get(prior.client_order_id) != prior.fill_time_ns:
+            return
+        remaining = self._by_order.get(prior.client_order_id, [])
+        if remaining:
+            self._last_ns[prior.client_order_id] = max(
+                self._fills[item].fill_time_ns for item in remaining
+            )
+            return
+        self._last_ns.pop(prior.client_order_id, None)
+
     def _drop_provisional(self, fill: LedgerFill) -> bool:
         """Drop cumulative prints. A venue fill also drops older ``order:`` prints."""
         incoming_is_bare = fill.fill_id.startswith("order:") and not fill.fill_id.endswith(":cum")
@@ -372,23 +393,7 @@ class LiveLedger:
         if not doomed:
             return False
         for fill_id in doomed:
-            prior = self._fills.pop(fill_id)
-            self._superseded.setdefault(fill_id, []).append(prior)
-            self._order.remove(fill_id)
-            self._applied.discard(fill_id)
-            bucket = self._by_order.get(prior.client_order_id, [])
-            if fill_id in bucket:
-                bucket.remove(fill_id)
-            if prior.client_order_id in self._expects:
-                self._unwind(prior)
-            if self._last_ns.get(prior.client_order_id) == prior.fill_time_ns:
-                remaining = self._by_order.get(prior.client_order_id, [])
-                if remaining:
-                    self._last_ns[prior.client_order_id] = max(
-                        self._fills[item].fill_time_ns for item in remaining
-                    )
-                else:
-                    self._last_ns.pop(prior.client_order_id, None)
+            self._forget_provisional(fill_id)
         return True
 
     def _exceeds_authorization(self, fill: LedgerFill) -> bool:

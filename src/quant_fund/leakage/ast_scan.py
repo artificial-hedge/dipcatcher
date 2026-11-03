@@ -420,6 +420,43 @@ def _enqueue_children(node: ast.AST, parents: dict[int, ast.AST], todo: deque[as
                     todo.append(item)
 
 
+def _collect_bucket(
+    node: ast.AST,
+    ntype: type[ast.AST],
+    buckets: dict[type[ast.AST], list[ast.AST]],
+    scope_lists: dict[int, _ScopeAssigns],
+) -> None:
+    """Drop one node into the walk buckets. Strings and add/mod ops are kept."""
+    if ntype not in _BUCKET_TYPES:
+        return
+    if ntype is ast.Constant:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            buckets[ntype].append(node)
+        return
+    if ntype is ast.BinOp:
+        if isinstance(node, ast.BinOp) and type(node.op) in (ast.Add, ast.Mod):
+            buckets[ntype].append(node)
+        return
+    if ntype is ast.FunctionDef or ntype is ast.AsyncFunctionDef:
+        scope_lists[id(node)] = {}
+    buckets[ntype].append(node)
+
+
+def _mark_shift_ancestors(node: ast.AST, parents: dict[int, ast.AST], shift: set[int]) -> None:
+    """Mark a shift-like call and its ancestors. Other calls are ignored."""
+    if not isinstance(node, ast.Call):
+        return
+    if not _call_might_contain_shift(node) or _shift_call_parts(node) is None:
+        return
+    cur: ast.AST | None = node
+    while cur is not None:
+        cid = id(cur)
+        if cid in shift:
+            return
+        shift.add(cid)
+        cur = parents.get(cid)
+
+
 def _tree_index(tree: ast.AST) -> _Index:
     """BFS in ``ast.walk`` order, plus per-scope assigns and node buckets.
 
@@ -436,38 +473,15 @@ def _tree_index(tree: ast.AST) -> _Index:
     shift: set[int] = set()
     scope_lists: dict[int, _ScopeAssigns] = {key: {}}
     todo: deque[ast.AST] = deque([tree])
-    bucket_types = _BUCKET_TYPES
-    add_ops = (ast.Add, ast.Mod)
     while todo:
         node = todo.popleft()
         ntype = type(node)
-        if ntype in bucket_types:
-            if ntype is ast.Constant:
-                if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                    buckets[ntype].append(node)
-            elif ntype is ast.BinOp:
-                if isinstance(node, ast.BinOp) and type(node.op) in add_ops:
-                    buckets[ntype].append(node)
-            else:
-                if ntype is ast.FunctionDef or ntype is ast.AsyncFunctionDef:
-                    scope_lists[id(node)] = {}
-                buckets[ntype].append(node)
+        _collect_bucket(node, ntype, buckets, scope_lists)
         _enqueue_children(node, parents, todo)
         if ntype is ast.Assign or ntype is ast.AnnAssign or ntype is ast.NamedExpr:
             _record_binds(node, parents, scope_lists, key)
-        elif (
-            ntype is ast.Call
-            and isinstance(node, ast.Call)
-            and _call_might_contain_shift(node)
-            and _shift_call_parts(node) is not None
-        ):
-            cur: ast.AST | None = node
-            while cur is not None:
-                cid = id(cur)
-                if cid in shift:
-                    break
-                shift.add(cid)
-                cur = parents.get(cid)
+        elif ntype is ast.Call:
+            _mark_shift_ancestors(node, parents, shift)
     index = _Index(parents, buckets, shift)
     if memo is not None:
         memo[key] = index

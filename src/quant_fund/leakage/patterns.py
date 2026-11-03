@@ -164,13 +164,12 @@ def find_spelled_out_headline(text: str) -> list[str]:
     return sorted(hits)
 
 
-def find_forbidden_headline(text: str) -> list[str]:
-    """Return the forbidden tokens headlined in *text* (empty = clean)."""
-    norm = _prepare(text)
-    if norm is None:
-        return []
-    compiled = _patterns()
-    hits: set[str] = set()
+def _headline_proximity(
+    norm: str,
+    compiled: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...],
+    hits: set[str],
+) -> None:
+    """Mark tokens whose match sits next to a number."""
     for token, patterns in compiled:
         for pattern in patterns:
             matched = False
@@ -183,16 +182,33 @@ def find_forbidden_headline(text: str) -> list[str]:
                     break
             if matched:
                 break
-    # Second stage: paragraph numeric-density check — a paragraph that names a
-    # forbidden token and cites >= 2 numbers is a headline even when each
-    # individual number sits outside the proximity window.
-    if len(hits) < len(compiled):
-        for paragraph in re.split(r"\n\s*\n|\n", norm):
-            if len(_NUMERIC_RE.findall(paragraph)) < 2:
+
+
+def _headline_paragraphs(
+    norm: str,
+    compiled: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...],
+    hits: set[str],
+) -> None:
+    """Mark a token named in a paragraph that cites two or more numbers."""
+    if len(hits) >= len(compiled):
+        return
+    for paragraph in re.split(r"\n\s*\n|\n", norm):
+        if len(_NUMERIC_RE.findall(paragraph)) < 2:
+            continue
+        for token, patterns in compiled:
+            if token in hits:
                 continue
-            for token, patterns in compiled:
-                if token in hits:
-                    continue
-                if any(pattern.search(paragraph) for pattern in patterns):
-                    hits.add(token)
+            if any(pattern.search(paragraph) for pattern in patterns):
+                hits.add(token)
+
+
+def find_forbidden_headline(text: str) -> list[str]:
+    """Return the forbidden tokens headlined in *text* (empty = clean)."""
+    norm = _prepare(text)
+    if norm is None:
+        return []
+    compiled = _patterns()
+    hits: set[str] = set()
+    _headline_proximity(norm, compiled, hits)
+    _headline_paragraphs(norm, compiled, hits)
     return sorted(hits)

@@ -28,6 +28,44 @@ from quant_fund.schemas.orders import Fill, Order, OrderSide, OrderStatus
 _POSITION_EPS = 1e-12
 
 
+def _nonfinite_or_negative(value: float, *, zero_rejected: bool) -> bool:
+    """True when ``value`` cannot be a usable size, price, or volatility."""
+    number = float(value)
+    if not np.isfinite(number):
+        return True
+    if zero_rejected:
+        return number <= 0.0
+    return number < 0.0
+
+
+def _market_inputs_unusable(
+    adv_dollars: float, sigma: float, market_predicted_vol: float | None
+) -> bool:
+    if _nonfinite_or_negative(adv_dollars, zero_rejected=True):
+        return True
+    if _nonfinite_or_negative(sigma, zero_rejected=False):
+        return True
+    if market_predicted_vol is None:
+        return False
+    return _nonfinite_or_negative(market_predicted_vol, zero_rejected=False)
+
+
+def _submit_reject_reason(
+    order: Order,
+    price: float,
+    adv_dollars: float,
+    sigma: float,
+    market_predicted_vol: float | None,
+) -> str | None:
+    if _nonfinite_or_negative(order.quantity, zero_rejected=True):
+        return RejectReason.ZERO_QTY.value
+    if price is None or _nonfinite_or_negative(price, zero_rejected=True):
+        return RejectReason.MISSING_PRICE.value
+    if _market_inputs_unusable(adv_dollars, sigma, market_predicted_vol):
+        return RejectReason.INVALID_MARKET_DATA.value
+    return None
+
+
 def _positive_mark(price: object) -> bool:
     if isinstance(price, bool) or not isinstance(price, numbers.Real):
         return False
@@ -461,39 +499,11 @@ class SimulatedBroker:
         prior = self._existing_ack(order.order_id)
         if prior is not None:
             return prior
-        if not np.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
+        reason = _submit_reject_reason(order, price, adv_dollars, sigma, market_predicted_vol)
+        if reason is not None:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
-                reject_reason=RejectReason.ZERO_QTY.value,
-                slot=self.slot,
-            )
-            self.reject_count += 1
-            self.history.append(rec)
-            return self._remember(rec)
-        if price is None or not np.isfinite(float(price)) or float(price) <= 0:
-            rec = OrderRecord(
-                order=order.model_copy(update={"status": OrderStatus.REJECTED}),
-                reject_reason=RejectReason.MISSING_PRICE.value,
-                slot=self.slot,
-            )
-            self.reject_count += 1
-            self.history.append(rec)
-            return self._remember(rec)
-        if (
-            not np.isfinite(float(adv_dollars))
-            or float(adv_dollars) <= 0
-            or not np.isfinite(float(sigma))
-            or float(sigma) < 0
-            or (
-                market_predicted_vol is not None
-                and (
-                    not np.isfinite(float(market_predicted_vol)) or float(market_predicted_vol) < 0
-                )
-            )
-        ):
-            rec = OrderRecord(
-                order=order.model_copy(update={"status": OrderStatus.REJECTED}),
-                reject_reason=RejectReason.INVALID_MARKET_DATA.value,
+                reject_reason=reason,
                 slot=self.slot,
             )
             self.reject_count += 1

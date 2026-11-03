@@ -306,6 +306,26 @@ class LiveDesk:
         self._save()
         return self._envelope(accepted=True, status="marked")
 
+    def _stale_quote_denial(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        px: float,
+        ts_ns: int,
+        client: str,
+    ) -> dict[str, object] | None:
+        """Return a stale-data denial. Other quote-gate errors still raise."""
+        try:
+            self._gate_quote(symbol, ts_ns, new_tick=False)
+        except LiveDeskError as exc:
+            if "stale quote" not in str(exc):
+                raise
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        if self._mark_is_stale(symbol, ts_ns):
+            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        return None
+
     def submit(
         self,
         symbol: str,
@@ -332,14 +352,9 @@ class LiveDesk:
         self._refuse_unconfirmed()
         if self._going_backwards(ts_ns):
             return self._deny(symbol, side, qty, px, ts_ns, client, ("non_monotonic_time",))
-        try:
-            self._gate_quote(symbol, ts_ns, new_tick=False)
-        except LiveDeskError as exc:
-            if "stale quote" not in str(exc):
-                raise
-            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
-        if self._mark_is_stale(symbol, ts_ns):
-            return self._deny(symbol, side, qty, px, ts_ns, client, ("stale_data",))
+        stale = self._stale_quote_denial(symbol, side, qty, px, ts_ns, client)
+        if stale is not None:
+            return stale
         self.marks[symbol] = px
         self.mark_ts[symbol] = ts_ns
         self._project(ts_ns)
