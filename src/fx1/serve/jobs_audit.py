@@ -250,11 +250,16 @@ def _wait_hits(sink: Any, n: int, timeout: float = _WAIT_S) -> None:
         time.sleep(0.05)
 
 
-def _busy_executor(client: TestClient, sleep_s: float = 1.5) -> None:
+def _busy_executor(client: TestClient, sleep_s: float = 1.5) -> threading.Event:
     """Park every worker thread on a raw sleeper — outside the inflight
     accounting — so a submitted job acquires its slot yet stays
     ``queued`` behind the future queue. The deterministic way to reach
-    the queued-cancel path (the executor is sized ``max_inflight``)."""
+    the queued-cancel path (the executor is sized ``max_inflight``).
+
+    The returned event releases the park early. Callers that only need
+    the slot busy for the next few requests set it once that observation
+    has landed; otherwise the park ends at ``sleep_s``.
+    """
     from typing import cast as _cast
 
     from fastapi import FastAPI  # noqa: PLC0415
@@ -265,6 +270,7 @@ def _busy_executor(client: TestClient, sleep_s: float = 1.5) -> None:
     for _ in range(int(getattr(executor, "_max_workers", 4))):  # noqa: SLF001
         executor.submit(lambda: hold(timeout=sleep_s))
     time.sleep(0.1)
+    return release
 
 
 def _key_card(client: TestClient, root: str, key_id: str) -> dict[str, Any]:
@@ -454,13 +460,13 @@ def _transition_probes() -> dict[str, bool]:
     # queued cancel: the lone worker thread is parked on a raw sleeper —
     # the submit acquires its inflight slot yet sits queued behind the
     # future queue, so DELETE lands while it is genuinely "queued"
-    _busy_executor(client, sleep_s=1.5)
+    _busy_executor(client, sleep_s=0.15)
     jid_b = _submit(client).json()["job_id"]
     d = client.delete(f"{_JOBS}/{jid_b}")
     out["cancel_queued_200_cancelled"] = d.status_code == 200 and d.json()["status"] == "cancelled"
     out["cancel_queued_finished_at_set"] = d.json().get("finished_at") is not None
     # past the sleeper window the future dequeues — start() must lose
-    time.sleep(2.0)
+    time.sleep(0.25)
     rec_b = _record(client, jid_b).json()
     out["cancelled_never_runs"] = rec_b["status"] == "cancelled" and runner.calls == []
 
@@ -850,11 +856,12 @@ def _webhook_probes() -> dict[str, bool]:
         # cancel fires the webhook once (a terminal transition)
         runner_q = _Runner()
         client_q = _client(runner_q, max_inflight=1)
-        _busy_executor(client_q, sleep_s=2.5)
+        _cancel_hold = _busy_executor(client_q, sleep_s=5.0)
         rb = _submit(client_q, callback_url=sink.url("/can"), callback_secret=secret)
         jb = rb.json()["job_id"]
         hits_before = len(sink.hits)
         client_q.delete(f"{_JOBS}/{jb}")
+        _cancel_hold.set()
         _wait_hits(sink, hits_before + 1)
         hit_c = sink.hits[-1]
         body_c = json.loads(hit_c.body)
@@ -1182,10 +1189,11 @@ def _durability_probes() -> dict[str, bool]:
     state_dir3 = _temporary_directory()
     runner_q2 = _Runner()
     c5 = _client(runner_q2, state_dir=state_dir3, max_inflight=1)
-    _busy_executor(c5, sleep_s=2.0)
+    _restart_hold = _busy_executor(c5, sleep_s=5.0)
     jb = _submit(c5).json()["job_id"]
     c6 = _client(_Runner(), state_dir=state_dir3)
     rec_b = c6.get(f"{_JOBS}/{jb}").json()
+    _restart_hold.set()
     out["restart_queued_fails_closed"] = rec_b.get("status") == "failed"
 
     # drain latch is process-local: a restarted app accepts work again
@@ -1449,9 +1457,10 @@ def _receipt_probes() -> dict[str, bool]:
     # non-terminal records seal too — the receipt pins "as served"
     runner_q = _Runner()
     client_q = _client(runner_q, max_inflight=1)
-    _busy_executor(client_q, sleep_s=2.0)
+    _receipt_hold = _busy_executor(client_q, sleep_s=5.0)
     jq = _submit(client_q).json()["job_id"]
     doc_q = client_q.get(f"{_JOBS}/{jq}/receipt")
+    _receipt_hold.set()
     out["receipt_queued_also_seals"] = (
         doc_q.status_code == 200 and verify_receipt_payload(doc_q.json())["valid"] is True
     )
@@ -1551,12 +1560,13 @@ def _client_probes() -> dict[str, bool]:
     # cancel a queued job through the client
     runner_q = _Runner()
     client_q = _client(runner_q, max_inflight=2)
-    _busy_executor(client_q, sleep_s=2.5)
+    _client_hold = _busy_executor(client_q, sleep_s=5.0)
     hc_q = HarnessClient("http://testserver", transport=_tc_transport(client_q))
     ja = _submit(client_q).json()["job_id"]
     rb = hc_q.submit_run("doctor")
     jb = rb
     cancelled = hc_q.cancel_job(jb)
+    _client_hold.set()
     out["client_cancel_job"] = cancelled["status"] == "cancelled"
     _wait(client_q, ja)
     return out

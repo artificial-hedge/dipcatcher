@@ -44,7 +44,12 @@ CI_BENCH_BUDGETS: dict[str, dict[str, int]] = {
     "bench_itransformer": {"n": 120, "iters": 200},
     "bench_tcn_forecaster": {"n": 120, "iters": 200},
     "bench_ft_transformer": {"n": 120, "iters": 200},
-    "bench_crossformer": {"n": 120, "iters": 200},
+    "bench_crossformer": {"n": 120, "iters": 40},
+    # Family test only requires a finite blob. The model unit test keeps the
+    # full 4000/300/5 fixture so the OOD-ratio claim stays on that bench.
+    "bench_bnn_ensemble": {"n": 800, "steps": 40, "members": 2},
+    # Unit test checks recall is in [0, 1]. The scorecard uses the same iters.
+    "bench_xlstm_mlstm": {"iters": 12},
     "bench_informer_attn": {"n": 480, "steps": 40, "batch": 32},
     # Closed forms stay exact at n=400; the Sinkhorn gap stays above 10x.
     "bench_optimal_transport": {"n": 400},

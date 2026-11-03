@@ -104,7 +104,7 @@ def bench_varswap_stopping() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_vs_core_bench(seed=_VS_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -125,7 +125,7 @@ def bench_hidden_markov_equilibrium() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_hme_core_bench(seed=_HME_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -144,7 +144,7 @@ def bench_arl_mm() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(call_bench(_arl_core_bench, seed=_ARL_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -165,7 +165,7 @@ def bench_liquidity_tail_lob() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_ltl_core_bench(seed=_LTL_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
 
 
@@ -186,5 +186,5 @@ def bench_gaussian_normalized_coords() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_gnc_core_bench(seed=_GNC_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}

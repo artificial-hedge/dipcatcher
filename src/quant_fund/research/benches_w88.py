@@ -58,7 +58,7 @@ def bench_markov_discretization() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MARKOV_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -70,7 +70,7 @@ def bench_lomb_scargle() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_LOMB_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -84,7 +84,7 @@ def bench_singular_spectrum() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SSA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -96,7 +96,7 @@ def bench_beck_katz() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PCSE_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -108,7 +108,7 @@ def bench_quandt_andrews() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_QA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -122,6 +122,6 @@ def bench_friedman_supersmoother() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SMOOTHER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

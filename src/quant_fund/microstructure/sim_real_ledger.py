@@ -78,14 +78,11 @@ def measure_sim(
         if bb is not None and ba is not None:
             spreads.append(ba - bb)
         if len(depth_acc) == 5:
-            try:
-                depth_acc += np.array(
-                    [sim.depth_at("buy", i + 1) + sim.depth_at("sell", i + 1) for i in range(5)],
-                    dtype=np.float64,
-                )
-                n_depth += 1
-            except KeyError:
-                pass
+            depth_acc += np.array(
+                [sim.depth_at("buy", i + 1) + sim.depth_at("sell", i + 1) for i in range(5)],
+                dtype=np.float64,
+            )
+            n_depth += 1
     signs_a = np.asarray(signs)
     mids_a = np.asarray(mids)
     spreads_a = np.asarray(spreads)

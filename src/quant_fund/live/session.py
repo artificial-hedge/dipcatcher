@@ -415,10 +415,15 @@ class LiveSession:
             try:
                 ack = self.broker.cancel(str(row["client_order_id"]), str(row["broker_order_id"]))
             except BrokerRejected as exc:
-                recovered = self._safe_recover(
-                    str(row["client_order_id"]), trigger="cancel_rejected"
-                )
-                if recovered is None:
+                try:
+                    recovered, lookup_exc = self._classify_recover(
+                        str(row["client_order_id"]), trigger="cancel_rejected"
+                    )
+                except LiveGateError:
+                    row["reason"] = "broker recovery failed closed"
+                    self._persist()
+                    raise
+                if lookup_exc is not None or recovered is None:
                     row["reason"] = str(exc)
                     self._persist()
                     result = _public_order(row, venue=self.venue, replayed=False)
@@ -662,53 +667,78 @@ class LiveSession:
             )
             record_live_order_result(venue=self.venue, status="not_acknowledged")
             raise
-        except Exception as exc:
-            recovered = self._safe_recover(order.client_order_id, trigger="submit_error")
+        except Exception as submit_exc:
+            try:
+                recovered, lookup_exc = self._classify_recover(
+                    order.client_order_id, trigger="submit_error"
+                )
+            except LiveGateError:
+                # A programming or payload error is not "the broker has no
+                # record". Keep the order inflight and surface the cause.
+                row["status"] = "inflight"
+                row["reason"] = "broker recovery failed closed"
+                self._persist()
+                raise
             if recovered is not None:
                 return recovered
             # A lost response is not proof the broker rejected the order.
-            # Leave it inflight so a later open can find it and cancel it.
+            # None means the broker has no record. An OSError means the
+            # lookup itself failed. Either way a later open can retry.
             row["status"] = "inflight"
             row["reason"] = "broker response lost; order remains recoverable"
             self._persist()
+            cause = lookup_exc if lookup_exc is not None else submit_exc
             log_event(
                 "live_order_result",
                 venue=self.venue,
                 side=order.side,
                 status="response_lost",
-                error_type=type(exc).__name__,
+                error_type=type(cause).__name__,
             )
             record_live_order_result(venue=self.venue, status="response_lost")
             raise LiveGateError(
                 "broker response lost; the order stays inflight until recovery succeeds"
-            ) from None
+            ) from cause
 
-    def _safe_recover(self, client_order_id: str, *, trigger: str) -> BrokerAck | None:
+    def _classify_recover(
+        self, client_order_id: str, *, trigger: str
+    ) -> tuple[BrokerAck | None, BaseException | None]:
+        """Return ``(ack, transport_error)``.
+
+        ``(None, None)`` means the broker has no record. ``OSError`` (including
+        ``TimeoutError``) stays on the second element so the order can be
+        retried. Any other exception is re-raised as ``LiveGateError``.
+        """
         try:
             ack = self.broker.recover(client_order_id)
+        except OSError as exc:
+            self._note_recovery("error", trigger, error_type=type(exc).__name__)
+            return None, exc
+        except LiveGateError as exc:
+            self._note_recovery("error", trigger, error_type=type(exc).__name__)
+            raise
         except Exception as exc:
-            log_event(
-                "live_order_recovery",
-                venue=self.venue,
-                outcome="error",
-                trigger=trigger,
-                error_type=type(exc).__name__,
-            )
-            record_live_order_recovery(venue=self.venue, outcome="error")
-            return None
+            self._note_recovery("error", trigger, error_type=type(exc).__name__)
+            raise LiveGateError(
+                "broker recovery failed closed; the order stays inflight"
+            ) from exc
         if ack is None:
-            log_event("live_order_recovery", venue=self.venue, outcome="not_found", trigger=trigger)
-            record_live_order_recovery(venue=self.venue, outcome="not_found")
-            return None
+            self._note_recovery("not_found", trigger)
+            return None, None
+        self._note_recovery(
+            "recovered", trigger, status=map_broker_status(ack.status)
+        )
+        return ack, None
+
+    def _note_recovery(self, outcome: str, trigger: str, **fields: str) -> None:
         log_event(
             "live_order_recovery",
             venue=self.venue,
-            outcome="recovered",
+            outcome=outcome,
             trigger=trigger,
-            status=map_broker_status(ack.status),
+            **fields,
         )
-        record_live_order_recovery(venue=self.venue, outcome="recovered")
-        return ack
+        record_live_order_recovery(venue=self.venue, outcome=outcome)
 
     def _deny_killed(
         self,
@@ -1024,8 +1054,10 @@ class LiveSession:
         for row in self.orders:
             if row["status"] not in _WORKING:
                 continue
-            ack = self._safe_recover(str(row["client_order_id"]), trigger="inflight")
-            if ack is None:
+            ack, lookup_exc = self._classify_recover(
+                str(row["client_order_id"]), trigger="inflight"
+            )
+            if lookup_exc is not None or ack is None:
                 continue
             changed = True
             self._apply_ack(row, ack, ts)

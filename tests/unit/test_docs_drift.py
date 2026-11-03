@@ -28,6 +28,7 @@ current miss set exactly — landed work removes entries, never adds them.
 from __future__ import annotations
 
 import ast
+import bisect
 import contextlib
 import fnmatch
 import importlib
@@ -186,16 +187,30 @@ def _tracked_index() -> tuple[frozenset[str], frozenset[str]]:
 TRACKED_FILES, TRACKED_DIRS = _tracked_index()
 
 
+def _newline_positions(text: str) -> list[int]:
+    return [i for i, ch in enumerate(text) if ch == "\n"]
+
+
+def _lineno_at(newlines: list[int], pos: int) -> int:
+    """1-based line of ``pos``, matching ``text[:pos].count('\\n') + 1``."""
+    return bisect.bisect_left(newlines, pos) + 1
+
+
 def _code_regions(text: str) -> list[tuple[int, str, str | None]]:
     """(lineno, content, cwd) for inline spans and fenced lines.
 
     ``cwd`` is the last ``cd <dir>`` seen inside the enclosing fence, so paths
     written relative to the block's working directory resolve.
+
+    Line numbers come from one newline index. The previous prefix
+    ``count('\\n')`` was quadratic on ``docs/evidence/index.md`` (about 80k
+    inline spans in a multi-megabyte file) and dominated the drift gate.
     """
     regions: list[tuple[int, str, str | None]] = []
+    newlines = _newline_positions(text)
     fences = list(FENCE_RE.finditer(text))
     for m in fences:
-        start = text[: m.start()].count("\n") + 1
+        start = _lineno_at(newlines, m.start())
         cwd: str | None = None
         for j, line in enumerate(m.group(1).splitlines()):
             stripped = line.strip()
@@ -203,10 +218,17 @@ def _code_regions(text: str) -> list[tuple[int, str, str | None]]:
             if cd:
                 cwd = cd.group(1).rstrip("/")
             regions.append((start + j, stripped, cwd))
+    # Fences do not nest, and finditer walks them in order, so one cursor
+    # drops every inline span that sits inside a fence.
+    fence_i = 0
+    n_fences = len(fences)
     for m in INLINE_RE.finditer(text):
-        if any(f.start() <= m.start() < f.end() for f in fences):
+        start = m.start()
+        while fence_i < n_fences and fences[fence_i].end() <= start:
+            fence_i += 1
+        if fence_i < n_fences and fences[fence_i].start() <= start:
             continue
-        regions.append((text[: m.start()].count("\n") + 1, m.group(1).strip(), None))
+        regions.append((_lineno_at(newlines, start), m.group(1).strip(), None))
     return regions
 
 

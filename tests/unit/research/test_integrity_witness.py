@@ -191,13 +191,96 @@ def test_consistency_kat_on_real_rekor_proof() -> None:
     )
 
 
+class _BytesResponse:
+    """Context-manager body, the slice of ``urlopen`` the verifier reads."""
+
+    def __init__(self, body: bytes) -> None:
+        self._body = body
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self) -> _BytesResponse:
+        return self
+
+    def __exit__(self, *_exc: object) -> bool:
+        return False
+
+
+def _prefetch_rekor_bodies(root: Path, *, workers: int = 8) -> dict[str, bytes]:
+    """Fetch the signed tree head and each consistency path concurrently.
+
+    The live test serves these bytes back through ``urlopen``. The pinned
+    verifier still checks every proof itself, in order; only the GETs move.
+    """
+    import urllib.request
+    from concurrent.futures import ThreadPoolExecutor
+
+    from quant_fund.research.integrity_witness import (
+        DEFAULT_REKOR_URL,
+        _parse_checkpoint_note,
+    )
+
+    base = DEFAULT_REKOR_URL.rstrip("/")
+    log_url = base + "/api/v1/log"
+    with urllib.request.urlopen(log_url, timeout=30) as resp:  # noqa: S310
+        log_body = resp.read()
+    parsed = _parse_checkpoint_note(str(json.loads(log_body).get("signedTreeHead", "")))
+    cache = {log_url: log_body}
+    if parsed is None:
+        return cache
+    cur_size = parsed[0]
+    urls: list[str] = []
+    for pf in sorted((root / WITNESS_DIR).glob("*.json")):
+        try:
+            record = json.loads(pf.read_text())
+            old_size = int(record["rekor"]["inclusion_proof"]["tree_size"])
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if old_size >= cur_size:
+            continue
+        urls.append(f"{base}/api/v1/log/proof?firstSize={old_size}&lastSize={cur_size}")
+
+    def _get(url: str) -> tuple[str, bytes | None]:
+        try:
+            with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310
+                return url, resp.read()
+        except OSError:
+            return url, None
+
+    unique = list(dict.fromkeys(urls))
+    if not unique:
+        return cache
+    with ThreadPoolExecutor(max_workers=min(workers, len(unique))) as pool:
+        for url, body in pool.map(_get, unique):
+            if body is not None:
+                cache[url] = body
+    return cache
+
+
 @pytest.mark.network
-def test_online_consistency_against_live_rekor() -> None:
+def test_online_consistency_against_live_rekor(monkeypatch: pytest.MonkeyPatch) -> None:
     """Live: every committed proof's tree must still be a prefix of Rekor's
     current signed tree head (consistency path + STH signature)."""
+    import urllib.request
+
     from quant_fund.research.integrity_witness import verify_witness_online
 
+    cache = _prefetch_rekor_bodies(REPO_ROOT)
+    real_urlopen = urllib.request.urlopen
+    misses: list[str] = []
+
+    def _urlopen(url: object, data: object = None, timeout: float = 30, **kwargs: object) -> object:
+        key = url if isinstance(url, str) else getattr(url, "full_url", "")
+        body = cache.get(key)
+        if body is None:
+            misses.append(str(key))
+            return real_urlopen(url, data, timeout, **kwargs)  # type: ignore[arg-type]
+        return _BytesResponse(body)
+
+    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
     res = verify_witness_online(REPO_ROOT)
+    assert misses == []
     assert res["online"] is True
     assert res["errors"] == []
     assert all(res["consistent"].values())

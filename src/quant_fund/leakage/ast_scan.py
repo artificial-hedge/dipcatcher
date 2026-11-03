@@ -25,8 +25,10 @@ import hashlib
 import io
 import re
 import tokenize
+from collections import deque
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, NamedTuple, cast, overload
 
 from quant_fund.leakage.rules import (
     FUNCTION_ALLOWLISTS,
@@ -98,12 +100,21 @@ def _function_allowlist_names(rule_id: str, path_str: str) -> frozenset[str]:
     return frozenset(matched)
 
 
+def _function_nodes(tree: ast.AST) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
+    return [
+        node
+        for node in _nodes(tree, ast.FunctionDef, ast.AsyncFunctionDef)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
+
+
 def _function_spans(tree: ast.AST) -> list[tuple[int, int, str]]:
     spans: list[tuple[int, int, str]] = []
-    for node in _iter_tree(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            end = node.end_lineno if node.end_lineno is not None else node.lineno
-            spans.append((node.lineno, end, node.name))
+    functions = _function_nodes(tree)
+    functions.sort(key=lambda node: (node.lineno, node.col_offset))
+    for node in functions:
+        end = node.end_lineno if node.end_lineno is not None else node.lineno
+        spans.append((node.lineno, end, node.name))
     return spans
 
 
@@ -293,6 +304,13 @@ def _shift_call_parts(node: ast.AST) -> tuple[ast.AST, ast.AST] | None:
 
 def _contains_negative_shift(node: ast.AST, assigns: _ScopeAssigns) -> bool:
     """True when the expression tree contains any provably-negative shift."""
+    # The file index records every node whose subtree holds a shift-shaped
+    # call. An expression outside that set cannot fold to a negative shift.
+    memo = _TREE_INDEX.get()
+    if memo is not None and len(memo) == 1:
+        index = next(iter(memo.values()))
+        if id(node) not in index.shift:
+            return False
     for sub in ast.walk(node):
         if not isinstance(sub, ast.Call):
             continue
@@ -316,47 +334,187 @@ def _call_name(node: ast.Call) -> str:
 
 # One walk per file, shared by every rule. Cleared at the end of scan_file so
 # a later file cannot reuse a recycled id(tree). Callers only read the lists.
-_TreeIndex = tuple[list[ast.AST], dict[int, ast.AST]]
-_TREE_INDEX: contextvars.ContextVar[dict[int, _TreeIndex] | None] = contextvars.ContextVar(
+class _Index(NamedTuple):
+    parents: dict[int, ast.AST]
+    buckets: dict[type[ast.AST], list[ast.AST]]
+    shift: set[int]
+
+
+_TREE_INDEX: contextvars.ContextVar[dict[int, _Index] | None] = contextvars.ContextVar(
     "leakage_tree_index", default=None
 )
 
+# Exact parser classes the rules iterate. String constants and Add/Mod
+# binops are the only values of those types the headline rules inspect.
+_BUCKET_TYPES: frozenset[type[ast.AST]] = frozenset(
+    {
+        ast.AnnAssign,
+        ast.Assign,
+        ast.AsyncFunctionDef,
+        ast.BinOp,
+        ast.Call,
+        ast.ClassDef,
+        ast.Constant,
+        ast.FunctionDef,
+        ast.Import,
+        ast.ImportFrom,
+        ast.JoinedStr,
+        ast.Module,
+    }
+)
 
-def _tree_index(tree: ast.AST) -> _TreeIndex:
+
+def _call_might_contain_shift(node: ast.Call) -> bool:
+    """Superset of ``_shift_call_parts`` so the shift set cannot miss a call."""
+    func = node.func
+    if isinstance(func, ast.Attribute):
+        return func.attr == "shift"
+    if isinstance(func, ast.Name):
+        return func.id == "shift"
+    return isinstance(func, ast.Call)
+
+
+def _record_binds(
+    node: ast.AST,
+    parents: dict[int, ast.AST],
+    scope_lists: dict[int, _ScopeAssigns],
+    module_id: int,
+) -> None:
+    """Append binds in BFS visit order, matching ``ast.walk`` of each scope."""
+    binds = _iter_binds(node)
+    if not binds:
+        return
+    line = node.lineno if isinstance(node, (ast.stmt, ast.expr)) else 0
+    fids: list[int] = []
+    cur = parents.get(id(node))
+    while cur is not None:
+        if type(cur) is ast.FunctionDef or type(cur) is ast.AsyncFunctionDef:
+            fids.append(id(cur))
+        cur = parents.get(id(cur))
+    module_assigns = scope_lists[module_id]
+    for name, value in binds:
+        item = (line, value)
+        module_assigns.setdefault(name, []).append(item)
+        for fid in fids:
+            scope_lists[fid].setdefault(name, []).append(item)
+
+
+def _enqueue_children(node: ast.AST, parents: dict[int, ast.AST], todo: deque[ast.AST]) -> None:
+    """Children in ``ast.iter_child_nodes`` order, without a generator per node.
+
+    A generator (or ``list()`` of one) on every node dominated the file walk.
+    Field order matches ``ast.walk``, so scope-assignment order stays the same.
+    """
+    for name in node._fields:
+        try:
+            field = getattr(node, name)
+        except AttributeError:
+            continue
+        if isinstance(field, ast.AST):
+            parents[id(field)] = node
+            todo.append(field)
+        elif isinstance(field, list):
+            for item in field:
+                if isinstance(item, ast.AST):
+                    parents[id(item)] = node
+                    todo.append(item)
+
+
+def _tree_index(tree: ast.AST) -> _Index:
+    """BFS in ``ast.walk`` order, plus per-scope assigns and node buckets.
+
+    Scope assignment lists are filled here so later rules do not walk the
+    file again. A function's list is the subsequence of binds inside it,
+    which matches ``ast.walk`` of that function because both are BFS.
+    """
     memo = _TREE_INDEX.get()
     key = id(tree)
     if memo is not None and key in memo:
         return memo[key]
-    nodes: list[ast.AST] = []
     parents: dict[int, ast.AST] = {}
-    root = tree
-    for node in ast.walk(root):
-        nodes.append(node)
-        for child in ast.iter_child_nodes(node):
-            parents[id(child)] = node
-    index = (nodes, parents)
+    buckets: dict[type[ast.AST], list[ast.AST]] = {kind: [] for kind in _BUCKET_TYPES}
+    shift: set[int] = set()
+    scope_lists: dict[int, _ScopeAssigns] = {key: {}}
+    todo: deque[ast.AST] = deque([tree])
+    bucket_types = _BUCKET_TYPES
+    add_ops = (ast.Add, ast.Mod)
+    while todo:
+        node = todo.popleft()
+        ntype = type(node)
+        if ntype in bucket_types:
+            if ntype is ast.Constant:
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    buckets[ntype].append(node)
+            elif ntype is ast.BinOp:
+                if isinstance(node, ast.BinOp) and type(node.op) in add_ops:
+                    buckets[ntype].append(node)
+            else:
+                if ntype is ast.FunctionDef or ntype is ast.AsyncFunctionDef:
+                    scope_lists[id(node)] = {}
+                buckets[ntype].append(node)
+        _enqueue_children(node, parents, todo)
+        if ntype is ast.Assign or ntype is ast.AnnAssign or ntype is ast.NamedExpr:
+            _record_binds(node, parents, scope_lists, key)
+        elif (
+            ntype is ast.Call
+            and isinstance(node, ast.Call)
+            and _call_might_contain_shift(node)
+            and _shift_call_parts(node) is not None
+        ):
+            cur: ast.AST | None = node
+            while cur is not None:
+                cid = id(cur)
+                if cid in shift:
+                    break
+                shift.add(cid)
+                cur = parents.get(cid)
+    index = _Index(parents, buckets, shift)
     if memo is not None:
         memo[key] = index
+    cache = _SCOPE_CACHE.get()
+    if cache is not None:
+        cache.update(scope_lists)
     return index
 
 
 def _iter_tree(tree: ast.AST) -> list[ast.AST]:
-    """Nodes in ``ast.walk`` order. Cached for the scan of this file."""
+    """Nodes in ``ast.walk`` order."""
+    return list(ast.walk(tree))
+
+
+@overload
+def _nodes[NodeT: ast.AST](tree: ast.AST, kind: type[NodeT]) -> list[NodeT]: ...
+
+
+@overload
+def _nodes(tree: ast.AST, kind: type[ast.AST], *kinds: type[ast.AST]) -> list[ast.AST]: ...
+
+
+def _nodes[NodeT: ast.AST](tree: ast.AST, kind: type[NodeT], *kinds: type[ast.AST]) -> list[Any]:
+    """Bucketed nodes. One type keeps walk order; several types are concatenated."""
+    selected: tuple[type[ast.AST], ...] = (cast(type[ast.AST], kind), *kinds)
     if _TREE_INDEX.get() is None:
-        root = tree
-        return list(ast.walk(root))
-    return _tree_index(tree)[0]
+        return [node for node in ast.walk(tree) if isinstance(node, selected)]
+    index = _tree_index(tree)
+    if not kinds:
+        found = index.buckets.get(selected[0])
+        if found is None:
+            return []
+        return cast(list[Any], found)
+    out: list[Any] = []
+    for item in selected:
+        out.extend(index.buckets.get(item, ()))
+    return out
 
 
 def _build_parent_map(tree: ast.AST) -> dict[int, ast.AST]:
     if _TREE_INDEX.get() is None:
         parents: dict[int, ast.AST] = {}
-        root = tree
-        for node in ast.walk(root):
+        for node in ast.walk(tree):
             for child in ast.iter_child_nodes(node):
                 parents[id(child)] = node
         return parents
-    return _tree_index(tree)[1]
+    return _tree_index(tree).parents
 
 
 def _enclosing_scopes(
@@ -377,11 +535,9 @@ def _enclosing_scopes(
 def _docstring_constant_ids(tree: ast.AST) -> set[int]:
     """ids of string Constants used as module/class/function docstrings."""
     ids: set[int] = set()
-    for node in _iter_tree(tree):
+    for node in _nodes(tree, ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef):
         body = getattr(node, "body", None)
-        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and (
-            isinstance(body, list) and body
-        ):
+        if isinstance(body, list) and body:
             first = body[0]
             if (
                 isinstance(first, ast.Expr)
@@ -425,25 +581,40 @@ def _is_negative_shift_period(expr: ast.AST, assigns: _ScopeAssigns, use_line: i
     return folded is not None and folded < 0
 
 
+# Merged maps are read-only after they are built. Caching them per scan
+# keeps LH006/LH010 from copying the module assignment table once per
+# statement. The lists inside are copies, so the scope cache stays immutable.
+_MERGED_CACHE: contextvars.ContextVar[dict[tuple[int, int], _ScopeAssigns] | None] = (
+    contextvars.ContextVar("dipcatcher_leakage_merged_cache", default=None)
+)
+
+
 def _merged_assigns(tree: ast.AST, scope: ast.AST) -> dict[str, list[tuple[int, ast.AST]]]:
     """Module-level + enclosing-scope assignment candidates.
 
     Module constants (``HALF = 10``) must resolve inside functions; scope
     names are appended so use-line-aware resolution picks the live binding.
     Copies the cached lists: the cache itself must stay immutable.
+    Callers must not mutate the returned mapping.
     """
+    cache = _MERGED_CACHE.get()
+    key = (id(tree), id(scope))
+    if cache is not None:
+        cached = cache.get(key)
+        if cached is not None:
+            return cached
     assigns = {name: list(entries) for name, entries in _scope_assignments(tree).items()}
     for name, entries in _scope_assignments(scope).items():
         assigns.setdefault(name, []).extend(entries)
+    if cache is not None:
+        cache[key] = assigns
     return assigns
 
 
 def _check_lh001(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in _iter_tree(tree):
-        if not isinstance(node, ast.Call):
-            continue
+    for node in _nodes(tree, ast.Call):
         parts = _shift_call_parts(node)
         if parts is None:
             continue
@@ -468,9 +639,7 @@ def _check_lh001(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh002(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in _iter_tree(tree):
-        if not isinstance(node, ast.Call):
-            continue
+    for node in _nodes(tree, ast.Call):
         name = _call_name(node)
         if not name.startswith("rolling"):
             continue
@@ -535,8 +704,8 @@ def _scipy_stats_bound_names(tree: ast.AST) -> set[str]:
     """Local names bound by ``from scipy.stats import ...`` — a `norm` from
     there is a distribution MLE (like `stats.norm.fit`), not a scaler."""
     bound: set[str] = set()
-    for node in _iter_tree(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "scipy.stats":
+    for node in _nodes(tree, ast.ImportFrom):
+        if node.module == "scipy.stats":
             bound.update(alias.asname or alias.name for alias in node.names)
     return bound
 
@@ -545,12 +714,8 @@ def _check_lh003(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
     scipy_stats_names = _scipy_stats_bound_names(tree)
-    for node in _iter_tree(tree):
-        if not (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and node.func.attr in _FIT_ATTRS
-        ):
+    for node in _nodes(tree, ast.Call):
+        if not (isinstance(node.func, ast.Attribute) and node.func.attr in _FIT_ATTRS):
             continue
         attr = node.func.attr
         receiver = node.func.value
@@ -607,8 +772,8 @@ def _check_lh003(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh004(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in _iter_tree(tree):
-        if not (isinstance(node, ast.Call) and _call_name(node) == "join_asof"):
+    for node in _nodes(tree, ast.Call):
+        if _call_name(node) != "join_asof":
             continue
         _, funcs = _enclosing_scopes(node, parents)
         scope: ast.AST = funcs[-1] if funcs else tree
@@ -665,7 +830,7 @@ def _check_lh005(tree: ast.AST, path_str: str) -> list[_Finding]:
     ):
         return []
     out: list[_Finding] = []
-    for node in _iter_tree(tree):
+    for node in _nodes(tree, ast.Assign, ast.AnnAssign):
         target: ast.AST | None = None
         value: ast.AST | None = None
         line = col = 0
@@ -725,7 +890,7 @@ def _contemp_target_names(target: ast.AST) -> list[str]:
 def _check_lh006(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in _iter_tree(tree):
+    for node in _nodes(tree, ast.Assign, ast.AnnAssign, ast.Call):
         # (a) ``delta_mid = mid.shift(-1) - mid`` assignment form (also
         # annotated targets, subscript keys, and tuple destructuring).
         if isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
@@ -887,8 +1052,8 @@ def _resolve_expr(
 def _check_lh007(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in _iter_tree(tree):
-        if not (isinstance(node, ast.Call) and _call_name(node) in _PSR_CALL_NAMES):
+    for node in _nodes(tree, ast.Call):
+        if _call_name(node) not in _PSR_CALL_NAMES:
             continue
         _, funcs = _enclosing_scopes(node, parents)
         scope: ast.AST = funcs[-1] if funcs else tree
@@ -942,7 +1107,7 @@ def _check_lh008(tree: ast.AST, path_str: str) -> list[_Finding]:
     docstrings = _docstring_constant_ids(tree)
     parents = _build_parent_map(tree)
     module_assigns = _scope_assignments(tree)
-    for node in _iter_tree(tree):
+    for node in _nodes(tree, ast.Constant, ast.BinOp):
         value: str | None = None
         if (
             isinstance(node, ast.Constant)
@@ -985,11 +1150,10 @@ def _blocked_io_aliases(tree: ast.AST) -> set[str]:
     """Local names bound to parquet readers via ``from X import read_parquet
     [as rp]`` — the aliased call `rp(path)` is the same bypass one hop down."""
     bound: set[str] = set()
-    for node in _iter_tree(tree):
-        if isinstance(node, ast.ImportFrom):
-            for alias in node.names:
-                if alias.name in _BLOCKED_IO_NAMES:
-                    bound.add(alias.asname or alias.name)
+    for node in _nodes(tree, ast.ImportFrom):
+        for alias in node.names:
+            if alias.name in _BLOCKED_IO_NAMES:
+                bound.add(alias.asname or alias.name)
     return bound
 
 
@@ -1023,9 +1187,7 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     module_assigns = _scope_assignments(tree)
     io_aliases = _blocked_io_aliases(tree)
-    for node in _iter_tree(tree):
-        if not isinstance(node, ast.Call):
-            continue
+    for node in _nodes(tree, ast.Call):
         name = _call_name(node)
         if name in _BLOCKED_IO_NAMES or name in io_aliases:
             out.append(
@@ -1071,10 +1233,13 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh010(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
-    for node in _iter_tree(tree):
-        if not isinstance(node, ast.Call):
-            continue
+    segments: dict[int, str] = {}
+    for node in _nodes(tree, ast.Call):
         name = _call_name(node)
+        # Only backward-fill calls can fire. Other calls used to copy the
+        # assignment map and then discard it.
+        if name not in ("bfill", "fill_null", "fillna"):
+            continue
         _, funcs = _enclosing_scopes(node, parents)
         scope: ast.AST = funcs[-1] if funcs else tree
         assigns = _merged_assigns(tree, scope)
@@ -1089,10 +1254,13 @@ def _check_lh010(tree: ast.AST, path_str: str) -> list[_Finding]:
         )
         if not (is_bfill or is_backward_fill or is_pandas_bfill):
             continue
-        try:
-            segment = ast.unparse(scope)
-        except Exception:
-            segment = ""
+        segment = segments.get(id(scope))
+        if segment is None:
+            try:
+                segment = ast.unparse(scope)
+            except Exception:
+                segment = ""
+            segments[id(scope)] = segment
         if '"event_time"' in segment or "'event_time'" in segment or "event_time" in segment:
             out.append(
                 _Finding(
@@ -1158,8 +1326,8 @@ def _lh011_dynamic_findings(
     """
     out: list[_Finding] = []
     module_assigns = _scope_assignments(tree)
-    for node in _iter_tree(tree):
-        if not (isinstance(node, ast.Call) and _call_name(node) in ("import_module", "__import__")):
+    for node in _nodes(tree, ast.Call):
+        if _call_name(node) not in ("import_module", "__import__"):
             continue
         if not node.args:
             continue
@@ -1193,7 +1361,7 @@ def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
     lazy_whitelist = LH011_LAZY_WHITELIST[package]
     parents = _build_parent_map(tree)
     out: list[_Finding] = []
-    for node in _iter_tree(tree):
+    for node in _nodes(tree, ast.Import, ast.ImportFrom):
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
         modules = _lh011_imported_modules(node, path_str)
@@ -1260,10 +1428,43 @@ def _lh013_emit(out: list[_Finding], line: int, col: int, tokens: list[str], cha
     )
 
 
+def _comment_probe(source: str) -> str:
+    """Every ``#`` through end of line, joined.
+
+    A comment token is one of these slices (tokenize does not escape-decode
+    comments). An alias the matcher would see in a comment is therefore a
+    substring of this probe after the same normalization. A ``#`` inside a
+    string is included too; that can only add tokenize work. Concatenated
+    literals are not comments and stay on the AST path.
+    """
+    parts: list[str] = []
+    start = 0
+    while True:
+        mark = source.find("#", start)
+        if mark < 0:
+            break
+        end = source.find("\n", mark)
+        if end < 0:
+            parts.append(source[mark:])
+            break
+        parts.append(source[mark:end])
+        start = end + 1
+    return "\n".join(parts)
+
+
 def _lh013_comment_findings(
     source: str, path_str: str, out: list[_Finding], patterns: _Lh013Patterns
 ) -> None:
     """Flag forbidden headline tokens in comments (invisible to the AST)."""
+    if "#" not in source:
+        return
+    from quant_fund.leakage.patterns import _prepare
+
+    # Non-ASCII files still have to be normalized (fullwidth and Cf
+    # evaders). Doing that on the whole file re-reads code the AST rules
+    # already cover; the probe is the comment-sized slice.
+    if _prepare(_comment_probe(source)) is None:
+        return
     try:
         for tok in tokenize.generate_tokens(io.StringIO(source).readline):
             if tok.type != tokenize.COMMENT:
@@ -1403,11 +1604,19 @@ def _check_lh013(tree: ast.AST, path_str: str, source: str) -> list[_Finding]:
     docstrings = _docstring_constant_ids(tree)
     parents = _build_parent_map(tree)
     module_assigns = _scope_assignments(tree)
-    for node in _iter_tree(tree):
-        _lh013_constant_findings(node, path_str, docstrings, out, patterns)
-        _lh013_fstring_findings(node, path_str, out, patterns)
-        _lh013_format_findings(node, path_str, module_assigns, out, patterns)
-        _lh013_concat_findings(node, path_str, module_assigns, parents, out, patterns)
+    for constant in _nodes(tree, ast.Constant):
+        _lh013_constant_findings(constant, path_str, docstrings, out, patterns)
+    for joined in _nodes(tree, ast.JoinedStr):
+        _lh013_fstring_findings(joined, path_str, out, patterns)
+    for binop in _nodes(tree, ast.BinOp):
+        if isinstance(binop.op, ast.Mod):
+            _lh013_format_findings(binop, path_str, module_assigns, out, patterns)
+        else:
+            _lh013_concat_findings(binop, path_str, module_assigns, parents, out, patterns)
+    for call in _nodes(tree, ast.Call):
+        func = call.func
+        if isinstance(func, ast.Attribute) and func.attr in ("format", "format_map"):
+            _lh013_format_findings(call, path_str, module_assigns, out, patterns)
     return out
 
 
@@ -1417,11 +1626,7 @@ def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list
     cross-file helpers are the documented residual ceiling.
     """
     out: list[_Finding] = []
-    functions = [
-        node
-        for node in _iter_tree(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-    ]
+    functions = _function_nodes(tree)
     leaky: dict[str, set[str]] = {}
     for func in functions:
         end = func.end_lineno or func.lineno
@@ -1432,9 +1637,7 @@ def _check_lh014(tree: ast.AST, path_str: str, findings: list[_Finding]) -> list
             leaky.setdefault(func.name, set()).update(hits)
     if not leaky:
         return out
-    for node in _iter_tree(tree):
-        if not isinstance(node, ast.Call):
-            continue
+    for node in _nodes(tree, ast.Call):
         # `helper()` and `self.helper()`/`obj.helper()` alike — a leaky
         # helper carries its finding through a dotted call too.
         callee = node.func
@@ -1487,9 +1690,11 @@ def scan_file(path: Path, *, rules: set[str] | None = None) -> list[_Finding]:
     """Scan one .py file; never raises on parse errors (LH012 instead)."""
     cache_token = _SCOPE_CACHE.set({})
     index_token = _TREE_INDEX.set({})
+    merged_token = _MERGED_CACHE.set({})
     try:
         return _scan_file_cached(path, rules=rules)
     finally:
+        _MERGED_CACHE.reset(merged_token)
         _TREE_INDEX.reset(index_token)
         _SCOPE_CACHE.reset(cache_token)
 
