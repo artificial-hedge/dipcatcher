@@ -1,0 +1,22 @@
+# Findings suppressed by the path allowlists that used to sit in .gitleaks.toml.
+# Generated with gitleaks 8.30.1 against the pinned config, full history of those paths.
+# Fingerprints only: a new synthetic secret on those paths is not pre-allowed.
+0848a67d9c1240e24fc81ee0ceb9126a16f4cad1:tests/fx1/journeys/textutil.py:generic-api-key:17
+0848a67d9c1240e24fc81ee0ceb9126a16f4cad1:tests/fx1/journeys/textutil.py:generic-api-key:18
+1c9fbf1ebca86fa0acee399e3d2877d2d0bc0257:tests/fx1/test_orchestration_e2e.py:generic-api-key:509
+3aad0f8c936d7103e9fadbfafcab1def51ceb4c1:tests/fx1/test_evidence.py:generic-api-key:162
+4277a035dd6c1085805466a2607f359bcfef9d7f:tests/fx1/test_model_smoke.py:generic-api-key:29
+6dfa0ecd227858b6803f1e54696ad9b3ea11d9ad:tests/fx1/test_evidence_ledger.py:generic-api-key:1008
+6dfa0ecd227858b6803f1e54696ad9b3ea11d9ad:tests/fx1/test_evidence_ledger.py:generic-api-key:366
+6dfa0ecd227858b6803f1e54696ad9b3ea11d9ad:tests/fx1/test_evidence_ledger.py:generic-api-key:494
+6dfa0ecd227858b6803f1e54696ad9b3ea11d9ad:tests/fx1/test_evidence_ledger.py:generic-api-key:509
+7e45882384f906c37a79782779b6dedc7782dc0e:src/fx1/interactive/profiles.py:generic-api-key:69
+802e5b55b5fa4321f9775cd1a0a8e053076214ba:tests/fx1/test_telemetry_live.py:generic-api-key:37
+8f442d4204d527c0fb0dae364b55b3fd7e9666fe:src/quant_fund/research/prereg_timestamp.py:generic-api-key:188
+96b44f894343e138f566bfec2db77cfff934f1c9:tests/fx1/test_bank_modelcard_serve.py:generic-api-key:367
+bb2460f15e8efe041e1f261117da6ce90d259cef:tests/fx1/test_bank_modelcard_serve.py:generic-api-key:184
+bb2460f15e8efe041e1f261117da6ce90d259cef:tests/fx1/test_bank_modelcard_serve.py:generic-api-key:274
+eaedbccbb3ab01edd8bafefab5ab96ffdbe21705:tests/fx1/test_kernel_redact.py:aws-access-token:45
+eaedbccbb3ab01edd8bafefab5ab96ffdbe21705:tests/fx1/test_kernel_redact.py:curl-auth-header:38
+eaedbccbb3ab01edd8bafefab5ab96ffdbe21705:tests/fx1/test_kernel_redact.py:jwt:46
+ff89d6f141c12d98749d2dd97fc9ddcb65bd0db9:tests/unit/cli/test_dipcatcher_latency.py:generic-api-key:23

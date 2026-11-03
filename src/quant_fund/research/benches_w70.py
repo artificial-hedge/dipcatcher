@@ -51,7 +51,7 @@ def bench_cyclostationary() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CYCLOSTATIONARY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -65,7 +65,7 @@ def bench_empirical_wavelets() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_EMPIRICAL_WAVELETS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -79,7 +79,7 @@ def bench_nonparametric_tests() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_NONPARAMETRIC_TESTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -91,7 +91,7 @@ def bench_polychoric() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_POLYCHORIC_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -105,7 +105,7 @@ def bench_compositional() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_COMPOSITIONAL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -119,6 +119,6 @@ def bench_sure_screening() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SURE_SCREENING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

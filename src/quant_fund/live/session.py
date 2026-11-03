@@ -555,24 +555,48 @@ class LiveSession:
             row["reason"] = "broker credentials are not set"
             self._persist()
             raise
-        except Exception:
-            recovered = self._safe_recover(order.client_order_id)
+        except Exception as submit_exc:
+            try:
+                recovered, lookup_exc = self._classify_recover(order.client_order_id)
+            except LiveGateError:
+                # A programming or payload error is not "the broker has no
+                # record". Keep the order inflight and surface the cause.
+                row["status"] = "inflight"
+                row["reason"] = "broker recovery failed closed"
+                self._persist()
+                raise
             if recovered is not None:
                 return recovered
             # A lost response is not proof the broker rejected the order.
-            # Leave it inflight so a later open can find it and cancel it.
+            # None means the broker has no record. An OSError means the
+            # lookup itself failed. Either way a later open can retry.
             row["status"] = "inflight"
             row["reason"] = "broker response lost; order remains recoverable"
             self._persist()
+            cause = lookup_exc if lookup_exc is not None else submit_exc
             raise LiveGateError(
                 "broker response lost; the order stays inflight until recovery succeeds"
-            ) from None
+            ) from cause
 
-    def _safe_recover(self, client_order_id: str) -> BrokerAck | None:
+    def _classify_recover(
+        self, client_order_id: str
+    ) -> tuple[BrokerAck | None, BaseException | None]:
+        """Return ``(ack, transport_error)``.
+
+        ``(None, None)`` is a real protocol result: the broker has no record.
+        ``OSError`` (including ``TimeoutError``) is a failed lookup and stays
+        on the second element so the order can be retried. Any other
+        exception is re-raised as ``LiveGateError`` and must not look like
+        a missing order.
+        """
         try:
-            return self.broker.recover(client_order_id)
-        except Exception:
-            return None
+            return self.broker.recover(client_order_id), None
+        except OSError as exc:
+            return None, exc
+        except LiveGateError:
+            raise
+        except Exception as exc:
+            raise LiveGateError("broker recovery failed closed; the order stays inflight") from exc
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
         row["broker_order_id"] = ack.broker_order_id
@@ -773,8 +797,8 @@ class LiveSession:
         for row in self.orders:
             if row["status"] != "inflight":
                 continue
-            ack = self._safe_recover(str(row["client_order_id"]))
-            if ack is None:
+            ack, lookup_exc = self._classify_recover(str(row["client_order_id"]))
+            if lookup_exc is not None or ack is None:
                 continue
             changed = True
             self._apply_ack(row, ack, ts)

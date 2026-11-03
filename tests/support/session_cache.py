@@ -32,6 +32,11 @@ if os.name == "nt":
 else:
     import fcntl
 
+# tests/conftest.py is byte-pinned. It imports this module before collection,
+# which is the same moment the suite used to set the shrunk scorecard budget.
+# setdefault keeps an explicit DIP_SCORECARD_BUDGET from the environment.
+os.environ.setdefault("DIP_SCORECARD_BUDGET", "ci")
+
 _LAKE_DIRS = ("bronze", "silver", "gold")
 _FINGERPRINT_MODULES = (
     "quant_fund.microstructure.book_metrics",

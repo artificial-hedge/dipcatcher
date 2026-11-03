@@ -13,11 +13,28 @@ are for longer sequences. Research only; not a live book.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from numba import njit
+else:
+    try:
+        from numba import njit
+    except ImportError:  # pragma: no cover - numba is a required dependency
+
+        def njit(*_args: Any, **_kwargs: Any) -> Any:
+            def _deco(fn: Any) -> Any:
+                return fn
+
+            if len(_args) == 1 and callable(_args[0]) and not _kwargs:
+                return _args[0]
+            return _deco
+
 
 Array = NDArray[np.float64]
 IntArray = NDArray[np.intp]
@@ -127,31 +144,101 @@ def _log_params(model: DiscreteHMM) -> tuple[Array, Array, Array]:
     )
 
 
+@njit(cache=True)
+def _logsumexp_incoming(prev: np.ndarray, log_a: np.ndarray, j: int) -> float:
+    """Log-sum-exp of ``prev[i] + log_a[i, j]`` over the previous state."""
+    n = prev.shape[0]
+    m = prev[0] + log_a[0, j]
+    for i in range(1, n):
+        v = prev[i] + log_a[i, j]
+        if v > m:
+            m = v
+    acc = 0.0
+    for i in range(n):
+        acc += np.exp(prev[i] + log_a[i, j] - m)
+    return float(m + math.log(acc))
+
+
+@njit(cache=True)
+def _logsumexp_row(row: np.ndarray) -> float:
+    """Log-sum-exp of one state row."""
+    n = row.shape[0]
+    m = row[0]
+    for j in range(1, n):
+        if row[j] > m:
+            m = row[j]
+    acc = 0.0
+    for j in range(n):
+        acc += np.exp(row[j] - m)
+    return float(m + math.log(acc))
+
+
+@njit(cache=True)
+def _log_forward_nb(
+    log_a: np.ndarray, log_b: np.ndarray, log_pi: np.ndarray, obs: np.ndarray
+) -> tuple[np.ndarray, float]:
+    """Log-space forward. ``logsumexp`` over the previous state, per step.
+
+    Same reduction as ``scipy.special.logsumexp(..., axis=0)`` on
+    ``alpha[t-1, :, None] + log_a``, without a Python call per timestep.
+    """
+    t_len = obs.shape[0]
+    n = log_a.shape[0]
+    alpha = np.empty((t_len, n))
+    o0 = obs[0]
+    for j in range(n):
+        alpha[0, j] = log_pi[j] + log_b[j, o0]
+    for t in range(1, t_len):
+        ot = obs[t]
+        prev = alpha[t - 1]
+        for j in range(n):
+            alpha[t, j] = _logsumexp_incoming(prev, log_a, j) + log_b[j, ot]
+    return alpha, _logsumexp_row(alpha[t_len - 1])
+
+
+@njit(cache=True)
+def _log_backward_nb(log_a: np.ndarray, log_b: np.ndarray, obs: np.ndarray) -> np.ndarray:
+    """Log-space backward. ``beta[T-1] = 0``. Reduces over the next state."""
+    t_len = obs.shape[0]
+    n = log_a.shape[0]
+    beta = np.zeros((t_len, n))
+    for t in range(t_len - 2, -1, -1):
+        ot = obs[t + 1]
+        for i in range(n):
+            m = log_a[i, 0] + log_b[0, ot] + beta[t + 1, 0]
+            for j in range(1, n):
+                v = log_a[i, j] + log_b[j, ot] + beta[t + 1, j]
+                if v > m:
+                    m = v
+            acc = 0.0
+            for j in range(n):
+                acc += np.exp(log_a[i, j] + log_b[j, ot] + beta[t + 1, j] - m)
+            beta[t, i] = m + np.log(acc)
+    return beta
+
+
+def _log_mats(model: DiscreteHMM) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    log_a, log_b, log_pi = _log_params(model)
+    return (
+        np.ascontiguousarray(log_a, dtype=np.float64),
+        np.ascontiguousarray(log_b, dtype=np.float64),
+        np.ascontiguousarray(log_pi, dtype=np.float64),
+    )
+
+
 def log_forward(model: DiscreteHMM, observations: list[int] | IntArray) -> tuple[Array, float]:
     """Scaled-free forward in log space — safe for arbitrarily long sequences."""
-    from scipy.special import logsumexp
-
     o = _as_obs(observations, model.n_obs)
-    log_a, log_b, log_pi = _log_params(model)
-    t_len, n = o.size, model.n_states
-    alpha = np.empty((t_len, n), dtype=float)
-    alpha[0] = log_pi + log_b[:, o[0]]
-    for t in range(1, t_len):
-        alpha[t] = logsumexp(alpha[t - 1][:, None] + log_a, axis=0) + log_b[:, o[t]]
-    return alpha, float(logsumexp(alpha[-1]))
+    log_a, log_b, log_pi = _log_mats(model)
+    alpha, ll = _log_forward_nb(log_a, log_b, log_pi, np.ascontiguousarray(o, dtype=np.int64))
+    return alpha, float(ll)
 
 
 def log_backward(model: DiscreteHMM, observations: list[int] | IntArray) -> Array:
     """Backward trellis in log space; beta[T-1] = log(1) = 0."""
-    from scipy.special import logsumexp
-
     o = _as_obs(observations, model.n_obs)
-    log_a, log_b, _ = _log_params(model)
-    t_len, n = o.size, model.n_states
-    beta = np.zeros((t_len, n), dtype=float)
-    for t in range(t_len - 2, -1, -1):
-        beta[t] = logsumexp(log_a + (log_b[:, o[t + 1]] + beta[t + 1])[None, :], axis=1)
-    return beta
+    log_a, log_b, _ = _log_mats(model)
+    return _log_backward_nb(log_a, log_b, np.ascontiguousarray(o, dtype=np.int64))
 
 
 def log_likelihood(model: DiscreteHMM, observations: list[int] | IntArray) -> float:
@@ -173,11 +260,12 @@ def log_gamma_xi(
         raise ValueError("forward likelihood is zero; cannot form posteriors")
     gamma = np.exp(alpha + beta - ll)
     t_len, n = o.size, model.n_states
-    xi = np.zeros((max(t_len - 1, 0), n, n), dtype=float)
-    for t in range(t_len - 1):
-        raw = alpha[t][:, None] + log_a + log_b[:, o[t + 1]][None, :] + beta[t + 1][None, :]
-        xi[t] = np.exp(raw - ll)
-    return gamma, xi, ll
+    if t_len <= 1:
+        return gamma, np.zeros((0, n, n), dtype=float), ll
+    # raw[t, i, j] = alpha[t, i] + log A[i, j] + log B[j, o[t+1]] + beta[t+1, j]
+    emit = log_b[:, o[1:]].T
+    raw = alpha[:-1, :, None] + log_a[None, :, :] + emit[:, None, :] + beta[1:, None, :]
+    return gamma, np.exp(raw - ll), ll
 
 
 def log_viterbi(model: DiscreteHMM, observations: list[int] | IntArray) -> tuple[IntArray, float]:

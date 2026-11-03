@@ -54,7 +54,7 @@ def bench_fastica() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FASTICA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -68,7 +68,7 @@ def bench_barrier_options() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BARRIER_OPTIONS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -80,7 +80,7 @@ def bench_tost() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_TOST_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -92,7 +92,7 @@ def bench_msm_causal() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MSM_CAUSAL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -104,7 +104,7 @@ def bench_nmf() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_NMF_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -118,6 +118,6 @@ def bench_auxiliary_pf() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_AUXILIARY_PF_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

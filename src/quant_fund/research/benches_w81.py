@@ -58,7 +58,7 @@ def bench_dirichlet_multinomial() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DIRICHLET_MULTINOMIAL_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -72,7 +72,7 @@ def bench_vonmises_fisher() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_VONMISES_FISHER_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -84,7 +84,7 @@ def bench_fkml() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_FKML_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -96,7 +96,7 @@ def bench_gandh() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GANDH_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -110,7 +110,7 @@ def bench_robbins_monro() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_ROBBINS_MONRO_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -122,6 +122,6 @@ def bench_pocs() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_POCS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

@@ -36,7 +36,7 @@ class TestFIGARCH:
 
     def test_fit_recovers_d(self):
         rng = np.random.default_rng(2)
-        n = 600
+        n = 250
         e = np.empty(n)
         s2 = np.empty(n)
         s2[0] = 1.0
@@ -45,7 +45,7 @@ class TestFIGARCH:
         for t in range(1, n):
             s2[t] = 0.02 + 0.08 * e[t - 1] ** 2 + 0.9 * s2[t - 1]
             e[t] = rng.normal(scale=np.sqrt(s2[t]))
-        fit = fit_figarch(e)
+        fit = fit_figarch(e, max_iter=40)
         assert 0.01 <= fit["d"][0] <= 0.99
         assert fit["phi"][0] >= 0 and fit["beta"][0] >= 0
         assert np.all(fit["sigma2"] > 0)

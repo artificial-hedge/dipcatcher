@@ -60,7 +60,7 @@ def bench_rainflow_fatigue() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_RAINFLOW_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -74,7 +74,7 @@ def bench_bayesian_tracking() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_TRACKING_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -86,7 +86,7 @@ def bench_sbm_inference() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_SBM_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -98,7 +98,7 @@ def bench_pu_learning() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PU_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -112,7 +112,7 @@ def bench_gr4j_hydrology() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_HYDRO_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -126,6 +126,6 @@ def bench_brinson_attribution() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_BRINSON_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)

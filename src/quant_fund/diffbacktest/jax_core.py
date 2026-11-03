@@ -972,6 +972,63 @@ def _compiled(
     return jax.jit(run)
 
 
+@lru_cache(maxsize=64)
+def _compiled_objective_grad(
+    strategy: str,
+    mode: str,
+    beta: float,
+    delay: int,
+    every: int,
+    periods: float,
+    initial_nav: float,
+    names: tuple[str, ...],
+    lookback_i: int,
+    skip_i: int,
+    vol_i: int,
+    topk_i: int,
+    long_only_i: int,
+    require_i: int,
+    long_short_i: int,
+    objective: str,
+    score_start: int,
+    smooth_drawdown: bool,
+) -> Any:
+    """One compiled value-and-grad per static book, reused across steps."""
+    jax, _ = _libs()
+
+    def scalar(theta: Any, path: Any) -> Any:
+        _w, _r, _t, _c, net, _nav = _forward(
+            path,
+            theta,
+            strategy=strategy,
+            mode=mode,
+            beta=beta,
+            delay=delay,
+            every=every,
+            periods=periods,
+            initial_nav=initial_nav,
+            names=names,
+            lookback_i=lookback_i,
+            skip_i=skip_i,
+            vol_i=vol_i,
+            topk_i=topk_i,
+            long_only_i=long_only_i,
+            require_i=require_i,
+            long_short_i=long_short_i,
+        )
+        return _objective_from_net(
+            net,
+            objective,
+            initial_nav=initial_nav,
+            periods=periods,
+            score_start=score_start,
+            beta=beta,
+            smooth_drawdown=smooth_drawdown,
+        )
+
+    return jax.jit(jax.value_and_grad(scalar, argnums=(0, 1)))
+
+
 def _call(
     prices: np.ndarray,
     params: StrategyParams,
@@ -1105,37 +1162,26 @@ def objective_gradients(
     delay = int(book.delay)
     every = int(book.rebalance_every)
 
-    def scalar(theta: Any, path: Any) -> Any:
-        _w, _r, _t, _c, net, _nav = _forward(
-            path,
-            theta,
-            strategy=strategy,
-            mode=mode,
-            beta=float(beta),
-            delay=delay,
-            every=every,
-            periods=periods,
-            initial_nav=float(initial_nav),
-            names=names,
-            lookback_i=lookback_i,
-            skip_i=skip_i,
-            vol_i=vol_i,
-            topk_i=topk_i,
-            long_only_i=long_only_i,
-            require_i=require_i,
-            long_short_i=long_short_i,
-        )
-        return _objective_from_net(
-            net,
-            objective,
-            initial_nav=float(initial_nav),
-            periods=periods,
-            score_start=int(score_start),
-            beta=float(beta),
-            smooth_drawdown=mode != "hard",
-        )
-
-    grad_fn = jax.jit(jax.value_and_grad(scalar, argnums=(0, 1)))
+    grad_fn = _compiled_objective_grad(
+        strategy,
+        mode,
+        float(beta),
+        delay,
+        every,
+        periods,
+        float(initial_nav),
+        names,
+        lookback_i,
+        skip_i,
+        vol_i,
+        topk_i,
+        long_only_i,
+        require_i,
+        long_short_i,
+        objective,
+        int(score_start),
+        mode != "hard",
+    )
     value, (g_theta, g_price) = grad_fn(jnp.asarray(theta0), jnp.asarray(px))
     return GradientResult(
         objective=objective,

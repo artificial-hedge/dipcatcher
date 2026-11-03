@@ -56,14 +56,38 @@ def _ediv(x: FloatArray, a: int, b: int) -> float:
 
 
 def _best_split(x: FloatArray, lo: int, hi: int, min_seg: int) -> tuple[int, float]:
-    """Argmax boundary in (lo, hi) with min segment size."""
+    """Argmax boundary in (lo, hi) with min segment size.
+
+    One pairwise distance matrix plus a summed-area table makes every
+    candidate split's energy divergence an O(1) block query. The statistic
+    matches ``_ediv`` (means include the zero diagonal).
+    """
     n = hi - lo
+    if n < 2 * min_seg + 2:
+        return -1, 0.0
+    seg = np.ascontiguousarray(x[lo:hi], dtype=np.float64)
+    sq = np.einsum("ij,ij->i", seg, seg)
+    dist = sq[:, None] + sq[None, :] - 2.0 * (seg @ seg.T)
+    np.sqrt(np.maximum(dist, 0.0, out=dist), out=dist)
+    prefix = np.zeros((n + 1, n + 1), dtype=np.float64)
+    prefix[1:, 1:] = np.cumsum(np.cumsum(dist, axis=0), axis=1)
+
+    def block(r0: int, r1: int, c0: int, c1: int) -> float:
+        return float(prefix[r1, c1] - prefix[r0, c1] - prefix[r1, c0] + prefix[r0, c0])
+
     best_t, best_d = -1, 0.0
-    seg = x[lo:hi]
     for t in range(min_seg, n - min_seg):
-        d = _ediv(seg, t, n)
-        if d > best_d:
-            best_d, best_t = d, t
+        n_l = t
+        n_r = n - t
+        if n_l < 2 or n_r < 2:
+            continue
+        div = (
+            2.0 * block(0, t, t, n) / (n_l * n_r)
+            - block(0, t, 0, t) / (n_l * n_l)
+            - block(t, n, t, n) / (n_r * n_r)
+        )
+        if div > best_d:
+            best_d, best_t = div, t
     return (lo + best_t if best_t > 0 else -1), best_d
 
 

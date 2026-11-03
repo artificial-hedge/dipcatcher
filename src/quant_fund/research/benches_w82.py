@@ -55,7 +55,7 @@ def bench_delong_auc() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_DELONG_AUC_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -69,7 +69,7 @@ def bench_passing_bablok() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_PASSING_BABLOK_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -83,7 +83,7 @@ def bench_marginal_homogeneity() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_MARGINAL_HOMOGENEITY_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -97,7 +97,7 @@ def bench_circular_tests() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_CIRCULAR_TESTS_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -109,7 +109,7 @@ def bench_graded_irt() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_GRADED_IRT_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
 
@@ -121,6 +121,6 @@ def bench_welch_anova() -> dict[str, float]:
         return {}
     try:
         out = _core(seed=_WELCH_ANOVA_SEED)
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ValueError, RuntimeError, FloatingPointError, TypeError):
         return {}
     return _isinstance_floats(out)
