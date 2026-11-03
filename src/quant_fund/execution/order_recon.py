@@ -138,9 +138,11 @@ class OrderFillLedger:
         self._counters: dict[str, int] = {
             "orders": 0,
             "duplicate_orders": 0,
+            "conflicting_orders": 0,
             "cancels": 0,
             "fills": 0,
             "duplicate_fills": 0,
+            "conflicting_fills": 0,
             "orphan_fills": 0,
             "out_of_order_fills": 0,
             "overfills": 0,
@@ -170,7 +172,11 @@ class OrderFillLedger:
         """Record an order idempotently; refuse new orders after a kill trip."""
         if self._kill_state != "ENABLED":
             raise KillSwitchActive(f"kill switch {self._kill_state}: {self._kill_reason}")
-        if order.order_id in self._orders:
+        existing = self._orders.get(order.order_id)
+        if existing is not None:
+            if existing.order != order:
+                self._counters["conflicting_orders"] += 1
+                return "conflicting_order"
             self._counters["duplicate_orders"] += 1
             return "duplicate_order"
         self._orders[order.order_id] = _OrderState(order=order)
@@ -202,14 +208,18 @@ class OrderFillLedger:
     def record_fill(self, fill: Fill) -> str:
         """Record a fill idempotently, classifying every anomaly.
 
-        Returns ``accepted``, ``duplicate_fill``, ``orphan_fill``,
-        ``out_of_order_fill``, ``overfill``, ``security_mismatch``, or
-        ``fill_after_cancel``. Duplicates are never double-counted. Overfills,
-        security mismatches, and fills after cancel are stored for replay and
-        are not applied to positions or cash.
+        Returns ``accepted``, ``duplicate_fill``, ``conflicting_fill``,
+        ``orphan_fill``, ``out_of_order_fill``, ``overfill``,
+        ``security_mismatch``, or ``fill_after_cancel``. Duplicates are never
+        double-counted. Overfills, security mismatches, and fills after cancel
+        are stored for replay and are not applied to positions or cash.
         """
         _validate_fill(fill)
-        if fill.fill_id in self._fills:
+        existing = self._fills.get(fill.fill_id)
+        if existing is not None:
+            if existing != fill:
+                self._counters["conflicting_fills"] += 1
+                return "conflicting_fill"
             self._counters["duplicate_fills"] += 1
             return "duplicate_fill"
         self._fills[fill.fill_id] = fill
@@ -319,16 +329,18 @@ class OrderFillLedger:
     def reconcile(self, *, expected_fill_ids: Iterable[str] = ()) -> dict[str, Any]:
         """Return a fail-loud reconciliation report over the whole ledger.
 
-        Surfaces duplicate/missing/out-of-order fills, orphan fills, and a
-        position/cash drift alarm. ``expected_fill_ids`` additionally flags any
-        externally-expected fill id that never arrived as a missing fill.
+        Surfaces duplicate/conflicting/missing/out-of-order fills, orphan fills,
+        and a position/cash drift alarm. ``expected_fill_ids`` additionally flags
+        any externally-expected fill id that never arrived as a missing fill.
         """
         expected = set(expected_fill_ids)
         absent_expected = sorted(expected - set(self._fills))
         missing = sorted(set(self._missing_fills()) | set(absent_expected))
         drift = self._drift_report()
         clean = not (
-            self._counters["duplicate_fills"]
+            self._counters["conflicting_orders"]
+            or self._counters["duplicate_fills"]
+            or self._counters["conflicting_fills"]
             or self._counters["orphan_fills"]
             or self._counters["out_of_order_fills"]
             or self._counters["overfills"]
