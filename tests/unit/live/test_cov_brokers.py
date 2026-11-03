@@ -30,7 +30,12 @@ from quant_fund.live.brokers import (
     alpaca_credentials,
     map_broker_status,
 )
-from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import (
+    BrokerRejected,
+    BrokerUnconfirmed,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 
 PAPER = "https://paper-api.alpaca.markets"
 
@@ -225,7 +230,7 @@ def test_a_disconnect_propagates_instead_of_being_read_as_a_rejection() -> None:
         raise ConnectionResetError("peer reset")
 
     broker = AlpacaBroker("alpaca-paper", ("key", "secret"), transport=explode)
-    with pytest.raises(ConnectionResetError):
+    with pytest.raises(BrokerUnconfirmed, match="unconfirmed after a transport failure"):
         broker.submit(order())
     with pytest.raises(ConnectionResetError):
         broker.account()
@@ -255,7 +260,7 @@ def test_submit_duplicate_id_without_a_recoverable_order_still_fails() -> None:
         (400, json.dumps({"message": "client_order_id must be unique"}).encode()),
         (404, b"{}"),
     )
-    with pytest.raises(BrokerRejected, match="client_order_id"):
+    with pytest.raises(BrokerUnconfirmed, match="unconfirmed after an ambiguous rejection"):
         paper(script).submit(order())
 
 
@@ -269,7 +274,7 @@ def test_submit_rejection_without_a_client_id_pointer_is_not_retried() -> None:
 
 def test_submit_rejects_a_non_object_order_response() -> None:
     script = Script((200, b"[]"))
-    with pytest.raises(BrokerRejected, match="order response was not an object"):
+    with pytest.raises(BrokerUnconfirmed, match="unconfirmed after an incomplete acknowledgement"):
         paper(script).submit(order())
 
 
@@ -329,7 +334,7 @@ def test_recover_returns_none_when_the_broker_has_no_such_order() -> None:
 
 
 def test_recover_rejects_a_non_object_lookup() -> None:
-    with pytest.raises(BrokerRejected, match="order lookup was not an object"):
+    with pytest.raises(BrokerRejected, match="broker order lookup was incomplete"):
         paper(Script((200, b"[]"))).recover("c1")
 
 
@@ -394,9 +399,8 @@ def test_fills_skips_rows_it_cannot_use() -> None:
         },
     ]
     script = Script((200, json.dumps(rows).encode()))
-    page = paper(script).fills(broker_to_client={})
-    assert page.fills == ()
-    assert page.truncated is False
+    with pytest.raises(BrokerRejected, match="broker fill row was malformed"):
+        paper(script).fills(broker_to_client={})
 
 
 def test_fills_records_mapped_rows_and_marks_a_full_page() -> None:

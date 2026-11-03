@@ -109,8 +109,10 @@ class TestOrderExpectations:
         ledger.note_order("o1", expects_fill=True)
         assert ledger.reconcile()["missing_fills"] == ["o1"]
         ledger.set_expects_fill("o1", False)
+        ledger.declare(cash=ledger.computed_cash, positions=ledger.computed_positions)
         report = ledger.reconcile()
         assert report["missing_fills"] == []
+        assert report["drift"]["alarm"] is False
         assert report["ok"] is True
 
     def test_order_not_expecting_fill_is_never_missing(self) -> None:
@@ -130,11 +132,13 @@ class TestRecordFill:
         ledger.note_order("o1", expects_fill=True)
         assert ledger.record_fill(_fill()) == "accepted"
         assert ledger.record_fill(_fill()) == "duplicate_fill"
+        ledger.declare(cash=990.0, positions={"AAPL": 1.0})
         report = ledger.reconcile()
         assert report["duplicate_fills"] == 1
         assert report["computed_cash"] == 990.0
         assert report["computed_positions"] == {"AAPL": 1.0}
-        # Idempotent re-delivery alone does not make the book unclean.
+        # Idempotent re-delivery alone does not make a declared book unclean.
+        assert report["drift"]["alarm"] is False
         assert report["ok"] is True
 
     def test_orphan_fill_is_flagged_and_not_applied(self) -> None:
@@ -198,13 +202,13 @@ class TestRecordFill:
 
 
 class TestDeclareAndReconcile:
-    def test_undeclared_reconciliation_reports_no_drift(self) -> None:
+    def test_undeclared_reconciliation_is_not_a_clean_book(self) -> None:
         report = _ledger().reconcile()
         assert report["drift"]["declared"] is False
         assert report["drift"]["cash_drift"] is None
         assert report["drift"]["position_drift"] == {}
-        assert report["drift"]["alarm"] is False
-        assert report["ok"] is True
+        assert report["drift"]["alarm"] is True
+        assert report["ok"] is False
         assert report["live_pnl_claim"] is False
         assert report["research_evidence"] is False
 
