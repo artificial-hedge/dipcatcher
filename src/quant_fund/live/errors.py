@@ -14,6 +14,10 @@ class BrokerRejected(LiveGateError):
     """The broker accepted the connection and refused the request."""
 
 
+class BrokerResponseUncertain(BrokerRejected):
+    """The broker response cannot prove whether the request was applied."""
+
+
 class LiveBrokerRefused(LiveGateError):
     """The Alpaca live host is configured and refused.
 
