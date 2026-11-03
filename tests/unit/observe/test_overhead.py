@@ -6,6 +6,7 @@ They are not a benchmark claim.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -31,5 +32,8 @@ def test_disabled_span_stays_cheap_and_enabled_stays_local() -> None:
         "OBSERVE_OVERHEAD_OUT", "/opt/cursor/artifacts/observe_overhead.json"
     )
     target = Path(destination)
+    # The directory can exist on a mount that still refuses a new file.
+    # The timing assertions above are the contract; the dump is optional.
     if target.parent.is_dir():
-        target.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        with contextlib.suppress(OSError):
+            target.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
