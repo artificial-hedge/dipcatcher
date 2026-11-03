@@ -60,18 +60,18 @@ SUITES: tuple[Suite, ...] = (
         # The body is empty, so those two edits are equivalent and stay in the score.
         picks=_picks(
             (
-                ("M0000", 23, "negation-insertion"),
-                ("M0001", 29, "negation-insertion"),
-                ("M0002", 35, "negation-insertion"),
+                ("M0000", 24, "negation-insertion"),
+                ("M0001", 30, "negation-insertion"),
                 ("M0003", 42, "negation-insertion"),
-                ("M0004", 44, "negation-insertion"),
-                ("M0005", 23, "comparison-swap"),
-                ("M0006", 29, "comparison-swap"),
-                ("M0007", 35, "comparison-swap"),
-                ("M0008", 39, "comparison-swap"),
+                ("M0004", 51, "negation-insertion"),
+                ("M0005", 53, "negation-insertion"),
+                ("M0006", 24, "comparison-swap"),
+                ("M0007", 30, "comparison-swap"),
                 ("M0009", 42, "comparison-swap"),
-                ("M0010", 43, "const-bool-flip"),
-                ("M0011", 45, "const-bool-flip"),
+                ("M0010", 46, "comparison-swap"),
+                ("M0011", 51, "comparison-swap"),
+                ("M0012", 52, "const-bool-flip"),
+                ("M0013", 54, "const-bool-flip"),
             )
         ),
         selectors=(
@@ -84,10 +84,10 @@ SUITES: tuple[Suite, ...] = (
         target="src/quant_fund/pretrade/kernel.py",
         picks=_picks(
             (
-                ("M0161", 237, "comparison-swap"),
-                ("M0190", 280, "comparison-swap"),
-                ("M0191", 280, "comparison-swap"),
-                ("M0217", 386, "comparison-swap"),
+                ("M0164", 263, "comparison-swap"),
+                ("M0263", 307, "comparison-swap"),
+                ("M0264", 307, "comparison-swap"),
+                ("M0217", 438, "comparison-swap"),
             )
         ),
         selectors=(
@@ -98,12 +98,14 @@ SUITES: tuple[Suite, ...] = (
     Suite(
         name="order-fill-ledger",
         target="src/quant_fund/execution/order_recon.py",
+        # Duplicate order/fill membership became ``is not None`` after the
+        # conflicting-replay merge. The comparison swap is that same gate.
         picks=_picks(
             (
-                ("M0015", 171, "negation-insertion"),
-                ("M0046", 171, "comparison-swap"),
-                ("M0047", 173, "comparison-swap"),
-                ("M0055", 212, "comparison-swap"),
+                ("M0042", 250, "negation-insertion"),
+                ("M0093", 250, "comparison-swap"),
+                ("M0094", 254, "comparison-swap"),
+                ("M0104", 327, "comparison-swap"),
             )
         ),
         selectors=(
@@ -117,10 +119,10 @@ SUITES: tuple[Suite, ...] = (
         target="src/quant_fund/paper/ledger.py",
         picks=_picks(
             (
-                ("M0052", 147, "numeric-perturb"),
-                ("M0123", 197, "negation-insertion"),
-                ("M0222", 197, "comparison-swap"),
-                ("M0342", 209, "comparison-swap"),
+                ("M0055", 156, "numeric-perturb"),
+                ("M0126", 211, "negation-insertion"),
+                ("M0225", 211, "comparison-swap"),
+                ("M0344", 223, "comparison-swap"),
             )
         ),
         selectors=(
@@ -133,12 +135,12 @@ SUITES: tuple[Suite, ...] = (
         target="src/quant_fund/execution/simulated_broker.py",
         picks=_picks(
             (
-                ("M0023", 167, "negation-insertion"),
-                ("M0024", 169, "negation-insertion"),
-                ("M0027", 274, "negation-insertion"),
-                ("M0072", 167, "comparison-swap"),
-                ("M0073", 169, "comparison-swap"),
-                ("M0086", 274, "comparison-swap"),
+                ("M0073", 393, "negation-insertion"),
+                ("M0074", 395, "negation-insertion"),
+                ("M0077", 500, "negation-insertion"),
+                ("M0159", 393, "comparison-swap"),
+                ("M0160", 395, "comparison-swap"),
+                ("M0173", 500, "comparison-swap"),
             )
         ),
         selectors=(
@@ -151,14 +153,14 @@ SUITES: tuple[Suite, ...] = (
         target="src/quant_fund/execution/order_recon.py",
         picks=_picks(
             (
-                ("M0033", 299, "negation-insertion"),
-                ("M0069", 299, "boolop-swap"),
-                ("M0099", 299, "comparison-swap"),
-                ("M0100", 299, "comparison-swap"),
-                ("M0101", 309, "comparison-swap"),
-                ("M0102", 309, "comparison-swap"),
-                ("M0114", 310, "comparison-swap"),
-                ("M0115", 310, "comparison-swap"),
+                ("M0061", 418, "negation-insertion"),
+                ("M0119", 418, "boolop-swap"),
+                ("M0172", 418, "comparison-swap"),
+                ("M0173", 418, "comparison-swap"),
+                ("M0174", 428, "comparison-swap"),
+                ("M0175", 428, "comparison-swap"),
+                ("M0197", 429, "comparison-swap"),
+                ("M0198", 429, "comparison-swap"),
             )
         ),
         selectors=(
@@ -215,10 +217,10 @@ SUITES: tuple[Suite, ...] = (
         target="src/quant_fund/pretrade/engine.py",
         picks=_picks(
             (
-                ("M0088", 408, "boolop-swap"),
-                ("M0193", 408, "comparison-swap"),
-                ("M0194", 408, "comparison-swap"),
-                ("M0195", 408, "comparison-swap"),
+                ("M0093", 417, "boolop-swap"),
+                ("M0197", 417, "comparison-swap"),
+                ("M0198", 417, "comparison-swap"),
+                ("M0199", 417, "comparison-swap"),
             )
         ),
         selectors=(
@@ -247,12 +249,12 @@ SUITES: tuple[Suite, ...] = (
         target="src/quant_fund/live/brokers.py",
         picks=_picks(
             (
-                ("M0085", 340, "numeric-perturb"),
-                ("M0120", 256, "comparison-swap"),
-                ("M0121", 256, "comparison-swap"),
-                ("M0123", 261, "comparison-swap"),
-                ("M0124", 261, "comparison-swap"),
-                ("M0058", 605, "comparison-swap"),
+                ("M0137", 371, "numeric-perturb"),
+                ("M0201", 264, "comparison-swap"),
+                ("M0202", 264, "comparison-swap"),
+                ("M0204", 269, "comparison-swap"),
+                ("M0205", 269, "comparison-swap"),
+                ("M0095", 744, "comparison-swap"),
             )
         ),
         selectors=(
