@@ -288,14 +288,18 @@ class LiveSession:
                 "research_evidence": False,
             }
 
-    def mark(self, *, symbol: str, price: float, actor: str) -> dict[str, Any]:
+    def mark(
+        self, *, symbol: str, price: float, actor: str, at_ns: int | None = None
+    ) -> dict[str, Any]:
         with self._lock():
             self._require_trading()
             _actor(actor)
             cleaned = _symbol(symbol)
             number = _positive(price, "mark")
+            ts = self._clock(at_ns)
             self.marks[cleaned] = number
             self.broker.set_mark(cleaned, number)
+            self._sync_account(ts)
             self._persist()
             return {
                 "ok": True,
@@ -347,6 +351,21 @@ class LiveSession:
                 raise LiveGateError("order is not in this session")
             if row["status"] in _TERMINAL:
                 return _public_order(row, venue=self.venue, replayed=True)
+            if self._quote_is_stale(str(row["symbol"]), ts):
+                denied = _denied(
+                    reasons=("stale_data",),
+                    symbol=str(row["symbol"]),
+                    side=str(row["side"]),
+                    quantity=float(row["quantity"]),
+                    limit_price=float(row["limit_price"]),
+                    client_order_id=str(row["client_order_id"]),
+                    venue=self.venue,
+                )
+                self._audit(
+                    "deny",
+                    {"client_order_id": row["client_order_id"], "reasons": ["stale_data"]},
+                )
+                return denied
             self._sync_account(ts)
             decision = self.engine.decide(
                 self._view(row, float(row["limit_price"]), ts, KIND_CANCEL),
@@ -486,6 +505,22 @@ class LiveSession:
         if existing is not None:
             return _public_order(existing, venue=self.venue, replayed=True)
         self._capture_baseline()
+        if self._quote_is_stale(cleaned, ts):
+            denied = _denied(
+                reasons=("stale_data",),
+                symbol=cleaned,
+                side=order_side,
+                quantity=qty,
+                limit_price=limit,
+                client_order_id=client,
+                venue=self.venue,
+            )
+            self._audit(
+                "deny",
+                {"actor": who, "client_order_id": client, "reasons": ["stale_data"]},
+            )
+            self._persist()
+            return denied
         self.marks[cleaned] = reference
         self.broker.set_mark(cleaned, reference)
         self._sync_account(ts, reset_session=not self.orders)
@@ -519,7 +554,7 @@ class LiveSession:
             self._persist()
             return denied
         self.orders.append(placeholder)
-        self.ledger.note_order(client, expects_fill=False)
+        self.ledger.note_order(client, expects_fill=False, quantity=qty)
         self._persist()
         live_order = LiveOrder(
             client_order_id=client,
@@ -575,23 +610,31 @@ class LiveSession:
             return None
 
     def _apply_ack(self, row: dict[str, Any], ack: BrokerAck, ts: int) -> None:
+        # Fills land before the row becomes terminal, so this ack's prints apply
+        # and a later print on the terminal row does not. Filled quantity is
+        # updated first so working exposure does not reserve shares already filled.
         row["broker_order_id"] = ack.broker_order_id
-        status = map_broker_status(ack.status)
-        row["status"] = status
         row["filled_quantity"] = float(ack.filled_quantity)
         row["fill_price"] = ack.fill_price
         row["reason"] = ack.reason
+        for fill in ack.fills:
+            self._record_fill(fill, ts)
+        status = map_broker_status(ack.status)
+        row["status"] = status
         if status == "unmapped" and not row["reason"]:
             row["reason"] = f"unmapped broker status {ack.status}"
         expects = ack.status in {"filled", "partially_filled"}
         row["expects_fill"] = expects
         self.ledger.set_expects_fill(str(row["client_order_id"]), expects)
-        for fill in ack.fills:
-            self._record_fill(fill, ts)
 
     def _record_fill(self, fill: BrokerFill, ts: int) -> str:
         if fill.side not in {"buy", "sell"}:
             raise LiveGateError("broker fill side is not buy or sell")
+        if not self.ledger.has_fill(fill.fill_id):
+            row = self._find(fill.client_order_id)
+            if row is not None and str(row["status"]) in _TERMINAL:
+                self._latch_broker_fault("fill_after_terminal", fill.fill_id, ts)
+                return "fill_after_terminal"
         ledger_fill = LedgerFill(
             fill_id=fill.fill_id,
             client_order_id=fill.client_order_id,
@@ -602,7 +645,10 @@ class LiveSession:
             fill_time_ns=fill.fill_time_ns if fill.fill_time_ns > 0 else ts,
         )
         verdict = self.ledger.record_fill(ledger_fill)
-        if verdict in {"duplicate_fill", "orphan_fill"}:
+        if verdict in {"orphan_fill", "overfill"}:
+            self._latch_broker_fault(verdict, fill.fill_id, ts)
+            return verdict
+        if verdict == "duplicate_fill":
             return verdict
         if fill.client_order_id in self._engine_noted or verdict == "replaced_provisional":
             self._sync_account(ts)
@@ -610,6 +656,32 @@ class LiveSession:
             self._engine_from_fill(fill, ts)
             self._engine_noted.add(fill.client_order_id)
         return verdict
+
+    def _latch_broker_fault(self, verdict: str, fill_id: str, ts: int) -> None:
+        """Stop new orders when broker truth is an unknown, excess, or late fill."""
+        if self.kill_state["latched"]:
+            return
+        reason = f"{verdict} {fill_id}"
+        self.engine.trip("broker", reason, ts)
+        self.kill_state = {"latched": True, "actor": "broker", "reason": reason}
+
+    def _quote_is_stale(self, symbol: str, ts: int) -> bool:
+        """True when the stored quote is older than ``ts`` allows. Does not refresh it.
+
+        A timestamp inside the current window, including a loopback ``--at``
+        earlier than the wall clock, still refreshes on submit. Only an aged
+        quote is refused, so submit cannot launder it by rewriting the mark.
+        """
+        book = self.engine.book
+        if int(book.mark_ts) != 0 and ts > int(book.mark_deadline):
+            return True
+        sid = self._sids.get(symbol)
+        if sid is None:
+            return False
+        sym = self.engine.book.syms[sid]
+        if not sym.ref_ok:
+            return False
+        return ts > int(sym.deadline)
 
     def _engine_from_fill(self, fill: BrokerFill, ts: int) -> None:
         account = self.broker.account()
@@ -697,6 +769,8 @@ class LiveSession:
         """Copy reconciled fills onto the order row so cancel sees a filled order."""
         grouped: dict[str, list[LedgerFill]] = {}
         for fill in self.ledger.fills():
+            if not self.ledger.was_applied(fill.fill_id):
+                continue
             grouped.setdefault(fill.client_order_id, []).append(fill)
         for row in self.orders:
             fills = grouped.get(str(row["client_order_id"]))
@@ -868,7 +942,9 @@ class LiveSession:
     def _replay(self, fills: list[Any]) -> None:
         for row in self.orders:
             self.ledger.note_order(
-                str(row["client_order_id"]), expects_fill=bool(row["expects_fill"])
+                str(row["client_order_id"]),
+                expects_fill=bool(row["expects_fill"]),
+                quantity=float(row["quantity"]),
             )
         for item in fills:
             if not isinstance(item, dict):
@@ -987,6 +1063,8 @@ class LiveSession:
     def _replay_fills_into_engine(self, ts: int) -> None:
         positions: dict[str, float] = {}
         for fill in self.ledger.fills():
+            if not self.ledger.was_applied(fill.fill_id):
+                continue
             signed = fill.quantity if fill.side == "buy" else -fill.quantity
             before = positions.get(fill.symbol, 0.0)
             after = before + signed
