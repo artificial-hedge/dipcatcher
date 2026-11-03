@@ -20,7 +20,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from starlette.requests import empty_receive
+from starlette.requests import ClientDisconnect, empty_receive
 
 from quant_fund.api.rate_store import (
     backend_name,
@@ -606,6 +606,8 @@ async def buffer_capped_body(request: Request) -> None:
     while True:
         message = await original()
         if message.get("type") != "http.request":
+            if message.get("type") == "http.disconnect" and not chunks:
+                raise ClientDisconnect()
             payload = b"".join(chunks)
             request.state.bounded_body = payload
             _replace_receive(request, payload, original, message)

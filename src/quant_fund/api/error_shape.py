@@ -62,9 +62,23 @@ def error_shape_audit() -> dict[str, Any]:
                 os.environ[name] = value
 
 
+def _openapi_spec(client: Any) -> dict[str, Any]:
+    """Schema from the app. HTTP ``/openapi.json`` is behind the auth gate."""
+    app = getattr(client, "app", None)
+    spec: dict[str, Any] = {}
+    if app is not None and hasattr(app, "openapi"):
+        loaded = app.openapi()
+        if isinstance(loaded, dict):
+            spec = loaded
+    if spec.get("paths"):
+        return spec
+    fetched = client.get("/openapi.json").json()
+    return fetched if isinstance(fetched, dict) else {}
+
+
 def _audit_client(client: Any) -> dict[str, Any]:
     """Probe ``client`` and return the verdict record."""
-    spec = client.get("/openapi.json").json()
+    spec = _openapi_spec(client)
     paths = [p for p, ops in spec.get("paths", {}).items() if "get" in ops]
 
     records: list[dict[str, Any]] = []
