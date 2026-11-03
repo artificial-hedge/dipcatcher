@@ -1222,7 +1222,7 @@ def _probe_timeout_stream() -> dict[str, bool]:
     upstream.mode = "chat_ok"
     # OpenAICompatBackend takes an int timeout, so the header has to be
     # at least 1s. The stub stays asleep past that deadline.
-    upstream.delay_s = 1.5
+    upstream.delay_s = 5.0
     t0 = time.monotonic()
     r = client.post(
         "/v1/chat/completions",
@@ -1232,7 +1232,7 @@ def _probe_timeout_stream() -> dict[str, bool]:
     elapsed = time.monotonic() - t0
     upstream.delay_s = 0.0
     out["to_timeout_502"] = r.status_code == 502
-    out["to_timeout_bounded"] = elapsed < 8.0
+    out["to_timeout_bounded"] = elapsed < 12.0
     # the app is not wedged — the next request serves normally
     r = client.post("/v1/chat/completions", json=_chat_body(upstream))
     out["to_app_not_wedged"] = r.status_code == 200

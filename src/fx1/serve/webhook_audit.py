@@ -682,7 +682,7 @@ def _probe_retry(ctx: _Ctx) -> dict[str, bool]:
 
     # sink that accepts then stalls past the read timeout: unit-level
     # deliver_signed with a short timeout — retried, bounded, loud error
-    sink.stall_s = 0.5
+    sink.stall_s = 2.0
     t0 = time.monotonic()
     ok, err, attempts = deliver_signed(
         sink.url("/stall"), None, b"{}", timeout_s=0.2, backoff_s=0.01
