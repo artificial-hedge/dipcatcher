@@ -264,6 +264,18 @@ Verified in this tree, by the drills in [`OPS_RUNBOOK_PROD.md`](OPS_RUNBOOK_PROD
 - [x] `prod-time-drill` keeps the rate window, the HTTP bucket, and the
       kill file honest across a wall-clock step, and pages
       `DipcatcherDataStale` and `DipcatcherKillSwitchBlocking`.
+- [x] `prod-fs-readonly` pages `DipcatcherFilesystemReadOnly` for a
+      read-only non-temporary mount. `DipcatcherDiskPressure` stays quiet
+      on that series. promtool exit was 0.
+- [x] `prod-shutdown-drill` finishes SIGTERM and SIGINT with exit 0 and
+      the same ledger digest on resume. SIGKILL mid-replace leaves a
+      complete ledger, and restart applies the journaled intent once.
+- [x] `prod-backup-restore-drill` restores a snapshot taken while the
+      paper loop is running. Digests match. A stale restore fails closed
+      instead of double-submitting.
+- [x] `prod-paper-soak` holds a simulated paper loop for 3600 seconds
+      and checks RSS, open file descriptors, and thread count. The
+      measured series is in the ops runbook.
 
 Still the owner's. This slice does not do them:
 

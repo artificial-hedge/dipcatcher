@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import errno
 import os
+import time
 from pathlib import Path
 
 _REASON: str | None = None
+_HOLD_SKIPS = 0
 _CODES = frozenset({"enospc", "read_only", "write_failed"})
 _PATHS = (
     "DIPCATCHER_LEDGER_PATH",
@@ -103,6 +105,34 @@ def ensure_directories(parents: list[Path]) -> str | None:
     return None
 
 
+def _pause_before_replace() -> None:
+    """Spin while ``DIPCATCHER_REPLACE_HOLD`` exists. Unset in production.
+
+    ``DIPCATCHER_REPLACE_HOLD_SKIP`` counts publishes to let through first
+    (the opening mark). The drill kills the process after the temporary
+    bytes are durable and before ``os.replace`` publishes them.
+    """
+    global _HOLD_SKIPS
+    raw = os.environ.get("DIPCATCHER_REPLACE_HOLD", "").strip()
+    if not raw:
+        return
+    skip_raw = os.environ.get("DIPCATCHER_REPLACE_HOLD_SKIP", "").strip() or "0"
+    try:
+        skip = int(skip_raw)
+    except ValueError:
+        skip = 0
+    if skip > _HOLD_SKIPS:
+        _HOLD_SKIPS += 1
+        return
+    marker = Path(raw)
+    if marker.is_symlink():
+        return
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("holding\n", encoding="utf-8")
+    while marker.exists():
+        time.sleep(0.02)
+
+
 def replace_text(path: Path, payload: str) -> None:
     """Atomically replace ``path``. A failed write latches and raises."""
     parent = path.parent
@@ -116,6 +146,7 @@ def replace_text(path: Path, payload: str) -> None:
         raise DurableWriteError("write_failed")
     try:
         temporary.write_text(payload, encoding="utf-8")
+        _pause_before_replace()
         os.replace(temporary, path)
     except OSError as exc:
         code = errno_code(exc.errno or 0)

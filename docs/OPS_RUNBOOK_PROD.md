@@ -726,8 +726,9 @@ a 256 KiB tmpfs. It fills that mount, submits a paper order, frees the
 space, remounts the mount read-only, and remounts it read-write. A failed
 probe or a failed checkpoint rejects the order, latches
 `dipcatcher_write_halt`, and does not replace the ledger. `DipcatcherWriteHalt`
-is the page alert. `DipcatcherDiskPressure` stays silent on a read-only
-filesystem, so it is not the signal for this fault.
+is the page alert for a failed write. `DipcatcherDiskPressure` stays silent
+on a read-only filesystem. `DipcatcherFilesystemReadOnly` is the page for
+that mount.
 
 ```bash
 make -f deploy/prod.mk prod-disk-drill
@@ -759,3 +760,89 @@ Measured on this host: the HTTP bucket stayed empty across the wall
 jump, the signed window still denied the next order, the backward step
 set freshness to 86400 seconds, and the kill file still read
 `kill_switch:HALT_NEW_ORDERS`. promtool exit was 0.
+
+## Read-only filesystem page
+
+`DipcatcherDiskPressure` requires `node_filesystem_readonly == 0`. A
+read-only remount does not page it. `DipcatcherFilesystemReadOnly` pages
+when `node_filesystem_readonly` is 1 for 1 minute on a non-temporary
+filesystem. Temporary filesystems are excluded. `prod-fs-readonly` runs
+the promtool case in `deploy/observability/fs_readonly_test.yml`.
+
+```bash
+make -f deploy/prod.mk prod-fs-readonly
+```
+
+Measured on this host: promtool exit was 0. The ext4 series at 1 paged
+`DipcatcherFilesystemReadOnly`. The same series did not page
+`DipcatcherDiskPressure`. A tmpfs series at 1 and an ext4 series at 0
+stayed quiet.
+
+## Graceful shutdown
+
+`prod-shutdown-drill` runs a simulated paper order loop. SIGTERM and
+SIGINT finish the in-flight order, exit 0, and leave no open journal
+intent. A restart resumes that ledger with the same digest. SIGKILL is
+sent after the replacement bytes are written and before they are
+published. The published ledger stays the previous complete checkpoint.
+Restart applies the journaled intent once. A second restart keeps that
+digest. `DIPCATCHER_REPLACE_HOLD` is set only on the kill child. Leave
+it unset in production.
+
+```bash
+make -f deploy/prod.mk prod-shutdown-drill
+```
+
+Measured on this host: SIGTERM exited 0 with pending 0 and ledger
+`e26dc23184aa8f4279d4334488f99380352c2449e08a32a4b0a296221cedf4ca`.
+SIGINT exited 0 with pending 0 and ledger
+`9c0223c4a25b2c4f6cf0bdeadf95b4786eff18a96653b400f97d1b19b0ca19f7`.
+Both resumes matched those digests. SIGKILL returned -9. The published
+ledger stayed intact at
+`0416c209eb9f5e3a72420769fa313588986e5932a49566755efd885c4ce1aa7f`
+with one open intent. Restart applied it once and the ledger became
+`561117cbdf1e853d82cbd5072f44414689270c1aaa94fc9516797d0af6c0a5ad`.
+The next restart kept that digest.
+
+## Backup and restore
+
+`prod-backup-restore-drill` snapshots the ledger, journal, and audit
+log while a simulated paper loop is still submitting. The snapshot is
+archived with `backup_paper_state` and restored to a fresh directory.
+An order the snapshot already committed is a duplicate. A new order is
+accepted once. Restoring that archive onto the newer live directory
+fails closed with `dest_differs` and does not change the live bytes.
+
+```bash
+make -f deploy/prod.mk prod-backup-restore-drill
+```
+
+Measured on this host: the restored digests matched the snapshot.
+Ledger `19ce036b49c13f7a471b495ca48de2784e743574be4ce94d4b504c2a1f14b596`,
+journal `eb49016b547e562e8633454092561d58af3a3a2d49008fcc468a23bedbb6ae7d`,
+audit `84d8e97b2ff509df6bdf9275dec63ce7e5eddfec80bfe5089c789e27398ba097`.
+The live book had moved on. Its ledger was
+`595296c7276052856513958cfdf9d83c9f6cc7e561d8ffdd710f4d0d9581f7f0`.
+Replaying the committed order returned `duplicate`. A new order was
+`accepted` once. The stale restore returned `dest_differs` and the live
+digests stayed put.
+
+## Paper order soak
+
+`prod-paper-soak` submits simulated paper orders for 3600 seconds in
+one process. It samples RSS, open file descriptors, and thread count.
+After a 120 second warmup, a file-descriptor slope above 0.05 per
+second, an RSS slope above 20 KiB per second, or a thread count that
+grows by more than 1 fails the run. The series is the JSON object on
+stdout and in `DIPCATCHER_PAPER_SOAK_JSON`.
+
+```bash
+make -f deploy/prod.mk prod-paper-soak
+```
+
+Measured on this host: 3600 seconds, 2201018 cycles, 121 samples.
+After the 120 second warmup, 116 samples remained. The file-descriptor
+slope was 0 per second and the descriptor count stayed 5. The RSS slope
+was 0.010642 KiB/s. RSS moved from 338156 KiB to 338256 KiB. Thread
+growth was 0 and the count stayed 11. `leak` was false. Exit was 0.
+

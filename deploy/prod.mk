@@ -23,6 +23,10 @@
 #   make -f deploy/prod.mk prod-migrate-drill
 #   make -f deploy/prod.mk prod-disk-drill
 #   make -f deploy/prod.mk prod-time-drill
+#   make -f deploy/prod.mk prod-fs-readonly
+#   make -f deploy/prod.mk prod-shutdown-drill
+#   make -f deploy/prod.mk prod-backup-restore-drill
+#   make -f deploy/prod.mk prod-paper-soak
 #
 # Export QUANT_API_KEY and RESEARCH_API_KEY first. prod-secrets writes them
 # to files under SECRET_DIR and does not print them. Containers read those
@@ -82,7 +86,7 @@ else
 COMPOSE := $(SUDO) --preserve-env=$(PRESERVE) docker compose -f $(COMPOSE_FILE)
 endif
 
-.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-rollback-drill prod-signal-drill prod-order-load prod-redaction-audit prod-migrate-drill prod-disk-drill prod-time-drill prod-signals prod-certs prod-data prod-build prod-secrets
+.PHONY: prod-up prod-down prod-restart prod-rollback prod-smoke prod-preflight prod-backup prod-backup-ship prod-restore prod-dr-drill prod-log-retain prod-canary prod-alert-drill prod-rotate-drill prod-soak prod-rollback-drill prod-signal-drill prod-order-load prod-redaction-audit prod-migrate-drill prod-disk-drill prod-time-drill prod-fs-readonly prod-shutdown-drill prod-backup-restore-drill prod-paper-soak prod-signals prod-certs prod-data prod-build prod-secrets
 
 ifeq ($(SUDO),)
 SHIP := $(ROOT)/.venv/bin/python
@@ -207,6 +211,18 @@ prod-disk-drill:
 
 prod-time-drill:
 	cd $(ROOT) && uv run --quiet python scripts/prod_time_drill.py
+
+prod-fs-readonly:
+	cd $(ROOT) && uv run --quiet python scripts/prod_fs_readonly.py
+
+prod-shutdown-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_shutdown_drill.py
+
+prod-backup-restore-drill:
+	cd $(ROOT) && uv run --quiet python scripts/prod_backup_restore_drill.py
+
+prod-paper-soak:
+	cd $(ROOT) && uv run --quiet python scripts/prod_paper_soak.py
 
 prod-restore:
 	cd $(ROOT) && $(SUDO) $(ROOT)/.venv/bin/python scripts/paper_state_backup.py restore \

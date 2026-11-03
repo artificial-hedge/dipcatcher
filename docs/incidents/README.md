@@ -13,6 +13,7 @@ Each Prometheus alert under `deploy/observability/` links here from its `runbook
 - [DipcatcherDataStale](DipcatcherDataStale.md)
 - [DipcatcherTargetDown](DipcatcherTargetDown.md)
 - [DipcatcherDiskPressure](DipcatcherDiskPressure.md)
+- [DipcatcherFilesystemReadOnly](DipcatcherFilesystemReadOnly.md)
 - [DipcatcherReconcileDrift](DipcatcherReconcileDrift.md)
 - [DipcatcherBackupAge](DipcatcherBackupAge.md)
 - [DipcatcherCanaryAbort](DipcatcherCanaryAbort.md)

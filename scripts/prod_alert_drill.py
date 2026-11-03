@@ -37,6 +37,7 @@ _RESOLVE_S = 450.0
 _SILENCE_S = 20.0
 _ALERT = re.compile(r"(?m)^[ ]*- alert: ([A-Za-z0-9]+)\s*$")
 _FS = '{device="/dev/drill",fstype="ext4",mountpoint="/drill"}'
+_RO = '{device="/dev/ro",fstype="ext4",mountpoint="/ro"}'
 _BUCKETS = ("0.005", "0.01", "0.025", "0.05", "0.1", "0.25", "0.5", "1", "2.5", "5", "10", "+Inf")
 _REQUIRED = (
     "DipcatcherDiskPressure",
@@ -69,6 +70,7 @@ def fault_metrics(n: int) -> str:
         f"node_filesystem_avail_bytes{_FS} 10",
         f"node_filesystem_size_bytes{_FS} 100",
         f"node_filesystem_readonly{_FS} 0",
+        f"node_filesystem_readonly{_RO} 1",
         f'dipcatcher_errors_total{{stage="api"}} {n}',
         *_histogram("dipcatcher_stage_latency_seconds", '{stage="api"}', n),
         f'dipcatcher_http_requests_total{{code="500",service="lab"}} {n}',
@@ -96,6 +98,7 @@ def healthy_metrics(now: int, successes: int) -> str:
         f"node_filesystem_avail_bytes{_FS} 80",
         f"node_filesystem_size_bytes{_FS} 100",
         f"node_filesystem_readonly{_FS} 0",
+        f"node_filesystem_readonly{_RO} 0",
         'dipcatcher_http_requests_total{code="500",service="lab"} 0',
         f'dipcatcher_http_requests_total{{code="200",service="lab"}} {successes}',
     ]

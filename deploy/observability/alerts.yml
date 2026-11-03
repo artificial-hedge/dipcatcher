@@ -81,6 +81,16 @@ groups:
         annotations:
           summary: A filesystem has under 15 percent free.
           runbook: docs/incidents/DipcatcherDiskPressure.md
+      # DiskPressure requires node_filesystem_readonly == 0, so a remount
+      # does not page that rule. This rule is the read-only page.
+      - alert: DipcatcherFilesystemReadOnly
+        expr: 'node_filesystem_readonly{fstype!~"tmpfs|devtmpfs|overlay|squashfs|ramfs|aufs"} == 1'
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: A filesystem is mounted read-only.
+          runbook: docs/incidents/DipcatcherFilesystemReadOnly.md
       # 1 means owner-restamp would list a drifted corpus. The series is a
       # textfile gauge. Absent means this rule stays silent.
       - alert: DipcatcherReconcileDrift
