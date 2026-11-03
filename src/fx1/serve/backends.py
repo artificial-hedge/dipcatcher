@@ -57,6 +57,7 @@ from quant_fund.utils.outbound import (
     literal_destination_refusal,
     open_pinned,
 )
+
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
 BYOK_BASE_URL_ENV = "FX1_BYOK_BASE_URL"
