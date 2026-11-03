@@ -35,13 +35,12 @@ import hmac
 import json
 import os
 import re
-from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from quant_fund import __firm__, __version__
 
@@ -66,34 +65,44 @@ _TIME_RE = re.compile(r"^-\s*Time:\s*(\S+)", re.MULTILINE)
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class ResearchApiSettings:
+class ResearchApiSettings(BaseModel):
     """Filesystem roots + auth for the read-only research API."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     data_root: Path
     receipts_dir: Path
     verifier_dir: Path
     artifacts_dir: Path
-    api_key: str | None = None
+    api_key: str | None = Field(default=None, repr=False)
+
+    @field_validator("data_root", "receipts_dir", "verifier_dir", "artifacts_dir", mode="before")
+    @classmethod
+    def path_must_not_be_blank(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("must be a non-empty path")
+        return value
 
     @classmethod
     def from_env(cls) -> ResearchApiSettings:
-        data_root_env = os.environ.get("RESEARCH_API_DATA_ROOT") or os.environ.get(
-            "QUANT_DATA_ROOT"
-        )
-        data_root = Path(data_root_env) if data_root_env else _REPO_ROOT / "data"
-        return cls(
-            data_root=data_root,
-            receipts_dir=Path(
-                os.environ.get("RESEARCH_API_RECEIPTS_DIR", str(_REPO_ROOT / "receipts"))
-            ),
-            verifier_dir=Path(
-                os.environ.get("RESEARCH_API_VERIFIER_DIR", str(_REPO_ROOT / "verifier"))
-            ),
-            artifacts_dir=Path(
-                os.environ.get("RESEARCH_API_ARTIFACTS_DIR", str(_REPO_ROOT / "artifacts"))
-            ),
-            api_key=os.environ.get("RESEARCH_API_KEY") or None,
+        data_root_env = os.environ.get("RESEARCH_API_DATA_ROOT")
+        if data_root_env is None:
+            data_root_env = os.environ.get("QUANT_DATA_ROOT")
+        api_key = os.environ.get("RESEARCH_API_KEY")
+        return cls.model_validate(
+            {
+                "data_root": data_root_env if data_root_env is not None else _REPO_ROOT / "data",
+                "receipts_dir": os.environ.get(
+                    "RESEARCH_API_RECEIPTS_DIR", _REPO_ROOT / "receipts"
+                ),
+                "verifier_dir": os.environ.get(
+                    "RESEARCH_API_VERIFIER_DIR", _REPO_ROOT / "verifier"
+                ),
+                "artifacts_dir": os.environ.get(
+                    "RESEARCH_API_ARTIFACTS_DIR", _REPO_ROOT / "artifacts"
+                ),
+                "api_key": api_key if api_key and api_key.strip() else None,
+            }
         )
 
     @property
@@ -396,12 +405,13 @@ def _int_or_none(value: object) -> int | None:
 
 def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa: C901
     cfg = settings or ResearchApiSettings.from_env()
-    cfg = replace(
-        cfg,
-        data_root=cfg.data_root.resolve(),
-        receipts_dir=cfg.receipts_dir.resolve(),
-        verifier_dir=cfg.verifier_dir.resolve(),
-        artifacts_dir=cfg.artifacts_dir.resolve(),
+    cfg = cfg.model_copy(
+        update={
+            "data_root": cfg.data_root.resolve(),
+            "receipts_dir": cfg.receipts_dir.resolve(),
+            "verifier_dir": cfg.verifier_dir.resolve(),
+            "artifacts_dir": cfg.artifacts_dir.resolve(),
+        }
     )
     docs = _JsonDocCache()
 
