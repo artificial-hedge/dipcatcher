@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import types
 from pathlib import Path
@@ -187,7 +188,7 @@ def test_corpus_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     _install_corpus_module(monkeypatch)
     result = runner.invoke(app, ["corpus", "--receipts-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    assert "does not exist" in result.output
+    assert "does not exist" in re.sub(r"\s+", " ", result.output)
 
 
 def test_online_fdr_per_finding_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -370,4 +371,4 @@ def test_online_fdr_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.Monkey
     _install_online_module(monkeypatch)
     result = runner.invoke(app, ["online-fdr", "--receipts-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    assert "does not exist" in result.output
+    assert "does not exist" in re.sub(r"\s+", " ", result.output)
