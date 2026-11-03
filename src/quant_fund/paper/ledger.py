@@ -340,8 +340,10 @@ def load_broker_state(
     if not path.is_file():
         return None
     try:
-        state = parse_broker_state(path.read_text(encoding="utf-8"))
-    except (OSError, TypeError, ValueError):
+        state = _read_json_value(path)
+    except (OSError, TypeError, ValueError, RecursionError):
+        return None
+    if not isinstance(state, dict):
         return None
     return state
 
