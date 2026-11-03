@@ -1,6 +1,6 @@
 """Wave 8: ReplayClock deterministic sequence + paper fill/NAV identity."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
 
 import polars as pl
@@ -9,6 +9,17 @@ import pytest
 from quant_fund.config.loader import load_config
 from quant_fund.paper.clock import ReplayClock
 from quant_fund.paper.loop import run_paper_loop
+
+
+class _NaiveTzInfo(tzinfo):
+    def utcoffset(self, dt: datetime | None) -> timedelta | None:
+        return None
+
+    def dst(self, dt: datetime | None) -> timedelta | None:
+        return None
+
+    def tzname(self, dt: datetime | None) -> str | None:
+        return None
 
 
 def test_replay_clock_sequence_deterministic() -> None:
@@ -42,6 +53,43 @@ def test_replay_clock_empty_raises() -> None:
         clock.now()
     assert clock.tick() is None
     assert clock.exhausted()
+
+
+@pytest.mark.parametrize(
+    "event_time",
+    [
+        datetime(2024, 1, 1),
+        datetime(2024, 1, 1, tzinfo=_NaiveTzInfo()),
+    ],
+    ids=["missing_tzinfo", "none_utcoffset"],
+)
+def test_replay_clock_rejects_naive_event_times(event_time: datetime) -> None:
+    with pytest.raises(ValueError, match="timezone-aware"):
+        ReplayClock(event_times=[event_time])
+
+
+def test_replay_clock_rejects_backward_event_times() -> None:
+    times = [
+        datetime(2024, 1, 2, tzinfo=UTC),
+        datetime(2024, 1, 1, tzinfo=UTC),
+    ]
+    with pytest.raises(ValueError, match="non-decreasing"):
+        ReplayClock(event_times=times)
+
+
+def test_replay_clock_allows_equal_adjacent_event_times() -> None:
+    first = datetime(2024, 1, 1, tzinfo=UTC)
+    times = [first, first, first + timedelta(days=1)]
+    assert list(ReplayClock(event_times=times)) == times
+
+
+def test_replay_clock_now_raises_after_exhaustion() -> None:
+    event_time = datetime(2024, 1, 1, tzinfo=UTC)
+    clock = ReplayClock(event_times=[event_time])
+    assert clock.tick() == event_time
+    assert clock.tick() is None
+    with pytest.raises(RuntimeError, match="exhausted"):
+        clock.now()
 
 
 def _bars(n_days: int = 8) -> pl.DataFrame:

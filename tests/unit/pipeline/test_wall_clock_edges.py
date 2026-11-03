@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from quant_fund.paper.clock import WallClock
 
 RESEARCH_ONLY = True
@@ -42,3 +44,8 @@ def test_wall_clock_nonzero_step_advances_deterministically() -> None:
     # now() remains real wall time (not synthetic step cursor)
     assert isinstance(clock.now(), datetime)
     assert clock.now().tzinfo == UTC
+
+
+def test_wall_clock_rejects_negative_step() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        WallClock(step=timedelta(microseconds=-1))

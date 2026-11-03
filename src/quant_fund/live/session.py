@@ -16,11 +16,12 @@ import secrets
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from quant_fund.calendars.us_equities import XNYS
 from quant_fund.live.brokers import (
     AlpacaBroker,
     Broker,
@@ -473,6 +474,8 @@ class LiveSession:
     ) -> dict[str, Any]:
         who = _actor(actor)
         ts = self._clock(at_ns)
+        if self.venue != "loopback" and at_ns is not None and ts != int(self._now()):
+            raise LiveGateError(f"--at differs from the {self.venue} wall clock")
         self._require_trading()
         cleaned = _symbol(symbol)
         order_side = _side(side)
@@ -489,6 +492,7 @@ class LiveSession:
         self.marks[cleaned] = reference
         self.broker.set_mark(cleaned, reference)
         self._sync_account(ts, reset_session=not self.orders)
+        self._apply_exchange_calendar(ts)
         placeholder = {
             "client_order_id": client,
             "broker_order_id": "",
@@ -752,6 +756,23 @@ class LiveSession:
         zone = ZoneInfo(self.pretrade.session.timezone)
         local = datetime.fromtimestamp(ts / 1_000_000_000, zone)
         return business_session_id(local.date())
+
+    def _apply_exchange_calendar(self, ts: int) -> None:
+        """Intersect configured US RTH hours with the actual XNYS session."""
+        if self.config.calendar != "us_rth":
+            return
+        self.engine.refresh_session(ts)
+        instant = datetime.fromtimestamp(ts / 1_000_000_000, UTC)
+        session = XNYS.session_on(instant.astimezone(XNYS.tz).date())
+        if session is None:
+            self.engine.book.session_open = 0
+            self.engine.book.open_ns = 0
+            self.engine.book.close_ns = 0
+            return
+        open_ns = int(session.open_utc.timestamp() * 1_000_000_000)
+        close_ns = int(session.close_utc.timestamp() * 1_000_000_000)
+        self.engine.book.open_ns = max(self.engine.book.open_ns, open_ns)
+        self.engine.book.close_ns = min(self.engine.book.close_ns, close_ns)
 
     def _capture_baseline(self) -> None:
         if self.venue == "loopback" or self._baseline_from_broker:
