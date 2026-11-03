@@ -465,3 +465,132 @@ def test_snapshot_tamper_fails_closed(tmp_path: Path) -> None:
 def test_receipt_fields_reject_a_bad_id() -> None:
     with pytest.raises(DataContractError):
         snapshot_receipt_fields("not-a-hash")
+
+
+def test_query_rejects_replaced_valid_parquet(tmp_path: Path) -> None:
+    snapshot = write_partitioned_bars(tmp_path, _bars(), dataset="bars")
+    entry = snapshot.files[0]
+    replacement = tmp_path / "replacement.parquet"
+    _bars().with_columns(pl.lit(99.0).alias("close")).write_parquet(replacement)
+    object_path = tmp_path / entry.object_path
+    object_path.write_bytes(replacement.read_bytes())
+    with pytest.raises(DataContractError, match="object bytes do not match"):
+        asof_bars(tmp_path, snapshot.snapshot_id, T1)
+    assert object_path.read_bytes() == replacement.read_bytes()
+
+
+def test_query_rejects_truncated_object_without_repairing_it(tmp_path: Path) -> None:
+    snapshot = write_partitioned_bars(tmp_path, _bars(), dataset="bars")
+    object_path = tmp_path / snapshot.files[0].object_path
+    truncated = object_path.read_bytes()[:-1]
+    object_path.write_bytes(truncated)
+    with pytest.raises(DataContractError, match="object bytes do not match"):
+        asof_bars(tmp_path, snapshot.snapshot_id, T1)
+    assert object_path.read_bytes() == truncated
+
+
+def test_query_rechecks_object_after_read(tmp_path: Path) -> None:
+    from quant_fund.data.lakehouse import query as query_mod
+
+    snapshot = write_partitioned_bars(tmp_path, _bars(), dataset="bars")
+    object_path = tmp_path / snapshot.files[0].object_path
+    replacement = tmp_path / "replacement.parquet"
+    _bars().write_parquet(replacement)
+    original = query_mod._duckdb_frame
+
+    def replace_after_read(sql: str, params: list) -> pl.DataFrame:
+        frame = original(sql, params)
+        object_path.write_bytes(replacement.read_bytes())
+        return frame
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(query_mod, "_duckdb_frame", replace_after_read)
+        with pytest.raises(DataContractError, match="object bytes do not match"):
+            asof_bars(tmp_path, snapshot.snapshot_id, T1)
+
+
+def test_query_rejects_symlinked_object(tmp_path: Path) -> None:
+    snapshot = write_partitioned_bars(tmp_path, _bars(), dataset="bars")
+    object_path = tmp_path / snapshot.files[0].object_path
+    original = tmp_path / "original.parquet"
+    object_path.rename(original)
+    try:
+        object_path.symlink_to(original)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+    with pytest.raises(DataContractError, match="not a regular lake object"):
+        asof_bars(tmp_path, snapshot.snapshot_id, T1)
+
+
+def test_query_rejects_lfs_pointer_payload(tmp_path: Path) -> None:
+    pointer = tmp_path / "bars.parquet"
+    pointer.write_text(
+        "version https://git-lfs.github.com/spec/v1\n" + f"oid sha256:{'ab' * 32}\nsize 42\n",
+        encoding="ascii",
+    )
+    lake = tmp_path / "lake"
+    snapshot = import_files([pointer], lake, dataset="pointer", role="bars")
+    with pytest.raises(DataContractError, match="LFS pointer"):
+        asof_bars(lake, snapshot.snapshot_id, T1)
+
+
+def test_universe_query_rejects_corrupt_object(tmp_path: Path) -> None:
+    path = tmp_path / "universe.parquet"
+    pl.DataFrame(
+        {
+            "security_id": ["A"],
+            "symbol": ["AAPL"],
+            "asof": [DAY],
+            "available_time": [DAY],
+            "effective_from": [DAY],
+        }
+    ).write_parquet(path)
+    lake = tmp_path / "lake"
+    snapshot = import_files([path], lake, dataset="universe")
+    object_path = lake / snapshot.files[0].object_path
+    object_path.write_bytes(object_path.read_bytes()[:-1])
+    with pytest.raises(DataContractError, match="object bytes do not match"):
+        universe_asof(lake, snapshot.snapshot_id, DAY)
+
+
+@pytest.mark.parametrize("raw", [b"\xff", b'{"schema":'])
+def test_malformed_snapshot_bytes_raise_contract_error(tmp_path: Path, raw: bytes) -> None:
+    snapshot = write_partitioned_bars(tmp_path, _bars(), dataset="bars")
+    path = tmp_path / "snapshots" / f"{snapshot.snapshot_id}.json"
+    path.write_bytes(raw)
+    with pytest.raises(DataContractError, match="malformed"):
+        load_snapshot(tmp_path, snapshot.snapshot_id)
+
+
+def test_partitioned_writes_use_unique_staging_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from threading import Barrier
+
+    from quant_fund.data.lakehouse import store as store_mod
+
+    lake = tmp_path / "lake"
+    barrier = Barrier(2)
+    original = store_mod.put_file
+
+    def synchronized_put_file(root: Path, source: Path):
+        barrier.wait(timeout=10)
+        return original(root, source)
+
+    monkeypatch.setattr(store_mod, "put_file", synchronized_put_file)
+    frames = {
+        "left": _bars().with_columns(pl.lit(10.0).alias("close")),
+        "right": _bars().with_columns(pl.lit(20.0).alias("close")),
+    }
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        snapshots = {
+            name: future.result()
+            for name, future in {
+                name: pool.submit(write_partitioned_bars, lake, frame, dataset=name)
+                for name, frame in frames.items()
+            }.items()
+        }
+    for name, expected in (("left", 10.0), ("right", 20.0)):
+        visible = asof_bars(lake, snapshots[name].snapshot_id, T1)
+        assert set(visible["close"].to_list()) == {expected}
+    assert not list((lake / "tmp").glob("*.parquet"))

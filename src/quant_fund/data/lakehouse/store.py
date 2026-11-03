@@ -140,7 +140,7 @@ def load_snapshot(root: Path, snapshot_id: str) -> Snapshot:
         raise DataContractError(f"snapshot not found: {digest}")
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
+    except (UnicodeError, json.JSONDecodeError) as exc:
         raise DataContractError(f"snapshot {digest} is malformed") from exc
     if not isinstance(raw, dict) or raw.get("schema") != SNAPSHOT_SCHEMA:
         raise DataContractError(f"snapshot {digest} has an unsupported schema")
@@ -281,7 +281,9 @@ def _write_part(
     lake = Path(root)
     staging = lake / "tmp"
     staging.mkdir(parents=True, exist_ok=True)
-    temporary = staging / f"{os.getpid()}-{hash_bytes(logical_path.encode())}.parquet"
+    fd, temporary_name = tempfile.mkstemp(dir=staging, prefix="part-", suffix=".parquet")
+    os.close(fd)
+    temporary = Path(temporary_name)
     try:
         frame.write_parquet(temporary)
         destination, address = put_file(lake, temporary)
