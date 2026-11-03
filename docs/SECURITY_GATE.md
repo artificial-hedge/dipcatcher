@@ -25,7 +25,16 @@ QUANT_API_RATE_PER_SEC=off
 RESEARCH_API_RATE_PER_SEC=off
 ```
 
-`deploy/compose.hardened.yml` does not pass those variables into the container. A rescan uses an uncommitted compose override. `0`, `off`, `false`, `no`, or an empty value disables the limit. Production keeps the default of 10 requests/second. `.env.example` is hash-pinned and does not list them. `docs/THREAT_MODEL.md` is the operator description.
+`deploy/compose.hardened.yml` does not pass those variables into the container. A rescan uses an uncommitted compose override. `0`, `off`, `false`, `no`, or an empty value disables the limit. Production keeps the default of 10 requests/second for a peer that is not loopback. `.env.example` is hash-pinned and does not list them. `docs/THREAT_MODEL.md` is the operator description.
+
+## Loopback rate limit
+
+`127.0.0.1`, `::1`, `localhost`, and the ASGI peer `testclient` use a separate bucket:
+
+- `QUANT_API_LOOPBACK_RATE_PER_SEC` and `RESEARCH_API_LOOPBACK_RATE_PER_SEC` default to `100`.
+- `QUANT_API_LOOPBACK_RATE_BURST` and `RESEARCH_API_LOOPBACK_RATE_BURST` default to `1000`.
+
+The same disable words turn that pair off. A published Docker port is not a loopback peer, so a ZAP rescan still sets `QUANT_API_RATE_PER_SEC=off` and `RESEARCH_API_RATE_PER_SEC=off`. The loopback pair does not apply to that scan. `/health` is not counted. `tests/unit/api/test_http_controls.py` covers the split.
 
 The rescan for this slice sent 40 keyed requests to each service after the override. Every one was HTTP 200. ZAP's API scan then ran with active rules outside the SQL family set to IGNORE. Rules 40018, 40019, 40020, 40021, 40022, and 40027 passed on the lab and the research API, in the unauthenticated scan and in the keyed scan. The raw report's only HTTP 503 is lab `GET /ready`. The pinned ZAP 2.17.0 catalog has no active rule 40024. No handler change came out of that rescan.
 
@@ -52,15 +61,31 @@ For each of `QUANT_API_KEY`, `QUANT_API_READ_KEY`, `RESEARCH_API_KEY`, and `RESE
 
 `QUANT_API_AUDIT_LOG` and `RESEARCH_API_AUDIT_LOG` are append-only files.
 Each admin-key unsafe request appends one JSON object with `time`, `route`,
-`key_id`, `request_id`, `outcome`, and `kind`. `key_id` is the SHA-256 hex
-of the presented key. The line does not contain the key. `POST /backtest`
-is kind `ledger`. `POST /portfolio/optimize` is kind `compute`. Any other
-admin-key unsafe route is `unclassified`, which is how a new route stays
-visible. `dump_resolved`, `PaperLedger.flush`, and `LiveDesk.kill` append
-`config`, `ledger`, and `kill-file` when an admin actor is bound. The CLI
-does not bind that actor. A log path that cannot be opened turns the
-mutation into 503 before the route runs. `tests/unit/security/test_admin_audit.py`
-covers the line, the redaction, and those three kinds.
+`key_id`, `request_id`, `outcome`, `kind`, and `prev`. `key_id` is the
+SHA-256 hex of the presented key. `prev` is the SHA-256 hex of the previous
+raw line, or the SHA-256 of empty bytes on the first line. The line does
+not contain the key. `POST /backtest` is kind `ledger`. `POST /portfolio/optimize`
+is kind `optimize`: the handler returns a research weight envelope and writes
+no kill file, ledger, or config. Any other admin-key unsafe route is
+`unclassified`. A rejected key on an unsafe method, including a read key,
+appends outcome `denied`. Safe methods do not.
+
+`dump_resolved`, `PaperLedger.flush`, `LiveDesk.kill`, and the gateway
+session `kill` append `config`, `ledger`, and `kill-file`. When no HTTP
+actor is bound the route is `cli:<user>@<host>`, with the user and host
+reduced to an ASCII token. A log path that cannot be opened turns the
+mutation, and a denied attempt, into 503 before the route runs.
+
+`{LOG}_MAX_BYTES` defaults to 1048576. `off` disables rotation. When the
+next line would pass the cap, the active file is renamed to `NAME.1` and
+older siblings shift up. The new file's first `prev` is the last line of
+`NAME.1`. `python scripts/verify_audit_chain.py PATH` exits 0 and prints
+`audit chain ok` when the chain holds, including across those siblings.
+The chain is not a signature.
+
+`tests/unit/security/test_admin_audit.py` and
+`tests/unit/security/test_audit_chain.py` cover the line, the redaction,
+the CLI actor, the optimize kind, and the chain.
 
 ## Owner steps this gate does not perform
 

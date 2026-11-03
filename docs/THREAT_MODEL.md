@@ -20,7 +20,7 @@ claims. `quant_fund.api.app._stamp_research_honesty` overwrites
   audit key ids store a SHA-256 digest, not the key.
 - The append-only admin audit log (`QUANT_API_AUDIT_LOG` and
   `RESEARCH_API_AUDIT_LOG`). A line holds time, route, key id, request id,
-  outcome, and kind. It does not hold the key.
+  outcome, kind, and the SHA-256 of the previous line. It does not hold the key.
 - Research evidence on disk: `receipts/`, `verifier/`, `artifacts/`, and the
   run notebooks under the research data root. The research API is read-only.
 - Lab configs under `configs/`. `resolve_allowed_config_path` refuses a path
@@ -43,9 +43,9 @@ claims. `quant_fund.api.app._stamp_research_honesty` overwrites
 | Reverse proxy | Nothing, until a key is set | A proxy on the same host makes every browser look like loopback |
 
 `X-Forwarded-For` is not read. A reverse proxy bound to loopback collapses
-every client into the loopback peer: the no-key fallback allows them, and the
-rate limit does not apply. Set the API key before placing either service
-behind a proxy.
+every client into the loopback peer: the no-key fallback allows them, and
+they share the higher loopback bucket. Set the API key before placing either
+service behind a proxy.
 
 ## STRIDE
 
@@ -58,7 +58,7 @@ a threat this tree does not close.
 |---|---|---|
 | Spoofing | The peer is `request.client.host`. `X-Forwarded-For` is not a peer. | `test_forwarded_for_does_not_become_loopback` |
 | Tampering | 64 KiB body cap, JSON depth cap, header checks, config path allowlist, research id checks | `tests/unit/api/test_http_controls.py`, `tests/unit/security/test_pentest_surface.py`, `tests/unit/api/test_research_api.py` |
-| Repudiation | An admin-key mutation appends one JSON line | `tests/unit/security/test_admin_audit.py`. Safe methods, 401s, and 403s are not lines. That is a gap. |
+| Repudiation | An admin-key unsafe request appends one JSON line. A rejected key on an unsafe method is outcome `denied` | `tests/unit/security/test_admin_audit.py`. Safe methods are not lines. That remains a gap |
 | Information disclosure | Unhandled errors are `{"detail":"internal error"}`. Package version is on `GET /health` only | `test_lab_internal_error_hides_the_exception`, `test_health_is_the_only_lab_version_surface` |
 | Denial of service | Per-IP and per-key token buckets, body cap, 128-header cap | `tests/unit/api/test_http_controls.py` |
 | Elevation of privilege | Admin key, read key, wrong key, and no key have a fixed status on every route | `tests/unit/security/test_authz_matrix.py` |
@@ -71,7 +71,7 @@ a threat this tree does not close.
 | Tampering | Same body and path controls as any peer | The peer tests above |
 | Repudiation | A loopback request with no admin key does not write an audit line | `test_admin_audit` (the unauthenticated mutation is absent). A loopback admin mutation does write one |
 | Information disclosure | `/health` on loopback returns the package version | `test_health_is_the_only_lab_version_surface` |
-| Denial of service | Loopback skips the rate limit | Documented here. There is no test that a loopback flood is refused, because the control does not refuse it. Gap |
+| Denial of service | Loopback uses `{PREFIX}_LOOPBACK_RATE_PER_SEC` (default 100) and `{PREFIX}_LOOPBACK_RATE_BURST` (default 1000). `/health` stays unlimited | `test_loopback_uses_its_own_higher_limit` |
 | Elevation of privilege | With no key configured, loopback is allowed and every other peer is 403 | `middleware_audit` |
 
 ### Key files and environment
@@ -80,7 +80,7 @@ a threat this tree does not close.
 |---|---|---|
 | Spoofing | A previous key works only before `*_GRACE_UNTIL_FILE`. After that instant it is 401 | `test_previous_admin_key_works_only_inside_the_grace_window`, `test_grace_boundary_is_strict` |
 | Tampering | `{NAME}_FILE` replaces the env value on the next request. A missing or oversized file stays configured and matches nothing | `test_file_replaces_the_env_value_without_a_restart`, `test_unreadable_key_file_fails_closed`, `test_oversized_key_file_matches_nothing` |
-| Repudiation | The audit key id is `sha256` of the presented admin key | `test_admin_mutation_is_appended_and_the_key_stays_out_of_the_log` |
+| Repudiation | The audit key id is `sha256` of the presented key. Each line's `prev` is the SHA-256 of the previous raw line | `test_admin_mutation_is_appended_and_the_key_stays_out_of_the_log`, `tests/unit/security/test_audit_chain.py` |
 | Information disclosure | The key is absent from the audit line, including when `X-Request-ID` is the key, and from the read-key 403 body | `test_admin_audit`, `test_read_key_cannot_modify` |
 | Denial of service | A key file over 4096 bytes is not loaded | `test_oversized_key_file_matches_nothing` |
 | Elevation of privilege | The read key, current or previous, cannot call an unsafe method. A previous admin key can | `test_previous_read_key_is_safe_methods_only`, `test_read_key_cannot_modify` |
@@ -91,7 +91,7 @@ a threat this tree does not close.
 |---|---|---|
 | Spoofing | Config paths must resolve under `configs/`. Research ids must match a closed expression and stay under the evidence root | `test_lab_config_path_traversal`, research path tests in `test_research_api.py` |
 | Tampering | Backtest artifact paths cannot leave the artifact root | `get_backtest` path checks. Gap: no separate fuzz corpus beyond `test_pentest_surface.py` |
-| Repudiation | `POST /backtest` is kind `ledger`. `dump_resolved`, `PaperLedger.flush`, and `LiveDesk.kill` append `config`, `ledger`, and `kill-file` only while an admin actor is bound | `test_admin_audit` |
+| Repudiation | `POST /backtest` is kind `ledger`. `POST /portfolio/optimize` is kind `optimize`. `dump_resolved`, `PaperLedger.flush`, `LiveDesk.kill`, and the gateway `kill` append `config`, `ledger`, and `kill-file`. With no HTTP actor the route is `cli:<user>@<host>` | `test_process_mutations_bind_a_cli_actor`, `test_portfolio_optimize_kind_is_optimize` |
 | Information disclosure | A 200 can still name `source` or `artifact_path` | Residual below. No gate fails that response |
 | Denial of service | Artifact writes are the backtest route, which is admin-only and body-capped | `test_authz_matrix` |
 | Elevation of privilege | A path that escapes the root is 400 or 422 | `test_pentest_surface.py` |
@@ -121,12 +121,11 @@ does not scan that process.
 
 ## Gaps
 
-- CLI `dump_resolved`, paper `PaperLedger.flush`, and `LiveDesk.kill` append an audit line only when an admin actor is already bound. The HTTP middleware binds that actor for an admin-key unsafe method. No current route calls `dump_resolved` or `LiveDesk.kill`. A CLI invocation does not bind the actor, so those commands are outside this log.
-- `POST /portfolio/optimize` is kind `compute`. It does not write a kill file, a ledger, or a config.
-- Safe methods, rejected keys, and read-key 403s are not audit lines. A full disk after the handler has started can return 503 `audit log unavailable` while a backtest artifact from that request already exists.
-- Loopback is not rate limited. Several workers do not share buckets.
-- The harness gaps in the pending section remain. `gate_pins.sig` is not re-signed here.
-- `.env.example` does not list the file, grace, or audit-log variables.
+- Safe methods are not audit lines. A full disk after the handler has started can return 503 `audit log unavailable` while a backtest artifact from that request already exists. A denied line that cannot be appended becomes that same 503, and the route does not run.
+- Several workers do not share rate-limit buckets. Loopback and remote peers in one process do use separate buckets.
+- The hash chain detects a torn, deleted, or reordered line. It does not sign the head, so a rewrite of every `prev` still verifies. `scripts/verify_audit_chain.py` checks the chain. `gate_pins.sig` is not re-signed here.
+- The harness gaps in the pending section remain.
+- `.env.example` does not list the file, grace, audit-log, loopback-rate, or audit max-byte variables.
 
 ## Entrypoints
 
@@ -189,9 +188,14 @@ while the clock is strictly before the timestamp in
 `{NAME}_GRACE_UNTIL_FILE`. The runbook is in `docs/SECURITY_GATE.md`. An
 admin-key unsafe method appends a line to `QUANT_API_AUDIT_LOG` or
 `RESEARCH_API_AUDIT_LOG` when that variable is set, and always emits the
-same JSON through the `quant_fund.api.audit` logger. If the configured file
-cannot be opened, the mutation is 503 `audit log unavailable` and the route
-does not run.
+same JSON through the `quant_fund.api.audit` logger. A rejected key on an
+unsafe method appends outcome `denied`. If the configured file cannot be
+opened, the mutation or the denial is 503 `audit log unavailable` and the
+route does not run. `dump_resolved`, `PaperLedger.flush`, `LiveDesk.kill`,
+and the gateway session `kill` append when that file is set. With no HTTP
+actor the route is `cli:<user>@<host>`. Each line's `prev` is the SHA-256
+of the previous raw line. The active file rotates to `NAME.1` when the next
+line would pass `{LOG}_MAX_BYTES` (default 1048576).
 
 The CLI bind guard still requires the admin key. `QUANT_API_KEY_FILE`
 satisfies it. `QUANT_API_READ_KEY` and `QUANT_API_READ_KEY_FILE` do not.
@@ -225,9 +229,11 @@ In-memory token bucket, one process, not shared across workers.
 
 - `QUANT_API_RATE_PER_SEC` and `RESEARCH_API_RATE_PER_SEC` default to `10`.
 - `QUANT_API_RATE_BURST` and `RESEARCH_API_RATE_BURST` default to `30`.
-- `0`, `off`, `false`, `no`, or an empty value disables that API's limit.
-- A value that does not parse keeps 10 per second and a burst of 30.
-- Loopback peers, including `testclient`, skip the limit.
+- `QUANT_API_LOOPBACK_RATE_PER_SEC` and `RESEARCH_API_LOOPBACK_RATE_PER_SEC` default to `100`.
+- `QUANT_API_LOOPBACK_RATE_BURST` and `RESEARCH_API_LOOPBACK_RATE_BURST` default to `1000`.
+- `0`, `off`, `false`, `no`, or an empty value disables the bucket named by that variable. Turning off the remote pair leaves the loopback pair in place.
+- A value that does not parse keeps that pair's default.
+- Loopback peers, including `testclient`, take the loopback pair. Their key bucket is separate from the remote key bucket. The bucket id is still a SHA-256 digest.
 - `/health` is not counted.
 - Other routes take an IP token first, including a request that will 401 or
   403. After the key matches, a second bucket is taken. Its id is
