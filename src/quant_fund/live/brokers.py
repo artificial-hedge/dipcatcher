@@ -19,7 +19,12 @@ from typing import Any, Protocol, cast
 from urllib.parse import quote, urlencode
 
 from quant_fund.live.config import Venue
-from quant_fund.live.errors import BrokerRejected, LiveBrokerRefused, LiveGateError
+from quant_fund.live.errors import (
+    BrokerRejected,
+    BrokerResponseUncertain,
+    LiveBrokerRefused,
+    LiveGateError,
+)
 
 _HOSTS: dict[str, str] = {
     "alpaca-paper": "https://paper-api.alpaca.markets",
@@ -375,8 +380,11 @@ class AlpacaBroker:
                 raise
             return recovered
         if not isinstance(payload, dict):
-            raise BrokerRejected("broker order response was not an object")
-        return self._ack(payload)
+            raise BrokerResponseUncertain("broker order response was not an object")
+        try:
+            return self._ack(payload)
+        except BrokerRejected as exc:
+            raise BrokerResponseUncertain("broker order response was malformed") from exc
 
     def cancel(self, client_order_id: str, broker_order_id: str) -> BrokerAck:
         target = broker_order_id or ""
@@ -594,17 +602,25 @@ def _parse_broker_response(
 def _empty_response(status: int) -> tuple[Any, bool]:
     if 200 <= status < 300:
         return {}, False
-    raise BrokerRejected(f"broker HTTP {status}")
+    raise _response_error(status, f"broker HTTP {status}")
 
 
 def _parse_json_response(status: int, text: str, secrets: tuple[str, str]) -> tuple[Any, bool]:
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise BrokerRejected(f"broker HTTP {status} returned non-JSON") from exc
+        raise _response_error(status, f"broker HTTP {status} returned non-JSON") from exc
     if status >= 400:
-        raise BrokerRejected(_broker_error(status, parsed, secrets))
+        raise _response_error(status, _broker_error(status, parsed, secrets))
+    if not 200 <= status < 300:
+        raise _response_error(status, f"broker HTTP {status}")
     return parsed, False
+
+
+def _response_error(status: int, message: str) -> BrokerRejected:
+    if status in {408, 409, 425, 429} or status >= 500 or 200 <= status < 400:
+        return BrokerResponseUncertain(message)
+    return BrokerRejected(message)
 
 
 def _broker_error(status: int, parsed: Any, secrets: tuple[str, str]) -> str:

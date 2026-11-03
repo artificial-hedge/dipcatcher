@@ -33,7 +33,7 @@ from quant_fund.live.brokers import (
     map_broker_status,
 )
 from quant_fund.live.config import LiveConfig, load_gateway_pretrade
-from quant_fund.live.errors import BrokerRejected, LiveGateError
+from quant_fund.live.errors import BrokerRejected, BrokerResponseUncertain, LiveGateError
 from quant_fund.live.gateway_arm import (
     arm_session,
     disarm_session,
@@ -540,6 +540,8 @@ class LiveSession:
     def _send(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
         try:
             return self.broker.submit(order)
+        except BrokerResponseUncertain:
+            return self._recover_submission(row, order)
         except BrokerRejected as exc:
             return BrokerAck(
                 client_order_id=order.client_order_id,
@@ -556,17 +558,20 @@ class LiveSession:
             self._persist()
             raise
         except Exception:
-            recovered = self._safe_recover(order.client_order_id)
-            if recovered is not None:
-                return recovered
-            # A lost response is not proof the broker rejected the order.
-            # Leave it inflight so a later open can find it and cancel it.
-            row["status"] = "inflight"
-            row["reason"] = "broker response lost; order remains recoverable"
-            self._persist()
-            raise LiveGateError(
-                "broker response lost; the order stays inflight until recovery succeeds"
-            ) from None
+            return self._recover_submission(row, order)
+
+    def _recover_submission(self, row: dict[str, Any], order: LiveOrder) -> BrokerAck:
+        recovered = self._safe_recover(order.client_order_id)
+        if recovered is not None:
+            return recovered
+        # A lost response is not proof the broker rejected the order.
+        # Leave it inflight so a later open can find it and cancel it.
+        row["status"] = "inflight"
+        row["reason"] = "broker response lost; order remains recoverable"
+        self._persist()
+        raise LiveGateError(
+            "broker response lost; the order stays inflight until recovery succeeds"
+        ) from None
 
     def _safe_recover(self, client_order_id: str) -> BrokerAck | None:
         try:
