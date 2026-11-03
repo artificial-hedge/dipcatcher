@@ -397,7 +397,7 @@ def _run_rehearsal(source: Path, dest: Path, keys: Path) -> int:
     _install_outgoing(dest, material)
     _open_spine(source, dest, material, env)
     print("owner-rehearsal: ceremony", flush=True)
-    code = _run(dest, ["bash", "OWNER_STEPS.md"], _ceremony_env(env, material), source)
+    code = _run(dest, ["bash", "docs/OWNER_STEPS.md"], _ceremony_env(env, material), source)
     if code != 0:
         print(f"owner-rehearsal: ceremony exited {code}", flush=True)
         return code

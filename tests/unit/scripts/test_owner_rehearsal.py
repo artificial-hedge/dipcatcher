@@ -109,7 +109,7 @@ def test_retarget_points_manifest_paths_at_the_copy(tmp_path: Path) -> None:
 
 
 def test_owner_steps_sign_after_the_new_public_key_and_witness_the_one_checkpoint() -> None:
-    text = (REPO / "OWNER_STEPS.md").read_text(encoding="utf-8")
+    text = (REPO / "docs" / "OWNER_STEPS.md").read_text(encoding="utf-8")
     order = [
         "make rotate-key",
         "printf '%s\\n' \"$new_pub\" > quality/gate_signing.pub",
@@ -142,7 +142,7 @@ def test_makefile_stays_stock_and_the_proposal_carries_the_targets() -> None:
     assert "GATE_QUORUM_KEYS" in proposal
     assert "dipcatcher quorum-sign" in proposal
     assert "anchor-timestamp --file quality/checkpoint.json" in proposal
-    steps = (REPO / "OWNER_STEPS.md").read_text(encoding="utf-8")
+    steps = (REPO / "docs" / "OWNER_STEPS.md").read_text(encoding="utf-8")
     assert "uv run python scripts/owner_rehearsal.py" in steps
     assert "\nmake sign-pins\n" not in steps
     assert "\nmake anchor-checkpoint\n" not in steps
