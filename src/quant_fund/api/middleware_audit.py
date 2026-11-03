@@ -29,7 +29,7 @@ def _client() -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
 
 
-def _nonloopback_status(path: str, expected: str | None) -> int:
+def _nonloopback_status(path: str) -> int:
     """Drive ``_authenticate_request`` with a forged remote client scope."""
     from starlette.requests import Request
 
@@ -59,7 +59,7 @@ def _nonloopback_status(path: str, expected: str | None) -> int:
 
             return _Resp()
 
-        resp = await _authenticate_request(request, call_next, path, expected)
+        resp = await _authenticate_request(request, call_next, path)
         return int(resp.status_code)
 
     return asyncio.run(_run())
@@ -78,16 +78,16 @@ def middleware_audit() -> dict[str, Any]:
         }
 
         results["remote_no_key_refused"] = {
-            "status": _nonloopback_status("/models", None),
-            "ok": _nonloopback_status("/models", None) == 403,
-            "remote_on_public_path": _nonloopback_status("/health", None) == 200,
+            "status": _nonloopback_status("/models"),
+            "ok": _nonloopback_status("/models") == 403,
+            "remote_on_public_path": _nonloopback_status("/health") == 200,
         }
 
         # Empty-string key must NOT silently enable key auth semantics —
         # pinned: it falls through to the loopback gate like unset.
         os.environ["QUANT_API_KEY"] = ""
         results["empty_key_equals_unset"] = {
-            "remote_status": _nonloopback_status("/models", ""),
+            "remote_status": _nonloopback_status("/models"),
             "loopback_status": _client().get("/models").status_code,
         }
 
