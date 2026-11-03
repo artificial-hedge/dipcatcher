@@ -19,6 +19,7 @@ from hypothesis import settings as h_settings
 from hypothesis import strategies as st
 from pydantic import ValidationError
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.api.research_api import (
     ArtifactDetail,
     ArtifactListResponse,
@@ -280,7 +281,7 @@ def test_settings_from_env_overrides_and_precedence(
 
     for field, path in expected.items():
         assert getattr(settings, field) == path
-    assert settings.api_key == "not-a-real-key"
+    assert secrets_equal(settings.api_key, "not-a-real-key")
     assert "not-a-real-key" not in repr(settings)
 
 

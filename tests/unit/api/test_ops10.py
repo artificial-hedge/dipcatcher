@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from fx1.secret_guard import secrets_equal
 from quant_fund.api.rate_limit import reset_bucket
 from quant_fund.api.secret_files import SecretFileError, apply_secret_files, clear_loaded_secrets
 from quant_fund.api.service_config import ServiceConfigError, ServiceSettings
@@ -367,7 +368,7 @@ def test_research_settings_load_the_file(tmp_path: Path, monkeypatch: pytest.Mon
     monkeypatch.setenv("DIPCATCHER_PROFILE", "prod")
     monkeypatch.setenv("RESEARCH_API_KEY_FILE", str(path))
     settings = ResearchApiSettings.from_env()
-    assert settings.api_key == _OTHER
+    assert secrets_equal(settings.api_key, _OTHER)
     clear_loaded_secrets()
     monkeypatch.setenv("RESEARCH_API_KEY", _KEY)
     with pytest.raises(SecretFileError, match="must not be set"):
