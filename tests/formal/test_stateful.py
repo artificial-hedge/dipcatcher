@@ -1,4 +1,10 @@
-"""Hypothesis stateful tests: broker cash versus the reference account."""
+"""Hypothesis stateful tests: broker cash versus the reference account.
+
+Each machine is a collected test. Hypothesis 6.168 runs
+``run_state_machine_as_test`` immediately, so calling it at import collects
+zero tests. The calls live in the test bodies. ``derandomize=True`` implies
+``database=None``.
+"""
 
 from datetime import UTC, datetime
 
@@ -205,11 +211,19 @@ class LifecycleMachine(RuleBasedStateMachine):
             assert order.filled <= order.qty + 1e-8
 
 
-test_accounting_state_machine = run_state_machine_as_test(
-    AccountingMachine,
-    settings=settings(max_examples=12, stateful_step_count=8, deadline=None),
+_MACHINE = settings(
+    derandomize=True,
+    max_examples=20,
+    stateful_step_count=8,
+    deadline=None,
 )
-test_lifecycle_state_machine = run_state_machine_as_test(
-    LifecycleMachine,
-    settings=settings(max_examples=10, stateful_step_count=8, deadline=None),
-)
+
+
+def test_accounting_state_machine() -> None:
+    """Cash, quantities, and NAV stay on the reference account."""
+    run_state_machine_as_test(AccountingMachine, settings=_MACHINE)
+
+
+def test_lifecycle_state_machine() -> None:
+    """Rest, sweep, cancel, expire, and restart traces stay inside the spec."""
+    run_state_machine_as_test(LifecycleMachine, settings=_MACHINE)
