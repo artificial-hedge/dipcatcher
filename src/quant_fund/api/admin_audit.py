@@ -1,10 +1,10 @@
 """Append-only audit lines for admin-key mutations.
 
-One JSON object per line: time, route, key id, request id, outcome, and
-kind. The key id is the SHA-256 hex of the presented admin key. The line
-never contains the key. ``kill-file``, ``ledger``, and ``config`` are the
-mutation kinds. A route that is not one of those still gets ``compute`` or
-``unclassified`` so a new admin mutation is recorded.
+One JSON object per line: time, route, key id, request id, outcome, kind,
+and prev. The key id is the SHA-256 hex of the presented admin key. ``prev``
+is the SHA-256 hex of the previous raw line. The line never contains the key.
+``kill-file``, ``ledger``, ``config``, and ``optimize`` are the known kinds.
+A route that is none of those gets ``unclassified``.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import re
+import threading
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -24,13 +25,20 @@ from typing import Any
 
 _LOGGER = logging.getLogger("quant_fund.api.audit")
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
-_KINDS = frozenset({"kill-file", "ledger", "config", "compute", "unclassified"})
+_KINDS = frozenset({"kill-file", "ledger", "config", "optimize", "unclassified"})
 _ROUTE_KIND = {
     ("POST", "/backtest"): "ledger",
-    ("POST", "/portfolio/optimize"): "compute",
+    ("POST", "/portfolio/optimize"): "optimize",
 }
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+_ACTOR_TOKEN = re.compile(r"[^A-Za-z0-9._-]")
 _ACTOR: ContextVar[_Actor | None] = ContextVar("dipcatcher_admin_audit", default=None)
+_GENESIS = hashlib.sha256(b"").hexdigest()
+_LOCKS: dict[str, threading.Lock] = {}
+_LOCK_GUARD = threading.Lock()
+_DEFAULT_MAX_BYTES = 1_048_576
+_ROTATE_RESERVE = 1024
+_TAIL_BYTES = 65536
 
 
 @dataclass(frozen=True)
@@ -43,16 +51,41 @@ class _Actor:
     log_env: str
 
 
+def audit_log_env_names() -> tuple[str, ...]:
+    """Log paths and the byte caps that rotate them."""
+    return (
+        "QUANT_API_AUDIT_LOG",
+        "RESEARCH_API_AUDIT_LOG",
+        "QUANT_API_AUDIT_LOG_MAX_BYTES",
+        "RESEARCH_API_AUDIT_LOG_MAX_BYTES",
+    )
+
+
+def cli_identity() -> str:
+    """Process actor ``cli:<user>@<host>`` with an ASCII token on each side."""
+    return f"cli:{_actor_token(_posix_user())}@{_actor_token(_host_name())}"
+
+
 def note_mutation(kind: str, outcome: str) -> None:
-    """Record a mutation when an admin-key request is on the stack."""
+    """Record a mutation when an admin actor is already on the stack."""
     actor = _ACTOR.get()
     if actor is None:
         return
-    _emit(
-        actor,
-        kind=_known(kind),
-        outcome=outcome,
-    )
+    _emit(actor, kind=_known(kind), outcome=outcome)
+
+
+def note_process_mutation(kind: str, outcome: str) -> None:
+    """Record a config, ledger, or kill-file write from this process.
+
+    An admin actor already on the stack keeps its route and key id.
+    Otherwise the route is ``cli:<user>@<host>``.
+    """
+    if _ACTOR.get() is not None:
+        note_mutation(kind, outcome)
+        return
+    identity = cli_identity()
+    actor = _actor_from_presented(identity, identity, _known(kind), "QUANT_API_AUDIT_LOG", (), None)
+    _emit(actor, kind=actor.kind, outcome=outcome)
 
 
 @contextmanager
@@ -94,6 +127,41 @@ async def audited_call(
     finally:
         _ACTOR.reset(token)
     return _finish(actor, response)
+
+
+def denied_audit_response(
+    request: Any,
+    refusal: Any,
+    *,
+    admin_current: str | None,
+    admin_previous: str | None,
+    read_current: str | None,
+    read_previous: str | None,
+    log_env: str,
+) -> Any:
+    """Return ``refusal``, or 503 when a denial line cannot be stored.
+
+    Safe methods and a missing key are unchanged. An unsafe method that
+    presented a key records outcome ``denied`` and does not copy the key.
+    """
+    if request.method.upper() in _SAFE_METHODS:
+        return refusal
+    presented = request.headers.get("X-API-Key")
+    if not presented:
+        return refusal
+    secrets = _secret_values(presented, admin_current, admin_previous, read_current, read_previous)
+    actor = _actor_from_presented(
+        f"{request.method.upper()} {request.url.path}",
+        presented,
+        _route_kind(request.method, request.url.path),
+        log_env,
+        secrets,
+        request.headers.get("X-Request-ID"),
+    )
+    if _emit(actor, kind=actor.kind, outcome="denied"):
+        return refusal
+    _LOGGER.info("audit log unavailable")
+    return _unavailable()
 
 
 def _http_actor(
@@ -170,11 +238,10 @@ def _emit(actor: _Actor, *, kind: str, outcome: str) -> bool:
         "outcome": _field(outcome, actor.secrets),
         "kind": _field(_known(kind), actor.secrets),
     }
-    line = json.dumps(record, sort_keys=True, separators=(",", ":"))
-    if _contains_secret(line, actor.secrets):
+    if _contains_secret(_dumps(record), actor.secrets):
         _LOGGER.info("audit line withheld")
-        return _write(actor.log_env, '{"kind":"unclassified","outcome":"withheld"}\n')
-    return _write(actor.log_env, line + "\n")
+        return _commit(actor.log_env, {"kind": "unclassified", "outcome": "withheld"}, ())
+    return _commit(actor.log_env, record, actor.secrets)
 
 
 def _route_kind(method: str, path: str) -> str:
@@ -226,6 +293,29 @@ def _status_code(response: Any) -> int:
     return 0
 
 
+def _actor_token(value: str) -> str:
+    cleaned = _ACTOR_TOKEN.sub("_", value)[:64]
+    return cleaned or "unknown"
+
+
+def _posix_user() -> str:
+    try:
+        import getpass
+
+        return getpass.getuser()
+    except OSError:
+        return "unknown"
+
+
+def _host_name() -> str:
+    try:
+        import socket
+
+        return socket.gethostname()
+    except OSError:
+        return "unknown"
+
+
 def _log_ready(log_env: str) -> bool:
     raw = os.environ.get(log_env, "").strip()
     if not raw:
@@ -238,16 +328,107 @@ def _log_ready(log_env: str) -> bool:
     return True
 
 
-def _write(log_env: str, line: str) -> bool:
-    _LOGGER.info("%s", line.rstrip("\n"))
+def _dumps(record: dict[str, str]) -> str:
+    return json.dumps(record, sort_keys=True, separators=(",", ":"))
+
+
+def _withheld(prev: str) -> dict[str, str]:
+    return {"kind": "unclassified", "outcome": "withheld", "prev": prev}
+
+
+def _commit(log_env: str, record: dict[str, str], secrets: tuple[str, ...]) -> bool:
     raw = os.environ.get(log_env, "").strip()
     if not raw:
+        body = dict(record)
+        body["prev"] = _GENESIS
+        line = _dumps(body)
+        if _contains_secret(line, secrets):
+            line = _dumps(_withheld(_GENESIS))
+        _LOGGER.info("%s", line)
         return True
     try:
-        _append_file(Path(raw), line)
-    except (OSError, UnicodeEncodeError):
+        with _path_lock(raw):
+            path = Path(raw)
+            _rotate(path, _max_bytes(log_env))
+            prev = _prev_hash(path)
+            body = dict(record)
+            body["prev"] = prev
+            line = _dumps(body)
+            if _contains_secret(line, secrets):
+                line = _dumps(_withheld(prev))
+            _LOGGER.info("%s", line)
+            _append_file(path, line + "\n")
+    except (OSError, UnicodeError):
         return False
     return True
+
+
+def _path_lock(raw: str) -> threading.Lock:
+    with _LOCK_GUARD:
+        lock = _LOCKS.get(raw)
+        if lock is None:
+            lock = threading.Lock()
+            _LOCKS[raw] = lock
+        return lock
+
+
+def _max_bytes(log_env: str) -> int | None:
+    raw = os.environ.get(f"{log_env}_MAX_BYTES", "").strip().lower()
+    if not raw:
+        return _DEFAULT_MAX_BYTES
+    if raw in {"0", "off", "false", "no"}:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return _DEFAULT_MAX_BYTES
+    if value <= 0:
+        return None
+    return value
+
+
+def _rotate(path: Path, max_bytes: int | None) -> None:
+    if max_bytes is None or not path.is_file():
+        return
+    size = path.stat().st_size
+    if size == 0 or size + _ROTATE_RESERVE <= max_bytes:
+        return
+    _shift(path)
+
+
+def _shift(path: Path) -> None:
+    generation = 1
+    while path.with_name(f"{path.name}.{generation}").exists():
+        generation += 1
+    while generation > 1:
+        source = path.with_name(f"{path.name}.{generation - 1}")
+        target = path.with_name(f"{path.name}.{generation}")
+        os.replace(source, target)
+        generation -= 1
+    os.replace(path, path.with_name(f"{path.name}.1"))
+
+
+def _prev_hash(path: Path) -> str:
+    last = _last_line(path)
+    if last is None:
+        last = _last_line(path.with_name(f"{path.name}.1"))
+    if last is None:
+        return _GENESIS
+    return hashlib.sha256(last.encode("ascii")).hexdigest()
+
+
+def _last_line(path: Path) -> str | None:
+    if not path.is_file() or path.stat().st_size == 0:
+        return None
+    with path.open("rb") as handle:
+        handle.seek(0, os.SEEK_END)
+        size = handle.tell()
+        handle.seek(max(0, size - _TAIL_BYTES))
+        blob = handle.read()
+    lines = blob.decode("ascii").splitlines()
+    if not lines:
+        return None
+    return lines[-1]
 
 
 def _append_file(path: Path, line: str) -> None:

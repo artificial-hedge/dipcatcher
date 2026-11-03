@@ -54,7 +54,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
 from quant_fund import __firm__, __version__
-from quant_fund.api.admin_audit import audited_call
+from quant_fund.api.admin_audit import audited_call, denied_audit_response
 from quant_fund.api.http_controls import (
     BODY_TOO_LARGE_DETAIL,
     MAX_BODY_BYTES,
@@ -492,7 +492,15 @@ async def _research_dispatch(request: Request, call_next: Any, cfg: ResearchApiS
         read_previous,
     )
     if refusal is not None:
-        return refusal
+        return denied_audit_response(
+            request,
+            refusal,
+            admin_current=admin_key,
+            admin_previous=admin_previous,
+            read_current=read_key,
+            read_previous=read_previous,
+            log_env="RESEARCH_API_AUDIT_LOG",
+        )
     provided = request.headers.get("X-API-Key") or ""
     limited_key = key_rate_response(request, "RESEARCH_API", provided)
     if limited_key is not None:

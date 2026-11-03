@@ -296,9 +296,9 @@ class PaperLedger:
             json.dumps({"run_id": self.run_id, "path": str(self.root)}, indent=2),
         )
         paths["latest"] = latest_path
-        from quant_fund.api.admin_audit import note_mutation
+        from quant_fund.api.admin_audit import note_process_mutation
 
-        note_mutation("ledger", "written")
+        note_process_mutation("ledger", "written")
         return paths
 
     def load_equity(self) -> pl.DataFrame:

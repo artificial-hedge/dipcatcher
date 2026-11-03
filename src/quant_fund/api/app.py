@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from quant_fund import __firm__, __version__
-from quant_fund.api.admin_audit import audited_call, note_mutation
+from quant_fund.api.admin_audit import audited_call, denied_audit_response, note_mutation
 from quant_fund.api.http_controls import (
     apply_security_headers,
     buffer_capped_body,
@@ -191,7 +191,15 @@ async def _authenticate_request(request: Request, call_next: Any, path: str) -> 
         read_previous,
     )
     if refusal is not None:
-        return refusal
+        return denied_audit_response(
+            request,
+            refusal,
+            admin_current=admin_key,
+            admin_previous=admin_previous,
+            read_current=read_key,
+            read_previous=read_previous,
+            log_env="QUANT_API_AUDIT_LOG",
+        )
     provided = request.headers.get("X-API-Key") or ""
     limited_key = key_rate_response(request, "QUANT_API", provided)
     if limited_key is not None:
